@@ -57,7 +57,8 @@ export default function Home() {
             LEADERBOARD
           </span>
           <PodiumComponent leaderboard={leaderboard} />
-          <Leaderboard rows={mockRows} />
+          <Leaderboard rows={mockRows} currentUsername="user55" />
+
         </section>
       </main>
       <Footer />

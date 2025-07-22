@@ -11,7 +11,7 @@ export default function Footer() {
         <Image src="/navlogo.png" alt="Clapo Logo" width={68} height={68} />
         <span>© 2025 CLAPO. ALL RIGHTS RESERVED</span>
       </div>
-      <div className="flex gap-8">
+      <div className="flex gap-20">
         <div>
           <div className="font-bold text-white mb-1 tracking-widest">PRODUCT</div>
           <div className="text-[#E4761B]">CLAPS</div>

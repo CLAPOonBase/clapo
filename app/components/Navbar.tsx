@@ -8,13 +8,13 @@ export default function Navbar() {
   const pathname = usePathname();
 
   const navItems = [
-    { label: "CLAPS", href: "/claps" },
+    { label: "CLAPS", href: "/" },
     { label: "SNAPS", href: "/snaps" },
     { label: "OPINIO", href: "/opinio" },
   ];
 
   return (
-    <nav className="w-full relative px-6 py-2 flex items-center justify-between bg-transparent font-mono">
+    <nav className="w-full relative p-6 flex items-center justify-between bg-transparent font-mono">
       <div className="flex items-center">
         <Image
           src="/navlogo.png"
@@ -40,10 +40,10 @@ export default function Navbar() {
       </div>
 
       <div className="flex gap-2 items-center">
-        <button className="bg-[#E4761B] text-black rounded px-3 py-1 text-xs font-bold shadow hover:bg-[#ffcb7b] transition">
-          CONNECT ✗
+        <button className="text-[#E4761B] bg-white rounded px-3 py-1 text-xs font-bold shadow hover:text-white hover:bg-[#E4761B] transition">
+          CONNECT X
         </button>
-        <button className="bg-[#23272B] text-[#A0A0A0] rounded px-3 py-1 text-xs font-bold shadow">
+        <button className="bg-[#23272B] text-white rounded px-3 py-1 text-xs font-bold shadow">
           CONNECT WALLET
         </button>
       </div>
