@@ -29,13 +29,11 @@ export default function ClientLayoutWrapper({
 
   return (
     <CursorContext.Provider value={{ customCursor, toggleCursor }}>
-      <div style={{ cursor: customCursor ? 'none' : 'auto' }}>
+      <div style={{ cursor: customCursor ? 'none' : 'auto',zIndex:"-999" }}>
         {customCursor && <SmoothCursor />}
         <Navbar />
         {children}
         <Footer />
-        
-        {/* Cursor Toggle Button */}
         <button
           onClick={toggleCursor}
           className="fixed bottom-4 right-4 z-50 bg-black/20 backdrop-blur-sm border border-white/10 text-white px-3 py-2 rounded-full text-sm hover:bg-black/30 transition-all duration-200"

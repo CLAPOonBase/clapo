@@ -38,8 +38,8 @@ export default function Leaderboard({ rows, currentUsername }: Props) {
             <th className="py-3 px-4 font-normal">TOTAL MINDSHARE</th>
             <th className="py-3 px-4 font-normal">CLAPO MINDSHARE</th>
             <th className="py-3 px-4 font-normal">CLAPO 24H CHANGE</th>
-            <th className="py-3 px-4 font-normal">SEI MINDSHARE</th>
-            <th className="py-3 px-4 font-normal">SEI 24H CHANGE</th>
+            <th className="py-3 px-4 font-normal">SUI MINDSHARE</th>
+            <th className="py-3 px-4 font-normal">SUI 24H CHANGE</th>
           </tr>
         </thead>
         <tbody>

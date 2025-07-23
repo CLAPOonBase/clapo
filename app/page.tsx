@@ -9,11 +9,58 @@ export default function Home() {
   const [mockRows, setMockRows] = useState<Row[]>([]);
 
 
-  useEffect(() => {
-    const rows = [...Array(100)].map((_, i) => ({
-      rank: i === 0 ? "YOU" : i + 1,
-      name: i === 0 ? "ARPIT" : `USER${i + 1}`,
-      username: i === 0 ? "ARPTIN" : `user${i + 1}`,
+useEffect(() => {
+  const topThree = [
+    {
+      rank: 1,
+      name: "Eman",
+      username: "@MUARSHB",
+      totalMindshare: "98.35",
+      clapoMindshare: "87.22",
+      clapoChange: "↗ +12.30%",
+      clapoChangeColor: "text-[#1FC77E]",
+      seiMindshare: "4.93%",
+      seiChange: "+1.45",
+      seiChangeColor: "text-[#1FC77E]",
+      bg: "bg-[#10151A]",
+      avatar: "https://robohash.org/ben.png?size=500x500",
+    },
+    {
+      rank: 2,
+      name: "Kostas",
+      username: "@JEFFDFENG",
+      totalMindshare: "95.11",
+      clapoMindshare: "79.03",
+      clapoChange: "↗ +8.76%",
+      clapoChangeColor: "text-[#1FC77E]",
+      seiMindshare: "3.91%",
+      seiChange: "+0.88",
+      seiChangeColor: "text-[#1FC77E]",
+      bg: "bg-[#181C20]",
+      avatar: "https://robohash.org/jeff.png?size=500x500",
+    },
+    {
+      rank: 3,
+      name: "Evan",
+      username: "@JAYENDRA_JOG",
+      totalMindshare: "91.77",
+      clapoMindshare: "75.89",
+      clapoChange: "↗ +7.34%",
+      clapoChangeColor: "text-[#1FC77E]",
+      seiMindshare: "3.43%",
+      seiChange: "+0.52",
+      seiChangeColor: "text-[#1FC77E]",
+      bg: "bg-[#10151A]",
+      avatar: "https://robohash.org/jay.png?size=500x500",
+    },
+  ];
+
+  const rest = [...Array(97)].map((_, i) => {
+    const index = i + 4;
+    return {
+      rank: index,
+      name: `USER${index}`,
+      username: `@user${index}`,
       totalMindshare: (Math.random() * 100).toFixed(2),
       clapoMindshare: (Math.random() * 100).toFixed(2),
       clapoChange: i % 2 === 0 ? "↘ -16.70%" : "↗ +16.70%",
@@ -25,24 +72,26 @@ export default function Home() {
           : `-${(Math.random() * 2).toFixed(2)}`,
       seiChangeColor: i % 2 === 0 ? "text-[#1FC77E]" : "text-[#FF4C4C]",
       bg: i % 2 === 0 ? "bg-[#10151A]" : "bg-[#181C20]",
-      avatar: `https://robohash.org/user${i + 1}.png?size=50x50`,
-    }));
-    setMockRows(rows);
-  }, []);
+      avatar: `https://robohash.org/user${index}.png?size=50x50`,
+    };
+  });
+
+  setMockRows([...topThree, ...rest]);
+}, []);
 
   const leaderboard = [
     {
-      name: "BEN",
+      name: "Eman",
       username: "@MUARSHB",
       avatar: "https://robohash.org/ben.png?size=500x500",
     },
     {
-      name: "JEFF",
+      name: "Kostas",
       username: "@JEFFDFENG",
       avatar: "https://robohash.org/jeff.png?size=500x500",
     },
     {
-      name: "JAY",
+      name: "Evan",
       username: "@JAYENDRA_JOG",
       avatar: "https://robohash.org/jay.png?size=500x500",
     },

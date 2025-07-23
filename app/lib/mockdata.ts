@@ -159,6 +159,7 @@ export const mockOpinions: Opinion[] = [
 ];
 
 
+
 // lib/utils.ts
 export const formatNumber = (num: number): string => {
   if (num >= 1000) {

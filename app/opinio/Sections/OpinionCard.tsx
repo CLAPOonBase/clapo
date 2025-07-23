@@ -48,7 +48,8 @@ export const OpinionCard: React.FC<OpinionCardProps> = ({ opinion }) => {
       
       <div className="flex justify-between items-center text-xs text-secondary">
         <span>{formatNumber(opinion.totalVotes)} votes</span>
-        <span><div className="flex justify-center items-center">
+        <span>
+            <div className="flex justify-center items-center">
          <span className="text-secondary">Market By</span>
                 <Image
                   src="/navlogo.png"
