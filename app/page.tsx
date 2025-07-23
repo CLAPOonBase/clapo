@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Hero from "./components/Hero";
-import Footer from "./components/Footer";
 import PodiumComponent from "./components/Podium";
+import { motion } from 'framer-motion';
 import Leaderboard from "./components/Leaderboard";
 import { Row } from "./types";
 export default function Home() {
@@ -49,7 +49,13 @@ export default function Home() {
   ];
 
   return (
+       <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+        >
     <div className="text-white font-mono flex flex-col items-center w-full">
+    
       <main className="flex-1 w-full flex flex-col items-center">
         <Hero />
         <section className="w-full flex flex-col items-center px-8 mt-24">
@@ -61,7 +67,7 @@ export default function Home() {
 
         </section>
       </main>
-      <Footer />
-    </div>
+     
+    </div> </motion.div>
   );
 }

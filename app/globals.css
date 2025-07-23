@@ -263,3 +263,14 @@ background: linear-gradient(360deg, #0B0D16 -61.97%, #181C2A 56.12%);
 .scrollbar-hide::-webkit-scrollbar {
   display: none; /* Chrome/Safari */
 }
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
