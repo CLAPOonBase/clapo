@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
-import { SmoothCursor } from "./components/CustomCursor";
+import ClientLayoutWrapper from "./Dialog/CursorToggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,10 +27,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={geistSans.className}>
-        <SmoothCursor />
-        <Navbar />
-        {children}
-        <Footer />
+        <ClientLayoutWrapper>
+          {children}
+        </ClientLayoutWrapper>
       </body>
     </html>
   );
