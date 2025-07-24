@@ -1,5 +1,7 @@
 
-import { Opinion } from '../types';
+
+import { Post,User ,Opinion, ActivityItem} from '../types';
+
 
 export const mockOpinions: Opinion[] = [
   {
@@ -188,3 +190,112 @@ export const generateSlug = (title: string): string => {
     .replace(/[\s_-]+/g, '-')
     .replace(/^-+|-+$/g, '');
 };
+
+
+
+export const mockUsers: User[] = [
+  {
+    id: 1,
+    name: "Eman",
+    handle: "@MUARSHB",
+    avatar: "https://robohash.org/eman.png?size=500x500",
+    cover: "https://source.unsplash.com/800x300/?nature,abstract",
+    bio: "Builder of the future. Tweeting mindshare and predictions.",
+    holdings: 12
+  },
+  {
+    id: 2,
+    name: "Kostas",
+    handle: "@JEFFDFENG",
+    avatar: "https://robohash.org/kostas.png?size=500x500",
+    cover: "https://source.unsplash.com/800x300/?finance,crypto",
+    bio: "Clapo maximalist. Opinions are my own.",
+    holdings: 12
+  },
+  {
+    id: 3,
+    name: "Evan",
+    handle: "@JAYENDRA_JOG",
+    avatar: "https://robohash.org/evan.png?size=500x500",
+    cover: "https://source.unsplash.com/800x300/?space,stars",
+    bio: "Predicting the world line, one vote at a time.",
+    holdings: 17
+  },
+]
+
+
+export const mockPosts: Post[] = [
+  {
+    id: 101,
+    author: "Eman",
+    handle: "@MUARSHB",
+    time: "2h ago",
+    content: "Just finished building a cool new dApp with 65k daily users! 🚀",
+    image: "https://source.unsplash.com/600x300/?technology",
+    likes: 45,
+    comments: 12,
+    retweets: 9
+  },
+  {
+    id: 102,
+    author: "Kostas",
+    handle: "@JEFFDFENG",
+    time: "4h ago",
+    content: "The global economic shift is real and accelerating. Time to adapt.",
+    likes: 32,
+    comments: 8,
+    retweets: 3
+  },
+  {
+    id: 103,
+    author: "Evan",
+    handle: "@JAYENDRA_JOG",
+    time: "1d ago",
+    content: "What a game last night! One of the best finishes I’ve ever seen. 🏀🔥",
+    image: "https://source.unsplash.com/600x300/?sports",
+    likes: 87,
+    comments: 21,
+    retweets: 14
+  }
+]
+
+export const mockActivity: ActivityItem[] = [
+  {
+    id: 1,
+    type: "like",
+    timestamp: "2 hours ago",
+    user: {
+        id:1,
+      name: "Alice",
+      handle: "@alice123",
+      avatar: "https://robohash.org/alice.png?size=50x50",
+      bio: "Building things with code and coffee ☕",
+    },
+  },
+  {
+    id: 2,
+    type: "retweet",
+    timestamp: "3 hours ago",
+    user: {
+        id:2,
+      name: "Bob",
+      handle: "@bobdev",
+      avatar: "https://robohash.org/bob.png?size=50x50",
+      bio: "React wizard and open source junkie",
+    },
+  },
+  {
+    id: 3,
+    type: "follow",
+    timestamp: "5 hours ago",
+    user: {
+        id:1,
+      name: "Charlie",
+      handle: "@charliex",
+      avatar: "https://robohash.org/charlie.png?size=50x50",
+      bio: "Design meets frontend — UI/UX lover",
+    },
+  },
+];
+
+

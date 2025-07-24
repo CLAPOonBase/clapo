@@ -21,7 +21,7 @@ export default function ClientLayoutWrapper({
 }: {
   children: React.ReactNode;
 }) {
-  const [customCursor, setCustomCursor] = useState(true);
+  const [customCursor, setCustomCursor] = useState(false);
 
   const toggleCursor = () => {
     setCustomCursor(!customCursor);
@@ -39,7 +39,7 @@ export default function ClientLayoutWrapper({
           className="fixed bottom-4 right-4 z-50 bg-black/20 backdrop-blur-sm border border-white/10 text-white px-3 py-2 rounded-full text-sm hover:bg-black/30 transition-all duration-200"
           title={customCursor ? "Switch to default cursor" : "Switch to custom cursor"}
         >
-          {customCursor ? "Default Cursor" : "Custom Sexy Cusor"}
+          {customCursor ? "Default Cursor" : "Custom Sexy Cursor"}
         </button>
       </div>
     </CursorContext.Provider>
