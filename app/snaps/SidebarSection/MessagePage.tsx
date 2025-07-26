@@ -144,7 +144,7 @@ export default function UserChatFeed() {
 
       {/* Chat Panel */}
       <div className="w-2/3 py-4 flex flex-col justify-between bg-dark-800 mx-4 rounded-md">
-        <div className="overflow-y-auto flex-1 space-y-3">
+        <div className="overflow-y-auto flex-1 space-y-3 px-2">
           {activeTab === "user" && selectedUser ? (
             <>
               <h2 className="flex items-center text-sm font-semibold border-b pb-2 mb-4 px-2 border-secondary">
