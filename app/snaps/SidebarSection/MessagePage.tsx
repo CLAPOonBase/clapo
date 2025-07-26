@@ -1,6 +1,5 @@
 "use client";
 import { LocateIcon, Mic, Search, Send,  Smile } from "lucide-react";
-import { space } from "postcss/lib/list";
 import { useState } from "react";
 
 const mockUsers = [
