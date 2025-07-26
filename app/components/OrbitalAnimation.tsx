@@ -16,16 +16,16 @@ const OrbitalAnimation: React.FC = () => {
   const centerRef = useRef<HTMLDivElement | null>(null);
 
   const baseImages: Item[] = [
-    { id: 1, src: '/1.jpg', angle: 0, radius: 240 },
-    { id: 2, src: '/2.jpg', angle: 120, radius: 240 },
-    { id: 3, src: '/3.jpg', angle: 240, radius: 240 }
+    { id: 1, src: '/1.jpg', angle: 0, radius: 160 },
+    { id: 2, src: '/2.jpg', angle: 120, radius: 160 },
+    { id: 3, src: '/3.jpg', angle: 240, radius: 160 }
   ];
 
   const baseBubbles: Item[] = [
-    { id: 4, color: 'bg-green-400', size: 40, angle: 45, radius: 200 },
-    { id: 5, color: 'bg-yellow-400', size: 48, angle: 135, radius: 200 },
-    { id: 6, color: 'bg-purple-400', size: 44, angle: 225, radius: 200 },
-    { id: 7, color: 'bg-cyan-400', size: 36, angle: 315, radius: 200 }
+    { id: 4, color: 'bg-green-400', size: 28, angle: 45, radius: 120 },
+    { id: 5, color: 'bg-yellow-400', size: 32, angle: 135, radius: 120 },
+    { id: 6, color: 'bg-purple-400', size: 30, angle: 225, radius: 120 },
+    { id: 7, color: 'bg-cyan-400', size: 24, angle: 315, radius: 120 }
   ];
 
   useEffect(() => {
@@ -37,16 +37,16 @@ const OrbitalAnimation: React.FC = () => {
 
       timeouts.push(setTimeout(() => {
         setStage('in');
-      }, 1000)); // after rotation
+      }, 1000));
 
       timeouts.push(setTimeout(() => {
         setStage('out');
         setCycleCount((prev) => prev + 1);
-      }, 4000)); // after move to center
+      }, 4000));
 
       timeouts.push(setTimeout(() => {
         setStage('idle');
-      }, 7000)); // reset
+      }, 7000));
     };
 
     runCycle();
@@ -66,7 +66,7 @@ const OrbitalAnimation: React.FC = () => {
   };
 
   const effectiveAngle = (base: number) =>
-    ((cycleCount % 2 === 0 ? base : (base + 180)) + angleShift) % 360;
+    ((cycleCount % 2 === 0 ? base : base + 180) + angleShift) % 360;
 
   const modifiedImages = baseImages.map((img) => ({
     ...img,
@@ -79,12 +79,15 @@ const OrbitalAnimation: React.FC = () => {
   }));
 
   return (
-    <div className="relative w-[800px] h-[800px] overflow-hidden rounded-xl shadow-lg flex justify-center">
-      <div className="relative w-[600px] h-[600px]">
-        <div className="absolute top-1/2 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2" ref={centerRef}>
-          <div className="w-28 h-28 p-4 bg-white rounded-3xl flex items-center justify-center shadow-2xl transition-transform duration-[3000ms]">
-            <div className="text-4xl animate-pulse">
-              <img src='/4.png' alt="images" className="w-full h-full object-cover" />
+    <div className="relative w-[400px] h-[300px] sm:w-[400px] mt-20 md:mt-0 sm:h-[300px] md:w-[800px] md:h-[800px] overflow-visible md:overflow-hidden rounded-xl shadow-lg flex justify-center">
+      <div className="relative w-[220px] h-[220px] sm:w-[260px] sm:h-[260px] md:w-[600px] md:h-[600px]">
+        <div
+          className="absolute top-1/2 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
+          ref={centerRef}
+        >
+          <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 p-2 sm:p-3 md:p-4 bg-white rounded-3xl flex items-center justify-center shadow-2xl transition-transform duration-[3000ms]">
+            <div className="text-xl sm:text-2xl md:text-4xl animate-pulse">
+              <img src="/4.png" alt="images" className="w-full h-full object-cover" />
             </div>
           </div>
           {stage === 'in' && (
@@ -98,14 +101,18 @@ const OrbitalAnimation: React.FC = () => {
           return (
             <div
               key={item.id}
-              className="absolute z-10 w-14 h-14 p-2 rounded-2xl overflow-hidden shadow-lg bg-white transition-all duration-[1000ms]"
+              className="absolute z-10 w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 p-1 sm:p-2 rounded-2xl overflow-hidden shadow-lg bg-white transition-all duration-[1000ms]"
               style={{
-                left: '50%',
+                left: '40%',
                 top: '50%',
                 transform: `translate(${x}px, ${y}px)`
               }}
             >
-              <img src={item.src} alt={`person-${item.id}`} className="w-full h-full object-cover rounded-full" />
+              <img
+                src={item.src}
+                alt={`person-${item.id}`}
+                className="w-full h-full object-cover rounded-full"
+              />
             </div>
           );
         })}
@@ -132,12 +139,16 @@ const OrbitalAnimation: React.FC = () => {
         })}
 
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className={`w-72 h-72 border border-white/10 rounded-full transition-all duration-[1000ms] ${
-            stage === 'in' ? 'scale-75 opacity-30' : 'scale-100 opacity-10'
-          }`} />
-          <div className={`absolute w-48 h-48 border border-white/5 rounded-full transition-all duration-[1000ms] ${
-            stage === 'in' ? 'scale-50 opacity-20' : 'scale-100 opacity-5'
-          }`} />
+          <div
+            className={`w-48 h-48 sm:w-60 sm:h-60 md:w-72 md:h-72 border border-white/10 rounded-full transition-all duration-[1000ms] ${
+              stage === 'in' ? 'scale-75 opacity-30' : 'scale-100 opacity-10'
+            }`}
+          />
+          <div
+            className={`absolute w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 border border-white/5 rounded-full transition-all duration-[1000ms] ${
+              stage === 'in' ? 'scale-50 opacity-20' : 'scale-100 opacity-5'
+            }`}
+          />
         </div>
       </div>
     </div>
