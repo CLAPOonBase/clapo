@@ -9,12 +9,14 @@ import NotificationPage from './SidebarSection/NotificationPage'
 import BookmarkPage from './SidebarSection/BookmarkPage' 
 import {ProfilePage} from './SidebarSection/ProfilePage'
 import SearchPage from './SidebarSection/SearchPage'
+import MessagePage from './SidebarSection/MessagePage'
 import { Post } from '../types'
 import { mockActivity, mockPosts, mockUsers } from '../lib/mockdata'
 
 export default function SocialFeedPage() {
+
   const [activeTab, setActiveTab] = useState<'FOR YOU' | 'FOLLOWING'>('FOR YOU')
-  const [currentPage, setCurrentPage] = useState<'home' | 'explore' | 'notifications' | 'likes' | 'bookmarks' | 'profile' | 'search'>('home')
+  const [currentPage, setCurrentPage] = useState<'home' | 'explore' | 'notifications' | 'likes' | 'bookmarks' | 'profile' | 'messages' | 'search'>('home')
 
   const [liked, setLiked] = useState<Set<number>>(new Set())
   const [retweeted, setRetweeted] = useState<Set<number>>(new Set())
@@ -86,6 +88,8 @@ export default function SocialFeedPage() {
         return <ProfilePage user={mockUsers[0]} posts={mockPosts} />
       case 'search':
         return <SearchPage />
+      case 'messages':
+        return <MessagePage />
       case 'home':
       default:
         return (
@@ -131,7 +135,13 @@ export default function SocialFeedPage() {
       <div className="flex-1 rounded-md">
         {renderContent()}
       </div>
-      <ActivityFeed items={mockActivity} />
+   {currentPage !== 'messages' && (
+  <div className="w-[300px]">
+    <ActivityFeed items={mockActivity} />
+  </div>
+)}
+
+
     </div>
   )
 }

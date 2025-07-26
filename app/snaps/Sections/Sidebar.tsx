@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Search, Bell, Heart, Bookmark, User } from "lucide-react";
+import { Home, Search, Bell, Heart, Bookmark, User, MessageCircle } from "lucide-react";
 import Image from "next/image";
 import { PageKey } from "@/app/types";
 
@@ -14,6 +14,7 @@ const navItems: { label: string; value: PageKey; icon: React.ReactNode }[] = [
   { label: "NOTIFICATIONS", value: "notifications", icon: <Bell className="w-5 h-5 mr-4" /> },
   { label: "LIKES", value: "likes", icon: <Heart className="w-5 h-5 mr-4" /> },
   { label: "BOOKMARKS", value: "bookmarks", icon: <Bookmark className="w-5 h-5 mr-4" /> },
+  { label: "MESSAGES", value: "messages", icon: <MessageCircle className="w-5 h-5 mr-4" /> },
   { label: "PROFILE", value: "profile", icon: <User className="w-5 h-5 mr-4" /> }
 ];
 

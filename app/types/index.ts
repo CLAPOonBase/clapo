@@ -84,6 +84,7 @@ export type PageKey =
   | 'bookmarks'
   | 'profile'
   | 'search'
+  | 'messages';
 
 export type Post = {
   id: number
