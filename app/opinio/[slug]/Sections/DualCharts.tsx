@@ -1,231 +1,333 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Area,
+  AreaChart,
+  ComposedChart
+} from "recharts";
 
 type Period = "day" | "month" | "year";
+type ChartType = "line" | "bar" | "candle";
 
-const WIDTH = 100;
-const HEIGHT = 50;
-const PADDING = 2;
+type DataPoint = {
+  name: string;
+  fedMaintain: number;
+  rateCut: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+};
 
-const DualLineChart: React.FC = () => {
+const DualCharts: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<Period>("day");
+  const [chartType, setChartType] = useState<ChartType>("line");
 
-  const generateData = (
-    period: Period
-  ): { yesData: number[]; noData: number[] } => {
+  const generateData = (period: Period): DataPoint[] => {
     const dataPoints = period === "day" ? 24 : period === "month" ? 30 : 12;
-    const yesData: number[] = [];
-    const noData: number[] = [];
+    const data: DataPoint[] = [];
 
     for (let i = 0; i < dataPoints; i++) {
       const baseYes = 60 + Math.sin(i * 0.3) * 20 + Math.random() * 15;
       const baseNo = 40 + Math.cos(i * 0.2) * 15 + Math.random() * 10;
 
-      yesData.push(Math.max(10, Math.min(95, baseYes)));
-      noData.push(Math.max(5, Math.min(90, baseNo)));
+      const yesValue = Math.max(10, Math.min(95, baseYes));
+      const noValue = Math.max(5, Math.min(90, baseNo));
+
+      const open = yesValue + (Math.random() - 0.5) * 10;
+      const close = yesValue + (Math.random() - 0.5) * 8;
+      const high = Math.max(open, close) + Math.random() * 5;
+      const low = Math.min(open, close) - Math.random() * 5;
+
+      data.push({
+        name: getTimeLabel(i, period),
+        fedMaintain: Number(yesValue.toFixed(1)),
+        rateCut: Number(noValue.toFixed(1)),
+        open: Number(Math.max(5, open).toFixed(1)),
+        high: Number(Math.min(100, high).toFixed(1)),
+        low: Number(Math.max(0, low).toFixed(1)),
+        close: Number(Math.max(5, close).toFixed(1))
+      });
     }
 
-    return { yesData, noData };
+    return data;
   };
 
-  const { yesData, noData } = useMemo(
-    () => generateData(selectedPeriod),
-    [selectedPeriod]
-  );
-
-  const createPath = (
-    data: number[],
-    width: number,
-    height: number
-  ): string => {
-    const xStep = (width - PADDING * 2) / (data.length - 1);
-    const yScale = (height - PADDING * 2) / 100;
-    let path = `M${PADDING},${height - PADDING - data[0] * yScale}`;
-
-    for (let i = 1; i < data.length; i++) {
-      const x = PADDING + i * xStep;
-      const y = height - PADDING - data[i] * yScale;
-      path += ` L${x},${y}`;
-    }
-
-    return path;
-  };
-
-  const createFillPath = (
-    data: number[],
-    width: number,
-    height: number
-  ): string => {
-    const path = createPath(data, width, height);
-    return `${path} L${width - PADDING},${height - PADDING} L${PADDING},${
-      height - PADDING
-    } Z`;
-  };
-
-  const getTimeLabels = (period: Period): string[] => {
+  const getTimeLabel = (index: number, period: Period): string => {
     switch (period) {
       case "day":
-        return ["00:00", "06:00", "12:00", "18:00", "24:00"];
+        return `${String(index).padStart(2, "0")}:00`;
       case "month":
-        return ["Week 1", "Week 2", "Week 3", "Week 4"];
+        return `Day ${index + 1}`;
       case "year":
-        return ["Jan", "Mar", "Jun", "Sep", "Dec"];
+        const months = [
+          "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ];
+        return months[index] || `M${index + 1}`;
       default:
-        return [];
+        return `${index}`;
     }
   };
 
-  const getCurrentValues = (): { yes: string; no: string } => {
-    const yesValue = yesData[yesData.length - 1];
-    const noValue = noData[noData.length - 1];
-    return { yes: yesValue.toFixed(1), no: noValue.toFixed(1) };
+  const chartData = useMemo(() => generateData(selectedPeriod), [selectedPeriod]);
+
+  const getCurrentValues = () => {
+    const lastData = chartData[chartData.length - 1];
+    return {
+      fedMaintain: lastData.fedMaintain,
+      rateCut: lastData.rateCut
+    };
   };
 
   const currentValues = getCurrentValues();
-  const timeLabels = getTimeLabels(selectedPeriod);
 
-  return (
-    <div className="w-full">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-6">
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-primary rounded-full" />
-            <span className="text-white text-[8px] font-medium">
-              Fed maintain rate {currentValues.yes}%
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-primary rounded-full" />
-            <span className="text-white text-[8px] font-medium">
-              Cut {currentValues.yes}%
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-orange-500 rounded-full" />
-            <span className="text-white text-[8px] font-medium">
-              cut {currentValues.no}%
-            </span>
-          </div>
-        </div>
-
-        <div className="flex absolute bottom-0 left-[40%] bg-dark-800">
-          {(["day", "month", "year"] as Period[]).map((period) => (
-            <button
-              key={period}
-              onClick={() => setSelectedPeriod(period)}
-              className={`px-3 py-1 mb-1 text-xs font-medium rounded transition-all duration-200 ${
-                selectedPeriod === period
-                  ? "text-white bg-black "
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              {period.charAt(0).toUpperCase() + period.slice(1)}
-            </button>
+  const CustomTooltip = ({
+    active,
+    payload,
+    label
+  }: {
+    active?: boolean;
+    payload?: { name: string; value: number; color: string }[];
+    label?: string;
+  }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="">
+          <p className="text-gray-300 text-sm mb-2">{label}</p>
+          {payload.map((entry, index) => (
+            <p key={index} className="text-sm" style={{ color: entry.color }}>
+              {entry.name === "fedMaintain"
+                ? "Fed Maintain"
+                : entry.name === "rateCut"
+                ? "Rate Cut"
+                : entry.name}
+              : {entry.value}%
+            </p>
           ))}
         </div>
+      );
+    }
+    return null;
+  };
+
+  const CandlestickChart = ({ data }: { data: DataPoint[] }) => (
+    <ResponsiveContainer width="100%" height="100%">
+      <ComposedChart data={data}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+        <XAxis
+          dataKey="name"
+          axisLine={false}
+          tickLine={false}
+          tick={{ fontSize: 10, fill: "#9CA3AF" }}
+          interval="preserveStartEnd"
+        />
+        <YAxis
+          axisLine={false}
+          tickLine={false}
+          tick={{ fontSize: 10, fill: "#9CA3AF" }}
+          domain={[0, 100]}
+        />
+        <Tooltip content={<CustomTooltip />} />
+        {data.map((entry, index) => {
+          const isGreen = entry.close >= entry.open;
+          return (
+            <g key={index}>
+              <rect
+                x={(index / data.length) * 100 + "%"}
+                y={(100 - Math.max(entry.open, entry.close)) + "%"}
+                width="2%"
+                height={Math.abs(entry.close - entry.open) + "%"}
+                fill={isGreen ? "#10B981" : "#EF4444"}
+                opacity={0.8}
+              />
+              <line
+                x1={(index / data.length) * 100 + "%"}
+                y1={(100 - entry.high) + "%"}
+                x2={(index / data.length) * 100 + "%"}
+                y2={(100 - entry.low) + "%"}
+                stroke={isGreen ? "#10B981" : "#EF4444"}
+                strokeWidth={1}
+              />
+            </g>
+          );
+        })}
+      </ComposedChart>
+    </ResponsiveContainer>
+  );
+
+  const renderChart = () => {
+    switch (chartType) {
+      case "line":
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData}>
+              <defs>
+                <linearGradient id="fedGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="cutGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#F97316" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#F97316" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+              <XAxis
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 10, fill: "#9CA3AF" }}
+                interval="preserveStartEnd"
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 10, fill: "#9CA3AF" }}
+                domain={[0, 100]}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Area
+                type="monotone"
+                dataKey="rateCut"
+                stroke="#F97316"
+                strokeWidth={2}
+                fill="url(#cutGradient)"
+                dot={{ fill: "#F97316", r: 2 }}
+                activeDot={{ r: 4, fill: "#F97316" }}
+              />
+              <Area
+                type="monotone"
+                dataKey="fedMaintain"
+                stroke="#10B981"
+                strokeWidth={2}
+                fill="url(#fedGradient)"
+                dot={{ fill: "#10B981", r: 2 }}
+                activeDot={{ r: 4, fill: "#10B981" }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        );
+
+      case "bar":
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} barGap={2}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+              <XAxis
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 10, fill: "#9CA3AF" }}
+                interval="preserveStartEnd"
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 10, fill: "#9CA3AF" }}
+                domain={[0, 100]}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar
+                dataKey="fedMaintain"
+                fill="#10B981"
+                radius={[2, 2, 0, 0]}
+                opacity={0.8}
+              />
+              <Bar
+                dataKey="rateCut"
+                fill="#F97316"
+                radius={[2, 2, 0, 0]}
+                opacity={0.8}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+
+      case "candle":
+        return <CandlestickChart data={chartData} />;
+    }
+  };
+
+  return (
+    <div className="w-full relative pb-12">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-8">
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-emerald-500 rounded-full" />
+            <span className="text-gray-300 text-sm font-medium">
+              Fed Maintain Rate {currentValues.fedMaintain}%
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-orange-500 rounded-full" />
+            <span className="text-gray-300 text-sm font-medium">
+              Rate Cut {currentValues.rateCut}%
+            </span>
+          </div>
+        </div>
+
+        <div className="flex absolute bottom-0 left-1/2 -translate-x-1/2 items-center space-x-4">
+          <div className="flex bg-gray-800 rounded-lg p-1">
+            {(["line", "bar", "candle"] as ChartType[]).map((type) => (
+              <button
+                key={type}
+                onClick={() => setChartType(type)}
+                className={`px-1.5 py-1 md:px-3 md:py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
+                  chartType === type
+                    ? "text-white bg-gray-700 shadow-sm"
+                    : "text-gray-400 hover:text-white hover:bg-gray-750"
+                }`}
+              >
+                {type.charAt(0).toUpperCase() + type.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex bg-gray-800 rounded-lg p-1">
+            {(["day", "month", "year"] as Period[]).map((period) => (
+              <button
+                key={period}
+                onClick={() => setSelectedPeriod(period)}
+                className={`px-1.5 py-1 md:px-3 md:py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
+                  selectedPeriod === period
+                    ? "text-white bg-gray-700 shadow-sm"
+                    : "text-gray-400 hover:text-white hover:bg-gray-750"
+                }`}
+              >
+                {period.charAt(0).toUpperCase() + period.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="relative w-full h-48 mt-2">
-        <svg
-          className="w-full h-full"
-          viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <linearGradient id="yesGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-            </linearGradient>
-            <linearGradient id="noGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#f97316" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
-            </linearGradient>
-          </defs>
+      <div className="relative w-full h-80">
+        {renderChart()}
 
-          {[0, 25, 50, 75, 100].map((value) => {
-            const y = HEIGHT - PADDING - (value * (HEIGHT - PADDING * 2)) / 100;
-            return (
-              <line
-                key={value}
-                x1={PADDING}
-                y1={y}
-                x2={WIDTH - PADDING}
-                y2={y}
-                stroke="#334155"
-                strokeWidth="0.2"
-                opacity="0.5"
-              />
-            );
-          })}
-
-          <path
-            d={createFillPath(noData, WIDTH, HEIGHT)}
-            fill="url(#noGradient)"
-          />
-          <path
-            d={createFillPath(yesData, WIDTH, HEIGHT)}
-            fill="url(#yesGradient)"
-          />
-          <path
-            d={createPath(noData, WIDTH, HEIGHT)}
-            stroke="#f97316"
-            strokeWidth="0.6"
-            fill="none"
-          />
-          <path
-            d={createPath(yesData, WIDTH, HEIGHT)}
-            stroke="#10b981"
-            strokeWidth="0.6"
-            fill="none"
-          />
-
-          {yesData.map((value, index) => {
-            const x =
-              PADDING + (index * (WIDTH - PADDING * 2)) / (yesData.length - 1);
-            const y = HEIGHT - PADDING - (value * (HEIGHT - PADDING * 2)) / 100;
-            return (
-              <circle
-                key={`yes-${index}`}
-                cx={x}
-                cy={y}
-                r="0.8"
-                fill="#10b981"
-              />
-            );
-          })}
-
-          {noData.map((value, index) => {
-            const x =
-              PADDING + (index * (WIDTH - PADDING * 2)) / (noData.length - 1);
-            const y = HEIGHT - PADDING - (value * (HEIGHT - PADDING * 2)) / 100;
-            return (
-              <circle
-                key={`no-${index}`}
-                cx={x}
-                cy={y}
-                r="0.8"
-                fill="#f97316"
-              />
-            );
-          })}
-        </svg>
-
-        <div className="absolute bottom-2 left-2 text-xs text-gray-400">
+        <div className="absolute bottom-4 left-4 text-xs text-gray-500 font-mono">
           {selectedPeriod.toUpperCase()} VIEW
         </div>
-        <div className="absolute bottom-2 right-2 text-xs text-gray-400">
-          ANALYTICS
+        <div className="absolute bottom-4 right-4 text-xs text-gray-500 font-mono">
+          {chartType.toUpperCase()} CHART
         </div>
       </div>
 
-      <div className="flex justify-between text-xs text-gray-500 mt-2">
-        {timeLabels.map((label, index) => (
-          <span key={index}>{label}</span>
-        ))}
+      <div className="flex justify-between text-xs text-gray-500 mt-4 px-4">
+        <span>Start</span>
+        <span>Current Period</span>
+        <span>End</span>
       </div>
     </div>
   );
 };
 
-export default DualLineChart;
+export default DualCharts;

@@ -24,7 +24,7 @@ export default function ActivityFeed({ items }: Props) {
   const isExpanded = visibleCount > ITEMS_PER_PAGE;
 
   return (
-    <div className={`mx-4 w-72 rounded-md sticky top-0 bg-dark-800 p-4 transition-all overflow-y-hidden duration-300 ${isExpanded ? "h-[600px]" : "h-[400px]"}`}>
+    <div className={`md:mx-4 md:w-72 w-full rounded-md sticky top-0 bg-dark-800 p-4 transition-all overflow-y-hidden duration-300 ${isExpanded ? "h-[600px]" : "h-[400px]"}`}>
       <h2 className="text-xl font-bold mb-4 border-b">
         ACTIVITY FEED
       </h2>

@@ -201,7 +201,15 @@ export const mockUsers: User[] = [
     avatar: "https://robohash.org/eman.png?size=500x500",
     cover: "https://source.unsplash.com/800x300/?nature,abstract",
     bio: "Builder of the future. Tweeting mindshare and predictions.",
-    holdings: 12
+    holdings: 12,
+    status: 'active',
+messages: [
+  { from: "me", text: "Bro, should I invest in pizza coins?", time: "9:00 PM" },
+  { from: "Eman", text: "Only if it's deep dish.", time: "9:01 PM" },
+  { from: "me", text: "What about pineapple NFTs?", time: "9:02 PM" },
+  { from: "Eman", text: "That's a felony in 8 countries.", time: "9:03 PM" },
+]
+
   },
   {
     id: 2,
@@ -210,7 +218,16 @@ export const mockUsers: User[] = [
     avatar: "https://robohash.org/kostas.png?size=500x500",
     cover: "https://source.unsplash.com/800x300/?finance,crypto",
     bio: "Clapo maximalist. Opinions are my own.",
-    holdings: 12
+    holdings: 12,
+    status: 'active',
+messages: [
+  { from: "me", text: "Dude, I accidentally launched a DAO.", time: "10:12 PM" },
+  { from: "Kostas", text: "What’s it called?", time: "10:13 PM" },
+  { from: "me", text: "DogsAgainstMondaysDAO", time: "10:14 PM" },
+  { from: "Kostas", text: "🔥🔥 I’m in. Minting a membership NFT now.", time: "10:15 PM" },
+  { from: "Kostas", text: "Do we get free coffee too?", time: "10:15 PM" },
+]
+
   },
   {
     id: 3,
@@ -219,7 +236,15 @@ export const mockUsers: User[] = [
     avatar: "https://robohash.org/evan.png?size=500x500",
     cover: "https://source.unsplash.com/800x300/?space,stars",
     bio: "Predicting the world line, one vote at a time.",
-    holdings: 17
+    holdings: 17,
+    status: 'active',
+    messages: [
+  { from: "me", text: "If I stare at a chart long enough, does it go up?", time: "7:45 PM" },
+  { from: "Evan", text: "Only if you squint and whisper bullish things.", time: "7:46 PM" },
+  { from: "me", text: "I told it ‘To the moon’ 5 times.", time: "7:47 PM" },
+  { from: "Evan", text: "It’s now going to Uranus.", time: "7:48 PM" },
+]
+
   },
 ]
 

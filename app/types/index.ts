@@ -84,6 +84,7 @@ export type PageKey =
   | 'bookmarks'
   | 'profile'
   | 'search'
+  | 'activity'
   | 'messages';
 
 export type Post = {
@@ -106,6 +107,8 @@ export type User = {
   cover?: string
   bio?: string
   holdings?: number
+  status?: 'active' | 'inactive' 
+  messages?: { from: string; text: string; time: string }[] | undefined
 }
 
 

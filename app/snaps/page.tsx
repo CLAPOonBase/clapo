@@ -12,11 +12,12 @@ import SearchPage from './SidebarSection/SearchPage'
 import MessagePage from './SidebarSection/MessagePage'
 import { Post } from '../types'
 import { mockActivity, mockPosts, mockUsers } from '../lib/mockdata'
+import ActivityPage from './SidebarSection/ActivityPage'
 
 export default function SocialFeedPage() {
 
   const [activeTab, setActiveTab] = useState<'FOR YOU' | 'FOLLOWING'>('FOR YOU')
-  const [currentPage, setCurrentPage] = useState<'home' | 'explore' | 'notifications' | 'likes' | 'bookmarks' | 'profile' | 'messages' | 'search'>('home')
+  const [currentPage, setCurrentPage] = useState<'home' | 'explore' | 'notifications' | 'likes' | 'activity' | 'profile' | 'messages' | 'bookmarks' | 'search'>('home')
 
   const [liked, setLiked] = useState<Set<number>>(new Set())
   const [retweeted, setRetweeted] = useState<Set<number>>(new Set())
@@ -84,6 +85,8 @@ export default function SocialFeedPage() {
         />
       case 'bookmarks':
         return <BookmarkPage />
+         case 'activity':
+        return <ActivityPage />
       case 'profile':
         return <ProfilePage user={mockUsers[0]} posts={mockPosts} />
       case 'search':
@@ -130,13 +133,13 @@ export default function SocialFeedPage() {
   }
 
   return (
-    <div className=" max-w-7xl mx-auto text-white flex">
-      <Sidebar setCurrentPage={setCurrentPage} />
-      <div className="flex-1 rounded-md">
+    <div className=" max-w-7xl flex-col md:flex-row mx-auto text-white flex">
+      <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+      <div className="flex-1 m-4 md:m-0 rounded-md">
         {renderContent()}
       </div>
    {currentPage !== 'messages' && (
-  <div className="w-[300px]">
+  <div className="w-[300px] md:block hidden">
     <ActivityFeed items={mockActivity} />
   </div>
 )}
