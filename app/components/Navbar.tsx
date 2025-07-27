@@ -5,10 +5,16 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 export default function Navbar() {
   const pathname = usePathname();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeDialog, setActiveDialog] = useState<null | 'x' | 'wallet'>(null);
 
   const navItems = [
@@ -17,16 +23,37 @@ export default function Navbar() {
     { label: "OPINIO", href: "/opinio" },
   ];
 
-  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const openDialog = (type: 'x' | 'wallet') => setActiveDialog(type);
   const closeDialog = () => setActiveDialog(null);
 
   return (
     <>
       <nav className="w-full sticky top-0 md:relative p-4 md:p-6 flex items-center justify-between bg-transparent font-mono z-[9999]">
-        <button onClick={toggleMobileMenu} className="md:hidden z-50 p-2 text-white" aria-label="Toggle menu">
-          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="md:hidden z-50">
+          <Drawer>
+            <DrawerTrigger className="p-2 text-white">
+              <Menu size={24} />
+            </DrawerTrigger>
+            <DrawerContent className="bg-dark-800 text-white border-none mb-20 rounded-t-[40px]">
+              <DrawerHeader>
+                <DrawerTitle className="text-primary"></DrawerTitle>
+              </DrawerHeader>
+              <div className="flex flex-col space-y-6 px-6 pb-6">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`tracking-[0.3em] text-sm font-bold ${
+                      pathname === item.href ? "text-[#E4761B]" : "text-[#A0A0A0] hover:text-white"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </DrawerContent>
+          </Drawer>
+        </div>
 
         <div className="flex items-center z-50">
           <Image src="/navlogo.png" alt="Clapo Logo" width={120} height={40} className="object-contain h-6 md:h-8 w-auto" />
@@ -71,35 +98,6 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="md:hidden absolute bg-[#1A1A1A] left-2 right-2 top-20 p-4 rounded-lg z-40"
-          >
-            <div className="flex flex-col items-center space-y-6 px-8">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`tracking-[0.3em] text-sm font-bold ${
-                    pathname === item.href ? "text-[#E4761B]" : "text-[#A0A0A0] hover:text-white"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Dialog */}
       <AnimatePresence>
         {activeDialog && (
           <motion.div

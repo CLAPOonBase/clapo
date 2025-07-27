@@ -6,7 +6,7 @@ export default function Footer() {
     <footer className="relative w-full mt-20 py-20 bg-dark-800 px-6 sm:px-10 text-xs text-[#A0A0A0] overflow-visible">
       <div
         className="absolute -top-10 left-0 w-full h-40 bg-no-repeat bg-top"
-        style={{ backgroundImage: 'url("/footer.svg")', zIndex: "-998" }}
+        style={{ backgroundImage: 'url("/footer.svg")', zIndex: "998" }}
       />
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-12">
         <div className="flex flex-col items-start gap-2">
@@ -14,7 +14,7 @@ export default function Footer() {
           <span>© 2025 CLAPO. ALL RIGHTS RESERVED</span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-10 w-full max-w-5xl">
+        <div style={{zIndex:"999"}} className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-10 w-full max-w-5xl">
           <div>
             <div className="font-bold text-white mb-2 tracking-widest">
               PRODUCT
