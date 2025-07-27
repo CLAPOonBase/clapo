@@ -20,7 +20,6 @@ export default function Leaderboard({ rows, currentUsername }: Props) {
 
   return (
     <div className="w-full bg-[#10151A] rounded-xl shadow-lg border border-[#23272B] mt-16 max-h-[500px] overflow-hidden relative">
-      {/* Fixed Search Header */}
       <div className="sticky top-0 z-20 bg-[#10151A] flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-0 pr-4 sm:pr-6 pl-2 py-3 border-b border-[#23272B]">
         <input
           className="bg-transparent text-[#A0A0A0] text-xs px-2 border border-[#23272b] p-2 rounded-md outline-none flex-1 min-w-0"
@@ -31,21 +30,18 @@ export default function Leaderboard({ rows, currentUsername }: Props) {
         </span>
       </div>
 
-      {/* Scrollable Table Container */}
       <div className="overflow-y-auto max-h-[calc(500px-80px)] scrollbar-hide">
-        {/* Horizontal Scrollable Table for Mobile */}
-        <div className="overflow-x-auto scrollbar-hide">
-          <table className="min-w-full text-xs text-left" style={{ minWidth: '800px' }}>
-            {/* Fixed Table Header */}
-            <thead className="sticky top-0 z-10 bg-[#10151A]">
+        <div className="overflow-x-auto sm:overflow-x-visible scrollbar-hide">
+          <table className="text-xs text-left w-full sm:min-w-full" style={{ minWidth: '800px' }}>
+            <thead className="bg-[#10151A]">
               <tr className="text-[#A0A0A0] border-b border-[#23272B]">
-                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[60px]">RANK</th>
-                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[140px]">USER</th>
-                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[120px]">TOTAL MINDSHARE</th>
-                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[120px]">CLAPO MINDSHARE</th>
-                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[120px]">CLAPO 24H CHANGE</th>
-                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[120px]">SUI MINDSHARE</th>
-                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[120px]">SUI 24H CHANGE</th>
+                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[60px] sm:min-w-0">RANK</th>
+                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[140px] sm:min-w-0">USER</th>
+                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[120px] sm:min-w-0">TOTAL MINDSHARE</th>
+                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[120px] sm:min-w-0">CLAPO MINDSHARE</th>
+                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[120px] sm:min-w-0">CLAPO 24H CHANGE</th>
+                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[120px] sm:min-w-0">SUI MINDSHARE</th>
+                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[120px] sm:min-w-0">SUI 24H CHANGE</th>
               </tr>
             </thead>
             <tbody>
