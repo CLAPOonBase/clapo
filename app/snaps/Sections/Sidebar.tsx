@@ -99,7 +99,7 @@ export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
 
      
       {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-dark-800 border-t border-gray-700 z-30">
+      <div style={{zIndex:"1000"}} className="md:hidden fixed bottom-0 left-0 right-0 bg-dark-800 border-t border-gray-700 z-30">
         <div className="flex justify-around items-center py-2 px-4">
          {navItems
   .filter((item) => item.showOnMobile !== false)

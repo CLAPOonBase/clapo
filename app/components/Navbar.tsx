@@ -28,7 +28,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="w-full sticky top-0 md:relative p-4 md:p-6 flex items-center justify-between bg-transparent font-mono z-[9999]">
+      <nav className="w-full sticky top-0 md:relative p-4 md:p-6 flex items-center justify-between bg-black font-mono z-[9999]">
         <div className="md:hidden z-50">
           <Drawer>
             <DrawerTrigger className="p-2 text-white">
