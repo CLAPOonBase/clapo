@@ -24,6 +24,8 @@ const navItems = [
 export default function MainVoting() {
   const [opinions] = useState<Opinion[]>(mockOpinions);
   const [selectedCategory, setSelectedCategory] = useState<string>('TRENDING');
+  const user_id = '0000.....021212'; 
+  const balance = 1000;
 
   const filteredOpinions = opinions.filter((opinion) => {
     if (selectedCategory === 'TRENDING') {
@@ -33,13 +35,30 @@ export default function MainVoting() {
       const createdAt = new Date(opinion.createdAt);
       const now = new Date();
       const diffInHours = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
-      return diffInHours <= 72; // opinions from the last 3 days
+      return diffInHours <= 72;
     }
     return opinion.category === selectedCategory;
   });
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 px-6">
+      <div className='w-full rounded-md flex space-x-4 justify-between'>
+        <div className='bg-dark-800 p-4 rounded-md w-full flex flex-col text-left'>
+          <span className='text-2xl'>Hey, {user_id}</span>
+          <span className='text-secondary'>Welcome back! Here&apos;s what trending in the markets.</span>
+        </div>
+        <div className='bg-dark-800 p-4 rounded-md w-full flex justify-between items-center'>
+         <div className='flex flex-col items-start text-white'>
+ <span>Balance</span>
+          <span className='text-2xl text-secondary'>${balance}</span>
+         </div>
+          <div>
+ <button className='bg-white text-primary px-4 py-2 rounded-md hover:bg-gray-100 transition'>
+  Make Deposit
+ </button>
+         </div>
+        </div>
+      </div>
         <div>
  <div className="flex space-x-6 justify-center items-center border-b border-secondary-light/10 overflow-x-auto">
         {navItems.map(({ label }) => (
@@ -64,7 +83,7 @@ export default function MainVoting() {
         </div>
      
      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {filteredOpinions.length > 0 ? (
           filteredOpinions.map((opinion) => (
             <OpinionCard key={opinion.id} opinion={opinion} />

@@ -87,6 +87,12 @@ export type PageKey =
   | 'activity'
   | 'messages';
 
+  export type OpinionPageKey =
+  | 'exploremarket'
+  | 'myportfolio'
+  | 'wallet'
+  | 'settings';
+
 export type Post = {
   id: number
   author: string
