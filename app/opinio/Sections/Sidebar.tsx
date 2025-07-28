@@ -1,7 +1,6 @@
 "use client";
 
-import { Home, Search, Bell ,Activity } from "lucide-react";
-import Image from "next/image";
+import {  BriefcaseBusiness, Telescope, Wallet, Settings } from "lucide-react";
 import { OpinionPageKey } from "@/app/types";
 import { useState } from "react";
 import Hero from "./Hero";
@@ -18,10 +17,10 @@ const navItems: {
   showOnMobile?: boolean;
   showOnDesktop?: boolean;
 }[] = [
-  { label: "Explore Market", value: "exploremarket", icon: <Home className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
-  { label: "My Portfolio", value: "myportfolio", icon: <Search className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
-  { label: "Wallet", value: "wallet", icon: <Bell className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
-  { label: "Settings", value: "settings", icon: <Activity className="w-5 h-5 md:mr-4" />, showOnDesktop: true },
+  { label: "Explore Market", value: "exploremarket", icon: <Telescope className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
+  { label: "My Portfolio", value: "myportfolio", icon: <BriefcaseBusiness className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
+  { label: "Wallet", value: "wallet", icon: <Wallet className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
+  { label: "Settings", value: "settings", icon: <Settings className="w-5 h-5 md:mr-4" />, showOnDesktop: true },
 ];
 
 
@@ -88,7 +87,15 @@ export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
             </div>
           ))}
         </nav>
-           <div className="flex justify-center items-center py-2 bg-primary text-white rounded-md hover:bg-orange-700"> Create a Market</div>
+         <div
+  onClick={() => handleNavClick("createmarket")}
+  className={`flex justify-center items-center py-2 bg-primary text-white rounded-md hover:bg-orange-700 cursor-pointer ${
+    currentPage === "createmarket" ? "bg-orange-700" : ""
+  }`}
+>
+  Create a Market
+</div>
+
       </div>
 
      

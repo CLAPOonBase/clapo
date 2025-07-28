@@ -91,7 +91,9 @@ export type PageKey =
   | 'exploremarket'
   | 'myportfolio'
   | 'wallet'
-  | 'settings';
+  | 'settings'
+  | 'createmarket'
+;
 
 export type Post = {
   id: number
