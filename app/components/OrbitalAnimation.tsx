@@ -33,24 +33,24 @@ const OrbitalAnimation: React.FC = () => {
 
     const runCycle = () => {
       setStage('rotate');
-      setAngleShift((prev) => prev + 15);
+      setAngleShift((prev) => prev + 5);
 
       timeouts.push(setTimeout(() => {
         setStage('in');
-      }, 1000));
+      }, 2000));
 
       timeouts.push(setTimeout(() => {
         setStage('out');
         setCycleCount((prev) => prev + 1);
-      }, 4000));
+      }, 8000));
 
       timeouts.push(setTimeout(() => {
         setStage('idle');
-      }, 7000));
+      }, 14000));
     };
 
     runCycle();
-    const interval = setInterval(runCycle, 7000);
+    const interval = setInterval(runCycle, 14000);
 
     return () => {
       timeouts.forEach(clearTimeout);
@@ -85,7 +85,7 @@ const OrbitalAnimation: React.FC = () => {
           className="absolute top-1/2 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
           ref={centerRef}
         >
-          <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 p-2 sm:p-3 md:p-4 bg-white rounded-3xl flex items-center justify-center shadow-2xl transition-transform duration-[3000ms]">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 p-2 sm:p-3 md:p-4 bg-white rounded-3xl flex items-center justify-center shadow-2xl transition-transform duration-[5000ms]">
             <div className="text-xl sm:text-2xl md:text-4xl animate-pulse">
               <img src="/4.png" alt="images" className="w-full h-full object-cover" />
             </div>
@@ -101,7 +101,7 @@ const OrbitalAnimation: React.FC = () => {
           return (
             <div
               key={item.id}
-              className="absolute z-10 w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 p-1 sm:p-2 rounded-2xl overflow-hidden shadow-lg bg-white transition-all duration-[1000ms]"
+              className="absolute z-10 w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 p-1 sm:p-2 rounded-2xl overflow-hidden shadow-lg bg-white transition-all duration-[2000ms]"
               style={{
                 left: '40%',
                 top: '50%',
@@ -123,7 +123,7 @@ const OrbitalAnimation: React.FC = () => {
           return (
             <div
               key={bubble.id}
-              className={`absolute ${bubble.color} rounded-full transition-all duration-[1000ms]`}
+              className={`absolute ${bubble.color} rounded-full transition-all duration-[2000ms]`}
               style={{
                 width: bubble.size,
                 height: bubble.size,
@@ -140,12 +140,12 @@ const OrbitalAnimation: React.FC = () => {
 
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div
-            className={`w-48 h-48 sm:w-60 sm:h-60 md:w-72 md:h-72 border border-white/10 rounded-full transition-all duration-[1000ms] ${
+            className={`w-48 h-48 sm:w-60 sm:h-60 md:w-72 md:h-72 border border-white/10 rounded-full transition-all duration-[2000ms] ${
               stage === 'in' ? 'scale-75 opacity-30' : 'scale-100 opacity-10'
             }`}
           />
           <div
-            className={`absolute w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 border border-white/5 rounded-full transition-all duration-[1000ms] ${
+            className={`absolute w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 border border-white/5 rounded-full transition-all duration-[2000ms] ${
               stage === 'in' ? 'scale-50 opacity-20' : 'scale-100 opacity-5'
             }`}
           />

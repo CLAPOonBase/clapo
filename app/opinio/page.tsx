@@ -36,7 +36,7 @@ export default function OpinioPage() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: 'easeOut' }}
-        ><div className="text-center flex  min-h-screen text-white mt-8 md:mt-20">
+        ><div className="text-center flex  min-h-screen text-white">
           <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
           <div className="w-full">
             {renderContent()}

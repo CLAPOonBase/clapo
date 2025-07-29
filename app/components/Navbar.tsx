@@ -1,8 +1,10 @@
 'use client';
+
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { signIn, signOut, useSession } from 'next-auth/react';
 import { Menu, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -16,6 +18,7 @@ import {
 export default function Navbar() {
   const pathname = usePathname();
   const [activeDialog, setActiveDialog] = useState<null | 'x' | 'wallet'>(null);
+  const { data: session } = useSession();
 
   const navItems = [
     { label: "CLAPS", href: "/" },
@@ -26,9 +29,12 @@ export default function Navbar() {
   const openDialog = (type: 'x' | 'wallet') => setActiveDialog(type);
   const closeDialog = () => setActiveDialog(null);
 
+  const isLoggedIn = !!session;
+
   return (
     <>
       <nav className="w-full sticky top-0 md:relative p-4 md:p-6 flex items-center justify-between bg-black font-mono z-[9999]">
+        {/* Mobile Drawer */}
         <div className="md:hidden z-50">
           <Drawer>
             <DrawerTrigger className="p-2 text-white">
@@ -46,6 +52,13 @@ export default function Navbar() {
                     className={`tracking-[0.3em] text-sm font-bold ${
                       pathname === item.href ? "text-[#E4761B]" : "text-[#A0A0A0] hover:text-white"
                     }`}
+                    onClick={() => {
+                        // Close drawer on item click
+                        const drawerTrigger = document.querySelector('[data-radix-popper-content-wrapper]');
+                        if (drawerTrigger) {
+                            drawerTrigger.classList.remove('open'); // Adjust class based on your drawer implementation
+                        }
+                    }}
                   >
                     {item.label}
                   </Link>
@@ -55,10 +68,12 @@ export default function Navbar() {
           </Drawer>
         </div>
 
+        {/* Logo */}
         <div className="flex items-center z-50">
           <Image src="/navlogo.png" alt="Clapo Logo" width={120} height={40} className="object-contain h-6 md:h-8 w-auto" />
         </div>
 
+        {/* Desktop Navigation Items */}
         <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 gap-8 items-center">
           {navItems.map((item) => (
             <Link
@@ -73,12 +88,13 @@ export default function Navbar() {
           ))}
         </div>
 
+        {/* Desktop Connect Buttons */}
         <div className="hidden md:flex gap-2 items-center">
           <button
             onClick={() => openDialog('x')}
             className="text-[#E4761B] bg-white rounded px-3 py-1 text-xs font-bold shadow hover:text-white hover:bg-[#E4761B] transition"
           >
-            CONNECT X
+            {isLoggedIn ? session.user?.name || 'CONNECTED' : 'CONNECT X'}
           </button>
           <button
             onClick={() => openDialog('wallet')}
@@ -88,16 +104,18 @@ export default function Navbar() {
           </button>
         </div>
 
+        {/* Mobile Connect Button */}
         <div className="flex md:hidden justify-center">
           <button
-            onClick={() => openDialog('wallet')}
+            onClick={() => openDialog('x')}
             className="text-[#E4761B] bg-white rounded px-3 py-1 text-xs font-bold shadow hover:text-white hover:bg-[#E4761B] transition"
           >
-            Connect
+            {isLoggedIn ? session.user?.name || 'Connected' : 'Connect'}
           </button>
         </div>
       </nav>
 
+      {/* Dialog for both Mobile and Desktop */}
       <AnimatePresence>
         {activeDialog && (
           <motion.div
@@ -105,7 +123,7 @@ export default function Navbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="md:hidden absolute bg-[#1A1A1A] left-2 right-2 top-20 p-4 rounded-lg z-40"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[10000]" // Adjusted for full screen overlay
             onClick={closeDialog}
           >
             <motion.div
@@ -113,10 +131,11 @@ export default function Navbar() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ duration: 0.3 }}
+              className="bg-[#1A1A1A] p-6 rounded-lg shadow-lg w-full max-w-sm" // Centered, responsive dialog
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-bold">
+                <h2 className="text-lg font-bold text-white">
                   {activeDialog === 'x' ? 'Connect X Options' : 'Connect Wallet'}
                 </h2>
                 <button onClick={closeDialog} className="text-gray-400 hover:text-white">
@@ -124,17 +143,35 @@ export default function Navbar() {
                 </button>
               </div>
 
-              <div className="space-y-2 text-sm">
+              <div className="space-y-3 text-sm">
                 {activeDialog === 'x' ? (
-                  <button className="w-full px-4 py-2 bg-[#E4761B] rounded hover:bg-[#c86619] font-semibold">
-                    Connect X Now
-                  </button>
+                  isLoggedIn ? (
+                    <button
+                      onClick={() => {
+                        signOut();
+                        closeDialog();
+                      }}
+                      className="w-full px-4 py-2 bg-[#333] text-white rounded hover:bg-[#444] font-semibold transition-colors"
+                    >
+                      Logout ({session.user?.name || 'User'})
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        signIn('twitter');
+                        closeDialog();
+                      }}
+                      className="w-full px-4 py-2 bg-[#E4761B] text-white rounded hover:bg-[#c86619] font-semibold transition-colors"
+                    >
+                      Connect X Now
+                    </button>
+                  )
                 ) : (
                   <>
-                    <button className="w-full px-4 py-2 bg-[#E4761B] rounded hover:bg-[#c86619] font-semibold">
+                    <button className="w-full px-4 py-2 bg-[#E4761B] text-white rounded hover:bg-[#c86619] font-semibold transition-colors">
                       MetaMask
                     </button>
-                    <button className="w-full px-4 py-2 bg-[#333] rounded hover:bg-[#444] font-semibold">
+                    <button className="w-full px-4 py-2 bg-[#333] text-white rounded hover:bg-[#444] font-semibold transition-colors">
                       WalletConnect
                     </button>
                   </>

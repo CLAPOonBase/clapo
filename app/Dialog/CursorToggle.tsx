@@ -34,7 +34,9 @@ export default function ClientLayoutWrapper({
   if (!isMounted) return null;
 
   return (
-    <CursorContext.Provider value={{ customCursor, toggleCursor }}>
+   
+
+ <CursorContext.Provider value={{ customCursor, toggleCursor }}>
       <div className="bg-black" style={{ cursor: customCursor ? "none" : "auto", zIndex: "-999" }}>
         {customCursor && <SmoothCursor />}
         <Navbar />
@@ -49,5 +51,7 @@ export default function ClientLayoutWrapper({
         </button>
       </div>
     </CursorContext.Provider>
+
+   
   );
 }

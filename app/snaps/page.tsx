@@ -13,6 +13,7 @@ import MessagePage from './SidebarSection/MessagePage'
 import { Post } from '../types'
 import { mockActivity, mockPosts, mockUsers } from '../lib/mockdata'
 import ActivityPage from './SidebarSection/ActivityPage'
+import { motion } from 'framer-motion'
 
 export default function SocialFeedPage() {
 
@@ -133,6 +134,11 @@ export default function SocialFeedPage() {
   }
 
   return (
+    <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+        >
     <div className=" max-w-7xl flex-col md:flex-row mx-auto text-white flex">
       <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
       <div className="flex-1 m-4 md:m-0 rounded-md">
@@ -146,5 +152,8 @@ export default function SocialFeedPage() {
 
 
     </div>
+
+        </motion.div>
+
   )
 }
