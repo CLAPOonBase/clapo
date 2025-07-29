@@ -7,7 +7,6 @@
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
-    "types": ["next-auth", "./types/next-auth"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
