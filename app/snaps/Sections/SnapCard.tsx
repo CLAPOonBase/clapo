@@ -19,26 +19,32 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   const [showImageModal, setShowImageModal] = useState(false)
   const { likePost, unlikePost, retweetPost, bookmarkPost, viewPost, state } = useApi()
 
-  // Check if this is an API post or legacy post
-  const isApiPost = 'userId' in post
+  const isApiPost = 'userId' in post || 'user_id' in post
   const postId = isApiPost ? post.id : post.id.toString()
   const postContent = isApiPost ? post.content : post.content
-  const postImage = isApiPost ? post.mediaUrl : post.image
-  const postAuthor = isApiPost ? (post.user?.username || 'Unknown') : (post.author || 'Unknown')
-  const postHandle = isApiPost ? `@${post.user?.username || 'unknown'}` : (post.handle || '@unknown')
-  const postTime = isApiPost ? new Date(post.createdAt).toLocaleDateString() : (post.time || 'Unknown')
-  const postLikes = isApiPost ? post.likeCount : post.likes
-  const postComments = isApiPost ? post.commentCount : post.comments
-  const postRetweets = isApiPost ? post.retweetCount : post.retweets
+  const postImage = isApiPost ? (post.mediaUrl || post.media_url) : post.image
+  const postAuthor = isApiPost 
+    ? post.user?.username || post.username || 'Unknown' 
+    : post.author || 'Unknown'
+  const postHandle = isApiPost 
+    ? `@${post.user?.username || post.username || 'unknown'}` 
+    : post.handle || '@unknown'
+  const postTime = isApiPost 
+    ? new Date(post.createdAt || post.created_at).toLocaleDateString() 
+    : (post.time || 'Unknown')
+  const postLikes = isApiPost ? post.likeCount || post.like_count : post.likes
+  const postComments = isApiPost ? post.commentCount || post.comment_count : post.comments
+  const postRetweets = isApiPost ? post.retweetCount || post.retweet_count : post.retweets
+  const postAvatar = isApiPost 
+    ? post.user?.avatarUrl || post.avatar_url 
+    : post.authorAvatar
 
-  // Check if user has engaged with this post
   const isLiked = liked ?? state.engagement.likedPosts.has(postId)
   const isRetweeted = retweeted ?? state.engagement.retweetedPosts.has(postId)
   const isBookmarked = bookmarked ?? state.engagement.bookmarkedPosts.has(postId)
 
   const handleLike = async () => {
     if (!state.user.currentUser) return
-
     try {
       if (isLiked) {
         await unlikePost(postId, state.user.currentUser.id)
@@ -53,7 +59,6 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
 
   const handleRetweet = async () => {
     if (!state.user.currentUser) return
-
     try {
       await retweetPost(postId, state.user.currentUser.id)
       onRetweet?.(isApiPost ? postId : parseInt(postId))
@@ -64,7 +69,6 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
 
   const handleBookmark = async () => {
     if (!state.user.currentUser) return
-
     try {
       await bookmarkPost(postId, state.user.currentUser.id)
       onBookmark?.(isApiPost ? postId : parseInt(postId))
@@ -75,7 +79,6 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
 
   const handleView = async () => {
     if (!state.user.currentUser) return
-
     try {
       await viewPost(postId, state.user.currentUser.id)
     } catch (error) {
@@ -88,13 +91,13 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
       <div className="bg-dark-800 my-4 rounded-md p-4" onClick={handleView}>
         <div className="flex space-x-3">
           <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden">
-            {post.user?.avatarUrl || post.authorAvatar ? (
+            {postAvatar ? (
               <img 
-                src={post.user?.avatarUrl || post.authorAvatar || 'https://robohash.org/default.png'} 
+                src={postAvatar} 
                 alt={postAuthor}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.currentTarget.src = 'https://robohash.org/default.png';
+                  e.currentTarget.src = 'https://robohash.org/default.png'
                 }}
               />
             ) : (
@@ -131,13 +134,12 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
               </div>
             )}
             <div className='flex justify-between text-secondary'>
-
               <div className="flex items-center space-x-4 text-gray-500">
                 <button 
                   className="flex items-center space-x-2 hover:text-blue-500" 
                   onClick={(e) => {
                     e.stopPropagation()
-                    // TODO: Implement comment functionality
+                    // TODO: Comment functionality
                   }}
                 >
                   <MessageCircle className="w-5 h-5" />
@@ -163,7 +165,6 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
                   <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
                   <span className="text-sm">{(postLikes || 0) + (isLiked ? 1 : 0)}</span>
                 </button>
-              
                 <button className="hover:text-blue-500">
                   <Share className="w-5 h-5" />
                 </button>
@@ -178,7 +179,6 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
                 <Bookmark className={`w-5 h-5 ${isBookmarked ? 'fill-current' : ''}`} />
               </button>
             </div>
-          
           </div>
         </div>
       </div>

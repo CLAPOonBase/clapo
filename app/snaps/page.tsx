@@ -40,6 +40,8 @@ export default function SocialFeedPage() {
     console.log('🔍 Posts Count:', state.posts.posts.length)
   }, [session, status, state])
 
+  console.log('for you posts:', state.posts.posts)
+
   useEffect(() => {
     // Fetch posts when session is available
     if (status === 'authenticated' && session?.dbUserId) {
