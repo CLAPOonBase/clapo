@@ -1,40 +1,41 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { OpinionCard } from './OpinionCard';
-import { Opinion } from '@/app/types';
-import { mockOpinions } from '@/app/lib/mockdata';
-import { Search } from 'lucide-react';
-import UserDetails from './UserDetails';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from "react";
+import { OpinionCard } from "./OpinionCard";
+import { Opinion } from "@/app/types";
+import { mockOpinions } from "@/app/lib/mockdata";
+import { Search } from "lucide-react";
+import UserDetails from "./UserDetails";
+import { motion, AnimatePresence } from "framer-motion";
 
 const navItems = [
-  { label: 'TRENDING' },
-  { label: 'NEW' },
-  { label: 'POLITICS' },
-  { label: 'SPORTS' },
-  { label: 'CRYPTO' },
-  { label: 'TECH' },
-  { label: 'CELEBRITY' },
-  { label: 'WORLD' },
-  { label: 'ECONOMY' },
-  { label: 'TRUMP' },
-  { label: 'ELECTIONS' },
-  { label: 'MENTIONS' }
+  { label: "TRENDING" },
+  { label: "NEW" },
+  { label: "POLITICS" },
+  { label: "SPORTS" },
+  { label: "CRYPTO" },
+  { label: "TECH" },
+  { label: "CELEBRITY" },
+  { label: "WORLD" },
+  { label: "ECONOMY" },
+  { label: "TRUMP" },
+  { label: "ELECTIONS" },
+  { label: "MENTIONS" },
 ];
 
 export default function MainVoting() {
   const [opinions] = useState<Opinion[]>(mockOpinions);
-  const [selectedCategory, setSelectedCategory] = useState<string>('TRENDING');
+  const [selectedCategory, setSelectedCategory] = useState<string>("TRENDING");
 
   const filteredOpinions = opinions.filter((opinion) => {
-    if (selectedCategory === 'TRENDING') {
+    if (selectedCategory === "TRENDING") {
       return opinion.totalVotes > 1000;
     }
-    if (selectedCategory === 'NEW') {
+    if (selectedCategory === "NEW") {
       const createdAt = new Date(opinion.createdAt);
       const now = new Date();
-      const diffInHours = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+      const diffInHours =
+        (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
       return diffInHours <= 72;
     }
     return opinion.category === selectedCategory;
@@ -57,8 +58,8 @@ export default function MainVoting() {
               onClick={() => setSelectedCategory(label)}
               className={`pb-2 px-1 text-sm font-medium transition-colors whitespace-nowrap ${
                 selectedCategory === label
-                  ? 'text-primary border-b-2 border-primary'
-                  : 'text-secondary hover:text-white'
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-secondary hover:text-white"
               }`}
             >
               {label}
