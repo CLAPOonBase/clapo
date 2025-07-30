@@ -43,6 +43,22 @@ export const authOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }: { user: any, account: any, profile?: any }) {
+      console.log('🔍 NextAuth signIn callback triggered');
+      console.log('🔍 Account data:', {
+        provider: account?.provider,
+        hasAccessToken: !!account?.access_token,
+        accessTokenLength: account?.access_token?.length || 0
+      });
+      console.log('🔍 Profile data:', {
+        id: profile?.id,
+        username: profile?.username,
+        screen_name: profile?.screen_name,
+        name: profile?.name,
+        description: profile?.description,
+        profile_image_url: profile?.profile_image_url,
+        profile_image_url_https: profile?.profile_image_url_https
+      });
+      
       if (account?.provider === "twitter" && profile) {
         try {
           const twitterData = {
@@ -52,11 +68,15 @@ export const authOptions = {
             avatarUrl: profile.profile_image_url_https || profile.profile_image_url || profile.profile_image_url_400x400 || user.image || "https://robohash.org/default.png",
           };
 
+          console.log('🔍 Processed Twitter data for session:', twitterData);
+          console.log('🔍 Access token being stored:', account.access_token ? 'EXISTS' : 'MISSING');
+
           user.twitterData = twitterData;
           user.needsPasswordSetup = true;
           user.provider = 'twitter';
           user.dbUserId = null;
           user.dbUser = null;
+          user.access_token = account.access_token;
           
           return true;
         } catch (error) {
@@ -88,6 +108,7 @@ export const authOptions = {
         token.twitterData = user.twitterData;
         token.needsPasswordSetup = user.needsPasswordSetup;
         token.provider = user.provider;
+        token.access_token = user.access_token;
       }
       
       if (trigger === "update" && session) {
@@ -96,6 +117,7 @@ export const authOptions = {
         token.twitterData = session.twitterData;
         token.needsPasswordSetup = session.needsPasswordSetup;
         token.provider = session.provider;
+        token.access_token = session.access_token;
       }
       
       return token;
@@ -116,6 +138,10 @@ export const authOptions = {
       
       if (token?.provider) {
         session.provider = token.provider;
+      }
+      
+      if (token?.access_token) {
+        session.access_token = token.access_token;
       }
       
       return session;

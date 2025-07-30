@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Lock, Eye, EyeOff } from 'lucide-react';
@@ -25,6 +25,76 @@ export default function PasswordSetupModal({ isOpen, onClose, onComplete }: Pass
   });
   const router = useRouter();
 
+  const fetchAccurateTwitterDetails = async (accessToken: string) => {
+    console.log('🔍 Fetching Twitter details with access token:', accessToken);
+    try {
+      const response = await fetch(`/api/twitter?accessToken=${accessToken}`);
+      console.log('🔍 Twitter API response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('🔍 Raw Twitter API response:', data);
+        
+        const userDetails = {
+          username: data.data.username,
+          name: data.data.name,
+          description: data.data.description,
+          avatarUrl: data.data.profile_image_url,
+          verified: data.data.verified,
+          followersCount: data.data.followers_count,
+          followingCount: data.data.following_count,
+          tweetCount: data.data.tweet_count,
+        };
+        
+        console.log('🔍 Processed Twitter user details:', userDetails);
+        localStorage.setItem('twitterDetails', JSON.stringify(userDetails));
+        console.log('🔍 Cached Twitter details in localStorage');
+        return userDetails;
+      } else {
+        console.error('🔍 Twitter API error:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('🔍 Error fetching accurate Twitter details:', error);
+    }
+    return null;
+  };
+
+  const getCachedOrFetchTwitterDetails = async (accessToken: string) => {
+    console.log('🔍 Checking for cached Twitter details...');
+    const cachedDetails = localStorage.getItem('twitterDetails');
+    if (cachedDetails) {
+      try {
+        const parsedDetails = JSON.parse(cachedDetails);
+        console.log('🔍 Found cached Twitter details:', parsedDetails);
+        return parsedDetails;
+      } catch (error) {
+        console.error('🔍 Error parsing cached details:', error);
+        localStorage.removeItem('twitterDetails');
+      }
+    } else {
+      console.log('🔍 No cached details found, fetching from API...');
+    }
+    return await fetchAccurateTwitterDetails(accessToken);
+  };
+
+  useEffect(() => {
+    console.log('🔍 Session changed in PasswordSetupModal:', {
+      hasSession: !!session,
+      accessToken: session?.access_token ? 'EXISTS' : 'MISSING',
+      twitterData: session?.twitterData,
+      dbUser: session?.dbUser,
+      needsPasswordSetup: session?.needsPasswordSetup,
+      provider: session?.provider
+    });
+    
+    if (session?.access_token) {
+      console.log('🔍 Access token found, fetching Twitter details...');
+      getCachedOrFetchTwitterDetails(session.access_token);
+    } else {
+      console.log('🔍 No access token in session');
+    }
+  }, [session]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -43,13 +113,41 @@ export default function PasswordSetupModal({ isOpen, onClose, onComplete }: Pass
     }
 
     try {
+      let accurateTwitterData = null;
+      
+      console.log('🔍 Starting password setup process...');
+      console.log('🔍 Session data:', {
+        hasSession: !!session,
+        accessToken: session?.access_token ? 'EXISTS' : 'MISSING',
+        twitterData: session?.twitterData,
+        needsPasswordSetup: session?.needsPasswordSetup,
+        provider: session?.provider
+      });
+      
+      if (session?.access_token) {
+        console.log('🔍 Fetching accurate Twitter data with access token...');
+        accurateTwitterData = await getCachedOrFetchTwitterDetails(session.access_token);
+        console.log('🔍 Accurate Twitter data received:', accurateTwitterData);
+      } else {
+        console.log('🔍 No access token available, using fallback data');
+      }
+      
       const signupData = {
-        username: (session?.twitterData?.username || '').replace(/\s+/g, '_').toLowerCase(),
+        username: (accurateTwitterData?.username || session?.twitterData?.username || '').replace(/\s+/g, '_').toLowerCase(),
         email: session?.twitterData?.email || '',
         password: passwordData.password,
-        bio: session?.twitterData?.bio || 'Twitter user',
-        avatarUrl: session?.twitterData?.avatarUrl || '',
+        bio: accurateTwitterData?.description || session?.twitterData?.bio || 'Twitter user',
+        avatarUrl: accurateTwitterData?.avatarUrl || session?.twitterData?.avatarUrl || '',
       };
+
+      console.log('🔍 Final signup data:', {
+        username: signupData.username,
+        email: signupData.email,
+        password: signupData.password ? '[HIDDEN]' : 'MISSING',
+        bio: signupData.bio,
+        avatarUrl: signupData.avatarUrl,
+        dataSource: accurateTwitterData ? 'Twitter API' : 'OAuth Fallback'
+      });
 
       if (!signupData.username) {
         throw new Error('Username is missing');

@@ -30,6 +30,7 @@ interface ExtendedSession {
     createdAt: string;
   };
   dbUserId?: string;
+  access_token?: string;
 }
 
 export default function Navbar() {
