@@ -95,6 +95,7 @@ export type PageKey =
   | 'createmarket'
 ;
 
+// Legacy Post type for backward compatibility
 export type Post = {
   id: number
   author: string
@@ -105,6 +106,24 @@ export type Post = {
   likes: number
   comments: number
   retweets: number
+}
+
+// New API Post type
+export interface ApiPost {
+  id: string
+  userId: string
+  content: string
+  mediaUrl?: string
+  createdAt: string
+  viewCount: number
+  likeCount: number
+  commentCount: number
+  retweetCount: number
+  user?: {
+    id: string
+    username: string
+    avatarUrl: string
+  }
 }
 
 export type User = {
@@ -119,10 +138,71 @@ export type User = {
   messages?: { from: string; text: string; time: string }[] | undefined
 }
 
+// New API User type
+export interface ApiUser {
+  id: string
+  username: string
+  email: string
+  bio: string
+  avatarUrl: string
+  createdAt: string
+  followerCount: number
+  followingCount: number
+}
 
 export type ActivityItem = {
   id: number
   type: 'like' | 'retweet' | 'follow'
   user: User
   timestamp: string
+}
+
+// New API Activity type
+export interface ApiActivity {
+  id: string
+  userId: string
+  activityType: 'post_created' | 'like' | 'retweet' | 'follow' | 'comment'
+  targetId: string
+  timestamp: string
+}
+
+// New API Notification type
+export interface ApiNotification {
+  id: string
+  userId: string
+  type: 'like' | 'retweet' | 'follow' | 'comment' | 'mention'
+  refId: string
+  fromUserId: string
+  isRead: boolean
+  createdAt: string
+}
+
+// Utility type for converting between legacy and API types
+export type PostAdapter = {
+  legacyToApi: (post: Post) => ApiPost
+  apiToLegacy: (post: ApiPost) => Post
+}
+
+// User state management
+export interface UserState {
+  currentUser: ApiUser | null
+  isAuthenticated: boolean
+  loading: boolean
+  error: string | null
+}
+
+// Post state management
+export interface PostState {
+  posts: ApiPost[]
+  loading: boolean
+  error: string | null
+  hasMore: boolean
+}
+
+// Engagement state
+export interface EngagementState {
+  likedPosts: Set<string>
+  retweetedPosts: Set<string>
+  bookmarkedPosts: Set<string>
+  viewedPosts: Set<string>
 }

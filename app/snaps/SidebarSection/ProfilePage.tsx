@@ -1,19 +1,45 @@
 "use client"
 
-import { useState, ChangeEvent } from "react"
+import { useState, ChangeEvent, useEffect } from "react"
 import { User, Post } from "@/app/types"
 import { motion } from "framer-motion"
 import { Ellipsis, PencilIcon } from "lucide-react"
+import { useSession } from "next-auth/react"
 
 type Props = {
-  user: User
+  user?: User
   posts: Post[]
 }
 
 export function ProfilePage({ user, posts }: Props) {
-  const [avatar, setAvatar] = useState(user.avatar)
-  const [cover, setCover] = useState(user.cover || "/default-cover.jpg")
+  const { data: session } = useSession();
+  
+  // Use session data if available, otherwise fall back to props
+  const currentUser = session?.dbUser ? {
+    name: session.dbUser.username,
+    handle: `@${session.dbUser.username}`,
+    bio: session.dbUser.bio || 'No bio available',
+    avatar: session.dbUser.avatarUrl || 'https://robohash.org/default.png',
+    cover: "/default-cover.jpg"
+  } : user || {
+    name: 'User',
+    handle: '@user',
+    bio: 'No bio available',
+    avatar: 'https://robohash.org/default.png',
+    cover: "/default-cover.jpg"
+  };
+
+  const [avatar, setAvatar] = useState(currentUser.avatar)
+  const [cover, setCover] = useState(currentUser.cover || "/default-cover.jpg")
   const [activeTab, setActiveTab] = useState<"Threads" | "Ticket Holding" | "Stats">("Threads")
+
+  // Update avatar when session changes
+  useEffect(() => {
+    if (session?.dbUser?.avatarUrl) {
+      console.log('🔄 Updating avatar from session:', session.dbUser.avatarUrl);
+      setAvatar(session.dbUser.avatarUrl);
+    }
+  }, [session?.dbUser?.avatarUrl]);
 
   const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -54,8 +80,12 @@ export function ProfilePage({ user, posts }: Props) {
         >
           <img
             src={avatar}
-            alt={user.name}
+            alt={currentUser.name}
             className="w-24 h-24 rounded-full border-4 border-dark-900 object-cover"
+            onError={(e) => {
+              console.log('❌ Avatar failed to load:', avatar);
+              e.currentTarget.src = 'https://robohash.org/default.png';
+            }}
           />
           <label className="absolute bottom-0 left-0 bg-white text-black p-2 rounded-full cursor-pointer">
             <PencilIcon className="h-4 w-4" />
@@ -83,9 +113,9 @@ export function ProfilePage({ user, posts }: Props) {
         
       </div>
 <div className="p-4">
-            <h2 className="text-xl font-bold">{user.name}</h2>
-            <p className="text-gray-400 text-sm">{user.handle}</p>
-            <p className="text-gray-400 text-xs mt-1">{user.bio}</p>
+            <h2 className="text-xl font-bold">{currentUser.name}</h2>
+            <p className="text-gray-400 text-sm">{currentUser.handle}</p>
+            <p className="text-gray-400 text-xs mt-1">{currentUser.bio}</p>
           </div>
       {/* Tabs */}
       <div className="mt-6">
@@ -131,16 +161,16 @@ export function ProfilePage({ user, posts }: Props) {
               <div className="flex items-center justify-between bg-dark-800 p-4 rounded">
                 <div className="flex items-center space-x-3">
                   <img
-                    src={user.avatar}
-                    alt={user.name}
+                    src={currentUser.avatar}
+                    alt={currentUser.name}
                     className="w-10 h-10 rounded-full object-cover"
                   />
                   <div>
-                    <p className="font-bold">{user.name}</p>
-                    <p className="text-xs text-gray-400">{user.handle}</p>
+                    <p className="font-bold">{currentUser.name}</p>
+                    <p className="text-xs text-gray-400">{currentUser.handle}</p>
                   </div>
                 </div>
-                <span className="text-green-400 font-semibold">{user.holdings} Holding</span>
+                <span className="text-green-400 font-semibold">{currentUser.holdings} Holding</span>
               </div>
             </div>
           )}

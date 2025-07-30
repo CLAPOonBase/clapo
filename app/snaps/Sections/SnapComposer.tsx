@@ -1,15 +1,44 @@
 "use client";
 import { Camera, Video, FileText, Calendar, PencilLine, Send } from "lucide-react";
 import { useState } from "react";
+import { useSession } from "next-auth/react";
+import { useApi } from "../../Context/ApiProvider";
+import { ComposerSkeleton } from "../../components/SkeletonLoader";
 
 export default function SnapComposer() {
   const [content, setContent] = useState("");
   const [focused, setFocused] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createPost } = useApi();
+  const { data: session, status } = useSession();
 
-  const handleSubmit = () => {
-    if (content.trim()) {
-      console.log("Posting:", content);
+  // Show skeleton if not authenticated
+  if (status === 'loading') {
+    return <ComposerSkeleton />;
+  }
+
+  if (status === 'unauthenticated') {
+    return <ComposerSkeleton />;
+  }
+
+  const handleSubmit = async () => {
+    if (!content.trim() || !session?.dbUserId) return;
+
+    setIsSubmitting(true);
+    try {
+      await createPost({
+        content: content.trim(),
+        mediaUrl: undefined, // TODO: Add media upload functionality
+        parentPostId: undefined,
+        isRetweet: false,
+        retweetRefId: undefined
+      });
       setContent("");
+    } catch (error) {
+      console.error("Failed to create post:", error);
+      // TODO: Add error handling UI
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -49,6 +78,7 @@ export default function SnapComposer() {
                   target.style.height = 'auto';
                   target.style.height = target.scrollHeight + 'px';
                 }}
+                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -58,7 +88,10 @@ export default function SnapComposer() {
             {actions.map(({ icon: Icon, label, color }) => (
               <button
                 key={label}
-                className={`flex items-center justify-center gap-2 p-3 rounded-xl bg-dark-800/50 hover:bg-dark-800 transition-all duration-200 group ${color}`}
+                disabled={isSubmitting}
+                className={`flex items-center justify-center gap-2 p-3 rounded-xl bg-dark-800/50 hover:bg-dark-800 transition-all duration-200 group ${color} ${
+                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
                 <Icon className="w-5 h-5 transition-transform group-hover:scale-110" />
                 <span className="text-sm font-medium hidden sm:inline">{label}</span>
@@ -77,15 +110,17 @@ export default function SnapComposer() {
             </div>
             <button
               onClick={handleSubmit}
-              disabled={!content.trim()}
+              disabled={!content.trim() || isSubmitting || !session?.dbUserId}
               className={`flex items-center gap-2 px-6 text-white mx-4 py-2 rounded-full font-medium transition-all duration-200 ${
-                content.trim()
+                content.trim() && !isSubmitting && session?.dbUserId
                   ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
                   : 'bg-gray-700 text-gray-400 cursor-not-allowed'
               }`}
             >
-              <Send className="w-4 h-4" />
-              <span className="hidden sm:inline">Post</span>
+              <Send className={`w-4 h-4 ${isSubmitting ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">
+                {isSubmitting ? 'Posting...' : 'Post'}
+              </span>
             </button>
           </div>
         </div>

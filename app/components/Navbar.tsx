@@ -15,10 +15,27 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 
+interface ExtendedSession {
+  user?: {
+    name?: string;
+    email?: string;
+    image?: string;
+  };
+  dbUser?: {
+    id: string;
+    username: string;
+    email: string;
+    bio: string;
+    avatarUrl: string;
+    createdAt: string;
+  };
+  dbUserId?: string;
+}
+
 export default function Navbar() {
   const pathname = usePathname();
   const [activeDialog, setActiveDialog] = useState<null | 'x' | 'wallet'>(null);
-  const { data: session } = useSession();
+  const { data: session } = useSession() as { data: ExtendedSession | null };
 
   const navItems = [
     { label: "CLAPS", href: "/" },
@@ -94,7 +111,7 @@ export default function Navbar() {
             onClick={() => openDialog('x')}
             className="text-[#E4761B] bg-white rounded px-3 py-1 text-xs font-bold shadow hover:text-white hover:bg-[#E4761B] transition"
           >
-            {isLoggedIn ? session.user?.name || 'CONNECTED' : 'CONNECT X'}
+            {isLoggedIn ? (session.dbUser?.username || session.user?.name || 'CONNECTED') : 'CONNECT X'}
           </button>
           <button
             onClick={() => openDialog('wallet')}
@@ -110,7 +127,7 @@ export default function Navbar() {
             onClick={() => openDialog('x')}
             className="text-[#E4761B] bg-white rounded px-3 py-1 text-xs font-bold shadow hover:text-white hover:bg-[#E4761B] transition"
           >
-            {isLoggedIn ? session.user?.name || 'Connected' : 'Connect'}
+            {isLoggedIn ? (session.dbUser?.username || session.user?.name || 'Connected') : 'Connect'}
           </button>
         </div>
       </nav>
@@ -153,7 +170,7 @@ export default function Navbar() {
                       }}
                       className="w-full px-4 py-2 bg-[#333] text-white rounded hover:bg-[#444] font-semibold transition-colors"
                     >
-                      Logout ({session.user?.name || 'User'})
+                      Logout ({session.dbUser?.username || session.user?.name || 'User'})
                     </button>
                   ) : (
                     <button
