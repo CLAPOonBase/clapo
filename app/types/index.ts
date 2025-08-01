@@ -140,7 +140,7 @@ export type User = {
 
 // New API User type
 export interface ApiUser {
-  id: string
+  id: unknown
   username: string
   email: string
   bio: string

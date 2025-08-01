@@ -148,7 +148,7 @@ export const authOptions = {
     },
   },
   events: {
-    async signIn({ user, account, profile, isNewUser }: { user: any, account: any, profile?: any, isNewUser?: boolean }) {
+    async signIn({ user, account, isNewUser }: { user: any, account: any, profile?: any, isNewUser?: boolean }) {
       if (account?.provider === "twitter" && isNewUser) {
         console.log("🎉 New user signed in via Twitter:", {
           username: user.dbUser?.username,

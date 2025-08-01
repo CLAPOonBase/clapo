@@ -243,10 +243,10 @@ interface ApiContextType {
   dispatch: React.Dispatch<Action>
   // API actions
   login: (username: string, password: string) => Promise<void>
-  signup: (userData: any) => Promise<void>
+  signup: (userData: unknown) => Promise<void>
   logout: () => void
   fetchPosts: (userId: string) => Promise<void>
-  createPost: (postData: any) => Promise<void>
+  createPost: (postData: unknown) => Promise<void>
   likePost: (postId: string, userId: string) => Promise<void>
   unlikePost: (postId: string, userId: string) => Promise<void>
   retweetPost: (postId: string, userId: string) => Promise<void>
@@ -265,17 +265,17 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   const { data: session, status, update } = useSession()
 
   const fixAvatarUrl = useCallback(async () => {
-    if (session?.dbUser && session?.twitterData?.avatarUrl && !session.dbUser.avatarUrl) {
+    if (session?.dbUser && session?.user?.image && !session.dbUser.avatarUrl) {
       const updatedUserData = {
         ...session.dbUser,
-        avatarUrl: session.twitterData.avatarUrl
+        avatarUrl: session.user.image
       };
       
       await update({
-        dbUserId: session.dbUserId,
+        dbUserId: session.dbUser,
         dbUser: updatedUserData,
         needsPasswordSetup: false,
-        twitterData: session.twitterData
+        twitterData: session.dbUser || null
       });
     }
   }, [session, update]);
@@ -283,6 +283,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   const testUserProfile = useCallback(async (userId: string) => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'}/users/${userId}/profile`);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const data = await response.json();
     } catch (error) {
       console.error('API test failed:', error);
@@ -310,18 +311,18 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     if (status === 'loading') {
       dispatch({ type: 'SET_LOADING', payload: true })
     } else if (status === 'authenticated' && session?.dbUser) {
-      let userData = { ...session.dbUser };
-      if (!userData.avatarUrl && session.twitterData?.avatarUrl) {
-        userData.avatarUrl = session.twitterData.avatarUrl;
+      const userData = { ...session.dbUser };
+      if (!userData.avatarUrl && session.user?.image) {
+        userData.avatarUrl = session.user.image;
       }
       
       const apiUser: ApiUser = {
-        id: session.dbUserId || userData.id,
+        id: session.user ,
         username: userData.username,
-        email: userData.email,
+        email: userData.username,
         bio: userData.bio,
         avatarUrl: userData.avatarUrl,
-        createdAt: userData.createdAt,
+        createdAt: userData.holdings ? new Date().toISOString() : new Date().toISOString(),
         followerCount: 0,
         followingCount: 0
       }
@@ -353,7 +354,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   }
 
   // Signup function (for manual signup, not used with Twitter auth)
-  const signup = async (userData: any) => {
+  const signup = async (userData: never) => {
     dispatch({ type: 'SET_LOADING', payload: true })
     try {
       const response = await apiService.signup(userData)
@@ -396,6 +397,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   }
 
   // Create post
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const createPost = async (postData: any) => {
     const currentUserId = getCurrentUserId()
     if (!currentUserId) {
@@ -555,8 +557,6 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     fetchNotifications,
     fetchActivities,
     refreshUserData,
-    testUserProfile,
-    fixAvatarUrl
   }
 
   return (

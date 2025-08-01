@@ -19,7 +19,8 @@ export default function Leaderboard({ rows, currentUsername }: Props) {
   }
 
   return (
-    <div className="w-full bg-[#10151A] rounded-xl shadow-lg border border-[#23272B] mt-16 max-h-[500px] overflow-hidden relative">
+
+    <div className="w-full bg-[#10151A] rounded-xl shadow-lg border border-[#23272B] max-h-[500px] overflow-hidden relative">
       <div className="sticky top-0 z-20 bg-[#10151A] flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-0 pr-4 sm:pr-6 pl-2 py-3 border-b border-[#23272B]">
         <input
           className="bg-transparent text-[#A0A0A0] text-xs px-2 border border-[#23272b] p-2 rounded-md outline-none flex-1 min-w-0"
