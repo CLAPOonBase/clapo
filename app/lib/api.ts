@@ -31,7 +31,15 @@ import {
   JoinCommunityResponse,
   NotificationsResponse,
   ActivityResponse,
-  ApiError
+  ApiError,
+  CreateMessageThreadRequest,
+  MessageThreadsResponse,
+  ThreadMessagesResponse,
+  AddParticipantRequest,
+  AddParticipantResponse,
+  CommunitiesResponse,
+  CommunityMembersResponse,
+  CommunityMessagesResponse
 } from '../types/api'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'
@@ -121,11 +129,194 @@ class ApiService {
     })
   }
 
-  async updateUserPassword(userId: string, password: string): Promise<{ message: string }> {
-    return this.request<{ message: string }>(`/users/${userId}/password`, {
-      method: 'PUT',
-      body: JSON.stringify({ password }),
-    })
+  async updateUserPassword(userId: string, newPassword: string): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${userId}/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ newPassword }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating user password:', error);
+      throw error;
+    }
+  }
+
+  // Messaging APIs
+  async createMessageThread(data: CreateMessageThreadRequest): Promise<any> {
+    try {
+      console.log('🔧 API: Creating direct message thread with data:', data)
+      
+      // Use the direct-thread API with optional name
+      const requestBody: any = {
+        userId1: data.creatorId,
+        userId2: data.targetUserId
+      }
+      
+      // Add name if provided
+      if (data.name) {
+        requestBody.name = data.name
+      }
+      
+      const response = await this.request('/messages/direct-thread', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      })
+      
+      console.log('🔧 API: Response data:', response)
+      return response
+    } catch (error) {
+      console.error('Error creating message thread:', error);
+      throw error;
+    }
+  }
+
+  async getMessageThreads(userId: string, limit = 20, offset = 0): Promise<MessageThreadsResponse> {
+    try {
+      const response = await this.request(`/message-threads?userId=${userId}&limit=${limit}&offset=${offset}`)
+      return response as MessageThreadsResponse
+    } catch (error) {
+      console.error('Error fetching message threads:', error);
+      throw error;
+    }
+  }
+
+  async getThreadMessages(threadId: string, limit = 50, offset = 0): Promise<ThreadMessagesResponse> {
+    try {
+      const response = await this.request(`/message-threads/${threadId}/messages?limit=${limit}&offset=${offset}`)
+      return response as ThreadMessagesResponse
+    } catch (error) {
+      console.error('Error fetching thread messages:', error);
+      throw error;
+    }
+  }
+
+  async sendMessage(threadId: string, data: SendMessageRequest): Promise<SendMessageResponse> {
+    try {
+      const response = await this.request(`/messages/thread/${threadId}`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+      return response as SendMessageResponse
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error;
+    }
+  }
+
+  async addParticipantToThread(threadId: string, data: AddParticipantRequest): Promise<AddParticipantResponse> {
+    try {
+      const response = await this.request(`/message-threads/${threadId}/participants`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+      return response as AddParticipantResponse
+    } catch (error) {
+      console.error('Error adding participant to thread:', error);
+      throw error;
+    }
+  }
+
+  async markMessageAsRead(messageId: string): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/messages/${messageId}/read`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+      throw error;
+    }
+  }
+
+  // Communities APIs
+  async createCommunity(data: CreateCommunityRequest): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/communities`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating community:', error);
+      throw error;
+    }
+  }
+
+  async getCommunities(searchQuery?: string, limit = 20, offset = 0): Promise<any> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (searchQuery) queryParams.append('searchQuery', searchQuery);
+      queryParams.append('limit', limit.toString());
+      queryParams.append('offset', offset.toString());
+      
+      const response = await fetch(`${API_BASE_URL}/communities?${queryParams}`);
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching communities:', error);
+      throw error;
+    }
+  }
+
+  async joinCommunity(communityId: string, data: JoinCommunityRequest): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/communities/${communityId}/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error joining community:', error);
+      throw error;
+    }
+  }
+
+  async getCommunityMembers(communityId: string, limit = 50, offset = 0): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/communities/${communityId}/members?limit=${limit}&offset=${offset}`);
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching community members:', error);
+      throw error;
+    }
+  }
+
+  async sendCommunityMessage(communityId: string, data: SendMessageRequest): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/communities/${communityId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Error sending community message:', error);
+      throw error;
+    }
+  }
+
+  async getCommunityMessages(communityId: string, limit = 50, offset = 0): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/communities/${communityId}/messages?limit=${limit}&offset=${offset}`);
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching community messages:', error);
+      throw error;
+    }
   }
 
   async searchUsers(query: string, limit: number = 10, offset: number = 0): Promise<SearchUsersResponse> {
@@ -205,34 +396,6 @@ class ApiService {
   async unfollowUser(userId: string, data: FollowRequest): Promise<UnfollowResponse> {
     return this.request<UnfollowResponse>(`/users/${userId}/follow`, {
       method: 'DELETE',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async createMessageThread(data: CreateThreadRequest): Promise<CreateThreadResponse> {
-    return this.request<CreateThreadResponse>('/messages/thread', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async sendMessage(threadId: string, data: SendMessageRequest): Promise<SendMessageResponse> {
-    return this.request<SendMessageResponse>(`/messages/thread/${threadId}`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async createCommunity(data: CreateCommunityRequest): Promise<CreateCommunityResponse> {
-    return this.request<CreateCommunityResponse>('/communities', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async joinCommunity(communityId: string, data: JoinCommunityRequest): Promise<JoinCommunityResponse> {
-    return this.request<JoinCommunityResponse>(`/communities/${communityId}/join`, {
-      method: 'POST',
       body: JSON.stringify(data),
     })
   }

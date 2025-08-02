@@ -25,6 +25,7 @@ export default function SocialFeedPage() {
   const [liked, setLiked] = useState<Set<number>>(new Set())
   const [retweeted, setRetweeted] = useState<Set<number>>(new Set())
   const [bookmarked, setBookmarked] = useState<Set<number>>(new Set())
+  const [hasInitializedData, setHasInitializedData] = useState(false)
 
   const { data: session, status } = useSession()
   const { state, fetchPosts, fetchNotifications, fetchActivities } = useApi()
@@ -36,18 +37,41 @@ export default function SocialFeedPage() {
     console.log('🔍 User Authenticated:', state.user.isAuthenticated)
     console.log('🔍 Current User:', state.user.currentUser)
     console.log('🔍 Posts Count:', state.posts.posts.length)
+    console.log('🔍 Session Expires:', session?.expires)
+    console.log('🔍 DB User ID:', session?.dbUser?.id)
+    
+    // Check if session token is stored
+    if (typeof window !== 'undefined') {
+      const nextAuthToken = localStorage.getItem('next-auth.session-token') || 
+                           localStorage.getItem('__Secure-next-auth.session-token')
+      console.log('🔍 NextAuth Token in localStorage:', nextAuthToken ? 'EXISTS' : 'MISSING')
+      
+      // Check cookies
+      const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=')
+        acc[key] = value
+        return acc
+      }, {} as Record<string, string>)
+      console.log('🔍 NextAuth Cookies:', Object.keys(cookies).filter(key => key.includes('next-auth')))
+    }
   }, [session, status, state])
 
   console.log('for you posts:', state.posts.posts)
 
   useEffect(() => {
-    if (status === 'authenticated' && session?.dbUser?.id) {
+    if (status === 'authenticated' && session?.dbUser?.id && !hasInitializedData) {
       console.log('🚀 Fetching posts for user:', session.dbUser.id)
       fetchPosts(session.dbUser.id)
       fetchNotifications(session.dbUser.id)
       fetchActivities(session.dbUser.id)
+      setHasInitializedData(true)
     }
-  }, [session, status, fetchPosts, fetchNotifications, fetchActivities])
+    
+    // Reset when user logs out
+    if (status === 'unauthenticated') {
+      setHasInitializedData(false)
+    }
+  }, [session, status, hasInitializedData])
 
   const toggleSet = (set: Set<number>, id: number): Set<number> => {
     const newSet = new Set(set)

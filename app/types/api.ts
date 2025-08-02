@@ -200,6 +200,12 @@ export interface UnfollowResponse {
 }
 
 // Messaging Types
+export interface CreateMessageThreadRequest {
+  creatorId: string
+  targetUserId: string
+  name?: string // Optional name for the thread
+}
+
 export interface CreateThreadRequest {
   creatorId: string
   isGroup: boolean
@@ -225,31 +231,66 @@ export interface SendMessageRequest {
   mediaUrl?: string
 }
 
-export interface Message {
-  id: string
-  threadId: string
-  senderId: string
-  content: string
-  createdAt: string
-}
-
 export interface SendMessageResponse {
   message: string
   messageData: Message
 }
 
-// Community Types
+export interface Message {
+  id: string
+  threadId: string
+  senderId: string
+  content: string
+  mediaUrl?: string
+  createdAt: string
+}
+
+export interface ThreadMessage {
+  id: string
+  thread_id: string
+  sender_id: string
+  content: string
+  media_url?: string
+  created_at: string
+}
+
+export interface MessageThreadsResponse {
+  message: string
+  threads: Thread[]
+}
+
+export interface ThreadMessagesResponse {
+  message: string
+  messages: ThreadMessage[]
+}
+
+export interface AddParticipantRequest {
+  threadId: string
+  userId: string
+}
+
+export interface AddParticipantResponse {
+  message: string
+  participant: {
+    id: string
+    thread_id: string
+    user_id: string
+    joined_at: string
+  }
+}
+
+// Communities Types
 export interface CreateCommunityRequest {
-  creatorId: string
   name: string
   description: string
+  creatorId: string
 }
 
 export interface Community {
   id: string
-  creatorId: string
   name: string
   description: string
+  creatorId: string
   createdAt: string
 }
 
@@ -271,6 +312,29 @@ export interface JoinCommunityResponse {
     joinedAt: string
     isAdmin: boolean
   }
+}
+
+export interface CommunityMember {
+  id: string
+  communityId: string
+  userId: string
+  joinedAt: string
+  isAdmin: boolean
+}
+
+export interface CommunitiesResponse {
+  message: string
+  communities: Community[]
+}
+
+export interface CommunityMembersResponse {
+  message: string
+  members: CommunityMember[]
+}
+
+export interface CommunityMessagesResponse {
+  message: string
+  messages: Message[]
 }
 
 // Notification Types
@@ -308,4 +372,32 @@ export interface ApiError {
   message: string
   status: number
   error?: string
+}
+
+export interface MessageThread {
+  id: string
+  creatorId: string
+  isGroup: boolean
+  name: string
+  createdAt: string
+}
+
+export interface ThreadMessage {
+  id: string
+  threadId: string
+  senderId: string
+  content: string
+  mediaUrl?: string
+  createdAt: string
+  senderUsername?: string
+}
+
+export interface CommunityMessage {
+  id: string
+  communityId: string
+  senderId: string
+  content: string
+  mediaUrl?: string
+  createdAt: string
+  senderUsername?: string
 } 

@@ -28,7 +28,7 @@ export default function SnapComposer() {
     try {
       await createPost({
         content: content.trim(),
-        mediaUrl: undefined, // TODO: Add media upload functionality
+        mediaUrl: undefined, 
         parentPostId: undefined,
         isRetweet: false,
         retweetRefId: undefined
