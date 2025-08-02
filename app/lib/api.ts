@@ -282,4 +282,137 @@ class ApiService {
 
   async getCommunityMembers(communityId: string, limit = 50, offset = 0): Promise<any> {
     try {
-      const response = await this.request(`
+      const response = await this.request(`/communities/${communityId}/members?limit=${limit}&offset=${offset}`)
+      return response
+    } catch (error) {
+      console.error('Error fetching community members:', error)
+      throw error
+    }
+  }
+
+  async sendCommunityMessage(communityId: string, data: SendMessageRequest): Promise<any> {
+    try {
+      const response = await this.request(`/communities/${communityId}/messages`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+      return response
+    } catch (error) {
+      console.error('Error sending community message:', error)
+      throw error
+    }
+  }
+
+  async getCommunityMessages(communityId: string, limit = 50, offset = 0): Promise<any> {
+    try {
+      const response = await this.request(`/communities/${communityId}/messages?limit=${limit}&offset=${offset}`)
+      return response
+    } catch (error) {
+      console.error('Error fetching community messages:', error)
+      throw error
+    }
+  }
+
+  async searchUsers(query: string, limit: number = 10, offset: number = 0): Promise<SearchUsersResponse> {
+    const params = new URLSearchParams({
+      q: query,
+      limit: limit.toString(),
+      offset: offset.toString(),
+    })
+    return this.request<SearchUsersResponse>(`/users/search?${params}`)
+  }
+
+  async createPost(data: CreatePostRequest): Promise<CreatePostResponse> {
+    return this.request<CreatePostResponse>('/posts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getPersonalizedFeed(userId: string, limit: number = 10, offset: number = 0): Promise<FeedResponse> {
+    const params = new URLSearchParams({
+      userId,
+      limit: limit.toString(),
+      offset: offset.toString(),
+    })
+    return this.request<FeedResponse>(`/feed/foryou?${params}`)
+  }
+
+  async viewPost(postId: string, data: ViewPostRequest): Promise<ViewPostResponse> {
+    return this.request<ViewPostResponse>(`/posts/${postId}/view`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async likePost(postId: string, data: LikePostRequest): Promise<LikeResponse> {
+    return this.request<LikeResponse>(`/posts/${postId}/like`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async unlikePost(postId: string, data: LikePostRequest): Promise<UnlikeResponse> {
+    return this.request<UnlikeResponse>(`/posts/${postId}/like`, {
+      method: 'DELETE',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async commentOnPost(postId: string, data: CommentRequest): Promise<CommentResponse> {
+    return this.request<CommentResponse>(`/posts/${postId}/comment`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async retweetPost(postId: string, data: LikePostRequest): Promise<RetweetResponse> {
+    return this.request<RetweetResponse>(`/posts/${postId}/retweet`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async bookmarkPost(postId: string, data: LikePostRequest): Promise<BookmarkResponse> {
+    return this.request<BookmarkResponse>(`/posts/${postId}/bookmark`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async followUser(userId: string, data: FollowRequest): Promise<FollowResponse> {
+    return this.request<FollowResponse>(`/users/${userId}/follow`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async unfollowUser(userId: string, data: FollowRequest): Promise<UnfollowResponse> {
+    return this.request<UnfollowResponse>(`/users/${userId}/follow`, {
+      method: 'DELETE',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getNotifications(userId: string, limit: number = 10, offset: number = 0): Promise<NotificationsResponse> {
+    const params = new URLSearchParams({
+      userId,
+      limit: limit.toString(),
+      offset: offset.toString(),
+    })
+    return this.request<NotificationsResponse>(`/notifications?${params}`)
+  }
+
+  async getRecentActivity(userId: string, limit: number = 10, offset: number = 0): Promise<ActivityResponse> {
+    const params = new URLSearchParams({
+      userId,
+      limit: limit.toString(),
+      offset: offset.toString(),
+    })
+    return this.request<ActivityResponse>(`/activity/recent?${params}`)
+  }
+}
+
+export const apiService = new ApiService()
+
+export { ApiService }
