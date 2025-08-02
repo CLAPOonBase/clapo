@@ -398,6 +398,7 @@ interface ApiContextType {
   getCommunityMembers: (communityId: string) => Promise<void>
   sendCommunityMessage: (communityId: string, data: SendMessageRequest) => Promise<void>
   getCommunityMessages: (communityId: string) => Promise<void>
+  getUserCommunities: (userId: string) => Promise<void>
 }
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined)
@@ -714,6 +715,15 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const getUserCommunities = useCallback(async (userId: string) => {
+    try {
+      const response = await apiService.getUserCommunities(userId)
+      dispatch({ type: 'SET_COMMUNITIES', payload: response.communities })
+    } catch (error) {
+      console.error('Failed to fetch user communities:', error)
+    }
+  }, [])
+
   const value: ApiContextType = {
     state,
     dispatch,
@@ -741,6 +751,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     getCommunityMembers,
     sendCommunityMessage,
     getCommunityMessages,
+    getUserCommunities,
   }
 
   return (

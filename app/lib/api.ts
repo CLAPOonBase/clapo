@@ -145,18 +145,13 @@ class ApiService {
     }
   }
 
-  // Messaging APIs
   async createMessageThread(data: CreateMessageThreadRequest): Promise<any> {
     try {
-      console.log('🔧 API: Creating direct message thread with data:', data)
-      
-      // Use the direct-thread API with optional name
       const requestBody: any = {
         userId1: data.creatorId,
         userId2: data.targetUserId
       }
       
-      // Add name if provided
       if (data.name) {
         requestBody.name = data.name
       }
@@ -166,7 +161,6 @@ class ApiService {
         body: JSON.stringify(requestBody),
       })
       
-      console.log('🔧 API: Response data:', response)
       return response
     } catch (error) {
       console.error('Error creating message thread:', error);
@@ -235,192 +229,57 @@ class ApiService {
     }
   }
 
-  // Communities APIs
   async createCommunity(data: CreateCommunityRequest): Promise<any> {
     try {
-      const response = await fetch(`${API_BASE_URL}/communities`, {
+      const response = await this.request('/communities', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
-      });
-      return await response.json();
+      })
+      return response
     } catch (error) {
-      console.error('Error creating community:', error);
-      throw error;
+      console.error('Error creating community:', error)
+      throw error
     }
   }
 
   async getCommunities(searchQuery?: string, limit = 20, offset = 0): Promise<any> {
     try {
-      const queryParams = new URLSearchParams();
-      if (searchQuery) queryParams.append('searchQuery', searchQuery);
-      queryParams.append('limit', limit.toString());
-      queryParams.append('offset', offset.toString());
+      const queryParams = new URLSearchParams()
+      if (searchQuery) queryParams.append('searchQuery', searchQuery)
+      queryParams.append('limit', limit.toString())
+      queryParams.append('offset', offset.toString())
       
-      const response = await fetch(`${API_BASE_URL}/communities?${queryParams}`);
-      return await response.json();
+      const response = await this.request(`/communities?${queryParams}`)
+      return response
     } catch (error) {
-      console.error('Error fetching communities:', error);
-      throw error;
+      console.error('Error fetching communities:', error)
+      throw error
+    }
+  }
+
+  async getUserCommunities(userId: string): Promise<any> {
+    try {
+      const response = await this.request(`/users/${userId}/communities`)
+      return response
+    } catch (error) {
+      console.error('Error fetching user communities:', error)
+      throw error
     }
   }
 
   async joinCommunity(communityId: string, data: JoinCommunityRequest): Promise<any> {
     try {
-      const response = await fetch(`${API_BASE_URL}/communities/${communityId}/join`, {
+      const response = await this.request(`/communities/${communityId}/join`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(data),
-      });
-      return await response.json();
+      })
+      return response
     } catch (error) {
-      console.error('Error joining community:', error);
-      throw error;
+      console.error('Error joining community:', error)
+      throw error
     }
   }
 
   async getCommunityMembers(communityId: string, limit = 50, offset = 0): Promise<any> {
     try {
-      const response = await fetch(`${API_BASE_URL}/communities/${communityId}/members?limit=${limit}&offset=${offset}`);
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching community members:', error);
-      throw error;
-    }
-  }
-
-  async sendCommunityMessage(communityId: string, data: SendMessageRequest): Promise<any> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/communities/${communityId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      return await response.json();
-    } catch (error) {
-      console.error('Error sending community message:', error);
-      throw error;
-    }
-  }
-
-  async getCommunityMessages(communityId: string, limit = 50, offset = 0): Promise<any> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/communities/${communityId}/messages?limit=${limit}&offset=${offset}`);
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching community messages:', error);
-      throw error;
-    }
-  }
-
-  async searchUsers(query: string, limit: number = 10, offset: number = 0): Promise<SearchUsersResponse> {
-    const params = new URLSearchParams({
-      q: query,
-      limit: limit.toString(),
-      offset: offset.toString(),
-    })
-    return this.request<SearchUsersResponse>(`/users/search?${params}`)
-  }
-
-  async createPost(data: CreatePostRequest): Promise<CreatePostResponse> {
-    return this.request<CreatePostResponse>('/posts', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async getPersonalizedFeed(userId: string, limit: number = 10, offset: number = 0): Promise<FeedResponse> {
-    const params = new URLSearchParams({
-      userId,
-      limit: limit.toString(),
-      offset: offset.toString(),
-    })
-    return this.request<FeedResponse>(`/feed/foryou?${params}`)
-  }
-
-  async viewPost(postId: string, data: ViewPostRequest): Promise<ViewPostResponse> {
-    return this.request<ViewPostResponse>(`/posts/${postId}/view`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async likePost(postId: string, data: LikePostRequest): Promise<LikeResponse> {
-    return this.request<LikeResponse>(`/posts/${postId}/like`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async unlikePost(postId: string, data: LikePostRequest): Promise<UnlikeResponse> {
-    return this.request<UnlikeResponse>(`/posts/${postId}/like`, {
-      method: 'DELETE',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async commentOnPost(postId: string, data: CommentRequest): Promise<CommentResponse> {
-    return this.request<CommentResponse>(`/posts/${postId}/comment`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async retweetPost(postId: string, data: LikePostRequest): Promise<RetweetResponse> {
-    return this.request<RetweetResponse>(`/posts/${postId}/retweet`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async bookmarkPost(postId: string, data: LikePostRequest): Promise<BookmarkResponse> {
-    return this.request<BookmarkResponse>(`/posts/${postId}/bookmark`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async followUser(userId: string, data: FollowRequest): Promise<FollowResponse> {
-    return this.request<FollowResponse>(`/users/${userId}/follow`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async unfollowUser(userId: string, data: FollowRequest): Promise<UnfollowResponse> {
-    return this.request<UnfollowResponse>(`/users/${userId}/follow`, {
-      method: 'DELETE',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async getNotifications(userId: string, limit: number = 10, offset: number = 0): Promise<NotificationsResponse> {
-    const params = new URLSearchParams({
-      userId,
-      limit: limit.toString(),
-      offset: offset.toString(),
-    })
-    return this.request<NotificationsResponse>(`/notifications?${params}`)
-  }
-
-  async getRecentActivity(userId: string, limit: number = 10, offset: number = 0): Promise<ActivityResponse> {
-    const params = new URLSearchParams({
-      userId,
-      limit: limit.toString(),
-      offset: offset.toString(),
-    })
-    return this.request<ActivityResponse>(`/activity/recent?${params}`)
-  }
-}
-
-// Create and export a singleton instance
-export const apiService = new ApiService()
-
-// Export the class for testing or custom instances
-export { ApiService } 
+      const response = await this.request(`

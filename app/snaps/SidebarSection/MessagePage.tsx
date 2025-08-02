@@ -2,17 +2,27 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useApi } from '../../Context/ApiProvider'
+import { apiService } from '../../lib/api'
 import { MessageCircle, Users, Plus, Send, Search, UserPlus } from 'lucide-react'
 
 export default function MessagePage() {
   const { data: session } = useSession()
-  const { state, getMessageThreads, getThreadMessages, sendMessage, getCommunities, joinCommunity, sendCommunityMessage, getCommunityMessages, createCommunity } = useApi()
+  const { 
+    state, 
+    getMessageThreads, 
+    getThreadMessages, 
+    sendMessage, 
+    getCommunities, 
+    joinCommunity, 
+    createCommunity
+  } = useApi()
   
   const [activeTab, setActiveTab] = useState<'dms' | 'communities'>('dms')
   const [dmSection, setDmSection] = useState<'threads' | 'search'>('threads')
   const [communitySection, setCommunitySection] = useState<'my' | 'join' | 'create'>('my')
-  const [selectedThread, setSelectedThread] = useState<string | null>(null)
   const [selectedCommunity, setSelectedCommunity] = useState<string | null>(null)
+  const [communityMessages, setCommunityMessages] = useState<any[]>([])
+  const [selectedThread, setSelectedThread] = useState<string | null>(null)
   const [messageContent, setMessageContent] = useState('')
   const [newCommunityName, setNewCommunityName] = useState('')
   const [newCommunityDescription, setNewCommunityDescription] = useState('')
@@ -25,16 +35,41 @@ export default function MessagePage() {
 
   useEffect(() => {
     if (session?.dbUser?.id) {
-      getMessageThreads(session.dbUser.id)
       getCommunities()
-      fetchAllUsers()
-    }
-    
-    // Reset when user logs out
-    if (!session?.dbUser?.id) {
-      setHasInitializedUsers(false)
     }
   }, [session?.dbUser?.id])
+
+  const handleCreateCommunity = async () => {
+    if (!session?.dbUser?.id || !newCommunityName.trim() || !newCommunityDescription.trim()) return
+
+    try {
+      await createCommunity({
+        name: newCommunityName.trim(),
+        description: newCommunityDescription.trim(),
+        creatorId: session.dbUser.id
+      })
+      
+      setShowCreateCommunityModal(false)
+      setNewCommunityName('')
+      setNewCommunityDescription('')
+      
+      getCommunities()
+    } catch (error) {
+      console.error('Failed to create community:', error)
+    }
+  }
+
+  const handleJoinCommunity = async (communityId: string) => {
+    if (!session?.dbUser?.id) return
+
+    try {
+      await joinCommunity(communityId, { userId: session.dbUser.id })
+      
+      getCommunities()
+    } catch (error) {
+      console.error('Failed to join community:', error)
+    }
+  }
 
   useEffect(() => {
     if (dmSection === 'search' && !hasInitializedUsers) {
@@ -55,7 +90,6 @@ export default function MessagePage() {
       if (data.users) {
         const filteredUsers = data.users.filter((user: any) => user.id !== session?.dbUser?.id)
         setAllUsers(filteredUsers)
-        // Also update search results if we're in search section
         if (dmSection === 'search') {
           setSearchResults(filteredUsers)
         }
@@ -93,10 +127,13 @@ export default function MessagePage() {
         content: messageContent.trim()
       })
     } else if (activeTab === 'communities' && selectedCommunity) {
-      await sendCommunityMessage(selectedCommunity, {
+      await apiService.sendCommunityMessage(selectedCommunity, {
         senderId: session.dbUser.id,
         content: messageContent.trim()
       })
+      
+      const response = await apiService.getCommunityMessages(selectedCommunity)
+      setCommunityMessages(response.messages || [])
     }
 
     setMessageContent('')
@@ -105,13 +142,7 @@ export default function MessagePage() {
   const handleStartChatWithUser = async (user: any) => {
     if (!session?.dbUser?.id) return
 
-    console.log('🚀 Starting chat with user:', user.username)
-    console.log('👤 Current user ID:', session.dbUser.id)
-    console.log('👥 Target user ID:', user.id)
-
     try {
-      // Create a direct message thread without a custom name
-      // We'll handle the display logic in the UI
       const response = await fetch('https://server.blazeswap.io/api/snaps/messages/direct-thread', {
         method: 'POST',
         headers: {
@@ -125,45 +156,21 @@ export default function MessagePage() {
       
       const threadResponse = await response.json()
       
-      console.log('📝 Thread Response:', threadResponse)
-      console.log('📝 Thread Response Type:', typeof threadResponse)
-      console.log('📝 Thread Response Keys:', Object.keys(threadResponse || {}))
-      
-      // Handle different possible response structures
       const thread = threadResponse?.thread || threadResponse?.data?.thread || threadResponse?.data || threadResponse
       
       if (thread && thread.id) {
-        console.log('✅ Thread created successfully!')
-        console.log('✅ Thread ID:', thread.id)
-        console.log('✅ Thread Name:', thread.name)
-
-        // Select the new thread
         setSelectedThread(thread.id)
         await getThreadMessages(thread.id)
         
-        // Refresh threads list
         await getMessageThreads(session.dbUser.id)
         
-        // Switch to threads section
         setDmSection('threads')
-        
-        console.log('✅ Chat setup complete!')
       } else {
         console.error('❌ Thread creation failed - no thread in response')
-        console.error('❌ Full response:', threadResponse)
-        console.error('❌ Extracted thread:', thread)
       }
     } catch (error) {
       console.error('❌ Failed to start chat with user:', error)
     }
-  }
-
-  const handleJoinCommunity = async (communityId: string) => {
-    if (!session?.dbUser?.id) return
-
-    await joinCommunity(communityId, {
-      userId: session.dbUser.id
-    })
   }
 
   const handleSelectThread = async (threadId: string) => {
@@ -173,12 +180,32 @@ export default function MessagePage() {
 
   const handleSelectCommunity = async (communityId: string) => {
     setSelectedCommunity(communityId)
-    await getCommunityMessages(communityId)
+    try {
+      const response = await apiService.getCommunityMessages(communityId)
+      setCommunityMessages(response.messages || [])
+    } catch (error) {
+      console.error('Failed to fetch community messages:', error)
+      setCommunityMessages([])
+    }
+  }
+
+  const handleSendCommunityMessage = async () => {
+    if (!selectedCommunity || !session?.dbUser?.id || !messageContent.trim()) return
+
+    try {
+      await apiService.sendCommunityMessage(selectedCommunity, {
+        senderId: session.dbUser.id,
+        content: messageContent.trim()
+      })
+      setMessageContent('')
+    } catch (error) {
+      console.error('Failed to send community message:', error)
+    }
   }
 
   const currentMessages = activeTab === 'dms' 
     ? state.threadMessages[selectedThread || ''] || []
-    : state.communityMessages[selectedCommunity || ''] || []
+    : communityMessages
 
   const currentThread = state.messageThreads?.find(t => t.id === selectedThread)
   const currentCommunity = state.communities?.find(c => c.id === selectedCommunity)
@@ -290,51 +317,20 @@ export default function MessagePage() {
               <div className="p-4">
                 <div className="space-y-2">
                   {state.messageThreads?.map((thread) => {
-                    // For direct messages, show the other participant's name
                     const currentUserId = session?.dbUser?.id
                     let displayName = thread.name || 'Direct Message'
                     
-                    console.log('🔍 Thread Debug:', {
-                      threadId: thread.id,
-                      threadName: thread.name,
-                      creatorId: (thread as any).creator_id,
-                      currentUserId,
-                      isGroup: (thread as any).is_group,
-                      allUsersCount: allUsers.length
-                    })
-                    
-                    // If this is a direct message, determine the other participant
-                    if (!(thread as any).is_group && currentUserId) {
-                      // If current user is the creator, the other participant is not the creator
-                      // If current user is not the creator, the other participant is the creator
-                      const otherParticipantId = (thread as any).creator_id === currentUserId 
-                        ? 'unknown' // We need to find the other participant
-                        : (thread as any).creator_id
+                    if (!(thread as any).is_group && currentUserId && (thread as any).participants) {
+                      const otherParticipant = (thread as any).participants.find(
+                        (participant: any) => participant.user_id !== currentUserId
+                      )
                       
-                      console.log('🔍 Other Participant ID:', otherParticipantId)
-                      
-                      if (otherParticipantId !== 'unknown') {
-                        // Try to get the other participant's info from the users list
-                        const otherUser = allUsers.find(user => user.id === otherParticipantId)
-                        console.log('🔍 Found Other User:', otherUser)
-                        if (otherUser) {
-                          displayName = otherUser.username || otherUser.name || 'User'
-                        } else {
-                          // Fallback to thread name if we can't find the user
-                          displayName = thread.name || 'Direct Message'
-                        }
+                      if (otherParticipant) {
+                        displayName = otherParticipant.username || 'User'
                       } else {
-                        // For threads where current user is creator, try to get info from thread name
-                        // The thread name might contain the other participant's username
-                        if (thread.name && thread.name !== 'Direct Message') {
-                          displayName = thread.name
-                        } else {
-                          displayName = 'Direct Message'
-                        }
+                        displayName = thread.name || 'Direct Message'
                       }
                     }
-                    
-                    console.log('🔍 Final Display Name:', displayName)
                     
                     return (
                       <div
@@ -424,6 +420,12 @@ export default function MessagePage() {
                       >
                         <div className="font-medium">{community.name}</div>
                         <div className="text-sm opacity-75">{community.description}</div>
+                        <div className="text-xs opacity-50">
+                          Created by {(community as any).creator_username || 'Unknown'}
+                        </div>
+                        <div className="text-xs opacity-50 mb-2">
+                          Members: {(community as any).member_count || 0}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -436,12 +438,12 @@ export default function MessagePage() {
                       >
                         <div className="font-medium">{community.name}</div>
                         <div className="text-sm opacity-75">{community.description}</div>
+                        <div className="text-xs opacity-50 mb-2">
+                          {community.member_count || 0} members
+                        </div>
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleJoinCommunity(community.id)
-                          }}
-                          className="mt-2 px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                          onClick={() => handleJoinCommunity(community.id)}
+                          className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
                         >
                           Join
                         </button>
@@ -483,18 +485,20 @@ export default function MessagePage() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {currentMessages?.map((message) => (
-            <div key={message.id} className="flex items-start space-x-3">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-bold">
-                  {message.senderUsername?.charAt(0)?.toUpperCase() || 'U'}
-                </span>
-              </div>
+          {currentMessages?.map((message: any) => (
+            <div key={message.id} className="flex gap-3 p-3 hover:bg-dark-700 rounded-lg">
+              <img 
+                src={activeTab === 'dms' ? (message.sender_avatar || 'https://robohash.org/default.png') : (message.sender_avatar || 'https://robohash.org/default.png')} 
+                alt="Avatar" 
+                className="w-8 h-8 rounded-full"
+              />
               <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-1">
-                  <span className="font-medium text-white">{message.senderUsername}</span>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-white">
+                    {activeTab === 'dms' ? (message.sender_username || 'User') : (message.sender_username || 'User')}
+                  </span>
                   <span className="text-xs text-gray-400">
-                    {new Date(message.createdAt).toLocaleTimeString()}
+                    {new Date(activeTab === 'dms' ? message.created_at : message.created_at).toLocaleString()}
                   </span>
                 </div>
                 <p className="text-gray-300">{message.content}</p>
@@ -550,18 +554,7 @@ export default function MessagePage() {
               
               <div className="flex space-x-3">
                 <button
-                  onClick={() => {
-                    if (newCommunityName.trim() && newCommunityDescription.trim() && session?.dbUser?.id) {
-                      createCommunity({
-                        name: newCommunityName.trim(),
-                        description: newCommunityDescription.trim(),
-                        creatorId: session.dbUser.id
-                      })
-                      setNewCommunityName('')
-                      setNewCommunityDescription('')
-                      setShowCreateCommunityModal(false)
-                    }
-                  }}
+                  onClick={handleCreateCommunity}
                   disabled={!newCommunityName.trim() || !newCommunityDescription.trim()}
                   className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
