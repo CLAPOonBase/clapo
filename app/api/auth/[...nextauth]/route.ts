@@ -101,7 +101,7 @@ export const authOptions = {
       
       return true;
     },
-    async jwt({ token, user, account, trigger, session }) {
+    async jwt({ token, user, account, trigger, session }: { token: any, user?: any, account?: any, trigger?: any, session?: any }) {
       if (account && user) {
         token.dbUserId = user.dbUserId;
         token.dbUser = user.dbUser;
@@ -122,7 +122,7 @@ export const authOptions = {
       
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: { session: any, token: any }) {
       if (token?.dbUserId) {
         session.dbUserId = token.dbUserId;
         session.dbUser = token.dbUser;

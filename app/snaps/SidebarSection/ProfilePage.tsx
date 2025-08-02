@@ -23,7 +23,7 @@ export function ProfilePage({ user, posts }: Props) {
         bio: session.dbUser.bio || "No bio available",
         avatar: session.dbUser.avatarUrl || "https://robohash.org/default.png",
         cover: "/default-cover.jpg",
-        holdings: session.dbUser.holdings ?? 0,
+        holdings: 0,
       }
     : user
     ? {
@@ -32,7 +32,7 @@ export function ProfilePage({ user, posts }: Props) {
         bio: user.bio || "No bio available",
         avatar: user.avatar || "https://robohash.org/default.png",
         cover: "/default-cover.jpg",
-        holdings: user.holdings ?? 0,
+        holdings: 0,
       }
     : {
         name: "User",

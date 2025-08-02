@@ -22,7 +22,7 @@ export default function SnapComposer() {
   }
 
   const handleSubmit = async () => {
-    if (!content.trim() || !session?.dbUserId) return;
+    if (!content.trim() || !session?.dbUser?.id) return;
 
     setIsSubmitting(true);
     try {
@@ -110,9 +110,9 @@ export default function SnapComposer() {
             </div>
             <button
               onClick={handleSubmit}
-              disabled={!content.trim() || isSubmitting || !session?.dbUserId}
+              disabled={!content.trim() || isSubmitting || !session?.dbUser?.id}
               className={`flex items-center gap-2 px-6 text-white mx-4 py-2 rounded-full font-medium transition-all duration-200 ${
-                content.trim() && !isSubmitting && session?.dbUserId
+                content.trim() && !isSubmitting && session?.dbUser?.id
                   ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
                   : 'bg-gray-700 text-gray-400 cursor-not-allowed'
               }`}
