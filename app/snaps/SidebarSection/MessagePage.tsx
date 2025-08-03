@@ -3,15 +3,14 @@ import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useApi } from '../../Context/ApiProvider'
 import { apiService } from '../../lib/api'
-import { MessageCircle, Users, Plus, Send, Search, UserPlus, ChevronDown } from 'lucide-react'
-import { useSocket } from '../../hooks/useSocket'
-import { useMessageListener } from '../../hooks/useMessageListener'
-import { sendDmMessage, sendCommunityMessage } from '../../utils/socketMessages'
+import { MessageCircle, Users, Plus, Send, Search, UserPlus, ChevronDown, RefreshCw } from 'lucide-react'
+import { io } from 'socket.io-client'
 
 export default function MessagePage() {
   const { data: session } = useSession()
   const { 
-    state, 
+    state,
+    dispatch,
     getMessageThreads, 
     getThreadMessages, 
     sendMessage, 
@@ -19,11 +18,6 @@ export default function MessagePage() {
     joinCommunity, 
     createCommunity
   } = useApi()
-  
-  const socket = useSocket()
-  
-  const [localDmMessages, setLocalDmMessages] = useState<any[]>([])
-  const [localCommunityMessages, setLocalCommunityMessages] = useState<any[]>([])
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
@@ -37,7 +31,7 @@ export default function MessagePage() {
   const [communityMessages, setCommunityMessages] = useState<any[]>([])
   const [selectedThread, setSelectedThread] = useState<string | null>(null)
   
-  const { dmMessages, communityMessages: socketCommunityMessages, setDmMessages, setCommunityMessages: setSocketCommunityMessages } = useMessageListener(selectedThread, selectedCommunity)
+
   const [messageContent, setMessageContent] = useState('')
   const [newCommunityName, setNewCommunityName] = useState('')
   const [newCommunityDescription, setNewCommunityDescription] = useState('')
@@ -47,6 +41,95 @@ export default function MessagePage() {
   const [loadingUsers, setLoadingUsers] = useState(false)
   const [showCreateCommunityModal, setShowCreateCommunityModal] = useState(false)
   const [hasInitializedUsers, setHasInitializedUsers] = useState(false)
+  
+  const [socket, setSocket] = useState<any>(null)
+  const [isConnected, setIsConnected] = useState(false)
+
+  useEffect(() => {
+    if (session?.dbUser?.id) {
+      const newSocket = io('https://server.blazeswap.io', {
+        transports: ['websocket', 'polling'],
+        timeout: 10000,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
+      })
+      
+      newSocket.on('connect', () => {
+        console.log('✅ Connected to socket server')
+        setIsConnected(true)
+      })
+      
+      newSocket.on('disconnect', (reason) => {
+        console.log('❌ Disconnected from socket server:', reason)
+        setIsConnected(false)
+      })
+      
+      newSocket.on('connect_error', (error) => {
+        console.error('❌ Socket connection error:', error)
+        setIsConnected(false)
+      })
+      
+      newSocket.on('new_dm_message', async (data) => {
+        console.log('📨 New DM received in MessagePage:', data)
+        
+        const message = data.message || data
+        const isOwnMessage = message.sender_id === session.dbUser.id || data.senderId === session.dbUser.id
+        
+        console.log('🔍 Message filtering:', {
+          messageSenderId: message.sender_id,
+          dataSenderId: data.senderId,
+          currentUserId: session.dbUser.id,
+          isOwnMessage,
+          messageThreadId: message.thread_id,
+          dataThreadId: data.threadId,
+          selectedThread,
+          threadMatches: data.threadId === selectedThread || message.thread_id === selectedThread
+        })
+        
+        if (data.threadId === selectedThread || message.thread_id === selectedThread) {
+          console.log('✅ New message received for current thread')
+          console.log('📝 Message content:', message.content)
+          console.log('📝 Message sender:', message.sender_username || message.sender_id)
+          
+          try {
+            const response = await fetch(`https://server.blazeswap.io/api/snaps/message-threads/${selectedThread}/messages?limit=50&offset=0`)
+            const data = await response.json()
+            
+            if (data.messages && Array.isArray(data.messages)) {
+              console.log('📊 Refreshed messages count:', data.messages.length)
+              dispatch({ 
+                type: 'SET_THREAD_MESSAGES', 
+                payload: { threadId: selectedThread, messages: data.messages } 
+              })
+            }
+          } catch (error) {
+            console.error('❌ Failed to refresh messages:', error)
+          }
+        } else {
+          console.log('❌ Message filtered out - not for current thread')
+        }
+      })
+      
+
+      newSocket.on('new_community_message', (data) => {
+        console.log('📨 New community message received:', data)
+        
+        const message = data.message || data
+        const isOwnMessage = message.sender_id === session.dbUser.id || data.senderId === session.dbUser.id
+        
+        if (!isOwnMessage && (data.communityId === selectedCommunity || message.community_id === selectedCommunity)) {
+          setCommunityMessages(prev => [...prev, message])
+        }
+      })
+      
+      setSocket(newSocket)
+      
+      return () => {
+        newSocket.disconnect()
+      }
+    }
+  }, [session?.dbUser?.id, selectedThread, selectedCommunity])
 
   useEffect(() => {
     if (session?.dbUser?.id) {
@@ -55,74 +138,7 @@ export default function MessagePage() {
     }
   }, [session?.dbUser?.id, getCommunities, getMessageThreads])
 
-  useEffect(() => {
-    if (socket) {
-      socket.on('new_dm_message', (data) => {
-        console.log('💬 New DM received in MessagePage:', data);
-        console.log('Message data:', data.message);
-        console.log('Current thread:', selectedThread);
-        
-        const message = data.message || data;
-        const threadId = message.threadId || message.thread_id || message.threadId;
-        
-        console.log('Message thread ID:', threadId);
-        console.log('Selected thread:', selectedThread);
-        console.log('Threads match:', threadId === selectedThread);
-        
-        console.log('🔍 Thread comparison:', { threadId, selectedThread, match: threadId === selectedThread });
-        
-        console.log('🔍 Thread comparison:', { threadId, selectedThread, match: threadId === selectedThread });
-        
-        // Always add message for debugging
-        console.log('✅ Adding DM message to local state (debug mode)');
-        setLocalDmMessages(prev => {
-          console.log('Previous local messages:', prev.length);
-          const newMessages = [...prev, message];
-          console.log('New local messages count:', newMessages.length);
-          return newMessages;
-        });
-      });
 
-      socket.on('new_community_message', (data) => {
-        console.log('📨 New community message received in MessagePage:', data);
-        console.log('Message data:', data.message);
-        console.log('Current community:', selectedCommunity);
-        
-        const message = data.message || data;
-        const communityId = message.communityId || message.community_id || message.communityId;
-        
-        console.log('Message community ID:', communityId);
-        console.log('Selected community:', selectedCommunity);
-        console.log('Communities match:', communityId === selectedCommunity);
-        
-        if (communityId === selectedCommunity || !selectedCommunity) {
-          console.log('✅ Adding community message to local state');
-          setLocalCommunityMessages(prev => [...prev, message]);
-        } else {
-          console.log('❌ Community ID mismatch, not adding message');
-        }
-      });
-
-      socket.onAny((eventName, ...args) => {
-        console.log('🎧 Socket event received:', eventName, args);
-      });
-
-      return () => {
-        console.log('🎧 Cleaning up socket listeners...');
-        socket.off('new_dm_message');
-        socket.off('new_community_message');
-        socket.offAny();
-      };
-    }
-  }, [socket, selectedThread, selectedCommunity])
-
-  useEffect(() => {
-    console.log('🔄 localDmMessages changed:', localDmMessages.length, localDmMessages);
-  }, [localDmMessages])
-
-  useEffect(() => {
-    console.log('🔄 localCommunityMessages changed:', localCommunityMessages.length, localCommunityMessages);
-  }, [localCommunityMessages])
 
   const handleCreateCommunity = async () => {
     if (!session?.dbUser?.id || !newCommunityName.trim() || !newCommunityDescription.trim()) return
@@ -209,45 +225,77 @@ export default function MessagePage() {
     const messageText = messageContent.trim()
     setMessageContent('')
 
-    if (activeTab === 'dms' && selectedThread) {
-      if (socket) {
-        const tempMessage = sendDmMessage(
-          socket, 
-          selectedThread, 
-          messageText, 
-          session.dbUser.id,
-          session.dbUser.username,
-          session.dbUser.avatarUrl
-        )
-        console.log('🚀 Adding local DM message:', tempMessage)
-        setLocalDmMessages(prev => [...prev, tempMessage])
-      } else {
-        await sendMessage(selectedThread, {
-          senderId: session.dbUser.id,
-          content: messageText
-        })
+    console.log('🔍 Sending message:', {
+      currentUserId: session.dbUser.id,
+      selectedThread,
+      selectedCommunity,
+      activeTab,
+      socketConnected: !!socket
+    })
+
+    if (activeTab === 'dms' && selectedThread && socket) {
+      // Add message to local state immediately for instant feedback
+      const tempMessage = {
+        id: `temp-${Date.now()}`,
+        content: messageText,
+        sender_id: session.dbUser.id,
+        created_at: new Date().toISOString(),
+        sender_username: session.dbUser.username,
+        sender_avatar: session.dbUser.avatarUrl
       }
+      
+      // Update local state immediately
+      const currentMessages = state.threadMessages[selectedThread] || []
+      const updatedMessages = [...currentMessages, tempMessage]
+      // Sort messages by creation time to ensure proper order
+      const sortedMessages = updatedMessages.sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      )
+      dispatch({ 
+        type: 'SET_THREAD_MESSAGES', 
+        payload: { threadId: selectedThread, messages: sortedMessages } 
+      })
+
+      // Send via socket like the test chat
+      socket.emit('send_dm_message', { 
+        userId: session.dbUser.id, 
+        content: messageText, 
+        threadId: selectedThread 
+      }, (response: any) => {
+        if (response.success) {
+          console.log('✅ Message sent successfully via socket')
+          // Refresh messages from server to get the real message with proper ID
+          getThreadMessages(selectedThread)
+        } else {
+          console.error('❌ Failed to send message via socket:', response.message)
+          // Remove temp message and fallback to API
+          dispatch({ 
+            type: 'SET_THREAD_MESSAGES', 
+            payload: { threadId: selectedThread, messages: currentMessages } 
+          })
+          sendMessage(selectedThread, {
+            senderId: session.dbUser.id,
+            content: messageText
+          })
+        }
+      })
+    } else if (activeTab === 'dms' && selectedThread) {
+      // Fallback to API if no socket
+      await sendMessage(selectedThread, {
+        senderId: session.dbUser.id,
+        content: messageText
+      })
+      // Refresh messages after sending
+      await getThreadMessages(selectedThread)
     } else if (activeTab === 'communities' && selectedCommunity) {
-      if (socket) {
-        const tempMessage = sendCommunityMessage(
-          socket, 
-          selectedCommunity, 
-          messageText, 
-          session.dbUser.id,
-          session.dbUser.username,
-          session.dbUser.avatarUrl
-        )
-        console.log('🚀 Adding local community message:', tempMessage)
-        setLocalCommunityMessages(prev => [...prev, tempMessage])
-      } else {
-        await apiService.sendCommunityMessage(selectedCommunity, {
-          senderId: session.dbUser.id,
-          content: messageText
-        })
-        
-        const response = await apiService.getCommunityMessages(selectedCommunity)
-        setCommunityMessages(response.messages || [])
-      }
+      // Send community message via API
+      await apiService.sendCommunityMessage(selectedCommunity, {
+        senderId: session.dbUser.id,
+        content: messageText
+      })
+      
+      const response = await apiService.getCommunityMessages(selectedCommunity)
+      setCommunityMessages(response.messages || [])
     }
   }
 
@@ -315,51 +363,42 @@ export default function MessagePage() {
     }
   }
 
-  const apiMessages = activeTab === 'dms' 
+  const currentMessages = activeTab === 'dms' 
     ? state.threadMessages[selectedThread || ''] || []
     : communityMessages
-
-  const socketMessages = activeTab === 'dms' 
-    ? dmMessages.filter(msg => msg.threadId === selectedThread)
-    : socketCommunityMessages.filter(msg => msg.communityId === selectedCommunity)
-
-  const localMessages = activeTab === 'dms' 
-    ? localDmMessages.filter(msg => msg.threadId === selectedThread)
-    : localCommunityMessages.filter(msg => msg.communityId === selectedCommunity)
-
-  const currentMessages = [...apiMessages, ...socketMessages, ...localMessages].sort((a, b) => 
-    new Date(a.created_at || a.createdAt).getTime() - new Date(b.created_at || b.createdAt).getTime()
-  )
-
-  console.log('🔍 Message Debug:', {
-    apiMessagesCount: apiMessages.length,
-    socketMessagesCount: socketMessages.length,
-    localMessagesCount: localMessages.length,
-    totalMessages: currentMessages.length,
-    selectedThread,
-    selectedCommunity,
-    activeTab
-  })
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     setNewMessageCount(0)
   }
 
+  
   useEffect(() => {
     if (messagesContainerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
       const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
       
-      if (isNearBottom) {
-        scrollToBottom()
+              if (isNearBottom) {
+          setTimeout(() => {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+          }, 100)
+        } else {
+          setNewMessageCount(prev => prev + 1)
+        }
       } else {
-        setNewMessageCount(prev => prev + 1)
+        setTimeout(() => {
+          messagesContainerRef.current?.scrollTo(0, messagesContainerRef.current.scrollHeight)
+        }, 100)
       }
-    } else {
-      scrollToBottom()
+        }, [currentMessages])
+
+    useEffect(() => {
+    if (selectedThread && messagesContainerRef.current) {
+      setTimeout(() => {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+      }, 200)
     }
-  }, [currentMessages])
+  }, [selectedThread])
 
   const handleScroll = () => {
     if (messagesContainerRef.current) {
@@ -388,8 +427,8 @@ export default function MessagePage() {
             <h2 className="text-xl font-bold text-white">Messages</h2>
             <div className="flex items-center gap-2">
               {/* Socket connection status */}
-              <div className={`w-2 h-2 rounded-full ${socket?.connected ? 'bg-green-500' : 'bg-red-500'}`} 
-                   title={socket?.connected ? 'Connected' : 'Disconnected'} />
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} 
+                   title={isConnected ? 'Connected' : 'Disconnected'} />
               <button className="text-blue-400 hover:text-blue-300">
                 <Plus className="w-5 h-5" />
               </button>
@@ -670,7 +709,7 @@ export default function MessagePage() {
           onScroll={handleScroll}
           className="flex-1 overflow-y-auto p-4 space-y-4 relative"
         >
-                    {currentMessages?.map((message: any) => (
+                    {currentMessages?.slice().reverse().map((message: any) => (
             <div key={message.id} className="flex gap-3 p-3 hover:bg-dark-700 rounded-lg">
               <img 
                 src={activeTab === 'dms' ? (message.sender_avatar || 'https://robohash.org/default.png') : (message.sender_avatar || 'https://robohash.org/default.png')} 
@@ -727,23 +766,18 @@ export default function MessagePage() {
               <Send className="w-4 h-4" />
             </button>
             <button
-              onClick={() => {
-                const testMessage = {
-                  id: `test-${Date.now()}`,
-                  content: 'Test message from other user',
-                  senderId: 'other-user',
-                  createdAt: new Date().toISOString(),
-                  threadId: selectedThread,
-                  sender_username: 'Test User',
-                  sender_avatar: 'https://robohash.org/test.png'
+              onClick={async () => {
+                if (activeTab === 'dms' && selectedThread) {
+                  await getThreadMessages(selectedThread)
+                } else if (activeTab === 'communities' && selectedCommunity) {
+                  const response = await apiService.getCommunityMessages(selectedCommunity)
+                  setCommunityMessages(response.messages || [])
                 }
-                console.log('🧪 Adding test message:', testMessage)
-                setLocalDmMessages(prev => [...prev, testMessage])
               }}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-              title="Add test message"
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+              title="Refresh messages"
             >
-              Test
+              <RefreshCw className="w-4 h-4" />
             </button>
           </div>
         </div>
