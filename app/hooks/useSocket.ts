@@ -5,7 +5,7 @@ export const useSocket = () => {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    socketRef.current = io('http://localhost:8080');
+    socketRef.current = io('https://server.blazeswap.io');
 
     socketRef.current.on('connect', () => {
       console.log('✅ Connected to WebSocket');

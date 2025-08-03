@@ -21,7 +21,6 @@ export default function MessagePage() {
   } = useApi()
   
   const socket = useSocket()
-  const { dmMessages, communityMessages: socketCommunityMessages } = useMessageListener()
   
   const [localDmMessages, setLocalDmMessages] = useState<any[]>([])
   const [localCommunityMessages, setLocalCommunityMessages] = useState<any[]>([])
@@ -37,6 +36,8 @@ export default function MessagePage() {
   const [selectedCommunity, setSelectedCommunity] = useState<string | null>(null)
   const [communityMessages, setCommunityMessages] = useState<any[]>([])
   const [selectedThread, setSelectedThread] = useState<string | null>(null)
+  
+  const { dmMessages, communityMessages: socketCommunityMessages, setDmMessages, setCommunityMessages: setSocketCommunityMessages } = useMessageListener(selectedThread, selectedCommunity)
   const [messageContent, setMessageContent] = useState('')
   const [newCommunityName, setNewCommunityName] = useState('')
   const [newCommunityDescription, setNewCommunityDescription] = useState('')
@@ -53,6 +54,33 @@ export default function MessagePage() {
       getMessageThreads(session.dbUser.id)
     }
   }, [session?.dbUser?.id, getCommunities, getMessageThreads])
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('new_dm_message', (data) => {
+        console.log('💬 New DM received in MessagePage:', data.message);
+        console.log('Current thread:', selectedThread, 'Message thread:', data.message.threadId);
+        if (data.message.threadId === selectedThread) {
+          console.log('✅ Adding DM message to local state');
+          setLocalDmMessages(prev => [...prev, data.message]);
+        }
+      });
+
+      socket.on('new_community_message', (data) => {
+        console.log('📨 New community message received in MessagePage:', data.message);
+        console.log('Current community:', selectedCommunity, 'Message community:', data.message.communityId);
+        if (data.message.communityId === selectedCommunity) {
+          console.log('✅ Adding community message to local state');
+          setLocalCommunityMessages(prev => [...prev, data.message]);
+        }
+      });
+
+      return () => {
+        socket.off('new_dm_message');
+        socket.off('new_community_message');
+      };
+    }
+  }, [socket, selectedThread, selectedCommunity])
 
   const handleCreateCommunity = async () => {
     if (!session?.dbUser?.id || !newCommunityName.trim() || !newCommunityDescription.trim()) return
@@ -218,12 +246,14 @@ export default function MessagePage() {
   const handleSelectThread = async (threadId: string) => {
     setSelectedThread(threadId)
     setLocalDmMessages([])
+    setDmMessages([])
     await getThreadMessages(threadId)
   }
 
   const handleSelectCommunity = async (communityId: string) => {
     setSelectedCommunity(communityId)
     setLocalCommunityMessages([])
+    setSocketCommunityMessages([])
     try {
       const response = await apiService.getCommunityMessages(communityId)
       setCommunityMessages(response.messages || [])
