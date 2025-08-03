@@ -112,14 +112,28 @@ export default function MessagePage() {
       })
       
 
-      newSocket.on('new_community_message', (data) => {
+      newSocket.on('new_community_message', async (data) => {
         console.log('📨 New community message received:', data)
         
         const message = data.message || data
         const isOwnMessage = message.sender_id === session.dbUser.id || data.senderId === session.dbUser.id
         
         if (!isOwnMessage && (data.communityId === selectedCommunity || message.community_id === selectedCommunity)) {
-          setCommunityMessages(prev => [...prev, message])
+          console.log('✅ New community message received for current community')
+          console.log('📝 Message content:', message.content)
+          console.log('📝 Message sender:', message.sender_username || message.sender_id)
+          
+          try {
+            const response = await fetch(`https://server.blazeswap.io/api/snaps/communities/${selectedCommunity}/messages?limit=50&offset=0`)
+            const data = await response.json()
+            
+            if (data.messages && Array.isArray(data.messages)) {
+              console.log('📊 Refreshed community messages count:', data.messages.length)
+              setCommunityMessages(data.messages)
+            }
+          } catch (error) {
+            console.error('❌ Failed to refresh community messages:', error)
+          }
         }
       })
       
@@ -234,7 +248,7 @@ export default function MessagePage() {
     })
 
     if (activeTab === 'dms' && selectedThread && socket) {
-      // Add message to local state immediately for instant feedback
+ 
       const tempMessage = {
         id: `temp-${Date.now()}`,
         content: messageText,
@@ -244,10 +258,10 @@ export default function MessagePage() {
         sender_avatar: session.dbUser.avatarUrl
       }
       
-      // Update local state immediately
+  
       const currentMessages = state.threadMessages[selectedThread] || []
       const updatedMessages = [...currentMessages, tempMessage]
-      // Sort messages by creation time to ensure proper order
+
       const sortedMessages = updatedMessages.sort((a, b) => 
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       )
@@ -264,11 +278,11 @@ export default function MessagePage() {
       }, (response: any) => {
         if (response.success) {
           console.log('✅ Message sent successfully via socket')
-          // Refresh messages from server to get the real message with proper ID
+      
           getThreadMessages(selectedThread)
         } else {
           console.error('❌ Failed to send message via socket:', response.message)
-          // Remove temp message and fallback to API
+
           dispatch({ 
             type: 'SET_THREAD_MESSAGES', 
             payload: { threadId: selectedThread, messages: currentMessages } 
@@ -280,20 +294,35 @@ export default function MessagePage() {
         }
       })
     } else if (activeTab === 'dms' && selectedThread) {
-      // Fallback to API if no socket
+
       await sendMessage(selectedThread, {
         senderId: session.dbUser.id,
         content: messageText
       })
-      // Refresh messages after sending
+  
       await getThreadMessages(selectedThread)
     } else if (activeTab === 'communities' && selectedCommunity) {
-      // Send community message via API
+   
+      const tempMessage = {
+        id: `temp-${Date.now()}`,
+        content: messageText,
+        sender_id: session.dbUser.id,
+        created_at: new Date().toISOString(),
+        sender_username: session.dbUser.username,
+        sender_avatar: session.dbUser.avatarUrl
+      }
+      
+
+      const updatedMessages = [...communityMessages, tempMessage]
+      setCommunityMessages(updatedMessages)
+
+
       await apiService.sendCommunityMessage(selectedCommunity, {
         senderId: session.dbUser.id,
         content: messageText
       })
       
+
       const response = await apiService.getCommunityMessages(selectedCommunity)
       setCommunityMessages(response.messages || [])
     }
@@ -367,6 +396,10 @@ export default function MessagePage() {
     ? state.threadMessages[selectedThread || ''] || []
     : communityMessages
 
+  const displayMessages = activeTab === 'dms' 
+    ? currentMessages?.slice().reverse()
+    : currentMessages
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     setNewMessageCount(0)
@@ -392,13 +425,13 @@ export default function MessagePage() {
       }
         }, [currentMessages])
 
-    useEffect(() => {
-    if (selectedThread && messagesContainerRef.current) {
-      setTimeout(() => {
-        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
-      }, 200)
-    }
-  }, [selectedThread])
+        useEffect(() => {
+      if ((selectedThread || selectedCommunity) && messagesContainerRef.current) {
+        setTimeout(() => {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+        }, 200)
+      }
+    }, [selectedThread, selectedCommunity])
 
   const handleScroll = () => {
     if (messagesContainerRef.current) {
@@ -419,14 +452,14 @@ export default function MessagePage() {
 
   return (
     <div className="bg-dark-800 rounded-md h-[600px] flex">
-      {/* Sidebar */}
+
       <div className="w-80 border-r border-gray-700 flex flex-col">
-        {/* Header */}
+
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white">Messages</h2>
             <div className="flex items-center gap-2">
-              {/* Socket connection status */}
+  
               <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} 
                    title={isConnected ? 'Connected' : 'Disconnected'} />
               <button className="text-blue-400 hover:text-blue-300">
@@ -709,7 +742,7 @@ export default function MessagePage() {
           onScroll={handleScroll}
           className="flex-1 overflow-y-auto p-4 space-y-4 relative"
         >
-                    {currentMessages?.slice().reverse().map((message: any) => (
+                    {displayMessages?.map((message: any) => (
             <div key={message.id} className="flex gap-3 p-3 hover:bg-dark-700 rounded-lg">
               <img 
                 src={activeTab === 'dms' ? (message.sender_avatar || 'https://robohash.org/default.png') : (message.sender_avatar || 'https://robohash.org/default.png')} 
