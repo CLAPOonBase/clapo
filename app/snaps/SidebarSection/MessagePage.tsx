@@ -9,7 +9,7 @@ import { io } from 'socket.io-client'
 export default function MessagePage() {
   const { data: session } = useSession()
   const { 
-    state,
+    state, 
     dispatch,
     getMessageThreads, 
     getThreadMessages, 
@@ -351,8 +351,8 @@ export default function MessagePage() {
             const apiResponse = await apiService.getCommunityMessages(selectedCommunity)
             setCommunityMessages(apiResponse.messages || [])
           }
-        })
-      } else if (activeTab === 'communities' && selectedCommunity) {
+      })
+    } else if (activeTab === 'communities' && selectedCommunity) {
         const tempMessage = {
           id: `temp-${Date.now()}`,
           content: messageText,
@@ -365,14 +365,14 @@ export default function MessagePage() {
         const updatedMessages = [...communityMessages, tempMessage]
         setCommunityMessages(updatedMessages)
 
-        await apiService.sendCommunityMessage(selectedCommunity, {
-          senderId: session.dbUser.id,
+      await apiService.sendCommunityMessage(selectedCommunity, {
+        senderId: session.dbUser.id,
           content: messageText
-        })
-        
-        const response = await apiService.getCommunityMessages(selectedCommunity)
-        setCommunityMessages(response.messages || [])
-      }
+      })
+      
+      const response = await apiService.getCommunityMessages(selectedCommunity)
+      setCommunityMessages(response.messages || [])
+    }
   }
 
   const handleStartChatWithUser = async (user: any) => {
@@ -509,9 +509,9 @@ export default function MessagePage() {
   
               <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} 
                    title={isConnected ? 'Connected' : 'Disconnected'} />
-              <button className="text-blue-400 hover:text-blue-300">
-                <Plus className="w-5 h-5" />
-              </button>
+            <button className="text-blue-400 hover:text-blue-300">
+              <Plus className="w-5 h-5" />
+            </button>
             </div>
           </div>
           
@@ -605,7 +605,7 @@ export default function MessagePage() {
           {activeTab === 'dms' ? (
             dmSection === 'threads' ? (
               <div className="p-4">
-                                <div className="space-y-2">
+                <div className="space-y-2">
                   {!state.messageThreads ? (
                     <div className="text-center py-8 text-gray-400">
                       Loading chats...
@@ -616,37 +616,37 @@ export default function MessagePage() {
                     </div>
                   ) : (
                     state.messageThreads?.map((thread) => {
-                      const currentUserId = session?.dbUser?.id
-                      let displayName = thread.name || 'Direct Message'
-                      
-                      if (!(thread as any).is_group && currentUserId && (thread as any).participants) {
-                        const otherParticipant = (thread as any).participants.find(
-                          (participant: any) => participant.user_id !== currentUserId
-                        )
-                        
-                        if (otherParticipant) {
-                          displayName = otherParticipant.username || 'User'
-                        } else {
-                          displayName = thread.name || 'Direct Message'
-                        }
-                      }
-                      
-                      return (
-                        <div
-                          key={thread.id}
-                          onClick={() => handleSelectThread(thread.id)}
-                          className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                            selectedThread === thread.id 
-                              ? 'bg-blue-600 text-white' 
-                              : 'bg-dark-700 text-gray-300 hover:bg-dark-600'
-                          }`}
-                        >
-                          <div className="font-medium">{displayName}</div>
-                          <div className="text-sm opacity-75">
-                            {(thread as any).is_group ? 'Group' : 'Direct Message'}
-                          </div>
-                        </div>
+                    const currentUserId = session?.dbUser?.id
+                    let displayName = thread.name || 'Direct Message'
+                    
+                    if (!(thread as any).is_group && currentUserId && (thread as any).participants) {
+                      const otherParticipant = (thread as any).participants.find(
+                        (participant: any) => participant.user_id !== currentUserId
                       )
+                      
+                      if (otherParticipant) {
+                        displayName = otherParticipant.username || 'User'
+                      } else {
+                        displayName = thread.name || 'Direct Message'
+                      }
+                    }
+                    
+                    return (
+                      <div
+                        key={thread.id}
+                        onClick={() => handleSelectThread(thread.id)}
+                        className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                          selectedThread === thread.id 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-dark-700 text-gray-300 hover:bg-dark-600'
+                        }`}
+                      >
+                        <div className="font-medium">{displayName}</div>
+                        <div className="text-sm opacity-75">
+                          {(thread as any).is_group ? 'Group' : 'Direct Message'}
+                        </div>
+                      </div>
+                    )
                     })
                   )}
                 </div>

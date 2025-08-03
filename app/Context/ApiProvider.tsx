@@ -384,6 +384,7 @@ interface ApiContextType {
   retweetPost: (postId: string, userId: string) => Promise<void>
   bookmarkPost: (postId: string, userId: string) => Promise<void>
   viewPost: (postId: string, userId: string) => Promise<void>
+  commentPost: (postId: string, data: CommentRequest) => Promise<any>
   fetchNotifications: (userId: string) => Promise<void>
   fetchActivities: (userId: string) => Promise<void>
   refreshUserData: (userId: string) => Promise<void>
@@ -517,7 +518,37 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
   // Get current user ID from session
   const getCurrentUserId = (): string | null => {
-    if (session?.dbUser?.id) return session.dbUser.id
+    console.log('🔍 Session Debug:', { 
+      sessionDbUser: session?.dbUser,
+      sessionDbUserId: session?.dbUser?.id,
+      sessionDbUserType: typeof session?.dbUser,
+      sessionDbUserIdType: typeof session?.dbUser?.id,
+      sessionTwitterData: session?.twitterData,
+      stateUser: state.user.currentUser,
+      sessionKeys: session ? Object.keys(session) : []
+    })
+    
+    // The session.dbUser object has an id field
+    if (session?.dbUser?.id) {
+      console.log('✅ Found user ID:', session.dbUser.id)
+      return session.dbUser.id
+    }
+    
+    // Check if there's a separate userId field in session
+    if (session?.userId) {
+      return session.userId
+    }
+    
+    // Check for dbUserId field
+    if (session?.dbUserId) {
+      return session.dbUserId
+    }
+    
+    // Check for user field
+    if (session?.user?.id) {
+      return session.user.id
+    }
+    
     if (session?.twitterData?.username) return session.twitterData.username
     return state.user.currentUser?.id || null
   }
@@ -551,9 +582,10 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const likePost = useCallback(async (postId: string, targetUserId: string) => {
+    console.log('🔍 Like Post Call:', { postId, targetUserId, type: typeof targetUserId })
     try {
       await apiService.likePost(postId, { userId: targetUserId })
-      dispatch({ type: 'LIKE_POST', payload: { postId, userId: targetUserId } })
+      dispatch({ type: 'LIKE_POST', payload: postId })
     } catch (error) {
       console.error('Error liking post:', error)
     }
@@ -562,7 +594,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   const unlikePost = useCallback(async (postId: string, targetUserId: string) => {
     try {
       await apiService.unlikePost(postId, { userId: targetUserId })
-      dispatch({ type: 'UNLIKE_POST', payload: { postId, userId: targetUserId } })
+      dispatch({ type: 'UNLIKE_POST', payload: postId })
     } catch (error) {
       console.error('Error unliking post:', error)
     }
@@ -571,16 +603,17 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   const retweetPost = useCallback(async (postId: string, targetUserId: string) => {
     try {
       await apiService.retweetPost(postId, { userId: targetUserId })
-      dispatch({ type: 'RETWEET_POST', payload: { postId, userId: targetUserId } })
+      dispatch({ type: 'RETWEET_POST', payload: postId })
     } catch (error) {
       console.error('Error retweeting post:', error)
     }
   }, [])
 
   const bookmarkPost = useCallback(async (postId: string, targetUserId: string) => {
+    console.log('🔍 Bookmark Post Call:', { postId, targetUserId, type: typeof targetUserId })
     try {
       await apiService.bookmarkPost(postId, { userId: targetUserId })
-      dispatch({ type: 'BOOKMARK_POST', payload: { postId, userId: targetUserId } })
+      dispatch({ type: 'BOOKMARK_POST', payload: postId })
     } catch (error) {
       console.error('Error bookmarking post:', error)
     }
@@ -588,9 +621,19 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
   const viewPost = useCallback(async (postId: string, targetUserId: string) => {
     try {
-      await apiService.viewPost(postId, { viewerId: targetUserId })
+      await apiService.viewPost(postId, { userId: targetUserId })
     } catch (error) {
       console.error('Error viewing post:', error)
+    }
+  }, [])
+
+  const commentPost = useCallback(async (postId: string, data: CommentRequest) => {
+    try {
+      const response = await apiService.commentOnPost(postId, data)
+      return response
+    } catch (error) {
+      console.error('Failed to comment on post:', error)
+      throw error
     }
   }, [])
 
@@ -737,6 +780,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     retweetPost,
     bookmarkPost,
     viewPost,
+    commentPost,
     fetchNotifications,
     fetchActivities,
     refreshUserData,

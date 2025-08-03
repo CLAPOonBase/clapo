@@ -27,6 +27,7 @@ export default function SnapComposer() {
     setIsSubmitting(true);
     try {
       await createPost({
+        userId: session.dbUser.id,
         content: content.trim(),
         mediaUrl: undefined, 
         parentPostId: undefined,

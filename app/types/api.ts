@@ -80,19 +80,20 @@ export interface CreatePostRequest {
 
 export interface Post {
   id: string
-  userId: string
+  user_id: string
   content: string
-  mediaUrl?: string
-  createdAt: string
-  viewCount: number
-  likeCount: number
-  commentCount: number
-  retweetCount: number
-  user?: {
-    id: string
-    username: string
-    avatarUrl: string
-  }
+  media_url?: string
+  created_at: string
+  parent_post_id?: string
+  is_retweet: boolean
+  retweet_ref_id?: string
+  view_count: number
+  like_count: number
+  comment_count: number
+  retweet_count: number
+  post_popularity_score: number
+  username: string
+  avatar_url: string
 }
 
 export interface CreatePostResponse {
@@ -107,7 +108,7 @@ export interface FeedResponse {
 
 // Engagement Types
 export interface ViewPostRequest {
-  viewerId: string
+  userId: string
 }
 
 export interface ViewPostResponse {
@@ -155,6 +156,10 @@ export interface CommentResponse {
   }
 }
 
+export interface RetweetRequest {
+  userId: string
+}
+
 export interface RetweetResponse {
   message: string
   retweet: {
@@ -163,6 +168,10 @@ export interface RetweetResponse {
     postId: string
     createdAt: string
   }
+}
+
+export interface BookmarkRequest {
+  userId: string
 }
 
 export interface BookmarkResponse {

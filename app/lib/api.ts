@@ -17,6 +17,7 @@ import {
   CommentRequest,
   CommentResponse,
   RetweetResponse,
+  BookmarkRequest,
   BookmarkResponse,
   FollowRequest,
   FollowResponse,
@@ -355,6 +356,7 @@ class ApiService {
   }
 
   async likePost(postId: string, data: LikePostRequest): Promise<LikeResponse> {
+    console.log('🔍 Like API Request:', { postId, data })
     return this.request<LikeResponse>(`/posts/${postId}/like`, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -382,7 +384,8 @@ class ApiService {
     })
   }
 
-  async bookmarkPost(postId: string, data: LikePostRequest): Promise<BookmarkResponse> {
+  async bookmarkPost(postId: string, data: BookmarkRequest): Promise<BookmarkResponse> {
+    console.log('🔍 Bookmark API Request:', { postId, data })
     return this.request<BookmarkResponse>(`/posts/${postId}/bookmark`, {
       method: 'POST',
       body: JSON.stringify(data),

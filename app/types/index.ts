@@ -111,19 +111,20 @@ export type Post = {
 // New API Post type
 export interface ApiPost {
   id: string
-  userId: string
+  user_id: string
   content: string
-  mediaUrl?: string
-  createdAt: string
-  viewCount: number
-  likeCount: number
-  commentCount: number
-  retweetCount: number
-  user?: {
-    id: string
-    username: string
-    avatarUrl: string
-  }
+  media_url?: string
+  created_at: string
+  parent_post_id?: string
+  is_retweet: boolean
+  retweet_ref_id?: string
+  view_count: number
+  like_count: number
+  comment_count: number
+  retweet_count: number
+  post_popularity_score: number
+  username: string
+  avatar_url: string
 }
 
 export type User = {
