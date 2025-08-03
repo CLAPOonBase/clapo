@@ -5,6 +5,7 @@ import PodiumComponent from "./components/Podium";
 import { motion } from 'framer-motion';
 import Leaderboard from "./components/Leaderboard";
 import { Row } from "./types";
+import RewardPoolsPage from "./components/LeaderboardBox";
 
 export default function Home() {
   const [mockRows, setMockRows] = useState<Row[]>([]);
@@ -114,6 +115,9 @@ export default function Home() {
               LEADERBOARD
             </span>
             <PodiumComponent leaderboard={leaderboard} />
+          <div className="mt-16 w-full">
+            <RewardPoolsPage/>
+          </div>
             {hasMounted && <Leaderboard rows={mockRows} currentUsername="user55" />}
           </section>
         </main>

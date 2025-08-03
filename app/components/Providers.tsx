@@ -11,7 +11,11 @@ interface ProvidersProps {
 
 export default function Providers({ children }: ProvidersProps) {
   return (
-    <SessionProvider>
+    <SessionProvider 
+      session={undefined}
+      refetchInterval={5 * 60} // Refetch session every 5 minutes
+      refetchOnWindowFocus={true}
+    >
       <ApiProvider>
         <WalletProvider>
           <ClientLayoutWrapper>{children}</ClientLayoutWrapper>

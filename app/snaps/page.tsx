@@ -11,8 +11,7 @@ import BookmarkPage from './SidebarSection/BookmarkPage'
 import {ProfilePage} from './SidebarSection/ProfilePage'
 import SearchPage from './SidebarSection/SearchPage'
 import MessagePage from './SidebarSection/MessagePage'
-import { Post, ApiPost } from '../types'
-import { mockActivity, mockPosts, mockUsers } from '../lib/mockdata'
+import { mockUsers } from '../lib/mockdata'
 import ActivityPage from './SidebarSection/ActivityPage'
 import { motion } from 'framer-motion'
 import { useApi } from '../Context/ApiProvider'
@@ -26,31 +25,23 @@ export default function SocialFeedPage() {
   const [liked, setLiked] = useState<Set<number>>(new Set())
   const [retweeted, setRetweeted] = useState<Set<number>>(new Set())
   const [bookmarked, setBookmarked] = useState<Set<number>>(new Set())
+  const [hasInitializedData, setHasInitializedData] = useState(false)
 
   const { data: session, status } = useSession()
   const { state, fetchPosts, fetchNotifications, fetchActivities } = useApi()
 
-  // Debug logging
   useEffect(() => {
-    console.log('🔍 Session Status:', status)
-    console.log('🔍 Session Data:', session)
-    console.log('🔍 API State:', state)
-    console.log('🔍 User Authenticated:', state.user.isAuthenticated)
-    console.log('🔍 Current User:', state.user.currentUser)
-    console.log('🔍 Posts Count:', state.posts.posts.length)
-  }, [session, status, state])
-
-  console.log('for you posts:', state.posts.posts)
-
-  useEffect(() => {
-    // Fetch posts when session is available
-    if (status === 'authenticated' && session?.dbUserId) {
-      console.log('🚀 Fetching posts for user:', session.dbUserId)
-      fetchPosts()
-      fetchNotifications()
-      fetchActivities()
+    if (status === 'authenticated' && session?.dbUser?.id && !hasInitializedData) {
+      fetchPosts(session.dbUser.id)
+      fetchNotifications(session.dbUser.id)
+      fetchActivities(session.dbUser.id)
+      setHasInitializedData(true)
     }
-  }, [session, status])
+    
+    if (status === 'unauthenticated') {
+      setHasInitializedData(false)
+    }
+  }, [session, status, hasInitializedData])
 
   const toggleSet = (set: Set<number>, id: number): Set<number> => {
     const newSet = new Set(set)
@@ -59,7 +50,6 @@ export default function SocialFeedPage() {
     return newSet
   }
 
-  // Only show API posts, no hardcoded data
   const allPosts = state.posts.posts
 
   const renderContent = () => {
@@ -72,9 +62,9 @@ export default function SocialFeedPage() {
         return allPosts.length > 0 ? (
           <SnapCard
             post={allPosts[0]}
-            liked={liked.has(typeof allPosts[0].id === 'string' ? parseInt(allPosts[0].id) : allPosts[0].id)}
-            bookmarked={bookmarked.has(typeof allPosts[0].id === 'string' ? parseInt(allPosts[0].id) : allPosts[0].id)}
-            retweeted={retweeted.has(typeof allPosts[0].id === 'string' ? parseInt(allPosts[0].id) : allPosts[0].id)}
+            liked={liked.has(parseInt(allPosts[0].id))}
+            bookmarked={bookmarked.has(parseInt(allPosts[0].id))}
+            retweeted={retweeted.has(parseInt(allPosts[0].id))}
             onLike={(id) => setLiked(toggleSet(liked, typeof id === 'string' ? parseInt(id) : id))}
             onBookmark={(id) => setBookmarked(toggleSet(bookmarked, typeof id === 'string' ? parseInt(id) : id))}
             onRetweet={(id) => setRetweeted(toggleSet(retweeted, typeof id === 'string' ? parseInt(id) : id))}
@@ -87,7 +77,7 @@ export default function SocialFeedPage() {
        case 'activity':
         return <ActivityPage />
       case 'profile':
-        return <ProfilePage user={state.user.currentUser || mockUsers[0]} posts={allPosts} />
+        return <ProfilePage user={mockUsers[0]} posts={[]} />
       case 'search':
         return <SearchPage />
       case 'messages':
@@ -112,7 +102,6 @@ export default function SocialFeedPage() {
               </div>
             </div>
             
-            {/* Show login prompt if not authenticated */}
             {status === 'unauthenticated' && (
               <div className="bg-dark-800 rounded-md p-6 my-4 text-center">
                 <h3 className="text-lg font-semibold text-white mb-2">Welcome to Snaps!</h3>
@@ -155,36 +144,6 @@ export default function SocialFeedPage() {
                     <p className="text-gray-400 text-sm">
                       {session.dbUser.bio || 'No bio available'}
                     </p>
-                    {!session.dbUser.avatarUrl && (
-                      <button
-                        onClick={() => {
-                          if (session.dbUserId) {
-                            window.location.reload();
-                          }
-                        }}
-                        className="text-blue-400 hover:text-blue-300 text-xs mt-1"
-                      >
-                        Refresh Profile Data
-                      </button>
-                    )}
-                    <button
-                      onClick={() => {
-                        if (session.dbUserId) {
-                          testUserProfile(session.dbUserId);
-                        }
-                      }}
-                      className="text-green-400 hover:text-green-300 text-xs mt-1 ml-2"
-                    >
-                      Test API Response
-                    </button>
-                    <button
-                      onClick={() => {
-                        fixAvatarUrl();
-                      }}
-                      className="text-yellow-400 hover:text-yellow-300 text-xs mt-1 ml-2"
-                    >
-                      Fix Avatar URL
-                    </button>
                   </div>
                   <button
                     onClick={() => signOut()}
@@ -192,29 +151,6 @@ export default function SocialFeedPage() {
                   >
                     Sign Out
                   </button>
-                </div>
-              </div>
-            )}
-
-            {status === 'authenticated' && session?.twitterData && !session?.dbUser && (
-              <div className="bg-blue-900/20 border border-blue-500/50 rounded-md p-4 my-4">
-                <div className="flex items-center gap-3">
-                  <img 
-                    src={session.twitterData.avatarUrl || 'https://robohash.org/default.png'} 
-                    alt="Profile" 
-                    className="w-10 h-10 rounded-full"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://robohash.org/default.png';
-                    }}
-                  />
-                  <div>
-                    <h3 className="text-white font-semibold">
-                      Welcome, {session.twitterData.username || 'User'}!
-                    </h3>
-                    <p className="text-blue-300 text-sm">
-                      Please set your password to complete your account setup.
-                    </p>
-                  </div>
                 </div>
               </div>
             )}
@@ -232,9 +168,9 @@ export default function SocialFeedPage() {
                   <SnapCard
                     key={post.id}
                     post={post}
-                    liked={liked.has(typeof post.id === 'string' ? parseInt(post.id) : post.id)}
-                    bookmarked={bookmarked.has(typeof post.id === 'string' ? parseInt(post.id) : post.id)}
-                    retweeted={retweeted.has(typeof post.id === 'string' ? parseInt(post.id) : post.id)}
+                    liked={liked.has(parseInt(post.id))}
+                    bookmarked={bookmarked.has(parseInt(post.id))}
+                    retweeted={retweeted.has(parseInt(post.id))}
                     onLike={(id) => setLiked(toggleSet(liked, typeof id === 'string' ? parseInt(id) : id))}
                     onBookmark={(id) => setBookmarked(toggleSet(bookmarked, typeof id === 'string' ? parseInt(id) : id))}
                     onRetweet={(id) => setRetweeted(toggleSet(retweeted, typeof id === 'string' ? parseInt(id) : id))}
@@ -251,7 +187,6 @@ export default function SocialFeedPage() {
     }
   }
 
-  // Show loading spinner while session is loading
   if (status === 'loading') {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -273,7 +208,7 @@ export default function SocialFeedPage() {
         </div>
         {currentPage !== 'messages' && (
           <div className="w-[300px] md:block hidden">
-            <ActivityFeed items={state.activities} loading={state.posts.loading} />
+            <ActivityFeed items={[]} loading={state.posts.loading} />
           </div>
         )}
       </div>
