@@ -5,17 +5,27 @@ export const useSocket = () => {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    socketRef.current = io('https://server.blazeswap.io');
+    console.log('🔌 Attempting to connect to WebSocket...');
+    socketRef.current = io('https://server.blazeswap.io', {
+      transports: ['websocket', 'polling'],
+      timeout: 10000,
+    });
 
     socketRef.current.on('connect', () => {
       console.log('✅ Connected to WebSocket');
+      console.log('Socket ID:', socketRef.current?.id);
     });
 
-    socketRef.current.on('disconnect', () => {
-      console.log('❌ Disconnected from WebSocket');
+    socketRef.current.on('connect_error', (error) => {
+      console.error('❌ WebSocket connection error:', error);
+    });
+
+    socketRef.current.on('disconnect', (reason) => {
+      console.log('❌ Disconnected from WebSocket:', reason);
     });
 
     return () => {
+      console.log('🔌 Disconnecting WebSocket...');
       socketRef.current?.disconnect();
     };
   }, []);

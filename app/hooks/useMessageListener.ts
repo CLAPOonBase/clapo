@@ -21,16 +21,24 @@ export const useMessageListener = (currentThreadId?: string, currentCommunityId?
     if (!socket) return;
 
     socket.on('new_dm_message', (data) => {
-      console.log('💬 New DM received:', data.message);
-      if (data.message.threadId === currentThreadId) {
-        setDmMessages(prev => [...prev, data.message]);
+      console.log('💬 New DM received in listener:', data);
+      const message = data.message || data;
+      const threadId = message.threadId || message.thread_id || message.threadId;
+      
+      if (threadId === currentThreadId) {
+        console.log('✅ Adding DM message to socket state');
+        setDmMessages(prev => [...prev, message]);
       }
     });
 
     socket.on('new_community_message', (data) => {
-      console.log('📨 New community message received:', data.message);
-      if (data.message.communityId === currentCommunityId) {
-        setCommunityMessages(prev => [...prev, data.message]);
+      console.log('📨 New community message received in listener:', data);
+      const message = data.message || data;
+      const communityId = message.communityId || message.community_id || message.communityId;
+      
+      if (communityId === currentCommunityId) {
+        console.log('✅ Adding community message to socket state');
+        setCommunityMessages(prev => [...prev, message]);
       }
     });
 

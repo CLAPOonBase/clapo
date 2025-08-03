@@ -58,29 +58,71 @@ export default function MessagePage() {
   useEffect(() => {
     if (socket) {
       socket.on('new_dm_message', (data) => {
-        console.log('💬 New DM received in MessagePage:', data.message);
-        console.log('Current thread:', selectedThread, 'Message thread:', data.message.threadId);
-        if (data.message.threadId === selectedThread) {
-          console.log('✅ Adding DM message to local state');
-          setLocalDmMessages(prev => [...prev, data.message]);
-        }
+        console.log('💬 New DM received in MessagePage:', data);
+        console.log('Message data:', data.message);
+        console.log('Current thread:', selectedThread);
+        
+        const message = data.message || data;
+        const threadId = message.threadId || message.thread_id || message.threadId;
+        
+        console.log('Message thread ID:', threadId);
+        console.log('Selected thread:', selectedThread);
+        console.log('Threads match:', threadId === selectedThread);
+        
+        console.log('🔍 Thread comparison:', { threadId, selectedThread, match: threadId === selectedThread });
+        
+        console.log('🔍 Thread comparison:', { threadId, selectedThread, match: threadId === selectedThread });
+        
+        // Always add message for debugging
+        console.log('✅ Adding DM message to local state (debug mode)');
+        setLocalDmMessages(prev => {
+          console.log('Previous local messages:', prev.length);
+          const newMessages = [...prev, message];
+          console.log('New local messages count:', newMessages.length);
+          return newMessages;
+        });
       });
 
       socket.on('new_community_message', (data) => {
-        console.log('📨 New community message received in MessagePage:', data.message);
-        console.log('Current community:', selectedCommunity, 'Message community:', data.message.communityId);
-        if (data.message.communityId === selectedCommunity) {
+        console.log('📨 New community message received in MessagePage:', data);
+        console.log('Message data:', data.message);
+        console.log('Current community:', selectedCommunity);
+        
+        const message = data.message || data;
+        const communityId = message.communityId || message.community_id || message.communityId;
+        
+        console.log('Message community ID:', communityId);
+        console.log('Selected community:', selectedCommunity);
+        console.log('Communities match:', communityId === selectedCommunity);
+        
+        if (communityId === selectedCommunity || !selectedCommunity) {
           console.log('✅ Adding community message to local state');
-          setLocalCommunityMessages(prev => [...prev, data.message]);
+          setLocalCommunityMessages(prev => [...prev, message]);
+        } else {
+          console.log('❌ Community ID mismatch, not adding message');
         }
       });
 
+      socket.onAny((eventName, ...args) => {
+        console.log('🎧 Socket event received:', eventName, args);
+      });
+
       return () => {
+        console.log('🎧 Cleaning up socket listeners...');
         socket.off('new_dm_message');
         socket.off('new_community_message');
+        socket.offAny();
       };
     }
   }, [socket, selectedThread, selectedCommunity])
+
+  useEffect(() => {
+    console.log('🔄 localDmMessages changed:', localDmMessages.length, localDmMessages);
+  }, [localDmMessages])
+
+  useEffect(() => {
+    console.log('🔄 localCommunityMessages changed:', localCommunityMessages.length, localCommunityMessages);
+  }, [localCommunityMessages])
 
   const handleCreateCommunity = async () => {
     if (!session?.dbUser?.id || !newCommunityName.trim() || !newCommunityDescription.trim()) return
@@ -245,15 +287,11 @@ export default function MessagePage() {
 
   const handleSelectThread = async (threadId: string) => {
     setSelectedThread(threadId)
-    setLocalDmMessages([])
-    setDmMessages([])
     await getThreadMessages(threadId)
   }
 
   const handleSelectCommunity = async (communityId: string) => {
     setSelectedCommunity(communityId)
-    setLocalCommunityMessages([])
-    setSocketCommunityMessages([])
     try {
       const response = await apiService.getCommunityMessages(communityId)
       setCommunityMessages(response.messages || [])
@@ -292,6 +330,16 @@ export default function MessagePage() {
   const currentMessages = [...apiMessages, ...socketMessages, ...localMessages].sort((a, b) => 
     new Date(a.created_at || a.createdAt).getTime() - new Date(b.created_at || b.createdAt).getTime()
   )
+
+  console.log('🔍 Message Debug:', {
+    apiMessagesCount: apiMessages.length,
+    socketMessagesCount: socketMessages.length,
+    localMessagesCount: localMessages.length,
+    totalMessages: currentMessages.length,
+    selectedThread,
+    selectedCommunity,
+    activeTab
+  })
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -622,7 +670,7 @@ export default function MessagePage() {
           onScroll={handleScroll}
           className="flex-1 overflow-y-auto p-4 space-y-4 relative"
         >
-          {currentMessages?.map((message: any) => (
+                    {currentMessages?.map((message: any) => (
             <div key={message.id} className="flex gap-3 p-3 hover:bg-dark-700 rounded-lg">
               <img 
                 src={activeTab === 'dms' ? (message.sender_avatar || 'https://robohash.org/default.png') : (message.sender_avatar || 'https://robohash.org/default.png')} 
@@ -635,7 +683,7 @@ export default function MessagePage() {
                     {activeTab === 'dms' ? (message.sender_username || 'User') : (message.sender_username || 'User')}
                   </span>
                   <span className="text-xs text-gray-400">
-                    {new Date(activeTab === 'dms' ? message.created_at : message.created_at).toLocaleString()}
+                    {new Date(message.created_at || message.createdAt).toLocaleString()}
                   </span>
                 </div>
                 <p className="text-gray-300">{message.content}</p>
@@ -677,6 +725,25 @@ export default function MessagePage() {
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => {
+                const testMessage = {
+                  id: `test-${Date.now()}`,
+                  content: 'Test message from other user',
+                  senderId: 'other-user',
+                  createdAt: new Date().toISOString(),
+                  threadId: selectedThread,
+                  sender_username: 'Test User',
+                  sender_avatar: 'https://robohash.org/test.png'
+                }
+                console.log('🧪 Adding test message:', testMessage)
+                setLocalDmMessages(prev => [...prev, testMessage])
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              title="Add test message"
+            >
+              Test
             </button>
           </div>
         </div>
