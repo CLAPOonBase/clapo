@@ -1,9 +1,12 @@
 "use client"
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useApi } from '../../Context/ApiProvider'
 import { apiService } from '../../lib/api'
-import { MessageCircle, Users, Plus, Send, Search, UserPlus } from 'lucide-react'
+import { MessageCircle, Users, Plus, Send, Search, UserPlus, ChevronDown } from 'lucide-react'
+import { useSocket } from '../../hooks/useSocket'
+import { useMessageListener } from '../../hooks/useMessageListener'
+import { sendDmMessage, sendCommunityMessage } from '../../utils/socketMessages'
 
 export default function MessagePage() {
   const { data: session } = useSession()
@@ -16,6 +19,17 @@ export default function MessagePage() {
     joinCommunity, 
     createCommunity
   } = useApi()
+  
+  const socket = useSocket()
+  const { dmMessages, communityMessages: socketCommunityMessages } = useMessageListener()
+  
+  const [localDmMessages, setLocalDmMessages] = useState<any[]>([])
+  const [localCommunityMessages, setLocalCommunityMessages] = useState<any[]>([])
+  
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const [showScrollButton, setShowScrollButton] = useState(false)
+  const [newMessageCount, setNewMessageCount] = useState(0)
   
   const [activeTab, setActiveTab] = useState<'dms' | 'communities'>('dms')
   const [dmSection, setDmSection] = useState<'threads' | 'search'>('threads')
@@ -36,8 +50,9 @@ export default function MessagePage() {
   useEffect(() => {
     if (session?.dbUser?.id) {
       getCommunities()
+      getMessageThreads(session.dbUser.id)
     }
-  }, [session?.dbUser?.id])
+  }, [session?.dbUser?.id, getCommunities, getMessageThreads])
 
   const handleCreateCommunity = async () => {
     if (!session?.dbUser?.id || !newCommunityName.trim() || !newCommunityDescription.trim()) return
@@ -121,22 +136,49 @@ export default function MessagePage() {
   const handleSendMessage = async () => {
     if (!messageContent.trim() || !session?.dbUser?.id) return
 
-    if (activeTab === 'dms' && selectedThread) {
-      await sendMessage(selectedThread, {
-        senderId: session.dbUser.id,
-        content: messageContent.trim()
-      })
-    } else if (activeTab === 'communities' && selectedCommunity) {
-      await apiService.sendCommunityMessage(selectedCommunity, {
-        senderId: session.dbUser.id,
-        content: messageContent.trim()
-      })
-      
-      const response = await apiService.getCommunityMessages(selectedCommunity)
-      setCommunityMessages(response.messages || [])
-    }
-
+    const messageText = messageContent.trim()
     setMessageContent('')
+
+    if (activeTab === 'dms' && selectedThread) {
+      if (socket) {
+        const tempMessage = sendDmMessage(
+          socket, 
+          selectedThread, 
+          messageText, 
+          session.dbUser.id,
+          session.dbUser.username,
+          session.dbUser.avatarUrl
+        )
+        console.log('🚀 Adding local DM message:', tempMessage)
+        setLocalDmMessages(prev => [...prev, tempMessage])
+      } else {
+        await sendMessage(selectedThread, {
+          senderId: session.dbUser.id,
+          content: messageText
+        })
+      }
+    } else if (activeTab === 'communities' && selectedCommunity) {
+      if (socket) {
+        const tempMessage = sendCommunityMessage(
+          socket, 
+          selectedCommunity, 
+          messageText, 
+          session.dbUser.id,
+          session.dbUser.username,
+          session.dbUser.avatarUrl
+        )
+        console.log('🚀 Adding local community message:', tempMessage)
+        setLocalCommunityMessages(prev => [...prev, tempMessage])
+      } else {
+        await apiService.sendCommunityMessage(selectedCommunity, {
+          senderId: session.dbUser.id,
+          content: messageText
+        })
+        
+        const response = await apiService.getCommunityMessages(selectedCommunity)
+        setCommunityMessages(response.messages || [])
+      }
+    }
   }
 
   const handleStartChatWithUser = async (user: any) => {
@@ -175,11 +217,13 @@ export default function MessagePage() {
 
   const handleSelectThread = async (threadId: string) => {
     setSelectedThread(threadId)
+    setLocalDmMessages([])
     await getThreadMessages(threadId)
   }
 
   const handleSelectCommunity = async (communityId: string) => {
     setSelectedCommunity(communityId)
+    setLocalCommunityMessages([])
     try {
       const response = await apiService.getCommunityMessages(communityId)
       setCommunityMessages(response.messages || [])
@@ -203,9 +247,53 @@ export default function MessagePage() {
     }
   }
 
-  const currentMessages = activeTab === 'dms' 
+  const apiMessages = activeTab === 'dms' 
     ? state.threadMessages[selectedThread || ''] || []
     : communityMessages
+
+  const socketMessages = activeTab === 'dms' 
+    ? dmMessages.filter(msg => msg.threadId === selectedThread)
+    : socketCommunityMessages.filter(msg => msg.communityId === selectedCommunity)
+
+  const localMessages = activeTab === 'dms' 
+    ? localDmMessages.filter(msg => msg.threadId === selectedThread)
+    : localCommunityMessages.filter(msg => msg.communityId === selectedCommunity)
+
+  const currentMessages = [...apiMessages, ...socketMessages, ...localMessages].sort((a, b) => 
+    new Date(a.created_at || a.createdAt).getTime() - new Date(b.created_at || b.createdAt).getTime()
+  )
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    setNewMessageCount(0)
+  }
+
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
+      
+      if (isNearBottom) {
+        scrollToBottom()
+      } else {
+        setNewMessageCount(prev => prev + 1)
+      }
+    } else {
+      scrollToBottom()
+    }
+  }, [currentMessages])
+
+  const handleScroll = () => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
+      setShowScrollButton(!isNearBottom)
+      
+      if (isNearBottom) {
+        setNewMessageCount(0)
+      }
+    }
+  }
 
   const currentThread = state.messageThreads?.find(t => t.id === selectedThread)
   const currentCommunity = state.communities?.find(c => c.id === selectedCommunity)
@@ -220,9 +308,14 @@ export default function MessagePage() {
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white">Messages</h2>
-            <button className="text-blue-400 hover:text-blue-300">
-              <Plus className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Socket connection status */}
+              <div className={`w-2 h-2 rounded-full ${socket?.connected ? 'bg-green-500' : 'bg-red-500'}`} 
+                   title={socket?.connected ? 'Connected' : 'Disconnected'} />
+              <button className="text-blue-400 hover:text-blue-300">
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
           </div>
           
           {/* Tabs */}
@@ -315,40 +408,50 @@ export default function MessagePage() {
           {activeTab === 'dms' ? (
             dmSection === 'threads' ? (
               <div className="p-4">
-                <div className="space-y-2">
-                  {state.messageThreads?.map((thread) => {
-                    const currentUserId = session?.dbUser?.id
-                    let displayName = thread.name || 'Direct Message'
-                    
-                    if (!(thread as any).is_group && currentUserId && (thread as any).participants) {
-                      const otherParticipant = (thread as any).participants.find(
-                        (participant: any) => participant.user_id !== currentUserId
-                      )
+                                <div className="space-y-2">
+                  {!state.messageThreads ? (
+                    <div className="text-center py-8 text-gray-400">
+                      Loading chats...
+                    </div>
+                  ) : state.messageThreads.length === 0 ? (
+                    <div className="text-center py-8 text-gray-400">
+                      No chats yet. Start a conversation with someone!
+                    </div>
+                  ) : (
+                    state.messageThreads?.map((thread) => {
+                      const currentUserId = session?.dbUser?.id
+                      let displayName = thread.name || 'Direct Message'
                       
-                      if (otherParticipant) {
-                        displayName = otherParticipant.username || 'User'
-                      } else {
-                        displayName = thread.name || 'Direct Message'
+                      if (!(thread as any).is_group && currentUserId && (thread as any).participants) {
+                        const otherParticipant = (thread as any).participants.find(
+                          (participant: any) => participant.user_id !== currentUserId
+                        )
+                        
+                        if (otherParticipant) {
+                          displayName = otherParticipant.username || 'User'
+                        } else {
+                          displayName = thread.name || 'Direct Message'
+                        }
                       }
-                    }
-                    
-                    return (
-                      <div
-                        key={thread.id}
-                        onClick={() => handleSelectThread(thread.id)}
-                        className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                          selectedThread === thread.id 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-dark-700 text-gray-300 hover:bg-dark-600'
-                        }`}
-                      >
-                        <div className="font-medium">{displayName}</div>
-                        <div className="text-sm opacity-75">
-                          {(thread as any).is_group ? 'Group' : 'Direct Message'}
+                      
+                      return (
+                        <div
+                          key={thread.id}
+                          onClick={() => handleSelectThread(thread.id)}
+                          className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                            selectedThread === thread.id 
+                              ? 'bg-blue-600 text-white' 
+                              : 'bg-dark-700 text-gray-300 hover:bg-dark-600'
+                          }`}
+                        >
+                          <div className="font-medium">{displayName}</div>
+                          <div className="text-sm opacity-75">
+                            {(thread as any).is_group ? 'Group' : 'Direct Message'}
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })}
+                      )
+                    })
+                  )}
                 </div>
               </div>
             ) : (
@@ -484,7 +587,11 @@ export default function MessagePage() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div 
+          ref={messagesContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto p-4 space-y-4 relative"
+        >
           {currentMessages?.map((message: any) => (
             <div key={message.id} className="flex gap-3 p-3 hover:bg-dark-700 rounded-lg">
               <img 
@@ -505,6 +612,22 @@ export default function MessagePage() {
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
+          
+          {showScrollButton && (
+            <button
+              onClick={scrollToBottom}
+              className="absolute bottom-4 right-4 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full shadow-lg transition-all duration-200 hover:scale-110"
+              title={`Scroll to bottom${newMessageCount > 0 ? ` (${newMessageCount} new)` : ''}`}
+            >
+              <ChevronDown className="w-4 h-4" />
+              {newMessageCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {newMessageCount > 9 ? '9+' : newMessageCount}
+                </span>
+              )}
+            </button>
+          )}
         </div>
 
         {/* Message Input */}

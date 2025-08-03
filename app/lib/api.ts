@@ -329,6 +329,15 @@ class ApiService {
     })
   }
 
+  async getPosts(userId: string, limit: number = 10, offset: number = 0): Promise<FeedResponse> {
+    const params = new URLSearchParams({
+      userId,
+      limit: limit.toString(),
+      offset: offset.toString(),
+    })
+    return this.request<FeedResponse>(`/feed/foryou?${params}`)
+  }
+
   async getPersonalizedFeed(userId: string, limit: number = 10, offset: number = 0): Promise<FeedResponse> {
     const params = new URLSearchParams({
       userId,
@@ -401,6 +410,15 @@ class ApiService {
       offset: offset.toString(),
     })
     return this.request<NotificationsResponse>(`/notifications?${params}`)
+  }
+
+  async getActivities(userId: string, limit: number = 10, offset: number = 0): Promise<ActivityResponse> {
+    const params = new URLSearchParams({
+      userId,
+      limit: limit.toString(),
+      offset: offset.toString(),
+    })
+    return this.request<ActivityResponse>(`/activity/recent?${params}`)
   }
 
   async getRecentActivity(userId: string, limit: number = 10, offset: number = 0): Promise<ActivityResponse> {
