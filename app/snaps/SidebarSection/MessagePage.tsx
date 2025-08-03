@@ -114,26 +114,37 @@ export default function MessagePage() {
 
       newSocket.on('new_community_message', async (data) => {
         console.log('📨 New community message received:', data)
+        console.log('🔍 Debug info:', {
+          dataCommunityId: data.communityId,
+          messageCommunityId: data.message?.community_id,
+          selectedCommunity,
+          communityMatches: data.communityId === selectedCommunity || data.message?.community_id === selectedCommunity
+        })
         
         const message = data.message || data
-        const isOwnMessage = message.sender_id === session.dbUser.id || data.senderId === session.dbUser.id
         
-        if (!isOwnMessage && (data.communityId === selectedCommunity || message.community_id === selectedCommunity)) {
-          console.log('✅ New community message received for current community')
-          console.log('📝 Message content:', message.content)
-          console.log('📝 Message sender:', message.sender_username || message.sender_id)
+        console.log('🔍 Community ID comparison:', {
+          dataCommunityId: data.communityId,
+          messageCommunityId: message.community_id,
+          selectedCommunity,
+          exactMatch: data.communityId === selectedCommunity,
+          messageMatch: message.community_id === selectedCommunity
+        })
+        
+        console.log('✅ New community message received for current community')
+        console.log('📝 Message content:', message.content)
+        console.log('📝 Message sender:', message.sender_username || message.sender_id)
+        
+        try {
+          const response = await fetch(`https://server.blazeswap.io/api/snaps/communities/${selectedCommunity}/messages?limit=50&offset=0`)
+          const data = await response.json()
           
-          try {
-            const response = await fetch(`https://server.blazeswap.io/api/snaps/communities/${selectedCommunity}/messages?limit=50&offset=0`)
-            const data = await response.json()
-            
-            if (data.messages && Array.isArray(data.messages)) {
-              console.log('📊 Refreshed community messages count:', data.messages.length)
-              setCommunityMessages(data.messages)
-            }
-          } catch (error) {
-            console.error('❌ Failed to refresh community messages:', error)
+          if (data.messages && Array.isArray(data.messages)) {
+            console.log('📊 Refreshed community messages count:', data.messages.length)
+            setCommunityMessages(data.messages)
           }
+        } catch (error) {
+          console.error('❌ Failed to refresh community messages:', error)
         }
       })
       
@@ -301,31 +312,67 @@ export default function MessagePage() {
       })
   
       await getThreadMessages(selectedThread)
-    } else if (activeTab === 'communities' && selectedCommunity) {
-   
-      const tempMessage = {
-        id: `temp-${Date.now()}`,
-        content: messageText,
-        sender_id: session.dbUser.id,
-        created_at: new Date().toISOString(),
-        sender_username: session.dbUser.username,
-        sender_avatar: session.dbUser.avatarUrl
+          } else if (activeTab === 'communities' && selectedCommunity && socket && isConnected) {
+        const tempMessage = {
+          id: `temp-${Date.now()}`,
+          content: messageText,
+          sender_id: session.dbUser.id,
+          created_at: new Date().toISOString(),
+          sender_username: session.dbUser.username,
+          sender_avatar: session.dbUser.avatarUrl
+        }
+        
+        const updatedMessages = [...communityMessages, tempMessage]
+        setCommunityMessages(updatedMessages)
+
+        console.log('🔍 Sending community message:', {
+          userId: session.dbUser.id,
+          content: messageText,
+          communityId: selectedCommunity,
+          socketConnected: isConnected
+        })
+        
+        socket.emit('send_community_message', {
+          userId: session.dbUser.id,
+          content: messageText,
+          communityId: selectedCommunity
+        }, async (response: any) => {
+          if (response.success) {
+            console.log('✅ Community message sent successfully via socket')
+            const apiResponse = await apiService.getCommunityMessages(selectedCommunity)
+            setCommunityMessages(apiResponse.messages || [])
+          } else {
+            console.error('❌ Failed to send community message via socket:', response.message)
+            setCommunityMessages(communityMessages)
+            await apiService.sendCommunityMessage(selectedCommunity, {
+              senderId: session.dbUser.id,
+              content: messageText
+            })
+            const apiResponse = await apiService.getCommunityMessages(selectedCommunity)
+            setCommunityMessages(apiResponse.messages || [])
+          }
+        })
+      } else if (activeTab === 'communities' && selectedCommunity) {
+        const tempMessage = {
+          id: `temp-${Date.now()}`,
+          content: messageText,
+          sender_id: session.dbUser.id,
+          created_at: new Date().toISOString(),
+          sender_username: session.dbUser.username,
+          sender_avatar: session.dbUser.avatarUrl
+        }
+        
+        const updatedMessages = [...communityMessages, tempMessage]
+        setCommunityMessages(updatedMessages)
+
+        await apiService.sendCommunityMessage(selectedCommunity, {
+          senderId: session.dbUser.id,
+          content: messageText
+        })
+        
+        const response = await apiService.getCommunityMessages(selectedCommunity)
+        setCommunityMessages(response.messages || [])
       }
-      
-
-      const updatedMessages = [...communityMessages, tempMessage]
-      setCommunityMessages(updatedMessages)
-
-
-      await apiService.sendCommunityMessage(selectedCommunity, {
-        senderId: session.dbUser.id,
-        content: messageText
-      })
-      
-
-      const response = await apiService.getCommunityMessages(selectedCommunity)
-      setCommunityMessages(response.messages || [])
-    }
   }
 
   const handleStartChatWithUser = async (user: any) => {
