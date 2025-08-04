@@ -43,7 +43,7 @@ import {
   CommunityMessagesResponse
 } from '../types/api'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/snaps'
 
 class ApiService {
   private baseUrl: string
@@ -82,7 +82,9 @@ class ApiService {
           }
         }
         
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+        const errorMessage = errorData.message || `HTTP error! status: ${response.status}`
+        console.error('API Error:', errorData)
+        throw new Error(errorMessage)
       }
 
       const responseData = await response.json()
@@ -119,7 +121,7 @@ class ApiService {
   }
 
   async getUserProfile(userId: string): Promise<ProfileResponse> {
-    const response = await this.request<ProfileResponse>(`/users/${userId}/profile`);
+    const response = await this.request<ProfileResponse>(`/users/${userId}/profile/posts`);
     return response;
   }
 
@@ -391,6 +393,25 @@ class ApiService {
       body: JSON.stringify(data),
     })
   }
+
+  async unbookmarkPost(postId: string, data: BookmarkRequest): Promise<any> {
+    console.log('🔍 Unbookmark API Request:', { postId, data })
+    try {
+      return this.request(`/posts/${postId}/bookmark`, {
+        method: 'DELETE',
+        body: JSON.stringify(data),
+      })
+    } catch (error) {
+      console.error('❌ Unbookmark API failed, trying alternative approach:', error)
+      // Fallback: try POST with unbookmark flag
+      return this.request(`/posts/${postId}/bookmark`, {
+        method: 'POST',
+        body: JSON.stringify({ ...data, action: 'unbookmark' }),
+      })
+    }
+  }
+
+
 
   async followUser(userId: string, data: FollowRequest): Promise<FollowResponse> {
     return this.request<FollowResponse>(`/users/${userId}/follow`, {

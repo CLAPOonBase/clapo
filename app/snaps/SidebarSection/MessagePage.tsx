@@ -15,6 +15,7 @@ export default function MessagePage() {
     getThreadMessages, 
     sendMessage, 
     getCommunities, 
+    getUserCommunities,
     joinCommunity, 
     createCommunity
   } = useApi()
@@ -44,6 +45,7 @@ export default function MessagePage() {
   
   const [socket, setSocket] = useState<any>(null)
   const [isConnected, setIsConnected] = useState(false)
+  const [userCommunities, setUserCommunities] = useState<any[]>([])
 
   useEffect(() => {
     if (session?.dbUser?.id) {
@@ -159,9 +161,10 @@ export default function MessagePage() {
   useEffect(() => {
     if (session?.dbUser?.id) {
       getCommunities()
+      getUserCommunities(session.dbUser.id)
       getMessageThreads(session.dbUser.id)
     }
-  }, [session?.dbUser?.id, getCommunities, getMessageThreads])
+  }, [session?.dbUser?.id, getCommunities, getUserCommunities, getMessageThreads])
 
   const handleCreateCommunity = async () => {
     if (!session?.dbUser?.id || !newCommunityName.trim() || !newCommunityDescription.trim()) return
@@ -738,13 +741,13 @@ export default function MessagePage() {
               <div className="mb-4">
                 {communitySection === 'my' ? (
                   <div className="space-y-2">
-                    {state.communities?.length === 0 ? (
+                    {state.communities?.filter((community: any) => community.is_member)?.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-12 text-slate-400">
                         <Users className="w-12 h-12 mb-3 opacity-50" />
                         <p className="text-sm text-center">No communities yet<br />Join or create one!</p>
                       </div>
                     ) : (
-                      state.communities?.map((community) => (
+                      state.communities?.filter((community: any) => community.is_member)?.map((community) => (
                         <div
                           key={community.id}
                           onClick={() => handleSelectCommunity(community.id)}

@@ -4,12 +4,16 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useApi } from "../../Context/ApiProvider";
 import { ComposerSkeleton } from "../../components/SkeletonLoader";
+import Toast from "../../components/Toast";
+import MediaUpload from "../../components/MediaUpload";
 
 export default function SnapComposer() {
   const [content, setContent] = useState("");
+  const [mediaUrl, setMediaUrl] = useState<string | undefined>(undefined);
   const [focused, setFocused] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { createPost } = useApi();
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const { createPost, fetchPosts } = useApi();
   const { data: session, status } = useSession();
 
   // Show skeleton if not authenticated
@@ -22,22 +26,32 @@ export default function SnapComposer() {
   }
 
   const handleSubmit = async () => {
-    if (!content.trim() || !session?.dbUser?.id) return;
+    if (!content.trim()) return;
+    if (!(session as any)?.dbUser?.id) return;
 
+    const userId = (session as any).dbUser.id;
     setIsSubmitting(true);
+    
     try {
-      await createPost({
-        userId: session.dbUser.id,
+      const postData = {
+        userId,
         content: content.trim(),
-        mediaUrl: undefined, 
+        mediaUrl: mediaUrl, 
         parentPostId: undefined,
         isRetweet: false,
         retweetRefId: undefined
-      });
+      };
+      
+      await createPost(postData);
+      
       setContent("");
+      setMediaUrl(undefined);
+      setToast({ message: 'Post created successfully!', type: 'success' });
+      
+      await fetchPosts(userId);
     } catch (error) {
       console.error("Failed to create post:", error);
-      // TODO: Add error handling UI
+      setToast({ message: 'Failed to create post', type: 'error' });
     } finally {
       setIsSubmitting(false);
     }
@@ -84,6 +98,18 @@ export default function SnapComposer() {
             </div>
           </div>
 
+          {/* Media Upload */}
+          {(session as any)?.dbUser?.id && (
+            <div className="px-4 sm:px-6 mb-4">
+              <MediaUpload
+                onMediaUploaded={(url) => setMediaUrl(url)}
+                onMediaRemoved={() => setMediaUrl(undefined)}
+                userId={(session as any).dbUser.id}
+                className="mb-4"
+              />
+            </div>
+          )}
+
           {/* Action buttons */}
           <div className="grid grid-cols-4 sm:grid-cols-4 gap-2 sm:gap-4 mb-4">
             {actions.map(({ icon: Icon, label, color }) => (
@@ -109,11 +135,11 @@ export default function SnapComposer() {
                 </span>
               )}
             </div>
-            <button
+                        <button
               onClick={handleSubmit}
-              disabled={!content.trim() || isSubmitting || !session?.dbUser?.id}
+              disabled={!content.trim() || isSubmitting || !(session as any)?.dbUser?.id}
               className={`flex items-center gap-2 px-6 text-white mx-4 py-2 rounded-full font-medium transition-all duration-200 ${
-                content.trim() && !isSubmitting && session?.dbUser?.id
+                content.trim() && !isSubmitting && (session as any)?.dbUser?.id
                   ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
                   : 'bg-gray-700 text-gray-400 cursor-not-allowed'
               }`}
@@ -126,6 +152,14 @@ export default function SnapComposer() {
           </div>
         </div>
       </div>
+      
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

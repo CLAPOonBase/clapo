@@ -125,6 +125,29 @@ export interface ApiPost {
   post_popularity_score: number
   username: string
   avatar_url: string
+  likes?: Array<{
+    user_id: string
+    username: string
+    avatar_url: string
+  }>
+  retweets?: Array<{
+    user_id: string
+    username: string
+    avatar_url: string
+  }>
+  bookmarks?: Array<{
+    user_id: string
+    username: string
+    avatar_url: string
+  }>
+  comments?: Array<{
+    id: string
+    content: string
+    created_at: string
+    user_id: string
+    username: string
+    avatar_url: string
+  }>
 }
 
 export type User = {

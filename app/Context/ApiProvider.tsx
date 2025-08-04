@@ -383,8 +383,11 @@ interface ApiContextType {
   unlikePost: (postId: string, userId: string) => Promise<void>
   retweetPost: (postId: string, userId: string) => Promise<void>
   bookmarkPost: (postId: string, userId: string) => Promise<void>
+  unbookmarkPost: (postId: string, userId: string) => Promise<void>
+
   viewPost: (postId: string, userId: string) => Promise<void>
   commentPost: (postId: string, data: CommentRequest) => Promise<any>
+  getUserProfile: (userId: string) => Promise<any>
   fetchNotifications: (userId: string) => Promise<void>
   fetchActivities: (userId: string) => Promise<void>
   refreshUserData: (userId: string) => Promise<void>
@@ -578,6 +581,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'ADD_POST', payload: response.post })
     } catch (error) {
       console.error('Failed to create post:', error)
+      throw error
     }
   }, [])
 
@@ -618,6 +622,18 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       console.error('Error bookmarking post:', error)
     }
   }, [])
+
+  const unbookmarkPost = useCallback(async (postId: string, targetUserId: string) => {
+    console.log('🔍 Unbookmark Post Call:', { postId, targetUserId, type: typeof targetUserId })
+    try {
+      await apiService.unbookmarkPost(postId, { userId: targetUserId })
+      dispatch({ type: 'UNBOOKMARK_POST', payload: postId })
+    } catch (error) {
+      console.error('Error unbookmarking post:', error)
+    }
+  }, [])
+
+
 
   const viewPost = useCallback(async (postId: string, targetUserId: string) => {
     try {
@@ -767,6 +783,16 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const getUserProfile = useCallback(async (userId: string) => {
+    try {
+      const response = await apiService.getUserProfile(userId)
+      return response
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error)
+      throw error
+    }
+  }, [])
+
   const value: ApiContextType = {
     state,
     dispatch,
@@ -779,8 +805,11 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     unlikePost,
     retweetPost,
     bookmarkPost,
+    unbookmarkPost,
+
     viewPost,
     commentPost,
+    getUserProfile,
     fetchNotifications,
     fetchActivities,
     refreshUserData,

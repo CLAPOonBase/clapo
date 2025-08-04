@@ -46,6 +46,32 @@ export interface UserProfile {
   createdAt: string
   followerCount: number
   followingCount: number
+  total_posts?: number
+  total_likes_given?: number
+  total_comments_made?: number
+  total_retweets_made?: number
+  total_bookmarks_made?: number
+  posts?: Array<{
+    id: string
+    content: string
+    media_url?: string
+    created_at: string
+    parent_post_id?: string
+    is_retweet: boolean
+    retweet_ref_id?: string
+    view_count: number
+    like_count: number
+    comment_count: number
+    retweet_count: number
+    original_post_content?: string
+    original_post_username?: string
+  }>
+  recent_activity?: Array<{
+    activity_type: 'like' | 'comment' | 'retweet' | 'post_created'
+    created_at: string
+    post_content: string
+    post_id: string
+  }>
 }
 
 export interface ProfileResponse {
@@ -94,6 +120,29 @@ export interface Post {
   post_popularity_score: number
   username: string
   avatar_url: string
+  likes?: Array<{
+    user_id: string
+    username: string
+    avatar_url: string
+  }>
+  retweets?: Array<{
+    user_id: string
+    username: string
+    avatar_url: string
+  }>
+  bookmarks?: Array<{
+    user_id: string
+    username: string
+    avatar_url: string
+  }>
+  comments?: Array<{
+    id: string
+    content: string
+    created_at: string
+    user_id: string
+    username: string
+    avatar_url: string
+  }>
 }
 
 export interface CreatePostResponse {
