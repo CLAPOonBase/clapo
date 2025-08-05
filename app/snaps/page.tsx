@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import Sidebar from './Sections/Sidebar'
-import SnapComposer from './Sections/SnapComposer'
+import {SnapComposer} from './Sections/SnapComposer'
 import SnapCard from './Sections/SnapCard'
 import ActivityFeed from './Sections/ActivityFeed'
 import {ExplorePage} from './SidebarSection/ExplorePage'
@@ -86,21 +86,7 @@ export default function SocialFeedPage() {
       default:
         return (
           <>
-            <div className="sticky top-0 backdrop-blur-sm">
-              <div className="flex justify-around space-x-8 bg-dark-800 rounded-md p-4">
-                {['FOR YOU', 'FOLLOWING'].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab as 'FOR YOU' | 'FOLLOWING')}
-                    className={`pb-2 font-semibold ${
-                      activeTab === tab ? 'text-white w-full border-b-2 border-orange-500' : 'text-gray-400 w-full hover:text-white'
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
-            </div>
+        
             
             {status === 'unauthenticated' && (
               <div className="bg-dark-800 rounded-md p-6 my-4 text-center">
@@ -127,7 +113,7 @@ export default function SocialFeedPage() {
             )}
 
             {status === 'authenticated' && session?.dbUser && (
-              <div className="bg-dark-800 rounded-md p-4 my-4">
+              <div className="bg-dark-800 rounded-md p-4 mb-4">
                 <div className="flex items-center gap-3">
                   <img 
                     src={session.dbUser.avatarUrl || 'https://robohash.org/default.png'} 
@@ -156,6 +142,22 @@ export default function SocialFeedPage() {
             )}
             
             <SnapComposer />
+
+                <div className="sticky top-0 pt-4 backdrop-blur-sm">
+              <div className="flex justify-around space-x-8 bg-dark-800 rounded-md p-4">
+                {['FOR YOU', 'FOLLOWING'].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab as 'FOR YOU' | 'FOLLOWING')}
+                    className={`pb-2 font-semibold ${
+                      activeTab === tab ? 'text-white w-full border-b-2 border-orange-500' : 'text-gray-400 w-full hover:text-white'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div>
               {state.posts.loading ? (
                 <div className="space-y-4">
