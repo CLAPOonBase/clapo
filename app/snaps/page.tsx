@@ -203,7 +203,7 @@ export default function SocialFeedPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
     >
-      <div className=" max-w-7xl flex-col md:flex-row mx-auto text-white flex">
+      <div className=" flex-col md:flex-row mx-auto text-white flex">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
         <div className="flex-1 m-4 md:m-0 rounded-md">
           {renderContent()}

@@ -51,7 +51,7 @@ export default function MainVoting() {
       <UserDetails />
 
       <div>
-        <div className="flex justify-center items-center border-b border-secondary-light/10 overflow-x-auto">
+        <div className="flex space-x-6 justify-center items-center border-b border-secondary-light/10 overflow-x-auto">
           {navItems.map(({ label }) => (
             <button
               key={label}
@@ -80,7 +80,7 @@ export default function MainVoting() {
       <AnimatePresence mode="wait">
         <motion.div
           key={selectedCategory}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 10 }}
