@@ -4,6 +4,7 @@ import { Home, Search, Bell, User, MessageCircle, Activity } from "lucide-react"
 import Image from "next/image";
 import { PageKey } from "@/app/types";
 import { useState } from "react";
+import UserProfileCard from "./UserProfileCard";
 
 type SidebarProps = {
   setCurrentPage: (page: PageKey) => void;
@@ -57,15 +58,8 @@ export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
         overflow-y-auto
       `}>
         {/* User Profile Section */}
-        <div className="flex items-center p-4 rounded-md bg-dark-800">
-          <div className="w-8 h-8 bg-black rounded-full mr-2 p-2 flex-shrink-0">
-            <Image src={"/4.png"} alt="User Avatar" width={100} height={100} />
-          </div>
-          <div className="hidden lg:block overflow-hidden">
-            <div className="text-sm font-semibold truncate">TITAN</div>
-            <div className="text-xs text-gray-400 truncate">@PHANTOM</div>
-          </div>
-        </div>
+        <UserProfileCard onProfileClick={() => handleNavClick('profile')} />
+
 
         {/* Navigation */}
         <nav className="space-y-2 bg-dark-800 rounded-md p-4 text-secondary">

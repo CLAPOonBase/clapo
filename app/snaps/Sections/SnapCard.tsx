@@ -1,12 +1,13 @@
 "use client"
 import React, { useState } from 'react'
-import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal } from 'lucide-react'
+import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume2 } from 'lucide-react'
 import { Post, ApiPost } from '@/app/types'
 import { useApi } from '../../Context/ApiProvider'
 import { useSession } from 'next-auth/react'
 import EngagementDetails from '../../components/EngagementDetails'
 import CommentSection from '../../components/CommentSection'
 import Toast from '../../components/Toast'
+import CommentInputBar from './CommentInputBar'
 
 type Props = {
   post: Post | ApiPost
@@ -38,7 +39,10 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
     ? `@${post.username || 'unknown'}` 
     : post.handle || '@unknown'
   const postTime = isApiPost 
-    ? new Date(post.created_at).toLocaleDateString() 
+    ? new Date(post.created_at).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      })
     : (post.time || 'Unknown')
 
   const postAvatar = isApiPost 
@@ -88,7 +92,6 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   }, [isUserInLikes, isUserInRetweets, isUserInBookmarks, liked, retweeted, bookmarked, postId, state.engagement])
 
   // Determine if user is currently engaged (for icon coloring)
-  // Use only the userEngagement state for consistency
   const isCurrentlyLiked = userEngagement.liked
   const isCurrentlyRetweeted = userEngagement.retweeted
   const isCurrentlyBookmarked = userEngagement.bookmarked
@@ -99,13 +102,11 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
     setIsLoading(prev => ({ ...prev, like: true }))
     try {
       if (isCurrentlyLiked) {
-        // Unlike the post
         await unlikePost(postId, session.dbUser.id)
         setLocalEngagement(prev => ({ ...prev, likes: Math.max(0, prev.likes - 1) }))
         setUserEngagement(prev => ({ ...prev, liked: false }))
         setToast({ message: 'Post unliked', type: 'unlike' })
       } else {
-        // Like the post
         await likePost(postId, session.dbUser.id)
         setLocalEngagement(prev => ({ ...prev, likes: prev.likes + 1 }))
         setUserEngagement(prev => ({ ...prev, liked: true }))
@@ -150,7 +151,6 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
     setIsLoading(prev => ({ ...prev, bookmark: true }))
     try {
       if (isCurrentlyBookmarked) {
-        // Remove bookmark using DELETE API
         console.log('🗑️ Removing bookmark...')
         await unbookmarkPost(postId, session.dbUser.id)
         setLocalEngagement(prev => ({ ...prev, bookmarks: Math.max(0, prev.bookmarks - 1) }))
@@ -158,7 +158,6 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
         setToast({ message: 'Bookmark removed', type: 'unbookmark' })
         console.log('✅ Bookmark removed successfully')
       } else {
-        // Add bookmark using POST API
         console.log('🔖 Adding bookmark...')
         await bookmarkPost(postId, session.dbUser.id)
         setLocalEngagement(prev => ({ ...prev, bookmarks: prev.bookmarks + 1 }))
@@ -188,173 +187,231 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
     setLocalEngagement(prev => ({ ...prev, comments: updatedComments.length }))
   }
 
-
-
   return (
     <>
-      <div className="bg-dark-800 my-4 rounded-md p-4" onClick={handleView}>
-        <div className="flex space-x-3">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden">
-            {postAvatar ? (
-              <img 
-                src={postAvatar} 
-                alt={postAuthor}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = 'https://robohash.org/default.png'
-                }}
-              />
-            ) : (
-              <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
-                <span className="text-sm font-bold">{postAuthor?.substring(0, 2)?.toUpperCase() || 'U'}</span>
-              </div>
-            )}
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center space-x-2 mb-2">
-              <span className="font-semibold text-white">{postAuthor}</span>
-              <span className="text-gray-400">{postHandle}</span>
-              <span className="text-gray-400">•</span>
-              <span className="text-gray-400">{postTime}</span>
+      <div className="bg-dark-800 text-secondary rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200 my-4" onClick={handleView}>
+        <div className="flex space-x-4">
+          {/* Avatar */}
+          <div className="flex-shrink-0">
+            <div className="w-12 h-12 rounded-full overflow-hidden ">
+              {postAvatar ? (
+                <img 
+                  src={postAvatar} 
+                  alt={postAuthor}
+                  className="w-full h-full object-cover bg-primary"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://ui-avatars.com/api/?name=' + postAuthor + ''
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full bg-indigo-500 flex items-center justify-center">
+                  <span className="text-se text-sm font-semibold">
+                    {postAuthor?.substring(0, 2)?.toUpperCase() || 'U'}
+                  </span>
+                </div>
+              )}
             </div>
-            <p className="text-white mb-3">{postContent}</p>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            {/* Header */}
+            <div className="flex items-center space-x-2 mb-3">
+              <span className="font-semibold text-white truncate">{postAuthor}</span>
+              <span className="text-secondary truncate">{postHandle}</span>
+              <span className="text-secondary">•</span>
+              <span className="text-secondary text-sm">{postTime}</span>
+            </div>
+
+            
+
+            {/* Post Content */}
+            <div className="mb-4">
+              <p className="text-secondary leading-relaxed whitespace-pre-wrap">{postContent}</p>
+            </div>
+            
+
+            {/* Media */}
             {postImage && (
-              <div className="mb-3 rounded-lg overflow-hidden">
-                {postImage.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                  <img 
-                    src={postImage} 
-                    alt="Post content"
-                    className="w-full max-h-96 object-cover cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShowImageModal(true)
-                    }}
-                  />
-                ) : postImage.match(/\.(mp4|webm|ogg|mov)$/i) ? (
-                  <video
-                    src={postImage}
-                    controls
-                    className="w-full max-h-96 rounded-lg"
-                  />
-                ) : postImage.match(/\.(mp3|wav|ogg|m4a)$/i) ? (
-                  <div className="bg-gray-800 rounded-lg p-4">
-                    <audio
-                      src={postImage}
-                      controls
-                      className="w-full"
+              <div className="mb-4">
+                <div className="rounded-xl overflow-hidden border border-secondary">
+                  {postImage.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                    <img 
+                      src={postImage} 
+                      alt="Post content"
+                      className="w-full max-h-96 object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowImageModal(true)
+                      }}
                     />
-                  </div>
-                ) : (
-                  <div className="bg-gray-800 rounded-lg p-4 text-center">
-                    <p className="text-gray-400 text-sm">Media file</p>
-                    <a
-                      href={postImage}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:text-blue-300 text-sm"
-                    >
-                      View media
-                    </a>
-                  </div>
-                )}
+                  ) : postImage.match(/\.(mp4|webm|ogg|mov)$/i) ? (
+                    <div className="relative">
+                      <video
+                        src={postImage}
+                        controls
+                        className="w-full max-h-96 bg-gray-50"
+                      />
+                    </div>
+                  ) : postImage.match(/\.(mp3|wav|ogg|m4a)$/i) ? (
+                    <div className="bg-gray-50 p-4 flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <Volume2 className="w-5 h-5 text-indigo-600" />
+                      </div>
+                      <div className="flex-1">
+                        <audio
+                          src={postImage}
+                          controls
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 p-4 text-center">
+                      <p className="text-gray-600 text-sm mb-2">Media file</p>
+                      <a
+                        href={postImage}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+                      >
+                        View media
+                      </a>
+                    </div>
+                  )}
+                </div>
+                
               </div>
             )}
+
+            {/* Engagement Bar */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-6">
+                {/* Like Button */}
                 <button 
                   onClick={(e) => {
                     e.stopPropagation()
                     handleLike()
                   }}
                   disabled={isLoading.like}
-                  className={`flex items-center space-x-2 transition-colors ${
+                  className={`flex items-center space-x-2 transition-all duration-200 hover:bg-red-50 hover:text-red-600 px-3 py-2 rounded-lg group ${
                     isLoading.like 
-                      ? 'text-gray-500 cursor-not-allowed' 
-                      : 'text-gray-400 hover:text-red-500'
+                      ? 'text-gray-400 cursor-not-allowed' 
+                      : isCurrentlyLiked 
+                        ? 'text-red-600 bg-red-50' 
+                        : 'text-gray-500 hover:text-red-600'
                   }`}
                 >
-                  <Heart className={`w-5 h-5 ${isCurrentlyLiked ? 'fill-red-500 text-red-500' : ''}`} />
-                  <span>{localEngagement.likes}</span>
+                  <Heart className={`w-5 h-5 transition-all duration-200 ${
+                    isCurrentlyLiked ? 'fill-red-600 text-red-600 scale-110' : 'group-hover:scale-110'
+                  }`} />
+                  <span className="text-sm font-medium">{localEngagement.likes}</span>
                 </button>
+
+                {/* Comment Button */}
                 <button 
                   onClick={(e) => {
                     e.stopPropagation()
                     setShowCommentSection(true)
                   }}
-                  className="flex items-center space-x-2 text-gray-400 hover:text-blue-500 transition-colors"
+                  className="flex items-center space-x-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg transition-all duration-200 group"
                 >
-                  <MessageCircle className="w-5 h-5" />
-                  <span>{localEngagement.comments}</span>
+                  <MessageCircle className="w-5 h-5 group-hover:scale-110 transition-all duration-200" />
+                  <span className="text-sm font-medium">{localEngagement.comments}</span>
                 </button>
+
+                {/* Retweet Button */}
                 <button 
                   onClick={(e) => {
                     e.stopPropagation()
                     handleRetweet()
                   }}
                   disabled={isLoading.retweet || isCurrentlyRetweeted}
-                  className={`flex items-center space-x-2 transition-colors ${
+                  className={`flex items-center space-x-2 transition-all duration-200 hover:bg-green-50 hover:text-green-600 px-3 py-2 rounded-lg group ${
                     isLoading.retweet || isCurrentlyRetweeted
-                      ? 'text-gray-500 cursor-not-allowed' 
-                      : 'text-gray-400 hover:text-green-500'
+                      ? 'text-gray-400 cursor-not-allowed' 
+                      : isCurrentlyRetweeted
+                        ? 'text-green-600 bg-green-50'
+                        : 'text-gray-500 hover:text-green-600'
                   }`}
                 >
-                  <Repeat2 className={`w-5 h-5 ${isCurrentlyRetweeted ? 'fill-green-500 text-green-500' : ''}`} />
-                  <span>{localEngagement.retweets}</span>
+                  <Repeat2 className={`w-5 h-5 transition-all duration-200 ${
+                    isCurrentlyRetweeted ? 'fill-green-600 text-green-600 scale-110' : 'group-hover:scale-110'
+                  }`} />
+                  <span className="text-sm font-medium">{localEngagement.retweets}</span>
                 </button>
+
+                {/* Bookmark Button */}
                 <button 
                   onClick={(e) => {
                     e.stopPropagation()
                     handleBookmark()
                   }}
                   disabled={isLoading.bookmark}
-                  className={`flex items-center space-x-2 transition-colors ${
+                  className={`flex items-center space-x-2 transition-all duration-200 hover:bg-blue-50 hover:text-blue-600 px-3 py-2 rounded-lg group ${
                     isLoading.bookmark 
-                      ? 'text-gray-500 cursor-not-allowed' 
-                      : 'text-gray-400 hover:text-purple-500'
+                      ? 'text-gray-400 cursor-not-allowed' 
+                      : isCurrentlyBookmarked
+                        ? 'text-blue-600 bg-blue-50'
+                        : 'text-gray-500 hover:text-blue-600'
                   }`}
                 >
-                  <Bookmark className={`w-5 h-5 ${isCurrentlyBookmarked ? 'fill-purple-500 text-purple-500' : ''}`} />
-                  <span>{localEngagement.bookmarks}</span>
+                  <Bookmark className={`w-5 h-5 transition-all duration-200 ${
+                    isCurrentlyBookmarked ? 'fill-blue-600 text-blue-600 scale-110' : 'group-hover:scale-110'
+                  }`} />
+                  <span className="text-sm font-medium">{localEngagement.bookmarks}</span>
                 </button>
+
+                {/* More Options */}
                 <button 
                   onClick={(e) => {
                     e.stopPropagation()
                     setShowEngagement(true)
                   }}
-                  className="flex items-center space-x-2 text-gray-400 hover:text-gray-300 transition-colors"
+                  className="flex items-center space-x-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-lg transition-all duration-200 group"
                 >
-                  <MoreHorizontal className="w-5 h-5" />
+                  <MoreHorizontal className="w-5 h-5 group-hover:scale-110 transition-all duration-200" />
                 </button>
               </div>
-              <div className="flex items-center space-x-4 text-sm">
-                <span className="flex items-center space-x-1 text-gray-400">
-                  <Eye className="w-4 h-4" />
-                  <span>{isApiPost ? post.post_popularity_score : 0}</span>
+
+              {/* Views */}
+              <div className="flex items-center space-x-2 text-gray-400">
+                <Eye className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {isApiPost ? (post.post_popularity_score || 0).toLocaleString() : '0'}
                 </span>
               </div>
             </div>
+                   {isApiPost && (
+  <div className="mt-4">
+    <CommentInputBar onClick={() => setShowCommentSection(true)} />
+  </div>
+)}
           </div>
         </div>
       </div>
 
+      {/* Image Modal */}
       {showImageModal && postImage && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={() => setShowImageModal(false)}>
-          <div className="relative max-w-4xl max-h-full p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4" onClick={() => setShowImageModal(false)}>
+          <div className="relative max-w-5xl max-h-full">
             <button 
               onClick={() => setShowImageModal(false)}
-              className="absolute top-4 right-4 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75 transition-colors"
+              className="absolute -top-12 right-0 text-white bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full p-2 transition-all duration-200"
             >
               <X className="w-6 h-6" />
             </button>
             <img 
               src={postImage} 
               alt="Post content"
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-full object-contain rounded-lg"
             />
           </div>
+   
         </div>
       )}
 
+      {/* Comment Section */}
       {showCommentSection && isApiPost && (
         <CommentSection
           post={post}
@@ -363,6 +420,7 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
         />
       )}
 
+      {/* Engagement Details */}
       {showEngagement && isApiPost && (
         <EngagementDetails
           likes={post.likes}
@@ -372,6 +430,7 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
         />
       )}
       
+      {/* Toast */}
       {toast && (
         <Toast
           message={toast.message}

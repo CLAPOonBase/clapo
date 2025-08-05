@@ -11,14 +11,7 @@ import {
   SendHorizonal,
   X,
 } from 'lucide-react'
-import MediaUpload,{MediaUploadHandle} from '@/app/components/MediaUpload'
-
-// import MediaUpload, { MediaUploadHandle } from '../../components/MediaUpload'
-
-// Dummy helpers – replace with your actual implementations
-// import { createPost } from '@/lib/createPost'
-
-// import { fetchPosts } from '@/lib/fetchPosts'
+import MediaUpload, { MediaUploadHandle } from '@/app/components/MediaUpload'
 import { useSession } from 'next-auth/react'
 import { useApi } from '@/app/Context/ApiProvider'
 
@@ -26,7 +19,7 @@ export function SnapComposer() {
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [mediaUrl, setMediaUrl] = useState<string | undefined>()
-   const { createPost, fetchPosts } = useApi();
+  const { createPost, fetchPosts } = useApi();
   const { data: session, status } = useSession();
   const [uploadedMedia, setUploadedMedia] = useState<{
     url: string
@@ -38,14 +31,13 @@ export function SnapComposer() {
   const userId = session?.dbUser?.id
 
   const actions = [
-    { icon: ImageIcon, label: 'Photo', color: 'text-green-500', type: 'image' },
-    { icon: Video, label: 'Video', color: 'text-pink-500', type: 'video' },
-    { icon: File, label: 'File', color: 'text-orange-500', type: 'any' },
-    { icon: Mic, label: 'Audio', color: 'text-yellow-500', type: 'audio' },
+    { icon: ImageIcon, label: 'Photo', color: 'text-blue-400 border-blue-300 hover:text-blue-300', type: 'image' },
+    { icon: Video, label: 'Video', color: 'text-purple-400 border-purple-300 hover:text-purple-300', type: 'video' },
+    { icon: File, label: 'File', color: 'text-emerald-400 border-emerald-300 hover:text-emerald-300', type: 'any' },
+    { icon: Mic, label: 'Audio', color: 'text-amber-400 border-amber-300 hover:text-amber-300', type: 'audio' },
   ]
 
   const handleMediaUpload = (url: string) => {
-    // Use fetch to determine file type from Blob
     fetch(url)
       .then((res) => res.blob())
       .then((blob) => {
@@ -97,7 +89,7 @@ export function SnapComposer() {
       setContent('')
       setMediaUrl(undefined)
       setUploadedMedia(null)
-      // TODO: Replace with your actual toast/notification implementation
+      
       if (typeof window !== 'undefined' && window.alert) {
         window.alert('Post created successfully!')
       }
@@ -109,19 +101,28 @@ export function SnapComposer() {
     }
   }
 
+  const getMediaIcon = (type: string) => {
+    switch (type) {
+      case 'image': return <ImageIcon className="w-8 h-8 text-dark-400" />
+      case 'video': return <Video className="w-8 h-8 text-dark-400" />
+      case 'audio': return <Mic className="w-8 h-8 text-dark-400" />
+      default: return <File className="w-8 h-8 text-dark-400" />
+    }
+  }
+
   const renderMediaPreview = () => {
     if (!uploadedMedia) return null
 
     return (
-      <div className="relative group">
-        <div className="relative overflow-hidden dark:bg-gray-800">
+      <div className="relative group mt-3">
+        <div className="relative overflow-hidden rounded-lg flex justify-center bg-dark-800/50 border border-dark-700/50">
           {uploadedMedia.type === 'image' && (
             <Image
               src={uploadedMedia.url}
               alt={uploadedMedia.name}
               width={400}
               height={192}
-              className="w-auto h-48 rounded-lg bg-transparent"
+              className="w-auto h-48 object-cover rounded-lg"
               onError={(e) => {
                 const target = e.target as HTMLImageElement
                 target.style.display = 'none'
@@ -131,20 +132,20 @@ export function SnapComposer() {
           {uploadedMedia.type === 'video' && (
             <video
               src={uploadedMedia.url}
-              className="w-full h-48 object-cover"
+              className="w-auto h-48 object-cover rounded-lg"
               controls
             />
           )}
           {uploadedMedia.type === 'audio' && (
-            <div className="p-4 flex items-center justify-center">
+            <div className="p-6 flex items-center justify-center">
               <audio src={uploadedMedia.url} controls className="w-full" />
             </div>
           )}
           {uploadedMedia.type === 'other' && (
-            <div className="p-4 flex items-center justify-center">
+            <div className="p-6 flex items-center justify-center">
               <div className="text-center">
                 {getMediaIcon(uploadedMedia.type)}
-                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                <p className="mt-3 text-sm text-dark-400">
                   {uploadedMedia.name}
                 </p>
               </div>
@@ -153,7 +154,7 @@ export function SnapComposer() {
         </div>
         <button
           onClick={handleRemoveMedia}
-          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
         >
           <X className="w-4 h-4" />
         </button>
@@ -161,60 +162,92 @@ export function SnapComposer() {
     )
   }
 
-  return (
-    <div className="w-full rounded-xl border border-dark-800 bg-dark-800 p-4">
-     <div className='border border-secondary/20 mb-2 rounded-md p-2 flex items-center justify-center'>
-       <TextareaAutosize
-        minRows={2}
-        maxRows={8}
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="What's on your mind?"
-        className="w-full resize-none rounded-md border-secondary/20 placeholder:justify-center  appearance-none bg-transparent text-sm text-white placeholder:text-dark-500 focus:outline-none"
-      />
-     </div>
+  const charCount = content.length
+  const isOverLimit = charCount > 200
+  const canSubmit = (content.trim() || mediaUrl) && !isSubmitting && !isOverLimit
 
+  return (
+    <div className="w-full bg-dark-800 backdrop-blur-sm rounded-xl p-5 shadow-xl">
+      {/* Text Input */}
+      <div className="relative">
+        <TextareaAutosize
+          minRows={3}
+          maxRows={8}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="What's happening?"
+          className="w-full resize-none bg-dark-700 p-2 rounded-md text-white placeholder-dark-400 text-base leading-relaxed focus:outline-none"
+        />
+        {/* Character Counter */}
+         
+          <div className={`absolute bottom-2 right-2 text-xs font-medium px-2 py-1 rounded ${
+            isOverLimit 
+              ? 'text-red-400 bg-red-900/20' 
+              : charCount > 180 
+                ? 'text-amber-400 bg-amber-900/20'
+                : 'text-dark-400 bg-dark-800/50'
+          }`}>
+            {charCount}/200
+          </div>
+        
+      </div>
+
+      {/* Hidden Media Upload Component */}
       <MediaUpload
         ref={mediaUploadRef}
         onMediaUploaded={handleMediaUpload}
         onMediaRemoved={handleRemoveMedia}
         userId={userId}
-        className=""
+        className="hidden"
       />
 
+      {/* Media Preview */}
       {renderMediaPreview()}
 
-      <div className="mt-4 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          {actions.map(({ icon: Icon, label, color, type }) => (
-            <button
-              key={label}
-              onClick={() => mediaUploadRef.current?.openFileDialog(type)}
-              disabled={isSubmitting}
-              className={`flex items-center justify-center gap-2 p-3 rounded-xl bg-dark-800/50 hover:bg-dark-800 transition-all duration-200 group ${color} ${
-                isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              <Icon className="w-5 h-5 transition-transform group-hover:scale-110" />
-              <span className="text-sm font-medium hidden sm:inline">
-                {label}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className={`rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:opacity-90 ${
-            isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <SendHorizonal className="w-4 h-4" />
-            Snap
+      {/* Divider */}
+      <div className="border-t border-dark-700/50 mt-4 pt-4">
+        <div className="flex items-center justify-between">
+          {/* Media Actions */}
+          <div className="flex items-center gap-4">
+            {actions.map(({ icon: Icon, label, color, type }) => (
+              <button
+                key={label}
+                onClick={() => mediaUploadRef.current?.openFileDialog(type)}
+                disabled={isSubmitting}
+                className={`flex border border-opacity-30 items-center gap-2 px-3 py-2 rounded-lg hover:bg-dark-800/50 transition-all duration-200 ${color} ${
+                  isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                }`}
+                title={label}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="text-sm font-medium hidden md:inline">
+                  {label}
+                </span>
+              </button>
+            ))}
           </div>
-        </button>
+
+          {/* Submit Button */}
+          <button
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
+              canSubmit
+                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-500/25'
+                : isOverLimit
+                  ? 'bg-red-600/50 text-red-300 cursor-not-allowed'
+                  : 'bg-dark-700 text-dark-400 cursor-not-allowed'
+            }`}
+            title={isOverLimit ? 'Message exceeds 200 character limit' : ''}
+          >
+            {isSubmitting ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <SendHorizonal className="w-4 h-4" />
+            )}
+            <span>{isSubmitting ? 'Posting...' : 'Snap'}</span>
+          </button>
+        </div>
       </div>
     </div>
   )

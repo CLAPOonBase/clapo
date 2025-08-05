@@ -112,45 +112,17 @@ export default function SocialFeedPage() {
               </div>
             )}
 
-            {status === 'authenticated' && session?.dbUser && (
-              <div className="bg-dark-800 rounded-md p-4 mb-4">
-                <div className="flex items-center gap-3">
-                  <img 
-                    src={session.dbUser.avatarUrl || 'https://robohash.org/default.png'} 
-                    alt="Profile" 
-                    className="w-10 h-10 rounded-full"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://robohash.org/default.png';
-                    }}
-                  />
-                  <div>
-                    <h3 className="text-white font-semibold">
-                      Welcome, {session.dbUser.username || 'User'}!
-                    </h3>
-                    <p className="text-gray-400 text-sm">
-                      {session.dbUser.bio || 'No bio available'}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => signOut()}
-                    className="ml-auto text-gray-400 hover:text-white text-sm"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              </div>
-            )}
             
             <SnapComposer />
 
                 <div className="sticky top-0 pt-4 backdrop-blur-sm">
-              <div className="flex justify-around space-x-8 bg-dark-800 rounded-md p-4">
+              <div className="flex justify-around space-x-8 bg-dark-800 rounded-md pt-4">
                 {['FOR YOU', 'FOLLOWING'].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab as 'FOR YOU' | 'FOLLOWING')}
                     className={`pb-2 font-semibold ${
-                      activeTab === tab ? 'text-white w-full border-b-2 border-orange-500' : 'text-gray-400 w-full hover:text-white'
+                      activeTab === tab ? 'text-white w-full border-b-4 border-orange-500' : 'text-gray-400 w-full hover:text-white'
                     }`}
                   >
                     {tab}
