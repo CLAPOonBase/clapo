@@ -212,7 +212,7 @@ export function SnapComposer() {
         >
           <div className="flex items-center gap-2">
             <SendHorizonal className="w-4 h-4" />
-            Send
+            Snap
           </div>
         </button>
       </div>

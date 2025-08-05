@@ -68,10 +68,10 @@ export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
         hidden md:block
         sticky top-0
         h-full
-        w-16 lg:w-96
+        
         px-4
         space-y-4
-        overflow-y-auto
+     
       `}
       >
         <div className="flex items-center pt-4 rounded-md bg-dark-800">

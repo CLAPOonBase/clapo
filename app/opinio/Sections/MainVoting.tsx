@@ -51,7 +51,7 @@ export default function MainVoting() {
       <UserDetails />
 
       <div>
-        <div className="flex space-x-6 justify-center items-center border-b border-secondary-light/10 overflow-x-auto">
+        <div className="flex justify-center items-center border-b border-secondary-light/10 overflow-x-auto">
           {navItems.map(({ label }) => (
             <button
               key={label}
