@@ -16,7 +16,7 @@ export const authOptions: NextAuthOptions = {
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" }
       },
-      async authorize(credentials) {
+      async authorize(credentials): Promise<any> {
         if (!credentials?.username || !credentials?.password) {
           return null
         }
@@ -32,7 +32,7 @@ export const authOptions: NextAuthOptions = {
               id: response.user.id,
               name: response.user.username,
               email: response.user.email,
-              image: response.user.avatarUrl,
+              image: (response.user as any).avatarUrl,
               dbUser: response.user,
               provider: 'credentials'
             }
@@ -57,7 +57,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account }) {
       if (account?.provider === 'twitter' && user) {
         token.provider = 'twitter'
-        token.twitterData = user
+        token.twitterData = user as any
         token.needsPasswordSetup = true
       }
       
@@ -70,10 +70,10 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token.dbUser) {
-        session.dbUser = token.dbUser as any
-        session.provider = token.provider as any
-        session.needsPasswordSetup = token.needsPasswordSetup as any
-        session.twitterData = token.twitterData as any
+        session.dbUser = token.dbUser
+        session.provider = token.provider as string
+        session.needsPasswordSetup = token.needsPasswordSetup as boolean
+        session.twitterData = token.twitterData
       }
       return session
     }

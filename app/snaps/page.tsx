@@ -1,8 +1,8 @@
 "use client"
 import { useState, useEffect } from 'react'
-import { useSession, signIn, signOut } from 'next-auth/react'
+import { useSession, signIn } from 'next-auth/react'
 import Sidebar from './Sections/Sidebar'
-import {SnapComposer} from './Sections/SnapComposer'
+import SnapComposer from './Sections/SnapComposer'
 import SnapCard from './Sections/SnapCard'
 import ActivityFeed from './Sections/ActivityFeed'
 import {ExplorePage} from './SidebarSection/ExplorePage'

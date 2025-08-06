@@ -1,9 +1,8 @@
 "use client"
 
-import { useState, ChangeEvent, useEffect } from "react"
-import { User, Post, ApiUser } from "@/app/types"
-import { motion } from "framer-motion"
-import { Ellipsis, PencilIcon } from "lucide-react"
+import { useState, useEffect } from "react"
+import { User, Post } from "@/app/types"
+import { Ellipsis } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useApi } from "../../Context/ApiProvider"
 

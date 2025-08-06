@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useApi } from '../../Context/ApiProvider'
 import { apiService } from '../../lib/api'
-import { MessageCircle, Users, Plus, Send, Search, UserPlus, ChevronDown, RefreshCw, Hash, Dot } from 'lucide-react'
+import { MessageCircle, Users, Plus, Send, Search, ChevronDown, Hash, Dot } from 'lucide-react'
 import { io } from 'socket.io-client'
 
 export default function MessagePage() {
@@ -29,7 +29,7 @@ export default function MessagePage() {
   const [dmSection, setDmSection] = useState<'threads' | 'search'>('threads')
   const [communitySection, setCommunitySection] = useState<'my' | 'join' | 'create'>('my')
   const [selectedCommunity, setSelectedCommunity] = useState<string | null>(null)
-  const [communityMessages, setCommunityMessages] = useState<any[]>([])
+  const [communityMessages, setCommunityMessages] = useState<unknown[]>([])
   const [selectedThread, setSelectedThread] = useState<string | null>(null)
   
 
@@ -37,15 +37,14 @@ export default function MessagePage() {
   const [newCommunityName, setNewCommunityName] = useState('')
   const [newCommunityDescription, setNewCommunityDescription] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
-  const [allUsers, setAllUsers] = useState<any[]>([])
-  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [allUsers, setAllUsers] = useState<unknown[]>([])
+  const [searchResults, setSearchResults] = useState<unknown[]>([])
   const [loadingUsers, setLoadingUsers] = useState(false)
   const [showCreateCommunityModal, setShowCreateCommunityModal] = useState(false)
   const [hasInitializedUsers, setHasInitializedUsers] = useState(false)
   
-  const [socket, setSocket] = useState<any>(null)
+  const [socket, setSocket] = useState<unknown>(null)
   const [isConnected, setIsConnected] = useState(false)
-  const [userCommunities, setUserCommunities] = useState<any[]>([])
 
   useEffect(() => {
     if (session?.dbUser?.id) {
@@ -215,7 +214,7 @@ export default function MessagePage() {
       const response = await fetch('https://server.blazeswap.io/api/snaps/users/search?q=')
       const data = await response.json()
       if (data.users) {
-        const filteredUsers = data.users.filter((user: any) => user.id !== session?.dbUser?.id)
+        const filteredUsers = data.users.filter((user: { id: string }) => user.id !== session?.dbUser?.id)
         setAllUsers(filteredUsers)
         if (dmSection === 'search') {
           setSearchResults(filteredUsers)
@@ -238,7 +237,7 @@ export default function MessagePage() {
       const response = await fetch(`https://server.blazeswap.io/api/snaps/users/search?q=${encodeURIComponent(query)}`)
       const data = await response.json()
       if (data.users) {
-        setSearchResults(data.users.filter((user: any) => user.id !== session?.dbUser?.id))
+        setSearchResults(data.users.filter((user: { id: string }) => user.id !== session?.dbUser?.id))
       }
     } catch (error) {
       console.error('Failed to search users:', error)
@@ -263,9 +262,13 @@ export default function MessagePage() {
  
       const tempMessage = {
         id: `temp-${Date.now()}`,
+        thread_id: selectedThread,
+        threadId: selectedThread,
         content: messageText,
         sender_id: session.dbUser.id,
+        senderId: session.dbUser.id,
         created_at: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
         sender_username: session.dbUser.username,
         sender_avatar: session.dbUser.avatarUrl
       }
@@ -276,18 +279,20 @@ export default function MessagePage() {
 
       const sortedMessages = updatedMessages.sort((a, b) => 
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      )
-      dispatch({ 
-        type: 'SET_THREAD_MESSAGES', 
-        payload: { threadId: selectedThread, messages: sortedMessages } 
-      })
+      );
+      if (typeof dispatch === 'function') {
+        dispatch({ 
+          type: 'SET_THREAD_MESSAGES', 
+          payload: { threadId: selectedThread, messages: sortedMessages } 
+        });
+      }
 
       // Send via socket like the test chat
-      socket.emit('send_dm_message', { 
+      (socket as { emit: (event: string, data: unknown, callback?: (response: unknown) => void) => void }).emit('send_dm_message', { 
         userId: session.dbUser.id, 
         content: messageText, 
         threadId: selectedThread 
-      }, (response: any) => {
+      }, (response: { success: boolean; message?: string }) => {
         if (response.success) {
           console.log('✅ Message sent successfully via socket')
       
@@ -323,24 +328,24 @@ export default function MessagePage() {
           sender_avatar: session.dbUser.avatarUrl
         }
         
-        const updatedMessages = [...communityMessages, tempMessage]
-        setCommunityMessages(updatedMessages)
+        const updatedMessages = [...communityMessages, tempMessage];
+        setCommunityMessages(updatedMessages);
 
         console.log('🔍 Sending community message:', {
           userId: session.dbUser.id,
           content: messageText,
           communityId: selectedCommunity,
           socketConnected: isConnected
-        })
+        });
         
-        socket.emit('send_community_message', {
+        (socket as { emit: (event: string, data: unknown, callback?: (response: unknown) => void) => void }).emit('send_community_message', {
           userId: session.dbUser.id,
           content: messageText,
           communityId: selectedCommunity
-        }, async (response: any) => {
+        }, async (response: { success: boolean; message?: string }) => {
           if (response.success) {
             console.log('✅ Community message sent successfully via socket')
-            const apiResponse = await apiService.getCommunityMessages(selectedCommunity)
+            const apiResponse = await apiService.getCommunityMessages(selectedCommunity) as { messages?: unknown[] }
             setCommunityMessages(apiResponse.messages || [])
           } else {
             console.error('❌ Failed to send community message via socket:', response.message)
@@ -349,7 +354,7 @@ export default function MessagePage() {
               senderId: session.dbUser.id,
               content: messageText
             })
-            const apiResponse = await apiService.getCommunityMessages(selectedCommunity)
+            const apiResponse = await apiService.getCommunityMessages(selectedCommunity) as { messages?: unknown[] }
             setCommunityMessages(apiResponse.messages || [])
           }
       })
@@ -371,12 +376,12 @@ export default function MessagePage() {
           content: messageText
       })
       
-      const response = await apiService.getCommunityMessages(selectedCommunity)
+      const response = await apiService.getCommunityMessages(selectedCommunity) as { messages?: unknown[] }
       setCommunityMessages(response.messages || [])
     }
   }
 
-  const handleStartChatWithUser = async (user: any) => {
+  const handleStartChatWithUser = async (user: { id: string; username: string }) => {
     if (!session?.dbUser?.id) return
 
     try {
@@ -418,7 +423,7 @@ export default function MessagePage() {
   const handleSelectCommunity = async (communityId: string) => {
     setSelectedCommunity(communityId)
     try {
-      const response = await apiService.getCommunityMessages(communityId)
+      const response = await apiService.getCommunityMessages(communityId) as { messages?: unknown[] }
       setCommunityMessages(response.messages || [])
     } catch (error) {
       console.error('Failed to fetch community messages:', error)
@@ -426,19 +431,19 @@ export default function MessagePage() {
     }
   }
 
-  const handleSendCommunityMessage = async () => {
-    if (!selectedCommunity || !session?.dbUser?.id || !messageContent.trim()) return
+  // const handleSendCommunityMessage = async () => {
+  //   if (!selectedCommunity || !session?.dbUser?.id || !messageContent.trim()) return
 
-    try {
-      await apiService.sendCommunityMessage(selectedCommunity, {
-        senderId: session.dbUser.id,
-        content: messageContent.trim()
-      })
-      setMessageContent('')
-    } catch (error) {
-      console.error('Failed to send community message:', error)
-    }
-  }
+  //   try {
+  //     await apiService.sendCommunityMessage(selectedCommunity, {
+  //       senderId: session.dbUser.id,
+  //       content: messageContent.trim()
+  //     })
+  //     setMessageContent('')
+  //   } catch (error) {
+  //     console.error('Failed to send community message:', error)
+  //   }
+  // }
 
   const currentMessages = activeTab === 'dms' 
     ? state.threadMessages[selectedThread || ''] || []
@@ -626,9 +631,9 @@ export default function MessagePage() {
                       const currentUserId = session?.dbUser?.id
                       let displayName = thread.name || 'Direct Message'
                       
-                      if (!(thread as any).is_group && currentUserId && (thread as any).participants) {
-                        const otherParticipant = (thread as any).participants.find(
-                          (participant: any) => participant.user_id !== currentUserId
+                      if (!(thread as { is_group?: boolean; participants?: { user_id: string; username: string }[] }).is_group && currentUserId && (thread as { is_group?: boolean; participants?: { user_id: string; username: string }[] }).participants) {
+                        const otherParticipant = (thread as { is_group?: boolean; participants?: { user_id: string; username: string }[] }).participants.find(
+                          (participant: { user_id: string; username: string }) => participant.user_id !== currentUserId
                         )
                         
                         if (otherParticipant) {
@@ -661,7 +666,7 @@ export default function MessagePage() {
                               <div className="font-semibold truncate">{displayName}</div>
                               <div className="text-xs opacity-70 flex items-center">
                                 <Dot className="w-3 h-3 mr-1" />
-                                {(thread as any).is_group ? 'Group Chat' : 'Direct Message'}
+                                {(thread as { is_group?: boolean }).is_group ? 'Group Chat' : 'Direct Message'}
                               </div>
                             </div>
                           </div>
@@ -696,7 +701,7 @@ export default function MessagePage() {
                       <p className="text-sm">Finding users...</p>
                     </div>
                   ) : displayUsers.length > 0 ? (
-                    displayUsers?.map((user) => (
+                    displayUsers?.map((user: { id: string; username: string }) => (
                       <div
                         key={user.id}
                         onClick={() => handleStartChatWithUser(user)}
@@ -741,13 +746,13 @@ export default function MessagePage() {
               <div className="mb-4">
                 {communitySection === 'my' ? (
                   <div className="space-y-2">
-                    {state.communities?.filter((community: any) => community.is_member)?.length === 0 ? (
+                    {state.communities?.filter((community) => (community as { is_member?: boolean }).is_member)?.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-12 text-slate-400">
                         <Users className="w-12 h-12 mb-3 opacity-50" />
                         <p className="text-sm text-center">No communities yet<br />Join or create one!</p>
                       </div>
                     ) : (
-                      state.communities?.filter((community: any) => community.is_member)?.map((community) => (
+                      state.communities?.filter((community) => (community as { is_member?: boolean }).is_member)?.map((community) => (
                         <div
                           key={community.id}
                           onClick={() => handleSelectCommunity(community.id)}
@@ -769,10 +774,10 @@ export default function MessagePage() {
                             </div>
                           </div>
                           <div className="flex items-center justify-between text-xs opacity-60">
-                            <span>Created by {(community as any).creator_username || 'Unknown'}</span>
+                            <span>Created by {(community as { creator_username?: string }).creator_username || 'Unknown'}</span>
                             <span className="flex items-center">
                               <Users className="w-3 h-3 mr-1" />
-                              {(community as any).member_count || 0}
+                              {(community as { member_count?: number }).member_count || 0}
                             </span>
                           </div>
                         </div>
@@ -804,7 +809,7 @@ export default function MessagePage() {
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-slate-400 flex items-center">
                               <Users className="w-3 h-3 mr-1" />
-                              {community.member_count || 0} members
+                              {(community as { member_count?: number }).member_count || 0} members
                             </span>
                             <button
                               onClick={() => handleJoinCommunity(community.id)}
@@ -882,7 +887,7 @@ export default function MessagePage() {
   onScroll={handleScroll}
   className="flex-1 overflow-y-auto p-4 space-y-3 relative scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent"
 >
-  {displayMessages?.map((message: any) => {
+  {displayMessages?.map((message: { id: string; sender_id: string; content: string; created_at: string; sender_username?: string; sender_avatar?: string }) => {
     const currentUserId = session?.dbUser?.id;
     const isOwnMessage = message.sender_id === currentUserId;
 
@@ -926,7 +931,7 @@ export default function MessagePage() {
               }`}
               >
             
-              {new Date(message.created_at || message.createdAt).toLocaleString()}
+              {new Date(message.created_at).toLocaleString()}
             </span>
           </div>
         </div>

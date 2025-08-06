@@ -1,6 +1,6 @@
 "use client"
 import { useState } from 'react'
-import { MessageCircle, Repeat2, Heart, Share, Bookmark, MoreHorizontal, X, Eye } from 'lucide-react'
+import { MessageCircle, Repeat2, Heart, Bookmark, X, Eye } from 'lucide-react'
 import { ApiPost } from '@/app/types'
 import { useApi } from '../../Context/ApiProvider'
 import { useSession } from 'next-auth/react'
@@ -74,14 +74,7 @@ export default function EnhancedSnapCard({ post, liked, bookmarked, retweeted, o
     }
   }
 
-  const handleView = async () => {
-    if (!session?.dbUser?.id) return
-    try {
-      await viewPost(post.id, session.dbUser.id)
-    } catch (error) {
-      console.error('Failed to view post:', error)
-    }
-  }
+
 
   const handleComment = async () => {
     if (!session?.dbUser?.id || !commentContent.trim()) return

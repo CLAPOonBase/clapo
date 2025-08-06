@@ -22,14 +22,10 @@ import {
   FollowRequest,
   FollowResponse,
   UnfollowResponse,
-  CreateThreadRequest,
-  CreateThreadResponse,
   SendMessageRequest,
   SendMessageResponse,
   CreateCommunityRequest,
-  CreateCommunityResponse,
   JoinCommunityRequest,
-  JoinCommunityResponse,
   NotificationsResponse,
   ActivityResponse,
   ApiError,
@@ -38,9 +34,6 @@ import {
   ThreadMessagesResponse,
   AddParticipantRequest,
   AddParticipantResponse,
-  CommunitiesResponse,
-  CommunityMembersResponse,
-  CommunityMessagesResponse
 } from '../types/api'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://server.blazeswap.io/api/snaps'
@@ -132,7 +125,7 @@ class ApiService {
     })
   }
 
-  async updateUserPassword(userId: string, newPassword: string): Promise<any> {
+  async updateUserPassword(userId: string, newPassword: string): Promise<{ success: boolean; message: string }> {
     try {
       const response = await fetch(`${API_BASE_URL}/users/${userId}/password`, {
         method: 'PUT',
@@ -148,9 +141,9 @@ class ApiService {
     }
   }
 
-  async createMessageThread(data: CreateMessageThreadRequest): Promise<any> {
+  async createMessageThread(data: CreateMessageThreadRequest): Promise<unknown> {
     try {
-      const requestBody: any = {
+      const requestBody: { userId1: string; userId2: string; name?: string } = {
         userId1: data.creatorId,
         userId2: data.targetUserId
       }
@@ -217,7 +210,7 @@ class ApiService {
     }
   }
 
-  async markMessageAsRead(messageId: string): Promise<any> {
+  async markMessageAsRead(messageId: string): Promise<unknown> {
     try {
       const response = await fetch(`${API_BASE_URL}/messages/${messageId}/read`, {
         method: 'PUT',
@@ -232,7 +225,7 @@ class ApiService {
     }
   }
 
-  async createCommunity(data: CreateCommunityRequest): Promise<any> {
+  async createCommunity(data: CreateCommunityRequest): Promise<unknown> {
     try {
       const response = await this.request('/communities', {
         method: 'POST',
@@ -245,7 +238,7 @@ class ApiService {
     }
   }
 
-  async getCommunities(searchQuery?: string, limit = 20, offset = 0): Promise<any> {
+  async getCommunities(searchQuery?: string, limit = 20, offset = 0): Promise<unknown> {
     try {
       const queryParams = new URLSearchParams()
       if (searchQuery) queryParams.append('searchQuery', searchQuery)
@@ -260,7 +253,7 @@ class ApiService {
     }
   }
 
-  async getUserCommunities(userId: string): Promise<any> {
+  async getUserCommunities(userId: string): Promise<unknown> {
     try {
       const response = await this.request(`/users/${userId}/communities`)
       return response
@@ -270,7 +263,7 @@ class ApiService {
     }
   }
 
-  async joinCommunity(communityId: string, data: JoinCommunityRequest): Promise<any> {
+  async joinCommunity(communityId: string, data: JoinCommunityRequest): Promise<unknown> {
     try {
       const response = await this.request(`/communities/${communityId}/join`, {
         method: 'POST',
@@ -283,7 +276,7 @@ class ApiService {
     }
   }
 
-  async getCommunityMembers(communityId: string, limit = 50, offset = 0): Promise<any> {
+  async getCommunityMembers(communityId: string, limit = 50, offset = 0): Promise<unknown> {
     try {
       const response = await this.request(`/communities/${communityId}/members?limit=${limit}&offset=${offset}`)
       return response
@@ -293,7 +286,7 @@ class ApiService {
     }
   }
 
-  async sendCommunityMessage(communityId: string, data: SendMessageRequest): Promise<any> {
+  async sendCommunityMessage(communityId: string, data: SendMessageRequest): Promise<unknown> {
     try {
       const response = await this.request(`/communities/${communityId}/messages`, {
         method: 'POST',
@@ -306,7 +299,7 @@ class ApiService {
     }
   }
 
-  async getCommunityMessages(communityId: string, limit = 50, offset = 0): Promise<any> {
+  async getCommunityMessages(communityId: string, limit = 50, offset = 0): Promise<unknown> {
     try {
       const response = await this.request(`/communities/${communityId}/messages?limit=${limit}&offset=${offset}`)
       return response
@@ -394,7 +387,7 @@ class ApiService {
     })
   }
 
-  async unbookmarkPost(postId: string, data: BookmarkRequest): Promise<any> {
+  async unbookmarkPost(postId: string, data: BookmarkRequest): Promise<unknown> {
     console.log('🔍 Unbookmark API Request:', { postId, data })
     try {
       return this.request(`/posts/${postId}/bookmark`, {
