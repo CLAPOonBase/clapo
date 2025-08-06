@@ -72,7 +72,6 @@ export function ProfilePage({ user, posts }: Props) {
           className="w-full h-full object-cover bg-black rounded-md"
         />
       </div>
-
       <div className="relative px-4 -mt-14 flex items-end space-x-4">
         <div className="relative">
           <img
