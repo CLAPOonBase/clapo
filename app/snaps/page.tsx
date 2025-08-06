@@ -2,9 +2,9 @@
 import { useState, useEffect } from 'react'
 import { useSession, signIn } from 'next-auth/react'
 import Sidebar from './Sections/Sidebar'
-import SnapComposer from './Sections/SnapComposer'
+import {SnapComposer} from './Sections/SnapComposer'
 import SnapCard from './Sections/SnapCard'
-import ActivityFeed from './Sections/ActivityFeed'
+// import ActivityFeed from './Sections/ActivityFeed'
 import {ExplorePage} from './SidebarSection/ExplorePage'
 import NotificationPage from './SidebarSection/NotificationPage'
 import BookmarkPage from './SidebarSection/BookmarkPage' 
@@ -16,6 +16,7 @@ import ActivityPage from './SidebarSection/ActivityPage'
 import { motion } from 'framer-motion'
 import { useApi } from '../Context/ApiProvider'
 import { PostSkeleton, LoadingSpinner } from '../components/SkeletonLoader'
+import UserActivityFeed from './Sections/ActivityFeed'
 
 export default function SocialFeedPage() {
 
@@ -182,7 +183,7 @@ export default function SocialFeedPage() {
         </div>
         {currentPage !== 'messages' && (
           <div className="w-[300px] md:block hidden">
-            <ActivityFeed items={[]} loading={state.posts.loading} />
+            <UserActivityFeed username={session.dbUser?.username} activity={[]} />
           </div>
         )}
       </div>

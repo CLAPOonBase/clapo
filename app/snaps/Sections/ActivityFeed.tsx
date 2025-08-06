@@ -1,105 +1,98 @@
-"use client";
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
-import { ActivityItem } from "@/app/types";
-import { ActivitySkeleton } from "../../components/SkeletonLoader";
+// components/UserActivityFeed.tsx
 
-type Props = {
-  items: ActivityItem[];
-  loading?: boolean;
-};
+import React from 'react'
 
-const ITEMS_PER_PAGE = 2;
+interface ActivityItem {
+  activity_type: 'like' | 'comment' | 'retweet' | 'post_created'
+  created_at: string
+  post_content: string
+  post_id: string
+}
 
-export default function ActivityFeed({ items, loading = false }: Props) {
-  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+interface UserActivityFeedProps {
+  username: string
+  activity: ActivityItem[]
+}
 
-  const handleSeeMore = () => {
-    setVisibleCount((prev) => prev + ITEMS_PER_PAGE);
-  };
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  })
+}
 
-  const handleSeeLess = () => {
-    setVisibleCount((prev) => Math.max(ITEMS_PER_PAGE, prev - ITEMS_PER_PAGE));
-  };
+const getActivityIcon = (type: string) => {
+  switch (type) {
+    case 'like':
+      return (
+        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5..." />
+        </svg>
+      )
+    case 'comment':
+      return (
+        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01..." />
+        </svg>
+      )
+    case 'retweet':
+      return (
+        <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M23 4v6h-6M1 20v-6h6..." />
+        </svg>
+      )
+    case 'post_created':
+      return (
+        <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2..." />
+        </svg>
+      )
+    default:
+      return null
+  }
+}
 
-  const isExpanded = visibleCount > ITEMS_PER_PAGE;
+const getActivityText = (type: string) => {
+  switch (type) {
+    case 'like':
+      return 'liked a post'
+    case 'comment':
+      return 'commented on a post'
+    case 'retweet':
+      return 'retweeted a post'
+    case 'post_created':
+      return 'created a post'
+    default:
+      return 'interacted with a post'
+  }
+}
+
+export default function UserActivityFeed({ username, activity }: UserActivityFeedProps) {
+  if (!activity || activity.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <p>No recent activity</p>
+      </div>
+    )
+  }
 
   return (
-    <div className={`md:mx-4 md:w-72 w-full rounded-md sticky top-0 bg-dark-800 p-4 transition-all overflow-y-hidden duration-300 ${isExpanded ? "h-[600px]" : "h-[400px]"}`}>
-      <h2 className="text-xl font-bold mb-4 border-b">
-        ACTIVITY FEED
-      </h2>
-
-      <div className="space-y-4 overflow-y-auto h-full pr-1">
-        {loading ? (
-          <ActivitySkeleton />
-        ) : (
-          <AnimatePresence>
-            {items.slice(0, visibleCount).map((item) => (
-              <motion.div
-                key={item.id}
-                className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-800 transition-all"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Image
-                  src={item.user.avatar}
-                  alt={item.user.name}
-                  width={40}
-                  height={40}
-                  className="rounded-full w-10 h-10 object-cover"
-                />
-
-                <div className="flex-1">
-                  <div className="text-sm">
-                    <span className="font-semibold text-white">
-                      {item.user.name}
-                    </span>
-                    <span className="text-gray-400 ml-1">
-                      {item.type === "like"
-                        ? "liked a post"
-                        : item.type === "retweet"
-                        ? "retweeted"
-                        : "followed someone"}
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    {item.user.handle}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1 line-clamp-2">
-                    {item.user.bio}
-                  </div>
-                  <div className="text-xs text-gray-600 mt-1">{item.timestamp}</div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        )}
-
-        {!loading && (
-          <div className="text-center mt-6 space-x-4">
-            {visibleCount < items.length && (
-              <button
-                onClick={handleSeeMore}
-                className="text-blue-500 hover:text-blue-400 text-sm"
-              >
-                SEE MORE
-              </button>
-            )}
-            {visibleCount > ITEMS_PER_PAGE && (
-              <button
-                onClick={handleSeeLess}
-                className="text-red-500 hover:text-red-400 text-sm"
-              >
-                SEE LESS
-              </button>
-            )}
+    <div className="space-y-4">
+      {activity.map((activityItem, index) => (
+        <div key={index} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg">
+          <div className="flex-shrink-0 mt-1">{getActivityIcon(activityItem.activity_type)}</div>
+          <div className="flex-1">
+            <div className="flex items-center space-x-2 mb-1">
+              <span className="font-semibold text-gray-900">@{username}</span>
+              <span className="text-gray-500 text-sm">{getActivityText(activityItem.activity_type)}</span>
+              <span className="text-gray-400 text-sm">{formatDate(activityItem.created_at)}</span>
+            </div>
+            <p className="text-gray-600 text-sm">{activityItem.post_content}</p>
           </div>
-        )}
-      </div>
+        </div>
+      ))}
     </div>
-  );
+  )
 }

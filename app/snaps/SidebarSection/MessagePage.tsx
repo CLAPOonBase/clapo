@@ -924,8 +924,8 @@ export default function MessagePage() {
                 : 'bg-slate-800/40 text-slate-200 border-slate-700/30 mr-auto'
               }`}
           >
-            <p className="leading-relaxed">{message.content}</p>
-              <span  className={`text-[8px] text-slate-400  rounded-full  ${isOwnMessage 
+            <p className="break-words break-all whitespace-pre-wrap text-wrap max-w-96">{message.content}</p>
+              <span  className={`text-[8px] text-slate-400 text-wrap w-40  rounded-full  ${isOwnMessage 
                 ? 'ml-auto' 
                 : ''
               }`}

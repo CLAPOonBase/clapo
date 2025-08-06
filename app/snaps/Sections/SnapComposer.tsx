@@ -1,131 +1,254 @@
-"use client";
-import { Camera, Video, FileText, Calendar, PencilLine, Send } from "lucide-react";
-import { useState } from "react";
-import { useSession } from "next-auth/react";
-import { useApi } from "../../Context/ApiProvider";
-import { ComposerSkeleton } from "../../components/SkeletonLoader";
+'use client'
 
-export default function SnapComposer() {
-  const [content, setContent] = useState("");
-  const [focused, setFocused] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { createPost } = useApi();
+import React, { useState, useRef } from 'react'
+import TextareaAutosize from 'react-textarea-autosize'
+import Image from 'next/image'
+import {
+  Image as ImageIcon,
+  Video,
+  File,
+  Mic,
+  SendHorizonal,
+  X,
+} from 'lucide-react'
+import MediaUpload, { MediaUploadHandle } from '@/app/components/MediaUpload'
+import { useSession } from 'next-auth/react'
+import { useApi } from '@/app/Context/ApiProvider'
+
+export function SnapComposer() {
+  const [content, setContent] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [mediaUrl, setMediaUrl] = useState<string | undefined>()
+  const { createPost, fetchPosts } = useApi();
   const { data: session, status } = useSession();
+  const [uploadedMedia, setUploadedMedia] = useState<{
+    url: string
+    name: string
+    type: 'image' | 'video' | 'audio' | 'other'
+  } | null>(null)
 
-  // Show skeleton if not authenticated
-  if (status === 'loading') {
-    return <ComposerSkeleton />;
+  const mediaUploadRef = useRef<MediaUploadHandle>(null)
+  const userId = session?.dbUser?.id
+
+  const actions = [
+    { icon: ImageIcon, label: 'Photo', color: 'text-blue-400 border-blue-300 hover:text-blue-300', type: 'image' },
+    { icon: Video, label: 'Video', color: 'text-purple-400 border-purple-300 hover:text-purple-300', type: 'video' },
+    { icon: File, label: 'File', color: 'text-emerald-400 border-emerald-300 hover:text-emerald-300', type: 'any' },
+    { icon: Mic, label: 'Audio', color: 'text-amber-400 border-amber-300 hover:text-amber-300', type: 'audio' },
+  ]
+
+  const handleMediaUpload = (url: string) => {
+    fetch(url)
+      .then((res) => res.blob())
+      .then((blob) => {
+        const type = blob.type
+        let mediaType: 'image' | 'video' | 'audio' | 'other' = 'other'
+
+        if (type.startsWith('image/')) mediaType = 'image'
+        else if (type.startsWith('video/')) mediaType = 'video'
+        else if (type.startsWith('audio/')) mediaType = 'audio'
+
+        setUploadedMedia({
+          url,
+          name: 'uploaded-file',
+          type: mediaType,
+        })
+        setMediaUrl(url)
+      })
+      .catch((err) => {
+        console.error('Failed to parse uploaded media', err)
+      })
   }
 
-  if (status === 'unauthenticated') {
-    return <ComposerSkeleton />;
+  const handleRemoveMedia = () => {
+    setMediaUrl(undefined)
+    setUploadedMedia(null)
   }
 
   const handleSubmit = async () => {
-    if (!content.trim() || !session?.dbUser?.id) return;
+    if (!content.trim() && !mediaUrl) return
+    if (!userId) {
+      console.error('User ID is missing from session')
+      return
+    }
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
+
     try {
-      await createPost({
-        userId: session.dbUser.id,
+      const postData = {
+        userId,
         content: content.trim(),
-        mediaUrl: undefined, 
+        mediaUrl,
         parentPostId: undefined,
         isRetweet: false,
-        retweetRefId: undefined
-      });
-      setContent("");
-    } catch (error) {
-      console.error("Failed to create post:", error);
-      // TODO: Add error handling UI
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+        retweetRefId: undefined,
+      }
 
-  const actions = [
-    { icon: Camera, label: "Photo", color: "text-secondary hover:text-blue-300" },
-    { icon: Video, label: "Video", color: "text-secondary hover:text-red-300" },
-    { icon: FileText, label: "File", color: "text-secondary hover:text-green-300" },
-    { icon: Calendar, label: "Event", color: "text-secondary hover:text-purple-300" }
-  ];
+      await createPost(postData)
+
+      setContent('')
+      setMediaUrl(undefined)
+      setUploadedMedia(null)
+      
+      if (typeof window !== 'undefined' && window.alert) {
+        window.alert('Post created successfully!')
+      }
+      await fetchPosts(userId)
+    } catch (error) {
+      console.error('Failed to create post:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const getMediaIcon = (type: string) => {
+    switch (type) {
+      case 'image': return <ImageIcon className="w-8 h-8 text-dark-400" />
+      case 'video': return <Video className="w-8 h-8 text-dark-400" />
+      case 'audio': return <Mic className="w-8 h-8 text-dark-400" />
+      default: return <File className="w-8 h-8 text-dark-400" />
+    }
+  }
+
+  const renderMediaPreview = () => {
+    if (!uploadedMedia) return null
+
+    return (
+      <div className="relative group mt-3">
+        <div className="relative overflow-hidden rounded-lg flex justify-center bg-dark-800/50 border border-dark-700/50">
+          {uploadedMedia.type === 'image' && (
+            <Image
+              src={uploadedMedia.url}
+              alt={uploadedMedia.name}
+              width={400}
+              height={192}
+              className="w-auto h-48 object-cover rounded-lg"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                target.style.display = 'none'
+              }}
+            />
+          )}
+          {uploadedMedia.type === 'video' && (
+            <video
+              src={uploadedMedia.url}
+              className="w-auto h-48 object-cover rounded-lg"
+              controls
+            />
+          )}
+          {uploadedMedia.type === 'audio' && (
+            <div className="p-6 flex items-center justify-center">
+              <audio src={uploadedMedia.url} controls className="w-full" />
+            </div>
+          )}
+          {uploadedMedia.type === 'other' && (
+            <div className="p-6 flex items-center justify-center">
+              <div className="text-center">
+                {getMediaIcon(uploadedMedia.type)}
+                <p className="mt-3 text-sm text-dark-400">
+                  {uploadedMedia.name}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+        <button
+          onClick={handleRemoveMedia}
+          className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    )
+  }
+
+  const charCount = content.length
+  const isOverLimit = charCount > 200
+  const canSubmit = (content.trim() || mediaUrl) && !isSubmitting && !isOverLimit
 
   return (
-    <div className="">
-      <div className={`bg-dark-800 rounded-md my-4 shadow-xl transition-all duration-300 ${
-        focused ? 'ring-2 ring-blue-500/50 shadow-2xl' : 'shadow-lg'
-      }`}>
-        {/* Main input area */}
-        <div className="py-4 sm:py-6">
-          <div className="flex items-start gap-3 px-4 sm:px-6">
-            <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-primary to-orange-400 rounded-full flex items-center justify-center">
-              <PencilLine className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                placeholder="What's on your mind?"
-                className="w-full bg-transparent text-white text-lg placeholder-gray-400 outline-none resize-none min-h-[3rem] max-h-32"
-                rows={1}
-                style={{
-                  height: 'auto',
-                  minHeight: '3rem'
-                }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = target.scrollHeight + 'px';
-                }}
-                disabled={isSubmitting}
-              />
-            </div>
+    <div className="w-full bg-dark-800 backdrop-blur-sm rounded-xl p-5 shadow-xl">
+      {/* Text Input */}
+      <div className="relative">
+        <TextareaAutosize
+          minRows={3}
+          maxRows={8}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="What's happening?"
+          className="w-full resize-none bg-dark-700 p-2 rounded-md text-white placeholder-dark-400 text-base leading-relaxed focus:outline-none"
+        />
+        {/* Character Counter */}
+         
+          <div className={`absolute bottom-2 right-2 text-xs font-medium px-2 py-1 rounded ${
+            isOverLimit 
+              ? 'text-red-400 bg-red-900/20' 
+              : charCount > 180 
+                ? 'text-amber-400 bg-amber-900/20'
+                : 'text-dark-400 bg-dark-800/50'
+          }`}>
+            {charCount}/200
           </div>
+        
+      </div>
 
-          {/* Action buttons */}
-          <div className="grid grid-cols-4 sm:grid-cols-4 gap-2 sm:gap-4 mb-4">
-            {actions.map(({ icon: Icon, label, color }) => (
+      {/* Hidden Media Upload Component */}
+      <MediaUpload
+        ref={mediaUploadRef}
+        onMediaUploaded={handleMediaUpload}
+        onMediaRemoved={handleRemoveMedia}
+        userId={userId}
+        className="hidden"
+      />
+
+      {/* Media Preview */}
+      {renderMediaPreview()}
+
+      {/* Divider */}
+      <div className="border-t border-dark-700/50 mt-4 pt-4">
+        <div className="flex items-center justify-between">
+          {/* Media Actions */}
+          <div className="flex items-center gap-4">
+            {actions.map(({ icon: Icon, label, color, type }) => (
               <button
                 key={label}
+                onClick={() => mediaUploadRef.current?.openFileDialog()}
                 disabled={isSubmitting}
-                className={`flex items-center justify-center gap-2 p-3 rounded-xl bg-dark-800/50 hover:bg-dark-800 transition-all duration-200 group ${color} ${
-                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                className={`flex border border-opacity-30 items-center gap-2 px-3 py-2 rounded-lg hover:bg-dark-800/50 transition-all duration-200 ${color} ${
+                  isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                 }`}
+                title={label}
               >
-                <Icon className="w-5 h-5 transition-transform group-hover:scale-110" />
-                <span className="text-sm font-medium hidden sm:inline">{label}</span>
+                <Icon className="w-5 h-5" />
+                <span className="text-sm font-medium hidden md:inline">
+                  {label}
+                </span>
               </button>
             ))}
           </div>
 
-          {/* Bottom bar with character count and post button */}
-          <div className="flex items-center justify-between pt-4 border-t border-gray-700">
-            <div className="text-xs text-gray-400">
-              {content.length > 0 && (
-                <span className={content.length > 280 ? 'text-red-400' : ''}>
-                  {content.length}/280
-                </span>
-              )}
-            </div>
-            <button
-              onClick={handleSubmit}
-              disabled={!content.trim() || isSubmitting || !session?.dbUser?.id}
-              className={`flex items-center gap-2 px-6 text-white mx-4 py-2 rounded-full font-medium transition-all duration-200 ${
-                content.trim() && !isSubmitting && session?.dbUser?.id
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
-                  : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              <Send className={`w-4 h-4 ${isSubmitting ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">
-                {isSubmitting ? 'Posting...' : 'Post'}
-              </span>
-            </button>
-          </div>
+          {/* Submit Button */}
+          <button
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
+              canSubmit
+                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-500/25'
+                : isOverLimit
+                  ? 'bg-red-600/50 text-red-300 cursor-not-allowed'
+                  : 'bg-dark-700 text-dark-400 cursor-not-allowed'
+            }`}
+            title={isOverLimit ? 'Message exceeds 200 character limit' : ''}
+          >
+            {isSubmitting ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <SendHorizonal className="w-4 h-4" />
+            )}
+            <span>{isSubmitting ? 'Posting...' : 'Snap'}</span>
+          </button>
         </div>
       </div>
     </div>
-  );
+  )
 }
