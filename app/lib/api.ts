@@ -36,7 +36,7 @@ import {
   AddParticipantResponse,
 } from '../types/api'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://server.blazeswap.io/api/snaps'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'
 
 class ApiService {
   private baseUrl: string
