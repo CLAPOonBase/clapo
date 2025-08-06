@@ -58,7 +58,7 @@ export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
         overflow-y-auto
       `}>
         {/* User Profile Section */}
-        <UserProfileCard onProfileClick={() => handleNavClick('profile')} />
+        <UserProfileCard onManageClick={() => handleNavClick('profile')} />
 
 
         {/* Navigation */}
