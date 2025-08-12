@@ -310,12 +310,18 @@ class ApiService {
   }
 
   async searchUsers(query: string, limit: number = 10, offset: number = 0): Promise<SearchUsersResponse> {
+    
     const params = new URLSearchParams({
       q: query,
       limit: limit.toString(),
       offset: offset.toString(),
     })
-    return this.request<SearchUsersResponse>(`/users/search?${params}`)
+    
+    const url = `/users/search?${params}`;
+    
+    const response = await this.request<SearchUsersResponse>(url);
+    
+    return response;
   }
 
   async createPost(data: CreatePostRequest): Promise<CreatePostResponse> {
@@ -351,7 +357,6 @@ class ApiService {
   }
 
   async likePost(postId: string, data: LikePostRequest): Promise<LikeResponse> {
-    console.log('🔍 Like API Request:', { postId, data })
     return this.request<LikeResponse>(`/posts/${postId}/like`, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -380,7 +385,6 @@ class ApiService {
   }
 
   async bookmarkPost(postId: string, data: BookmarkRequest): Promise<BookmarkResponse> {
-    console.log('🔍 Bookmark API Request:', { postId, data })
     return this.request<BookmarkResponse>(`/posts/${postId}/bookmark`, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -388,7 +392,6 @@ class ApiService {
   }
 
   async unbookmarkPost(postId: string, data: BookmarkRequest): Promise<unknown> {
-    console.log('🔍 Unbookmark API Request:', { postId, data })
     try {
       return this.request(`/posts/${postId}/bookmark`, {
         method: 'DELETE',

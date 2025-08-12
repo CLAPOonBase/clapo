@@ -89,8 +89,10 @@ export interface SearchUsersResponse {
   users: Array<{
     id: string
     username: string
+    email: string
     bio: string
-    avatarUrl: string
+    avatar_url: string | null
+    created_at: string
   }>
 }
 

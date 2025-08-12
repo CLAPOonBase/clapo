@@ -87,36 +87,9 @@ export default function SocialFeedPage() {
       default:
         return (
           <>
-        
-            
-            {status === 'unauthenticated' && (
-              <div className="bg-dark-800 rounded-md p-6 my-4 text-center">
-                <h3 className="text-lg font-semibold text-white mb-2">Welcome to Snaps!</h3>
-                <p className="text-gray-400 mb-4">Sign in to start posting and engaging with others.</p>
-                <div className="flex gap-4 justify-center">
-                  <button
-                    onClick={() => signIn('twitter')}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-                  >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                    </svg>
-                    Sign in with Twitter
-                  </button>
-                  <button
-                    onClick={() => signIn()}
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    Sign in with Email
-                  </button>
-                </div>
-              </div>
-            )}
-
-            
             <SnapComposer />
 
-                <div className="sticky top-0 pt-4 backdrop-blur-sm">
+            <div className="sticky top-0 pt-4 backdrop-blur-sm">
               <div className="flex justify-around space-x-8 bg-dark-800 rounded-md pt-4">
                 {['FOR YOU', 'FOLLOWING'].map((tab) => (
                   <button
@@ -170,6 +143,47 @@ export default function SocialFeedPage() {
     )
   }
 
+  // Don't render main content if session is not authenticated or dbUser is not loaded
+  if (status === 'unauthenticated' || !session?.dbUser) {
+    console.log('🔍 Session state:', { status, hasSession: !!session, hasDbUser: !!session?.dbUser });
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+      >
+        <div className="flex-col md:flex-row mx-auto text-white flex">
+          <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+          <div className="flex-1 m-4 md:m-0 rounded-md">
+            <div className="bg-dark-800 rounded-md p-6 my-4 text-center">
+              <h3 className="text-lg font-semibold text-white mb-2">Welcome to Snaps!</h3>
+              <p className="text-gray-400 mb-4">Sign in to start posting and engaging with others.</p>
+              <div className="flex gap-4 justify-center">
+                <button
+                  onClick={() => signIn('twitter')}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                  </svg>
+                  Sign in with Twitter
+                </button>
+                <button
+                  onClick={() => signIn()}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                >
+                  Sign in with Email
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    )
+  }
+
+  console.log('🔍 Rendering main content with dbUser:', session?.dbUser);
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -181,9 +195,9 @@ export default function SocialFeedPage() {
         <div className="flex-1 m-4 md:m-0 rounded-md">
           {renderContent()}
         </div>
-        {currentPage !== 'messages' && (
+        {currentPage !== 'messages' && session?.dbUser && (
           <div className="w-[300px] md:block hidden">
-            <UserActivityFeed username={session.dbUser?.username} activity={[]} />
+            <UserActivityFeed username={session.dbUser.username} activity={[]} />
           </div>
         )}
       </div>
