@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react'
 import EngagementDetails from '../../components/EngagementDetails'
 import CommentSection from '../../components/CommentSection'
 import Toast from '../../components/Toast'
+import { AnimatePresence, motion } from "framer-motion"
 import CommentInputBar from './CommentInputBar'
 
 type Props = {
@@ -140,7 +141,7 @@ const displayedText = expanded ? postContent : words.slice(0, 50).join(" ") + (i
       e.stopPropagation()
       setExpanded(prev => !prev)
     }}
-    className="text-blue-500 hover:underline text-sm pb-4 w-full text-end"
+    className="text-blue-500 hover:underline text-sm w-full text-end"
   >
     {expanded ? "View Less" : "View More"}
   </button>
@@ -148,7 +149,7 @@ const displayedText = expanded ? postContent : words.slice(0, 50).join(" ") + (i
 
 
             {postImage && (
-              <div className="mb-4 rounded-xl overflow-hidden border border-secondary/20">
+              <div className="mt-4 rounded-xl overflow-hidden">
                 {/\.(jpg|jpeg|png|gif|webp)$/i.test(postImage) ? (
                   <img src={postImage} alt="Post content" className="w-full max-h-96 object-cover cursor-pointer hover:opacity-95"
                     onClick={e => { e.stopPropagation(); setShowImageModal(true) }} />
@@ -228,9 +229,28 @@ const displayedText = expanded ? postContent : words.slice(0, 50).join(" ") + (i
         </div>
       )}
 
-      {showCommentSection && isApiPost && (
-        <CommentSection post={post} onClose={() => setShowCommentSection(false)} onCommentAdded={handleCommentAdded} />
-      )}
+  
+
+<AnimatePresence>
+  {showCommentSection && isApiPost && (
+    <motion.div
+      initial={{ y: "100%" }}
+      animate={{ y: 0 }}
+      exit={{ y: "100%" }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      className="fixed inset-0 z-50 flex justify-center items-end sm:items-center sm:p-4"
+    >
+      <div className="bg-dark-800 w-full sm:w-[600px] rounded-t-2xl sm:rounded-2xl shadow-lg max-h-[90%] overflow-y-auto">
+        <CommentSection
+          post={post}
+          onClose={() => setShowCommentSection(false)}
+          onCommentAdded={handleCommentAdded}
+        />
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
+
 
       {showEngagement && isApiPost && (
         <EngagementDetails likes={post.likes} retweets={post.retweets} bookmarks={post.bookmarks} onClose={() => setShowEngagement(false)} />

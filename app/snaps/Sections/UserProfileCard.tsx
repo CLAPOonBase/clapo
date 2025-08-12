@@ -13,11 +13,15 @@ export default function UserProfileCard({ onManageClick }: Props) {
   const isLoggedIn = status === 'authenticated' && session?.dbUser;
 
 
-  const avatarUrl = isLoggedIn ? session.dbUser.avatar_url.replace(/_normal(\.\w+)$/, '_400x400$1') 
+  
+ const avatarUrl = isLoggedIn && session.dbUser?.avatarUrl
+  ? session.dbUser.avatarUrl.replace(/_normal(\.\w+)$/, '_400x400$1')
   : '/default-cover.svg';
-  const coverUrl = isLoggedIn 
-  ? session.dbUser.avatar_url.replace(/_normal(\.\w+)$/, '_400x400$1') 
+
+const coverUrl = isLoggedIn && session.dbUser?.avatarUrl
+  ? session.dbUser.avatarUrl.replace(/_normal(\.\w+)$/, '_400x400$1')
   : '/default-cover.svg';
+
   const username = isLoggedIn ? session.dbUser.username : 'Guest';
   const bio = isLoggedIn ? session.dbUser.bio : 'Guest';
 
@@ -47,7 +51,7 @@ export default function UserProfileCard({ onManageClick }: Props) {
             {/* Avatar Image */}
             <div className="relative w-16 h-16 rounded-full transition-all duration-300 group-hover:border-orange-500/60">
               <Image
-                src={avatarUrl}
+                src={avatarUrl || '/default-cover.svg'}
                 alt="Avatar"
                 width={64}
                 height={64}

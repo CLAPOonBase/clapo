@@ -89,8 +89,8 @@ export default function SocialFeedPage() {
           <>
             <SnapComposer />
 
-            <div className="sticky top-0 pt-4 backdrop-blur-sm">
-              <div className="flex justify-around space-x-8 bg-dark-800 rounded-md pt-4">
+            {/* <div className="sticky top-0 pt-4 backdrop-blur-sm"> */}
+              {/* <div className="flex justify-around space-x-8 bg-dark-800 rounded-md pt-4">
                 {['FOR YOU', 'FOLLOWING'].map((tab) => (
                   <button
                     key={tab}
@@ -102,8 +102,8 @@ export default function SocialFeedPage() {
                     {tab}
                   </button>
                 ))}
-              </div>
-            </div>
+              </div> */}
+            {/* </div> */}
             <div>
               {state.posts.loading ? (
                 <div className="space-y-4">
