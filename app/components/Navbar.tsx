@@ -44,6 +44,7 @@ export default function Navbar() {
     { label: "CLAPS", href: "/" },
     { label: "SNAPS", href: "/snaps" },
     { label: "OPINIO", href: "/opinio" },
+    { label: "SMART CONTRACT", href: "/smart-contract-demo" },
   ];
 
   const openDialog = (type: "x" | "wallet") => setActiveDialog(type);
