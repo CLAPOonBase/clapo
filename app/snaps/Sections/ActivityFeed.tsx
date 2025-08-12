@@ -72,7 +72,7 @@ const getActivityText = (type: string) => {
 export default function UserActivityFeed({ username, activity }: UserActivityFeedProps) {
   if (!activity || activity.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 min-h-96 mx-4 rounded-2xl bg-dark-800 text-gray-500">
         <p>No recent activity</p>
       </div>
     )

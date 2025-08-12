@@ -18,12 +18,12 @@ const navItems: {
   showOnMobile?: boolean;
   showOnDesktop?: boolean;
 }[] = [
-  { label: "HOME", value: "home", icon: <Home className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
-  { label: "EXPLORE", value: "explore", icon: <Search className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
-  { label: "NOTIFICATIONS", value: "notifications", icon: <Bell className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
-  { label: "ACTIVITY", value: "activity", icon: <Activity className="w-5 h-5 md:mr-4" />, showOnDesktop: false },
-  { label: "MESSAGES", value: "messages", icon: <MessageCircle className="w-5 h-5 md:mr-4" />, showOnMobile: true },
-  { label: "PROFILE", value: "profile", icon: <User className="w-5 h-5 md:mr-4" />, showOnDesktop: true },
+  { label: "Home", value: "home", icon: <Home className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
+  { label: "Explore", value: "explore", icon: <Search className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
+  { label: "Notifications", value: "notifications", icon: <Bell className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
+  { label: "Activity", value: "activity", icon: <Activity className="w-5 h-5 md:mr-4" />, showOnDesktop: false },
+  { label: "Messages", value: "messages", icon: <MessageCircle className="w-5 h-5 md:mr-4" />, showOnMobile: true },
+  { label: "Profile", value: "profile", icon: <User className="w-5 h-5 md:mr-4" />, showOnDesktop: true },
 ];
 
 
@@ -54,6 +54,7 @@ export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
         h-full
         w-16 lg:w-64
         px-4
+        bg-dark-800 mx-4 rounded-2xl
         space-y-4
         overflow-y-auto
       `}>
@@ -62,32 +63,42 @@ export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
 
 
         {/* Navigation */}
-        <nav className="space-y-2 bg-dark-800 rounded-md p-4 text-secondary">
+        <nav className="space-y-2 relative bg-dark-800 rounded-md text-secondary">
+          <div 
+            className="absolute bg-primary rounded-2xl transition-all duration-300 ease-in-out"
+            style={{
+              top: `${0 + navItems.filter(item => item.showOnDesktop !== false).findIndex(item => item.value === currentPage) * 56}px`,
+              left: '0px',
+              right: '0px',
+              height: '48px',
+              opacity: currentPage ? 1 : 0
+            }}
+          />
           {navItems
-  .filter((item) => item.showOnDesktop !== false)
-  .map(({ label, value, icon }) => (
-
-            <div
-              key={value}
-              onClick={() => handleNavClick(value)}
-              className={`flex items-center p-3 rounded-lg hover:bg-gray-800 cursor-pointer group relative ${
-                currentPage === value ? 'text-white' : ''
-              }`}
-              title={label} // Tooltip for collapsed state
-            >
-              <div className="flex-shrink-0">
-                {icon}
+            .filter((item) => item.showOnDesktop !== false)
+            .map(({ label, value, icon }) => (
+              <div
+                key={value}
+                onClick={() => handleNavClick(value)}
+                className={`
+                  relative flex items-center p-3 rounded-lg cursor-pointer transition-colors duration-300
+                  ${currentPage === value ? 'text-white' : 'text-gray-400'}
+                `}
+                title={label}
+              >
+                <div className="flex-shrink-0 z-10">
+                  {icon}
+                </div>
+                <span className="hidden lg:block ml-4 truncate z-10">
+                  {label}
+                </span>
+                
+                {/* Tooltip for medium screens when collapsed */}
+                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 lg:hidden">
+                  {label}
+                </div>
               </div>
-              <span className="hidden lg:block ml-4 truncate">
-                {label}
-              </span>
-              
-              {/* Tooltip for medium screens when collapsed */}
-              <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 lg:hidden">
-                {label}
-              </div>
-            </div>
-          ))}
+            ))}
         </nav>
       </div>
 

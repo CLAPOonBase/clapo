@@ -12,6 +12,7 @@ declare module "next-auth" {
       image?: string | null
     }
     dbUser?: {
+      avatar_url: any
       id: string
       username: string
       email: string

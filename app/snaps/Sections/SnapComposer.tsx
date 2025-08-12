@@ -31,12 +31,11 @@ export function SnapComposer() {
   const userId = session?.dbUser?.id
 
   const actions = [
-    { icon: ImageIcon, label: 'Photo', color: 'text-blue-400 border-blue-300 hover:text-blue-300', type: 'image' },
-    { icon: Video, label: 'Video', color: 'text-purple-400 border-purple-300 hover:text-purple-300', type: 'video' },
-    { icon: File, label: 'File', color: 'text-emerald-400 border-emerald-300 hover:text-emerald-300', type: 'any' },
-    { icon: Mic, label: 'Audio', color: 'text-amber-400 border-amber-300 hover:text-amber-300', type: 'audio' },
+    { icon: ImageIcon, label: 'Photo', color: 'text-blue-400', type: 'image' },
+    { icon: Video, label: 'Video', color: 'text-purple-400', type: 'video' },
+    { icon: File, label: 'File', color: 'text-emerald-400', type: 'any' },
+    { icon: Mic, label: 'Audio', color: 'text-amber-400', type: 'audio' },
   ]
-
   const handleMediaUpload = (url: string) => {
     fetch(url)
       .then((res) => res.blob())
@@ -169,28 +168,37 @@ export function SnapComposer() {
   return (
     <div className="w-full bg-dark-800 backdrop-blur-sm rounded-xl p-5 shadow-xl">
       {/* Text Input */}
-      <div className="relative">
+       <div className='flex'>
+       <div className='rounded-full h-14 w-14'>
+       <Image
+  src={session?.dbUser?.avatar_url || session?.user?.image || '/4.png'}
+  alt=""
+  width={1000}
+  height={1000}
+  className="w-12 h-12 rounded-full "
+/>
+
+       </div>
+      <div className="relative w-full ">
         <TextareaAutosize
           minRows={3}
           maxRows={8}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="What's happening?"
-          className="w-full resize-none bg-dark-700 p-2 rounded-md text-white placeholder-dark-400 text-base leading-relaxed focus:outline-none"
+          className="w-full resize-none bg-transparent p-2 rounded-md text-white placeholder-dark-400 text-base leading-relaxed focus:outline-none"
         />
-        {/* Character Counter */}
-         
-          <div className={`absolute bottom-2 right-2 text-xs font-medium px-2 py-1 rounded ${
-            isOverLimit 
-              ? 'text-red-400 bg-red-900/20' 
-              : charCount > 180 
-                ? 'text-amber-400 bg-amber-900/20'
-                : 'text-dark-400 bg-dark-800/50'
-          }`}>
-            {charCount}/200
-          </div>
-        
+        <div className={`absolute bottom-2 right-2 text-xs font-medium px-2 py-1 rounded ${
+          isOverLimit 
+            ? 'text-red-400 bg-red-900/20' 
+            : charCount > 180 
+              ? 'text-amber-400 bg-amber-900/20'
+              : 'text-dark-400 bg-dark-800/50'
+        }`}>
+          {charCount}/200
+        </div>
       </div>
+     </div>
 
       {/* Hidden Media Upload Component */}
       <MediaUpload
@@ -214,7 +222,8 @@ export function SnapComposer() {
                 key={label}
                 onClick={() => mediaUploadRef.current?.openFileDialog()}
                 disabled={isSubmitting}
-                className={`flex border border-opacity-30 items-center gap-2 px-3 py-2 rounded-lg hover:bg-dark-800/50 transition-all duration-200 ${color} ${
+                // className={`flex items-center gap-2 px-3 py-2 rounded-lg ${color} ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-dark-800/50 transition-all duration-200 ${color} ${
                   isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                 }`}
                 title={label}

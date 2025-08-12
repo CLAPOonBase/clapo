@@ -331,7 +331,7 @@ class ApiService {
     })
   }
 
-  async getPosts(userId: string, limit: number = 10, offset: number = 0): Promise<FeedResponse> {
+  async getPosts(userId: string, limit: number = 50, offset: number = 0): Promise<FeedResponse> {
     const params = new URLSearchParams({
       userId,
       limit: limit.toString(),
@@ -340,7 +340,7 @@ class ApiService {
     return this.request<FeedResponse>(`/feed/foryou?${params}`)
   }
 
-  async getPersonalizedFeed(userId: string, limit: number = 10, offset: number = 0): Promise<FeedResponse> {
+  async getPersonalizedFeed(userId: string, limit: number = 50, offset: number = 0): Promise<FeedResponse> {
     const params = new URLSearchParams({
       userId,
       limit: limit.toString(),
