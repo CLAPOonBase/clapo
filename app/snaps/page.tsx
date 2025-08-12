@@ -16,7 +16,7 @@ import ActivityPage from './SidebarSection/ActivityPage'
 import { motion } from 'framer-motion'
 import { useApi } from '../Context/ApiProvider'
 import { PostSkeleton, LoadingSpinner } from '../components/SkeletonLoader'
-import UserActivityFeed from './Sections/ActivityFeed'
+// import UserActivityFeed from './Sections/ActivityFeed'
 
 export default function SocialFeedPage() {
 
