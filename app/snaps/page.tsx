@@ -182,8 +182,11 @@ export default function SocialFeedPage() {
           {renderContent()}
         </div>
         {currentPage !== 'messages' && (
-          <div className="w-[300px] md:block hidden">
-            <UserActivityFeed username={session.dbUser?.username} activity={[]} />
+          <div className="w-[300px] md:block hidden mx-4 rounded-md bg-dark-800 p-4">
+            <div>
+              <h2 className="text-lg font-semibold mb-4">User Activity Feed</h2>
+            </div>
+            {/* <UserActivityFeed username={session.dbUser.username} activity={[]} /> */}
           </div>
         )}
       </div>
