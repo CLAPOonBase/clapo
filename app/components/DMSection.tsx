@@ -76,12 +76,10 @@ export const DMSection = ({
     }
   };
 
-  const getOtherUserName = (thread: any) => {
-    if (!thread || !session?.dbUser?.id) return 'User';
-    if (thread.isGroup) return thread.name || 'Group Chat';
-    
-    const otherUser = thread.participants?.find((p: any) => p.user_id !== session.dbUser.id);
-    return otherUser?.username || 'User';
+  const getOtherUser = (thread: any) => {
+    if (!thread || !session?.dbUser?.id) return null;
+    if (thread.isGroup) return null;
+    return thread.participants?.find((p: any) => p.user_id !== session.dbUser.id) || null;
   };
 
   return dmSection === 'threads' ? (
@@ -98,30 +96,43 @@ export const DMSection = ({
             <p className="text-sm text-center">No chats yet<br />Start a conversation!</p>
           </div>
         ) : (
-          state.messageThreads?.map((thread: any) => (
-            <div
-              key={thread.id}
-              onClick={() => onSelectThread(thread.id)}
-              className={`group p-4 rounded-xl cursor-pointer transition-all duration-200 border ${
-                selectedThread === thread.id 
-                  ? 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-blue-500/50 text-white shadow-lg' 
-                  : 'bg-slate-700/30 border-slate-600/30 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500/50 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
-                    selectedThread === thread.id ? 'bg-blue-500' : 'bg-slate-600 group-hover:bg-slate-500'
-                  }`}>
-                    {getOtherUserName(thread).charAt(0).toUpperCase()}
+          state.messageThreads?.map((thread: any) => {
+            const otherUser = getOtherUser(thread);
+            return (
+              <div
+                key={thread.id}
+                onClick={() => onSelectThread(thread.id)}
+                className={`group p-4 rounded-xl cursor-pointer transition-all duration-200 border ${
+                  selectedThread === thread.id 
+                    ? 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-blue-500/50 text-white shadow-lg' 
+                    : 'bg-slate-700/30 border-slate-600/30 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500/50 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-600">
+                      {otherUser?.avatar_url ? (
+                        <img
+                          src={otherUser.avatar_url}
+                          alt={otherUser.username || 'User'}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center w-full h-full text-white font-bold">
+                          {otherUser?.username?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold truncate">
+                      {thread.isGroup ? thread.name : otherUser?.username || 'User'}
+                    </div>
                   </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold truncate">{getOtherUserName(thread)}</div>
-                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
@@ -156,24 +167,28 @@ export const DMSection = ({
               onClick={() => onStartChat(user)}
               className="group p-4 rounded-xl cursor-pointer transition-all duration-200 bg-slate-700/30 border border-slate-600/30 hover:bg-slate-700/50 hover:border-slate-500/50 hover:shadow-lg"
             >
-              <div className="flex flex-col items-center space-x-4">
-                <div className='flex justify-between w-full space-x-2 items-start'>
-                  <div className="relative">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-lg font-bold">
-                        {user.username?.charAt(0)?.toUpperCase() || 'U'}
-                      </span>
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-600">
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.username || 'User'}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full text-white font-bold">
+                      {user.username?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-white group-hover:text-blue-300 transition-colors">
+                    {user.username}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-white group-hover:text-blue-300 transition-colors">
-                      {user.username}
-                    </div>
-                    <div className="opacity-80 group-hover:opacity-100 transition-opacity">
-                      <button className='text-xs bg-green-900 px-2 rounded-md'>
-                        Add Friend
-                      </button>
-                    </div>
+                  <div className="opacity-80 group-hover:opacity-100 transition-opacity">
+                    <button className="text-xs bg-green-900 px-2 rounded-md">
+                      Add Friend
+                    </button>
                   </div>
                 </div>
               </div>

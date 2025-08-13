@@ -266,14 +266,7 @@ export default function MessagePage() {
           />
 
           <MessageList 
-            messages={currentMessages.map((msg: any) => ({
-              id: msg.id,
-              sender_id: msg.sender_id ?? msg.senderId,
-              content: msg.content,
-              created_at: msg.created_at ?? msg.createdAt,
-              sender_username: msg.sender_username ?? msg.senderUsername,
-              sender_avatar: msg.sender_avatar ?? msg.senderAvatar,
-            }))} 
+            messages={currentMessages} 
             currentUserId={session?.dbUser?.id} 
           />
 
