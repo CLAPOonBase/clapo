@@ -67,11 +67,17 @@ export function UserProfileHover({
     
     timeoutRef.current = setTimeout(() => {
       setShowProfile(false)
+      // Clear stats when hiding to allow fresh data next time
+      setUserStats(null)
+      setIsFollowing(false)
     }, 200)
   }
 
   const loadUserStats = async () => {
     if (!currentUserId || isLoading) return
+    
+    // If we already have stats, don't reload
+    if (userStats) return
     
     setIsLoading(true)
     try {

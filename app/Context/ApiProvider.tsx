@@ -579,12 +579,14 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
   const createPost = useCallback(async (postData: any) => {
     console.log('🔍 createPost called with data:', postData)
-    const userId = getCurrentUserId()
-    console.log('🔍 getCurrentUserId returned:', userId)
+    
+    // Use the userId from postData since it's already validated in SnapComposer
+    const userId = postData.userId
+    console.log('🔍 Using userId from postData:', userId)
     
     if (!userId) {
-      console.error('❌ No user ID found, returning early')
-      return
+      console.error('❌ No user ID found in postData, returning early')
+      throw new Error('User ID is required to create a post')
     }
 
     try {

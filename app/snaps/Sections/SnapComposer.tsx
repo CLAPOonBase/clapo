@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
 import Image from 'next/image'
 import {
@@ -26,7 +26,10 @@ export function SnapComposer() {
     createPost: typeof createPost,
     fetchPosts: typeof fetchPosts,
     session,
-    status
+    status,
+    sessionDbUser: session?.dbUser,
+    sessionDbUserId: session?.dbUser?.id,
+    userId: session?.dbUser?.id
   })
   
   const [uploadedMedia, setUploadedMedia] = useState<{
@@ -38,6 +41,16 @@ export function SnapComposer() {
   const mediaUploadRef = useRef<MediaUploadHandle>(null)
   const userId = session?.dbUser?.id
 
+  // Add useEffect to monitor session changes
+  React.useEffect(() => {
+    console.log('🔍 Session changed:', {
+      status,
+      session,
+      userId,
+      sessionDbUser: session?.dbUser
+    })
+  }, [session, status, userId])
+
   const actions = [
     { icon: ImageIcon, label: 'Photo', color: 'text-blue-400', type: 'image' },
     { icon: Video, label: 'Video', color: 'text-purple-400', type: 'video' },
@@ -45,26 +58,24 @@ export function SnapComposer() {
     { icon: Mic, label: 'Audio', color: 'text-amber-400', type: 'audio' },
   ]
   const handleMediaUpload = (url: string) => {
-    fetch(url)
-      .then((res) => res.blob())
-      .then((blob) => {
-        const type = blob.type
-        let mediaType: 'image' | 'video' | 'audio' | 'other' = 'other'
+    // Now we get a permanent S3 URL, so we can use it directly
+    setMediaUrl(url)
+    
+    // Extract file type from the URL or set a default
+    const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+    const isVideo = url.match(/\.(mp4|webm|ogg|mov)$/i)
+    const isAudio = url.match(/\.(mp3|wav|ogg|m4a)$/i)
+    
+    let mediaType: 'image' | 'video' | 'audio' | 'other' = 'other'
+    if (isImage) mediaType = 'image'
+    else if (isVideo) mediaType = 'video'
+    else if (isAudio) mediaType = 'audio'
 
-        if (type.startsWith('image/')) mediaType = 'image'
-        else if (type.startsWith('video/')) mediaType = 'video'
-        else if (type.startsWith('audio/')) mediaType = 'audio'
-
-        setUploadedMedia({
-          url,
-          name: 'uploaded-file',
-          type: mediaType,
-        })
-        setMediaUrl(url)
-      })
-      .catch((err) => {
-        console.error('Failed to parse uploaded media', err)
-      })
+    setUploadedMedia({
+      url,
+      name: 'uploaded-file',
+      type: mediaType,
+    })
   }
 
   const handleRemoveMedia = () => {
@@ -75,7 +86,11 @@ export function SnapComposer() {
   const handleSubmit = async () => {
     console.log('🚀 handleSubmit function called!')
     
-    if (!hasContent && !mediaUrl) return
+    // Check if there's any content or media
+    if (!hasContent && !mediaUrl) {
+      alert('Please add some content or media before posting')
+      return
+    }
     
     console.log('🔍 Submit Debug:', {
       session,
@@ -88,6 +103,7 @@ export function SnapComposer() {
     
     if (!userId) {
       console.error('User ID is missing from session')
+      alert('Please log in to create a post')
       return
     }
 
@@ -107,17 +123,27 @@ export function SnapComposer() {
       await createPost(postData)
       console.log('✅ createPost completed successfully')
 
+      // Reset form immediately after successful post creation
       setContent('')
       setMediaUrl(undefined)
       setUploadedMedia(null)
       
+      // Reset loading state immediately
+      setIsSubmitting(false)
+      
       if (typeof window !== 'undefined' && window.alert) {
         window.alert('Post created successfully!')
       }
-      await fetchPosts(userId)
+      
+      // Fetch posts in background (don't wait for it)
+      fetchPosts(userId).catch(error => {
+        console.error('Failed to fetch posts after creation:', error)
+      })
+      
     } catch (error) {
       console.error('Failed to create post:', error)
-    } finally {
+      alert('Failed to create post. Please try again.')
+      // Reset loading state on error
       setIsSubmitting(false)
     }
   }
