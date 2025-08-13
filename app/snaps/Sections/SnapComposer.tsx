@@ -21,6 +21,14 @@ export function SnapComposer() {
   const [mediaUrl, setMediaUrl] = useState<string | undefined>()
   const { createPost, fetchPosts } = useApi();
   const { data: session, status } = useSession();
+  
+  console.log('🔍 SnapComposer Debug:', {
+    createPost: typeof createPost,
+    fetchPosts: typeof fetchPosts,
+    session,
+    status
+  })
+  
   const [uploadedMedia, setUploadedMedia] = useState<{
     url: string
     name: string
@@ -65,7 +73,19 @@ export function SnapComposer() {
   }
 
   const handleSubmit = async () => {
-    if (!content.trim() && !mediaUrl) return
+    console.log('🚀 handleSubmit function called!')
+    
+    if (!hasContent && !mediaUrl) return
+    
+    console.log('🔍 Submit Debug:', {
+      session,
+      sessionDbUser: session?.dbUser,
+      sessionDbUserId: session?.dbUser?.id,
+      userId,
+      content: content.trim(),
+      mediaUrl
+    })
+    
     if (!userId) {
       console.error('User ID is missing from session')
       return
@@ -83,7 +103,9 @@ export function SnapComposer() {
         retweetRefId: undefined,
       }
 
+      console.log('🚀 About to call createPost with data:', postData)
       await createPost(postData)
+      console.log('✅ createPost completed successfully')
 
       setContent('')
       setMediaUrl(undefined)
@@ -163,7 +185,20 @@ export function SnapComposer() {
 
   const charCount = content.length
   const isOverLimit = charCount > 200
-  const canSubmit = (content.trim() || mediaUrl) && !isSubmitting && !isOverLimit
+  const hasContent = content.trim().length > 0
+  const canSubmit = (hasContent || mediaUrl) && !isSubmitting && !isOverLimit
+
+  console.log('🔍 Submit Button Debug:', {
+    content: content,
+    contentTrimmed: content.trim(),
+    contentTrimmedLength: content.trim().length,
+    hasContent,
+    mediaUrl,
+    isSubmitting,
+    isOverLimit,
+    charCount,
+    canSubmit
+  })
 
   return (
     <div className="w-full bg-dark-800 backdrop-blur-sm rounded-xl p-5 shadow-xl">
@@ -238,7 +273,11 @@ export function SnapComposer() {
 
           {/* Submit Button */}
           <button
-            onClick={handleSubmit}
+            onClick={() => {
+              console.log('🔍 Submit button clicked!')
+              console.log('🔍 Button state:', { canSubmit, content, mediaUrl, isSubmitting, isOverLimit })
+              handleSubmit()
+            }}
             disabled={!canSubmit}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
               canSubmit

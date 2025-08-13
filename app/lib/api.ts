@@ -50,6 +50,13 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`
+    console.log('🔍 API Request:', {
+      baseUrl: this.baseUrl,
+      endpoint,
+      fullUrl: url,
+      method: options.method || 'GET',
+      body: options.body
+    })
     
     const config: RequestInit = {
       headers: {
@@ -60,7 +67,13 @@ class ApiService {
     }
 
     try {
+      console.log('🚀 Making fetch request to:', url)
       const response = await fetch(url, config)
+      console.log('📡 Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      })
       
       if (!response.ok) {
         const errorText = await response.text()
@@ -81,9 +94,10 @@ class ApiService {
       }
 
       const responseData = await response.json()
+      console.log('✅ Response data:', responseData)
       return responseData
     } catch (error) {
-      console.error('Request failed:', error)
+      console.error('❌ Request failed:', error)
       throw error
     }
   }
