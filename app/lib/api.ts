@@ -47,7 +47,8 @@ class ApiService {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    authToken?: string
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`
     console.log('🔍 API Request:', {
@@ -55,14 +56,28 @@ class ApiService {
       endpoint,
       fullUrl: url,
       method: options.method || 'GET',
-      body: options.body
+      body: options.body,
+      hasAuthToken: !!authToken
     })
     
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+    
+    if (options.headers) {
+      Object.entries(options.headers).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          headers[key] = value
+        }
+      })
+    }
+    
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`
+    }
+    
     const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+      headers,
       ...options,
     }
 
@@ -128,7 +143,9 @@ class ApiService {
   }
 
   async getUserProfile(userId: string): Promise<ProfileResponse> {
+    console.log('🔍 API Service: Getting user profile for userId:', userId)
     const response = await this.request<ProfileResponse>(`/users/${userId}/profile/posts`);
+    console.log('🔍 API Service: Raw response from getUserProfile:', response)
     return response;
   }
 
@@ -423,18 +440,18 @@ class ApiService {
 
 
 
-  async followUser(userId: string, data: FollowRequest): Promise<FollowResponse> {
+  async followUser(userId: string, data: FollowRequest, authToken?: string): Promise<FollowResponse> {
     return this.request<FollowResponse>(`/users/${userId}/follow`, {
       method: 'POST',
       body: JSON.stringify(data),
-    })
+    }, authToken)
   }
 
-  async unfollowUser(userId: string, data: FollowRequest): Promise<UnfollowResponse> {
+  async unfollowUser(userId: string, data: FollowRequest, authToken?: string): Promise<UnfollowResponse> {
     return this.request<UnfollowResponse>(`/users/${userId}/follow`, {
       method: 'DELETE',
       body: JSON.stringify(data),
-    })
+    }, authToken)
   }
 
   async getNotifications(userId: string, limit: number = 10, offset: number = 0): Promise<NotificationsResponse> {
@@ -462,6 +479,31 @@ class ApiService {
       offset: offset.toString(),
     })
     return this.request<ActivityResponse>(`/activity/recent?${params}`)
+  }
+
+  async getUserFollowers(userId: string, limit: number = 50, offset: number = 0): Promise<{ followers: any[] }> {
+    const params = new URLSearchParams({
+      limit: limit.toString(),
+      offset: offset.toString(),
+    })
+    return this.request<{ followers: any[] }>(`/users/${userId}/followers?${params}`)
+  }
+
+  async getUserFollowing(userId: string, limit: number = 50, offset: number = 0): Promise<{ following: any[] }> {
+    const params = new URLSearchParams({
+      limit: limit.toString(),
+      offset: offset.toString(),
+    })
+    return this.request<{ following: any[] }>(`/users/${userId}/following?${params}`)
+  }
+
+  async getFollowingFeed(userId: string, limit: number = 50, offset: number = 0): Promise<FeedResponse> {
+    const params = new URLSearchParams({
+      userId,
+      limit: limit.toString(),
+      offset: offset.toString(),
+    })
+    return this.request<FeedResponse>(`/feed/following?${params}`)
   }
 }
 

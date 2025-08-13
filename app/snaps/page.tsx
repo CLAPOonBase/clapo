@@ -22,6 +22,8 @@ export default function SocialFeedPage() {
 
   const [activeTab, setActiveTab] = useState<'FOR YOU' | 'FOLLOWING'>('FOR YOU')
   const [currentPage, setCurrentPage] = useState<'home' | 'explore' | 'notifications' | 'likes' | 'activity' | 'profile' | 'messages' | 'bookmarks' | 'search'>('home')
+  const [followingPosts, setFollowingPosts] = useState<any[]>([])
+  const [isLoadingFollowing, setIsLoadingFollowing] = useState(false)
 
   const [liked, setLiked] = useState<Set<number>>(new Set())
   const [retweeted, setRetweeted] = useState<Set<number>>(new Set())
@@ -29,7 +31,7 @@ export default function SocialFeedPage() {
   const [hasInitializedData, setHasInitializedData] = useState(false)
 
   const { data: session, status } = useSession()
-  const { state, fetchPosts, fetchNotifications, fetchActivities } = useApi()
+  const { state, fetchPosts, fetchNotifications, fetchActivities, getFollowingFeed } = useApi()
 
   useEffect(() => {
     if (status === 'authenticated' && session?.dbUser?.id && !hasInitializedData) {
@@ -43,6 +45,27 @@ export default function SocialFeedPage() {
       setHasInitializedData(false)
     }
   }, [session, status, hasInitializedData])
+
+  const loadFollowingFeed = async () => {
+    if (!session?.dbUser?.id || isLoadingFollowing) return
+    
+    setIsLoadingFollowing(true)
+    try {
+      const response = await getFollowingFeed(session.dbUser.id, 50, 0)
+      setFollowingPosts(response.posts || [])
+    } catch (error) {
+      console.error('Failed to load following feed:', error)
+    } finally {
+      setIsLoadingFollowing(false)
+    }
+  }
+
+  const handleTabChange = (tab: 'FOR YOU' | 'FOLLOWING') => {
+    setActiveTab(tab)
+    if (tab === 'FOLLOWING') {
+      loadFollowingFeed()
+    }
+  }
 
   const toggleSet = (set: Set<number>, id: number): Set<number> => {
     const newSet = new Set(set)
@@ -89,12 +112,12 @@ export default function SocialFeedPage() {
           <>
             <SnapComposer />
 
-            {/* <div className="sticky top-0 pt-4 backdrop-blur-sm"> */}
-              {/* <div className="flex justify-around space-x-8 bg-dark-800 rounded-md pt-4">
+            <div className="sticky top-0 pt-4 backdrop-blur-sm">
+              <div className="flex justify-around space-x-8 bg-dark-800 rounded-md pt-4">
                 {['FOR YOU', 'FOLLOWING'].map((tab) => (
                   <button
                     key={tab}
-                    onClick={() => setActiveTab(tab as 'FOR YOU' | 'FOLLOWING')}
+                    onClick={() => handleTabChange(tab as 'FOR YOU' | 'FOLLOWING')}
                     className={`pb-2 font-semibold ${
                       activeTab === tab ? 'text-white w-full border-b-4 border-orange-500' : 'text-gray-400 w-full hover:text-white'
                     }`}
@@ -102,32 +125,60 @@ export default function SocialFeedPage() {
                     {tab}
                   </button>
                 ))}
-              </div> */}
-            {/* </div> */}
+              </div>
+            </div>
+            
             <div>
-              {state.posts.loading ? (
-                <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    <PostSkeleton key={i} />
-                  ))}
-                </div>
-              ) : allPosts.length > 0 ? (
-                allPosts.map((post) => (
-                  <SnapCard
-                    key={post.id}
-                    post={post}
-                    liked={liked.has(parseInt(post.id))}
-                    bookmarked={bookmarked.has(parseInt(post.id))}
-                    retweeted={retweeted.has(parseInt(post.id))}
-                    onLike={(id) => setLiked(toggleSet(liked, typeof id === 'string' ? parseInt(id) : id))}
-                    onBookmark={(id) => setBookmarked(toggleSet(bookmarked, typeof id === 'string' ? parseInt(id) : id))}
-                    onRetweet={(id) => setRetweeted(toggleSet(retweeted, typeof id === 'string' ? parseInt(id) : id))}
-                  />
-                ))
+              {activeTab === 'FOR YOU' ? (
+                state.posts.loading ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <PostSkeleton key={i} />
+                    ))}
+                  </div>
+                ) : allPosts.length > 0 ? (
+                  allPosts.map((post) => (
+                    <SnapCard
+                      key={post.id}
+                      post={post}
+                      liked={liked.has(parseInt(post.id))}
+                      bookmarked={bookmarked.has(parseInt(post.id))}
+                      retweeted={retweeted.has(parseInt(post.id))}
+                      onLike={(id) => setLiked(toggleSet(liked, typeof id === 'string' ? parseInt(id) : id))}
+                      onBookmark={(id) => setBookmarked(toggleSet(bookmarked, typeof id === 'string' ? parseInt(id) : id))}
+                      onRetweet={(id) => setRetweeted(toggleSet(retweeted, typeof id === 'string' ? parseInt(id) : id))}
+                    />
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    {status === 'authenticated' ? 'No posts yet. Be the first to share something!' : 'Sign in to see posts'}
+                  </div>
+                )
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  {status === 'authenticated' ? 'No posts yet. Be the first to share something!' : 'Sign in to see posts'}
-                </div>
+                isLoadingFollowing ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <PostSkeleton key={i} />
+                    ))}
+                  </div>
+                ) : followingPosts.length > 0 ? (
+                  followingPosts.map((post) => (
+                    <SnapCard
+                      key={post.id}
+                      post={post}
+                      liked={liked.has(parseInt(post.id))}
+                      bookmarked={bookmarked.has(parseInt(post.id))}
+                      retweeted={retweeted.has(parseInt(post.id))}
+                      onLike={(id) => setLiked(toggleSet(liked, typeof id === 'string' ? parseInt(id) : id))}
+                      onBookmark={(id) => setBookmarked(toggleSet(bookmarked, typeof id === 'string' ? parseInt(id) : id))}
+                      onRetweet={(id) => setRetweeted(toggleSet(retweeted, typeof id === 'string' ? parseInt(id) : id))}
+                    />
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    {status === 'authenticated' ? 'No posts from people you follow yet. Try following some users!' : 'Sign in to see posts'}
+                  </div>
+                )
               )}
             </div>
           </>

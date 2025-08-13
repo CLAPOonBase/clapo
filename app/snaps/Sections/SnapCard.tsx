@@ -9,6 +9,7 @@ import CommentSection from '../../components/CommentSection'
 import Toast from '../../components/Toast'
 import { AnimatePresence, motion } from "framer-motion"
 import CommentInputBar from './CommentInputBar'
+import { UserProfileHover } from '../../components/UserProfileHover'
 
 type Props = {
   post: Post | ApiPost
@@ -122,8 +123,19 @@ const displayedText = expanded ? postContent : words.slice(0, 50).join(" ") + (i
             )}
           </div>
              <div className="flex flex-1 min-w-0 items-center space-x-2 mb-3">
-            <span className='flex flex-col'>  <span className="font-semibold text-white truncate">{postAuthor}</span>
-              <span className="text-secondary truncate">{postHandle}</span></span>
+            <span className='flex flex-col'>  
+              <UserProfileHover 
+                userId={isApiPost ? post.user_id.toString() : post.id.toString()} 
+                username={postAuthor}
+                avatarUrl={postAvatar}
+                position="bottom"
+              >
+                <span className="font-semibold text-white truncate cursor-pointer hover:text-blue-400 transition-colors">
+                  {postAuthor}
+                </span>
+              </UserProfileHover>
+              <span className="text-secondary truncate">{postHandle}</span>
+            </span>
              
               <span className="text-secondary text-sm w-full text-end">{postTime}</span>
             </div>

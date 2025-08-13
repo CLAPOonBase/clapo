@@ -403,6 +403,11 @@ interface ApiContextType {
   sendCommunityMessage: (communityId: string, data: SendMessageRequest) => Promise<void>
   getCommunityMessages: (communityId: string) => Promise<void>
   getUserCommunities: (userId: string) => Promise<void>
+  getUserFollowers: (userId: string, limit: number, offset: number) => Promise<any>
+  getUserFollowing: (userId: string, limit: number, offset: number) => Promise<any>
+  getFollowingFeed: (userId: string, limit: number, offset: number) => Promise<any>
+  followUser: (targetUserId: string, data: FollowRequest) => Promise<any>
+  unfollowUser: (targetUserId: string, data: FollowRequest) => Promise<any>
 }
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined)
@@ -596,7 +601,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   const likePost = useCallback(async (postId: string, targetUserId: string) => {
     console.log('🔍 Like Post Call:', { postId, targetUserId, type: typeof targetUserId })
     try {
-      await apiService.likePost(postId, { userId: targetUserId })
+      await apiService.likePost(postId, { likerId: targetUserId })
       dispatch({ type: 'LIKE_POST', payload: postId })
     } catch (error) {
       console.error('Error liking post:', error)
@@ -605,7 +610,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
   const unlikePost = useCallback(async (postId: string, targetUserId: string) => {
     try {
-      await apiService.unlikePost(postId, { userId: targetUserId })
+      await apiService.unlikePost(postId, { likerId: targetUserId })
       dispatch({ type: 'UNLIKE_POST', payload: postId })
     } catch (error) {
       console.error('Error unliking post:', error)
@@ -614,7 +619,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
   const retweetPost = useCallback(async (postId: string, targetUserId: string) => {
     try {
-      await apiService.retweetPost(postId, { userId: targetUserId })
+      await apiService.retweetPost(postId, { retweeterId: targetUserId })
       dispatch({ type: 'RETWEET_POST', payload: postId })
     } catch (error) {
       console.error('Error retweeting post:', error)
@@ -645,7 +650,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
   const viewPost = useCallback(async (postId: string, targetUserId: string) => {
     try {
-      await apiService.viewPost(postId, { userId: targetUserId })
+      await apiService.viewPost(postId, { viewerId: targetUserId })
     } catch (error) {
       console.error('Error viewing post:', error)
     }
@@ -801,6 +806,63 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const followUser = useCallback(async (targetUserId: string, data: FollowRequest) => {
+    try {
+      console.log('🔍 Session Debug for followUser:', {
+        sessionKeys: session ? Object.keys(session) : [],
+        sessionData: session
+      })
+      const authToken = session?.accessToken || session?.token
+      console.log('🔍 Using auth token:', authToken)
+      const response = await apiService.followUser(targetUserId, data, authToken)
+      return response
+    } catch (error) {
+      console.error('Failed to follow user:', error)
+      throw error
+    }
+  }, [session])
+
+  const unfollowUser = useCallback(async (targetUserId: string, data: FollowRequest) => {
+    try {
+      const authToken = session?.accessToken || session?.token
+      const response = await apiService.unfollowUser(targetUserId, data, authToken)
+      return response
+    } catch (error) {
+      console.error('Failed to unfollow user:', error)
+      throw error
+    }
+  }, [session])
+
+  const getUserFollowers = useCallback(async (userId: string, limit: number = 50, offset: number = 0) => {
+    try {
+      const response = await apiService.getUserFollowers(userId, limit, offset)
+      return response
+    } catch (error) {
+      console.error('Failed to fetch user followers:', error)
+      throw error
+    }
+  }, [])
+
+  const getUserFollowing = useCallback(async (userId: string, limit: number = 50, offset: number = 0) => {
+    try {
+      const response = await apiService.getUserFollowing(userId, limit, offset)
+      return response
+    } catch (error) {
+      console.error('Failed to fetch user following:', error)
+      throw error
+    }
+  }, [])
+
+  const getFollowingFeed = useCallback(async (userId: string, limit: number = 50, offset: number = 0) => {
+    try {
+      const response = await apiService.getFollowingFeed(userId, limit, offset)
+      return response
+    } catch (error) {
+      console.error('Failed to fetch following feed:', error)
+      throw error
+    }
+  }, [])
+
   const value: ApiContextType = {
     state,
     dispatch,
@@ -814,10 +876,14 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     retweetPost,
     bookmarkPost,
     unbookmarkPost,
-
     viewPost,
     commentPost,
+    followUser,
+    unfollowUser,
     getUserProfile,
+    getUserFollowers,
+    getUserFollowing,
+    getFollowingFeed,
     fetchNotifications,
     fetchActivities,
     refreshUserData,

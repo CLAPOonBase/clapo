@@ -159,7 +159,7 @@ export interface FeedResponse {
 
 // Engagement Types
 export interface ViewPostRequest {
-  userId: string
+  viewerId: string
 }
 
 export interface ViewPostResponse {
@@ -168,14 +168,14 @@ export interface ViewPostResponse {
 }
 
 export interface LikePostRequest {
-  userId: string
+  likerId: string
 }
 
 export interface LikeResponse {
   message: string
   like: {
     id: string
-    userId: string
+    likerId: string
     postId: string
     createdAt: string
   }
@@ -185,13 +185,13 @@ export interface UnlikeResponse {
   message: string
   unlike: {
     id: string
-    userId: string
+    likerId: string
     postId: string
   }
 }
 
 export interface CommentRequest {
-  userId: string
+  commenterId: string
   content: string
   mediaUrl?: string
 }
@@ -200,7 +200,7 @@ export interface CommentResponse {
   message: string
   comment: {
     id: string
-    userId: string
+    commenterId: string
     postId: string
     content: string
     createdAt: string
@@ -208,30 +208,29 @@ export interface CommentResponse {
 }
 
 export interface RetweetRequest {
-  userId: string
+  retweeterId: string
 }
 
 export interface RetweetResponse {
   message: string
   retweet: {
     id: string
-    userId: string
+    retweeterId: string
     postId: string
     createdAt: string
   }
 }
 
 export interface BookmarkRequest {
-  userId: string
+  bookmarkerId: string
 }
 
 export interface BookmarkResponse {
   message: string
   bookmark: {
     id: string
-    userId: string
+    bookmarkerId: string
     postId: string
-    createdAt: string
   }
 }
 
