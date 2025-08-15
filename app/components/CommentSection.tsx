@@ -48,7 +48,7 @@ export default function CommentSection({ post, onClose, onCommentAdded }: Commen
         created_at: new Date().toISOString(),
         user_id: session.dbUser.id,
         username: session.dbUser.username || 'You',
-        avatar_url: session.dbUser.avatarUrl || 'https://robohash.org/default.png'
+        avatar_url: session.dbUser.avatar_url || 'https://robohash.org/default.png'
       }
       const updatedComments = [...comments, newComment]
       setComments(updatedComments)
@@ -122,7 +122,7 @@ export default function CommentSection({ post, onClose, onCommentAdded }: Commen
         <div className="border-t border-gray-700 bg-dark-800 p-3">
           <div className="flex items-center gap-3">
             <img
-              src={session?.dbUser?.avatarUrl || 'https://robohash.org/default.png'}
+              src={session?.dbUser?.avatar_url || 'https://robohash.org/default.png'}
               alt="Your avatar"
               className="h-8 w-8 rounded-full object-cover"
               onError={(e) => {

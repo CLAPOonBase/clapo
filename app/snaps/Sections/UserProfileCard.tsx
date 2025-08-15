@@ -12,15 +12,22 @@ export default function UserProfileCard({ onManageClick }: Props) {
   const { data: session, status } = useSession();
   const isLoggedIn = status === 'authenticated' && session?.dbUser;
 
+  console.log('🔍 UserProfileCard Debug:', {
+    status,
+    isLoggedIn,
+    sessionDbUser: session?.dbUser,
+    avatarUrl: session?.dbUser?.avatar_url,
+    username: session?.dbUser?.username
+  });
 
   
- const avatarUrl = isLoggedIn && session.dbUser?.avatarUrl
-  ? session.dbUser.avatarUrl.replace(/_normal(\.\w+)$/, '_400x400$1')
-  : '/default-cover.svg';
+ const avatarUrl = isLoggedIn && session.dbUser?.avatar_url
+  ? session.dbUser.avatar_url.replace(/_normal(\.\w+)$/, '_400x400$1')
+  : '/4.png';
 
-const coverUrl = isLoggedIn && session.dbUser?.avatarUrl
-  ? session.dbUser.avatarUrl.replace(/_normal(\.\w+)$/, '_400x400$1')
-  : '/default-cover.svg';
+const coverUrl = isLoggedIn && session.dbUser?.avatar_url
+  ? session.dbUser.avatar_url.replace(/_normal(\.\w+)$/, '_400x400$1')
+  : '/4.png';
 
   const username = isLoggedIn ? session.dbUser.username : 'Guest';
   const bio = isLoggedIn ? session.dbUser.bio : 'Guest';
@@ -31,7 +38,7 @@ const coverUrl = isLoggedIn && session.dbUser?.avatarUrl
       {/* Cover Image with Overlay */}
       <div className="relative h-28 w-full overflow-hidden">
         <Image
-          src={coverUrl || '/default-cover.svg'}
+          src={coverUrl || '/4.png'}
           alt="Cover"
           fill
           className='object-cover'
@@ -51,7 +58,7 @@ const coverUrl = isLoggedIn && session.dbUser?.avatarUrl
             {/* Avatar Image */}
             <div className="relative w-16 h-16 rounded-full transition-all duration-300 group-hover:border-orange-500/60">
               <Image
-                src={avatarUrl || '/default-cover.svg'}
+                src={avatarUrl || '/4.png'}
                 alt="Avatar"
                 width={64}
                 height={64}
@@ -77,6 +84,7 @@ const coverUrl = isLoggedIn && session.dbUser?.avatarUrl
             <p className="text-xs text-center text-gray-400 truncate mt-0.5">
               @{isLoggedIn ? username?.toLowerCase() : 'guest'}
             </p>
+            
          
           </div>
         </div>

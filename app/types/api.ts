@@ -349,8 +349,13 @@ export interface Community {
   id: string
   name: string
   description: string
-  creatorId: string
-  createdAt: string
+  creator_id: string
+  created_at: string
+  creator_username: string
+  creator_avatar: string
+  user_joined_at?: string | null
+  user_is_admin?: boolean
+  member_count: number
 }
 
 export interface CreateCommunityResponse {
@@ -375,10 +380,13 @@ export interface JoinCommunityResponse {
 
 export interface CommunityMember {
   id: string
-  communityId: string
-  userId: string
-  joinedAt: string
-  isAdmin: boolean
+  community_id: string
+  user_id: string
+  joined_at: string
+  is_admin: boolean
+  username: string
+  avatar_url: string
+  bio: string
 }
 
 export interface CommunitiesResponse {
@@ -399,12 +407,12 @@ export interface CommunityMessagesResponse {
 // Notification Types
 export interface Notification {
   id: string
-  userId: string
+  user_id: string
   type: 'like' | 'retweet' | 'follow' | 'comment' | 'mention'
-  refId: string
-  fromUserId: string
-  isRead: boolean
-  createdAt: string
+  content: string
+  related_id: string
+  is_read: boolean
+  created_at: string
 }
 
 export interface NotificationsResponse {
@@ -448,15 +456,15 @@ export interface ThreadMessage {
   content: string
   mediaUrl?: string
   createdAt: string
-  senderUsername?: string
 }
 
 export interface CommunityMessage {
   id: string
-  communityId: string
-  senderId: string
+  community_id: string
+  sender_id: string
   content: string
-  mediaUrl?: string
-  createdAt: string
-  senderUsername?: string
+  media_url?: string
+  created_at: string
+  sender_username?: string
+  sender_avatar?: string
 } 

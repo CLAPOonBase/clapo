@@ -232,7 +232,7 @@ export function SnapComposer() {
        <div className='flex'>
        <div className='rounded-full h-14 w-14'>
        <Image
-  src={session?.dbUser?.avatar_url || session?.user?.image || '/4.png'}
+  src={session?.dbUser?.avatar_url || '/4.png'}
   alt=""
   width={1000}
   height={1000}

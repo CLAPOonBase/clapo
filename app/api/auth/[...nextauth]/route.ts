@@ -75,7 +75,7 @@ export const authOptions: NextAuthOptions = {
                       username: existingUser.username,
                       email: existingUser.email,
                       bio: existingUser.bio,
-                      avatarUrl: existingUser.avatar_url || '',
+                      avatar_url: existingUser.avatar_url || '',
                       createdAt: existingUser.created_at
                     };
                     user.provider = 'twitter';
@@ -98,7 +98,7 @@ export const authOptions: NextAuthOptions = {
                 username: existingUser.username,
                 email: existingUser.email,
                 bio: existingUser.bio,
-                avatarUrl: existingUser.avatar_url || '',
+                avatar_url: existingUser.avatar_url || '',
                 createdAt: existingUser.created_at
               };
               user.provider = 'twitter';

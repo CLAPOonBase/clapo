@@ -34,6 +34,8 @@ import {
   ThreadMessagesResponse,
   AddParticipantRequest,
   AddParticipantResponse,
+  CommunityMembersResponse,
+  CommunityMessagesResponse,
 } from '../types/api'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'
@@ -307,33 +309,33 @@ class ApiService {
     }
   }
 
-  async getCommunityMembers(communityId: string, limit = 50, offset = 0): Promise<unknown> {
+  async getCommunityMembers(communityId: string, limit = 50, offset = 0): Promise<CommunityMembersResponse> {
     try {
       const response = await this.request(`/communities/${communityId}/members?limit=${limit}&offset=${offset}`)
-      return response
+      return response as CommunityMembersResponse
     } catch (error) {
       console.error('Error fetching community members:', error)
       throw error
     }
   }
 
-  async sendCommunityMessage(communityId: string, data: SendMessageRequest): Promise<unknown> {
+  async sendCommunityMessage(communityId: string, data: SendMessageRequest): Promise<CommunityMessagesResponse> {
     try {
       const response = await this.request(`/communities/${communityId}/messages`, {
         method: 'POST',
         body: JSON.stringify(data),
       })
-      return response
+      return response as CommunityMessagesResponse
     } catch (error) {
       console.error('Error sending community message:', error)
       throw error
     }
   }
 
-  async getCommunityMessages(communityId: string, limit = 50, offset = 0): Promise<unknown> {
+  async getCommunityMessages(communityId: string, limit = 50, offset = 0): Promise<CommunityMessagesResponse> {
     try {
       const response = await this.request(`/communities/${communityId}/messages?limit=${limit}&offset=${offset}`)
-      return response
+      return response as CommunityMessagesResponse
     } catch (error) {
       console.error('Error fetching community messages:', error)
       throw error

@@ -23,7 +23,9 @@ export default function MessagePage() {
     getCommunities, 
     getUserCommunities,
     joinCommunity, 
-    createCommunity
+    createCommunity,
+    getCommunityMessages,
+    sendCommunityMessage
   } = useApi();
   
    const handleStartChatWithUser = async (user: { id: string; username: string }) => {
@@ -85,11 +87,11 @@ export default function MessagePage() {
 
   useEffect(() => {
     if (session?.dbUser?.id) {
+      // getCommunities now handles both all communities and user communities merging
       getCommunities();
-      getUserCommunities(session.dbUser.id);
       getMessageThreads(session.dbUser.id);
     }
-  }, [session?.dbUser?.id, getCommunities, getUserCommunities, getMessageThreads]);
+  }, [session?.dbUser?.id, getCommunities, getMessageThreads]);
 
   const handleSendMessage = async (content: string) => {
     if (!session?.dbUser?.id) return;
@@ -148,6 +150,7 @@ export default function MessagePage() {
       setNewCommunityName('')
       setNewCommunityDescription('')
       
+      // Refresh communities (now handles both all and user communities)
       getCommunities()
     } catch (error) {
       console.error('Failed to create community:', error)
@@ -155,26 +158,39 @@ export default function MessagePage() {
   }
 
   const handleSendCommunityMessage = async (content: string) => {
-    if (!selectedCommunity) return;
+    if (!selectedCommunity || !session?.dbUser?.id) return;
+
+    console.log('🔍 Sending community message:', { content, communityId: selectedCommunity, userId: session.dbUser.id });
 
     try {
       if (isConnected && socket) {
+        console.log('🔍 Using WebSocket for real-time message');
         (socket as any).emit('send_community_message', {
           userId: session.dbUser.id,
           content,
           communityId: selectedCommunity
         }, async (response: { success: boolean; message?: string }) => {
+          console.log('🔍 WebSocket response:', response);
           if (!response.success) {
-            await sendCommunityMessage(content);
+            console.log('🔍 Falling back to REST API');
+            await sendCommunityMessage(selectedCommunity, {
+              senderId: session.dbUser.id,
+              content
+            });
           }
           await fetchCommunityMessages();
         });
       } else {
-        await sendCommunityMessage(content);
+        console.log('🔍 Using REST API for message');
+        await sendCommunityMessage(selectedCommunity, {
+          senderId: session.dbUser.id,
+          content
+        });
         await fetchCommunityMessages();
       }
+      console.log('✅ Community message sent successfully');
     } catch (error) {
-      console.error('Failed to send community message:', error);
+      console.error('❌ Failed to send community message:', error);
     }
   };
 
@@ -186,6 +202,7 @@ export default function MessagePage() {
     try {
       await joinCommunity(communityId, { userId: session.dbUser.id })
       
+      // Refresh communities (now handles both all and user communities)
       getCommunities()
     } catch (error) {
       console.error('Failed to join community:', error)
@@ -195,14 +212,16 @@ export default function MessagePage() {
   const [hasInitializedUsers, setHasInitializedUsers] = useState(false);
 
 
-  const sendCommunityMessage = async (content: string) => {
-    // Implementation depends on your apiService
-    // This is a placeholder for the actual implementation
-  };
-
   const fetchCommunityMessages = async () => {
-    // Implementation depends on your apiService
-    // This is a placeholder for the actual implementation
+    if (!selectedCommunity) return;
+    
+    try {
+      console.log('🔍 Fetching community messages for:', selectedCommunity);
+      await getCommunityMessages(selectedCommunity);
+      console.log('✅ Community messages fetched successfully');
+    } catch (error) {
+      console.error('❌ Failed to fetch community messages:', error);
+    }
   };
 
   const handleSelectThread = async (threadId: string) => {
@@ -211,8 +230,11 @@ export default function MessagePage() {
   };
 
   const handleSelectCommunity = async (communityId: string) => {
+    console.log('🔍 Selecting community:', communityId);
     setSelectedCommunity(communityId);
-    // Fetch community messages implementation
+    if (communityId) {
+      await fetchCommunityMessages();
+    }
   };
 
   return (

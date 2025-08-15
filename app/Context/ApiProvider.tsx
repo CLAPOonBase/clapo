@@ -388,6 +388,7 @@ interface ApiContextType {
   viewPost: (postId: string, userId: string) => Promise<void>
   commentPost: (postId: string, data: CommentRequest) => Promise<any>
   getUserProfile: (userId: string) => Promise<any>
+  updateUserProfile: (userId: string, data: UpdateProfileRequest) => Promise<any>
   fetchNotifications: (userId: string) => Promise<void>
   fetchActivities: (userId: string) => Promise<void>
   refreshUserData: (userId: string) => Promise<void>
@@ -399,7 +400,7 @@ interface ApiContextType {
   createCommunity: (data: CreateCommunityRequest) => Promise<void>
   getCommunities: (searchQuery?: string) => Promise<void>
   joinCommunity: (communityId: string, data: JoinCommunityRequest) => Promise<void>
-  getCommunityMembers: (communityId: string) => Promise<void>
+  getCommunityMembers: (communityId: string) => Promise<any>
   sendCommunityMessage: (communityId: string, data: SendMessageRequest) => Promise<void>
   getCommunityMessages: (communityId: string) => Promise<void>
   getUserCommunities: (userId: string) => Promise<void>
@@ -416,22 +417,6 @@ const ApiContext = createContext<ApiContextType | undefined>(undefined)
 export function ApiProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(apiReducer, initialState)
   const { data: session, status, update } = useSession()
-
-  const fixAvatarUrl = useCallback(async () => {
-    if (session?.dbUser && session?.user?.image && !session.dbUser.avatarUrl) {
-      const updatedUserData = {
-        ...session.dbUser,
-        avatarUrl: session.user.image
-      };
-      
-      await update({
-        dbUserId: session.dbUser,
-        dbUser: updatedUserData,
-        needsPasswordSetup: false,
-        twitterData: session.dbUser || null
-      });
-    }
-  }, [session, update]);
 
   const testUserProfile = useCallback(async (userId: string) => {
     try {
@@ -465,16 +450,21 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_LOADING', payload: true })
     } else if (status === 'authenticated' && session?.dbUser) {
       const userData = { ...session.dbUser };
-      if (!userData.avatarUrl && session.user?.image) {
-        userData.avatarUrl = session.user.image;
-      }
+      
+      console.log('🔍 ApiProvider Debug:', {
+        status,
+        sessionDbUser: session.dbUser,
+        userData,
+        avatarUrl: userData.avatar_url,
+        hasAvatar: !!userData.avatar_url
+      });
       
       const apiUser: ApiUser = {
-        id: session.user ,
+        id: userData.id,
         username: userData.username,
         email: userData.username,
         bio: userData.bio,
-        avatarUrl: userData.avatarUrl,
+        avatarUrl: userData.avatar_url,
         createdAt: userData.holdings ? new Date().toISOString() : new Date().toISOString(),
         followerCount: 0,
         followingCount: 0
@@ -486,8 +476,6 @@ export function ApiProvider({ children }: { children: ReactNode }) {
         fetchNotifications(session.dbUser.id)
         fetchActivities(session.dbUser.id)
       }
-    } else if (status === 'authenticated' && session?.twitterData) {
-      dispatch({ type: 'SET_LOADING', payload: false })
     } else if (status === 'unauthenticated') {
       dispatch({ type: 'CLEAR_USER' })
     }
@@ -525,18 +513,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   }
 
   // Get current user ID from session
-  const getCurrentUserId = (): string | null => {
-    console.log('🔍 Session Debug:', { 
-      sessionDbUser: session?.dbUser,
-      sessionDbUserId: session?.dbUser?.id,
-      sessionDbUserType: typeof session?.dbUser,
-      sessionDbUserIdType: typeof session?.dbUser?.id,
-      sessionTwitterData: session?.twitterData,
-      stateUser: state.user.currentUser,
-      sessionKeys: session ? Object.keys(session) : []
-    })
-    
-    // The session.dbUser object has an id field
+  const getCurrentUserId = useCallback(() => {
     if (session?.dbUser?.id) {
       console.log('✅ Found user ID:', session.dbUser.id)
       return session.dbUser.id
@@ -557,9 +534,8 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       return session.user.id
     }
     
-    if (session?.twitterData?.username) return session.twitterData.username
     return state.user.currentUser?.id || null
-  }
+  }, [session, state.user.currentUser?.id])
 
   const fetchPosts = useCallback(async (userId?: string) => {
     const targetUserId = userId || getCurrentUserId()
@@ -672,11 +648,14 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     const targetUserId = userId || getCurrentUserId()
     if (!targetUserId) return
 
+    console.log('🔍 Fetching notifications for user:', targetUserId);
     try {
       const response = await apiService.getNotifications(targetUserId)
+      console.log('🔍 Notifications API response:', response);
       dispatch({ type: 'SET_NOTIFICATIONS', payload: response.notifications })
+      console.log('✅ Notifications set in state:', response.notifications?.length || 0);
     } catch (error) {
-      console.error('Failed to fetch notifications:', error)
+      console.error('❌ Failed to fetch notifications:', error)
     }
   }, [])
 
@@ -749,11 +728,38 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   const getCommunities = useCallback(async (searchQuery?: string) => {
     try {
       const response = await apiService.getCommunities(searchQuery)
-      dispatch({ type: 'SET_COMMUNITIES', payload: response.communities })
+      const allCommunities = response.communities
+      
+      // If we have a current user, also fetch their communities to merge membership info
+      if (session?.dbUser?.id) {
+        try {
+          const userCommunitiesResponse = await apiService.getUserCommunities(session.dbUser.id)
+          const userCommunities = userCommunitiesResponse.communities
+          
+          // Merge the data: add user membership info to all communities
+          const mergedCommunities = allCommunities.map(community => {
+            const userCommunity = userCommunities.find(uc => uc.id === community.id)
+            return {
+              ...community,
+              user_joined_at: userCommunity?.user_joined_at || null,
+              user_is_admin: userCommunity?.user_is_admin || false
+            }
+          })
+          
+          dispatch({ type: 'SET_COMMUNITIES', payload: mergedCommunities })
+        } catch (userCommunitiesError) {
+          console.error('Failed to fetch user communities for merging:', userCommunitiesError)
+          // Fallback to just all communities without user membership info
+          dispatch({ type: 'SET_COMMUNITIES', payload: allCommunities })
+        }
+      } else {
+        // No user session, just set all communities
+        dispatch({ type: 'SET_COMMUNITIES', payload: allCommunities })
+      }
     } catch (error) {
       console.error('Failed to fetch communities:', error)
     }
-  }, [])
+  }, [session?.dbUser?.id])
 
   const joinCommunity = useCallback(async (communityId: string, data: JoinCommunityRequest) => {
     try {
@@ -765,9 +771,11 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
   const getCommunityMembers = useCallback(async (communityId: string) => {
     try {
-      await apiService.getCommunityMembers(communityId)
+      const response = await apiService.getCommunityMembers(communityId)
+      return response
     } catch (error) {
       console.error('Failed to fetch community members:', error)
+      throw error
     }
   }, [])
 
@@ -804,6 +812,16 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       return response
     } catch (error) {
       console.error('Failed to fetch user profile:', error)
+      throw error
+    }
+  }, [])
+
+  const updateUserProfile = useCallback(async (userId: string, data: UpdateProfileRequest) => {
+    try {
+      const response = await apiService.updateUserProfile(userId, data)
+      return response
+    } catch (error) {
+      console.error('Failed to update user profile:', error)
       throw error
     }
   }, [])
@@ -883,6 +901,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     followUser,
     unfollowUser,
     getUserProfile,
+    updateUserProfile,
     getUserFollowers,
     getUserFollowing,
     getFollowingFeed,

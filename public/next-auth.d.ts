@@ -12,12 +12,11 @@ declare module "next-auth" {
       image?: string | null
     }
     dbUser?: {
-      avatar_url: any
       id: string
       username: string
       email: string
       bio: string
-      avatarUrl: string
+      avatar_url: string
       createdAt: string
     }
     provider?: string
@@ -40,7 +39,7 @@ declare module "next-auth" {
       username: string
       email: string
       bio: string
-      avatarUrl: string
+      avatar_url: string
       createdAt: string
     }
     provider?: string
@@ -61,7 +60,7 @@ declare module "next-auth/jwt" {
       username: string
       email: string
       bio: string
-      avatarUrl: string
+      avatar_url: string
       createdAt: string
     }
     provider?: string
