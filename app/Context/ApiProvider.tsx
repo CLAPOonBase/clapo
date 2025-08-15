@@ -789,11 +789,14 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const getCommunityMessages = useCallback(async (communityId: string) => {
+    console.log('🔍 getCommunityMessages called for community:', communityId);
     try {
       const response = await apiService.getCommunityMessages(communityId)
+      console.log('🔍 Community messages API response:', response);
       dispatch({ type: 'SET_COMMUNITY_MESSAGES', payload: { communityId, messages: response.messages } })
+      console.log('✅ Community messages set in state for community:', communityId, 'Count:', response.messages?.length || 0);
     } catch (error) {
-      console.error('Failed to fetch community messages:', error)
+      console.error('❌ Failed to fetch community messages:', error)
     }
   }, [])
 

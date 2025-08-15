@@ -85,6 +85,18 @@ export default function MessagePage() {
         sender_avatar: msg.sender_avatar ?? msg.senderAvatar,
       }));
 
+  // Debug logging for messages
+  useEffect(() => {
+    console.log('🔍 currentMessages debug:', {
+      activeTab,
+      selectedCommunity,
+      selectedThread,
+      communityMessagesKeys: Object.keys(state.communityMessages || {}),
+      communityMessagesForSelected: state.communityMessages[selectedCommunity || ''],
+      currentMessagesLength: currentMessages.length
+    });
+  }, [activeTab, selectedCommunity, selectedThread, state.communityMessages, currentMessages]);
+
   useEffect(() => {
     if (session?.dbUser?.id) {
       // getCommunities now handles both all communities and user communities merging
@@ -233,9 +245,19 @@ export default function MessagePage() {
     console.log('🔍 Selecting community:', communityId);
     setSelectedCommunity(communityId);
     if (communityId) {
+      console.log('🔍 About to fetch community messages for:', communityId);
       await fetchCommunityMessages();
     }
   };
+
+  // Add useEffect to monitor selectedCommunity changes
+  useEffect(() => {
+    console.log('🔍 selectedCommunity changed to:', selectedCommunity);
+    if (selectedCommunity && activeTab === 'communities') {
+      console.log('🔍 Auto-fetching messages for selected community:', selectedCommunity);
+      fetchCommunityMessages();
+    }
+  }, [selectedCommunity, activeTab]);
 
   return (
     <div className="rounded-xl shadow-2xl h-[700px] flex overflow-hidden">
