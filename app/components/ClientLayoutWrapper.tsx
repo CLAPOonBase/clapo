@@ -11,7 +11,7 @@ interface ClientLayoutWrapperProps {
 export default function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
   const { data: session, status } = useSession();
   const [showPasswordSetup, setShowPasswordSetup] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(true);
 
   // Detect mobile device
   useEffect(() => {

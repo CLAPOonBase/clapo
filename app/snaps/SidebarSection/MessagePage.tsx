@@ -74,7 +74,14 @@ export default function MessagePage() {
   const currentCommunity = state.communities?.find(c => c.id === selectedCommunity);
   const currentMessages = activeTab === 'dms' 
     ? state.threadMessages[selectedThread || ''] || []
-    : state.communityMessages[selectedCommunity || ''] || [];
+    : (state.communityMessages[selectedCommunity || ''] || []).map((msg: any) => ({
+        id: msg.id,
+        sender_id: msg.sender_id ?? msg.senderId ?? '',
+        content: msg.content,
+        created_at: msg.created_at ?? msg.createdAt ?? '',
+        sender_username: msg.sender_username ?? msg.senderUsername,
+        sender_avatar: msg.sender_avatar ?? msg.senderAvatar,
+      }));
 
   useEffect(() => {
     if (session?.dbUser?.id) {
@@ -173,7 +180,7 @@ export default function MessagePage() {
 
    
 
-   const handleJoinCommunity = async (communityId: string) => {
+ const handleJoinCommunity = async (communityId: string) => {
     if (!session?.dbUser?.id) return
 
     try {
@@ -184,6 +191,9 @@ export default function MessagePage() {
       console.error('Failed to join community:', error)
     }
   }
+
+  const [hasInitializedUsers, setHasInitializedUsers] = useState(false);
+
 
   const sendCommunityMessage = async (content: string) => {
     // Implementation depends on your apiService

@@ -1,4 +1,5 @@
 import { Users, Hash } from 'lucide-react';
+import { ApiService } from '../lib/api';
 
 interface CommunitySectionProps {
   communitySection: 'my' | 'join' | 'create';
