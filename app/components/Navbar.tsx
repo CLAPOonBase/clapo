@@ -56,7 +56,9 @@ export default function Navbar() {
   return (
     <>
       <nav className="w-full sticky top-0 p-4 md:p-6 flex items-center justify-between bg-black backdrop-blur-lg font-mono z-[9999]">
-        <div className="md:hidden z-50">
+        
+        {/* Mobile + iPad Menu Drawer (visible until lg) */}
+        <div className="lg:hidden z-50">
           <Drawer>
             <DrawerTrigger className="p-2 text-white">
               <Menu size={24} />
@@ -75,14 +77,6 @@ export default function Navbar() {
                         ? "text-[#E4761B]"
                         : "text-[#A0A0A0] hover:text-white"
                     }`}
-                    onClick={() => {
-                      const drawerTrigger = document.querySelector(
-                        "[data-radix-popper-content-wrapper]"
-                      );
-                      if (drawerTrigger) {
-                        drawerTrigger.classList.remove("open");
-                      }
-                    }}
                   >
                     {item.label}
                   </Link>
@@ -92,6 +86,7 @@ export default function Navbar() {
           </Drawer>
         </div>
 
+        {/* Logo (always visible) */}
         <div className="flex items-center z-50">
           <Image
             src="/navlogo.png"
@@ -102,7 +97,8 @@ export default function Navbar() {
           />
         </div>
 
-        <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 gap-8 items-center">
+        {/* Desktop Nav Links (only lg and up) */}
+        <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 gap-8 items-center">
           {navItems.map((item) => (
             <Link
               key={item.href}
@@ -118,7 +114,8 @@ export default function Navbar() {
           ))}
         </div>
 
-        <div className="hidden md:flex gap-2 items-center">
+        {/* Desktop Buttons (only lg and up) */}
+        <div className="hidden lg:flex gap-2 items-center">
           <button
             onClick={() => openDialog("x")}
             className="text-[#E4761B] bg-white rounded px-3 py-1 text-xs font-bold shadow hover:text-white hover:bg-[#E4761B] transition"
@@ -139,7 +136,8 @@ export default function Navbar() {
           </button>
         </div>
 
-        <div className="flex md:hidden justify-center">
+        {/* Mobile + iPad Connect Button */}
+        <div className="flex lg:hidden justify-center">
           <button
             onClick={() => openDialog("x")}
             className="text-[#E4761B] bg-white rounded px-3 py-1 text-xs font-bold shadow hover:text-white hover:bg-[#E4761B] transition"
@@ -151,6 +149,7 @@ export default function Navbar() {
         </div>
       </nav>
 
+      {/* Dialogs */}
       <AnimatePresence>
         {activeDialog && (
           <motion.div

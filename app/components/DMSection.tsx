@@ -190,7 +190,7 @@ const searchUsers = async (query: string) => {
                     </div>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex flex-row justify-between w-full min-w-0">
                   <div className="font-semibold text-white group-hover:text-blue-300 transition-colors">
                     {user.username}
                   </div>

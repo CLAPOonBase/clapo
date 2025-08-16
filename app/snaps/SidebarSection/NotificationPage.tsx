@@ -117,7 +117,7 @@ const NotificationPage = () => {
 
   if (loading && notifications.length === 0) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center text-white">
+      <div className="sticky top-20 bg-dark-800 rounded-2xl flex flex-col items-center justify-center text-white">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mb-4"></div>
         <div className="text-gray-400">Loading notifications...</div>
       </div>
@@ -125,11 +125,11 @@ const NotificationPage = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-dark-800">
+    <div className="sticky top-20 flex flex-col rounded-2xl bg-dark-800">
       {/* Header */}
       <div className="p-6 border-b border-slate-700/50">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+          <h2 className="text-2xl font-bold bg-primary bg-clip-text text-transparent">
             Notifications
           </h2>
           <div className="flex items-center space-x-3">
@@ -158,7 +158,7 @@ const NotificationPage = () => {
           <span>Unread: {unreadCount}</span>
           {isConnected && (
             <span className="text-green-400 font-medium">
-              ✨ Real-time updates active
+              Real-time updates active
             </span>
           )}
         </div>
@@ -189,7 +189,7 @@ const NotificationPage = () => {
           filteredNotifications.map((notification: EnhancedNotification) => (
             <div
               key={notification.id}
-              className={`p-4 rounded-xl border-l-4 transition-all duration-200 hover:bg-slate-700/30 ${
+              className={`p-4 rounded-2xl transition-all duration-200 hover:bg-slate-700/30 ${
                 getNotificationColor(notification.type)
               } ${notification.is_read ? 'opacity-70' : 'opacity-100'}`}
             >

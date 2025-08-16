@@ -241,7 +241,7 @@ export default function SocialFeedPage() {
       >
         <div className="flex-col md:flex-row mx-auto text-white flex">
           <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-          <div className="flex-1 m-4 md:m-0 rounded-md">
+          <div className="flex-1 m-4 md:m-4 rounded-md">
             <div className="bg-dark-800 rounded-md p-6 my-4 text-center">
               <h3 className="text-lg font-semibold text-white mb-2">Welcome to Snaps!</h3>
               <p className="text-gray-400 mb-4">Sign in to start posting and engaging with others.</p>
@@ -278,7 +278,7 @@ export default function SocialFeedPage() {
     >
       <div className=" flex-col md:flex-row mx-auto text-white flex">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-        <div className="flex-1 m-4 md:m-0 rounded-md">
+        <div className="flex-1 m-4 md:m-0 rounded-md sticky top-20">
           {renderContent()}
         </div>
         {currentPage !== 'messages' && session?.dbUser && (
