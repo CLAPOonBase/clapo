@@ -42,7 +42,7 @@ export default function OpinioPage() {
       className=""
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
-      <div className="text-center mx-auto flex min-h-screen text-white">
+      <div className="flex sticky top-20">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
         <div className="w-full">{renderContent()}</div>
       </div>

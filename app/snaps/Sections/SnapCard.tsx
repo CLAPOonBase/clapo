@@ -109,7 +109,7 @@ const displayedText = expanded ? postContent : words.slice(0, 50).join(" ") + (i
 
   return (
     <>
-      <div className="bg-dark-800 text-secondary rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200 my-4" onClick={handleView}>
+      <div className="bg-dark-700 text-secondary rounded-2xl p-2 md:p-6 mt-8 shadow-sm hover:shadow-md transition-all duration-200 my-4" onClick={handleView}>
         <div className="flex flex-col space-y-4">
           <div className='flex space-x-2'>
             <div className="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden">

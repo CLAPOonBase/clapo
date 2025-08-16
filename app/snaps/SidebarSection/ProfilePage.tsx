@@ -53,9 +53,7 @@ export function ProfilePage({ user, posts }: Props) {
       if (response.profile) {
         console.log('🔍 Setting new profile:', response.profile)
         setProfile(response.profile)
-        
-        // Update the session with new profile data to keep it in sync
-        if (session.update) {
+              if (session.update) {
           const updatedDbUser = {
             ...session.dbUser,
             ...response.profile
@@ -98,6 +96,7 @@ export function ProfilePage({ user, posts }: Props) {
       </div>
     )
   }
+  console.log('🔍 Profile data:', profile)
 
   return (
     <div className="text-white bg-dark-800 rounded-md">
@@ -143,8 +142,7 @@ export function ProfilePage({ user, posts }: Props) {
         <p className="text-gray-400 text-sm">@{profile.username}</p>
         <p className="text-gray-400 text-xs mt-1">{profile.bio || 'No bio available'}</p>
       </div>
-
-      {/* Rest of the component remains the same */}
+      
       <div className="mt-6">
         <div className="flex justify-around space-x-4 bg-dark-800 p-2 border-b border-secondary">
           {(["Posts", "Activity"] as Tab[]).map((tab) => (

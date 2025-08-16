@@ -1,4 +1,5 @@
-import { MessageCircle, Users, Plus } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { MessageCircle, Users, Plus, Search } from 'lucide-react';
 
 interface TabNavigationProps {
   activeTab: 'dms' | 'communities';
@@ -19,89 +20,122 @@ export const TabNavigation = ({
   setCommunitySection,
   setShowCreateCommunityModal
 }: TabNavigationProps) => (
-  <>
+  <div className="space-y-4">
     {/* Main Tabs */}
-    <div className="flex space-x-2 p-1 rounded-lg">
+  <div className="relative flex gap-1 p-1 text-sm">
+      {/* Messages */}
       <button
-        onClick={() => setActiveTab('dms')}
-        className={`flex items-center space-x-2 py-2.5 justify-center transition-all duration-200 font-medium ${
-          activeTab === 'dms' 
-            ? 'border-b-2 border-primary text-white w-full' 
-            : 'text-slate-400 hover:text-white hover:bg-slate-600/50 w-full'
+        onClick={() => setActiveTab("dms")}
+        className={`relative flex items-center justify-center gap-2 py-3 px-4 font-medium flex-1 ${
+          activeTab === "dms" ? "text-primary" : "text-secondary"
         }`}
       >
         <MessageCircle className="w-4 h-4" />
-        <span>DMs</span>
+        <span>Messages</span>
+        {activeTab === "dms" && (
+          <motion.div
+            layoutId="activeTab"
+            className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary"
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          />
+        )}
       </button>
+
+      {/* Communities */}
       <button
-        onClick={() => setActiveTab('communities')}
-        className={`flex items-center space-x-2 py-2.5 justify-center transition-all duration-200 font-medium ${
-          activeTab === 'communities' 
-            ? 'border-b-2 border-primary text-white w-full' 
-            : 'text-slate-400 hover:text-white hover:bg-slate-600/50 w-full'
+        onClick={() => setActiveTab("communities")}
+        className={`relative flex items-center justify-center gap-2 py-3 px-4 font-medium flex-1 ${
+          activeTab === "communities" ? "text-primary" : "text-secondary"
         }`}
       >
         <Users className="w-4 h-4" />
         <span>Communities</span>
+        {activeTab === "communities" && (
+          <motion.div
+            layoutId="activeTab"
+            className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary"
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          />
+        )}
       </button>
     </div>
 
-    {/* Sub Tabs */}
-    {activeTab === 'dms' && (
-      <div className="flex space-x-2 mt-4 text-nowrap text-xs">
-        <button
-          onClick={() => setDmSection('threads')}
-          className={`px-3 py-1.5 rounded-md font-medium transition-all duration-200 ${
-            dmSection === 'threads' 
-              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' 
-              : 'text-slate-400 hover:text-white hover:bg-slate-600/30'
-          }`}
-        >
-          My Chats
-        </button>
-        <button
-          onClick={() => setDmSection('search')}
-          className={`px-3 py-1.5 rounded-md font-medium transition-all duration-200 ${
-            dmSection === 'search' 
-              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' 
-              : 'text-slate-400 hover:text-white hover:bg-slate-600/30'
-          }`}
-        >
-          Find Users
-        </button>
-      </div>
-    )}
+    {/* Sub Navigation */}
+    <div>
+      {activeTab === "dms" && (
+        <div className="relative flex justify-between gap-2 rounded-full w-full text-nowrap">
+          <button
+            onClick={() => setDmSection("threads")}
+            className={`relative px-2 rounded-lg text-sm font-medium z-10 ${
+              dmSection === "threads" ? "text-white" : "text-slate-400"
+            }`}
+          >
+            My Chats
+            {dmSection === "threads" && (
+              <motion.div
+                layoutId="dmSection"
+                className="absolute inset-0 border border-secondary rounded-lg"
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              />
+            )}
+          </button>
+          <button
+            onClick={() => setDmSection("search")}
+            className={`relative px-2 rounded-lg text-sm font-medium z-10 ${
+              dmSection === "search" ? "text-white" : "text-slate-400"
+            }`}
+          >
+            Find Users
+            {dmSection === "search" && (
+              <motion.div
+                layoutId="dmSection"
+                className="absolute inset-0 border border-secondary rounded-lg"
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              />
+            )}
+             
+          </button>
+          <div className='w-full flex justify-end'>
+            <div className='px-2 flex items-center rounded-full border border-gray-800'>
+                 <Search className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
 
     {activeTab === 'communities' && (
-      <div className="flex items-center space-x-2 mt-4">
-        <button
-          onClick={() => setCommunitySection('my')}
-          className={`px-3 py-1.5 rounded-md font-medium transition-all duration-200 ${
-            communitySection === 'my' 
-              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' 
-              : 'text-slate-400 hover:text-white hover:bg-slate-600/30'
-          }`}
-        >
-          My Communities
-        </button>
-        <button
-          onClick={() => setCommunitySection('join')}
-          className={`px-3 py-1.5 rounded-md font-medium transition-all duration-200 ${
-            communitySection === 'join' 
-              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' 
-              : 'text-slate-400 hover:text-white hover:bg-slate-600/30'
-          }`}
-        >
-          Discover
-        </button>
+      <div className="flex items-center justify-between w-full gap-2">
+        <div className="flex gap-2 flex-1">
+          <button
+            onClick={() => setCommunitySection('my')}
+            className={`px-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+              communitySection === 'my'
+                ? 'border text-white'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+            }`}
+          >
+            My Communities
+          </button>
+          <button
+            onClick={() => setCommunitySection('join')}
+            className={`px-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+              communitySection === 'join'
+                ? 'border text-white'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+            }`}
+          >
+            Discover
+          </button>
+        </div>
         <button
           onClick={() => setShowCreateCommunityModal(true)}
-          className="ml-auto p-1.5 rounded-md bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 hover:text-emerald-300 transition-all duration-200 hover:scale-110"
+          className="px-2 rounded-lg border hover:bg-slate-700 text-slate-300 hover:text-white transition-all duration-200"
           title="Create Community"
         >
           <Plus className="w-4 h-4" />
         </button>
       </div>
     )}
-  </>
+  </div>
 );

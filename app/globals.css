@@ -261,6 +261,11 @@ background: linear-gradient(360deg, #0B0D16 -61.97%, #181C2A 56.12%);
   }
 }
 
+*{
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
 /* styles/globals.css or anywhere */
 .scrollbar-hide {
   scrollbar-width: none; /* Firefox */

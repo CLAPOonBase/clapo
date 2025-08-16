@@ -21,16 +21,29 @@ export function SnapComposer() {
   const [mediaUrl, setMediaUrl] = useState<string | undefined>()
   const { createPost, fetchPosts } = useApi();
   const { data: session, status } = useSession();
-  
-  console.log('🔍 SnapComposer Debug:', {
-    createPost: typeof createPost,
-    fetchPosts: typeof fetchPosts,
-    session,
-    status,
-    sessionDbUser: session?.dbUser,
-    sessionDbUserId: session?.dbUser?.id,
-    userId: session?.dbUser?.id
-  })
+  const { getUserProfile, updateUserProfile } = useApi()
+  const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState<any>(null)
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (session?.dbUser?.id) {
+        try {
+          setLoading(true)
+          const profileData = await getUserProfile(session.dbUser.id)
+          setProfile(profileData.profile)
+        } catch (error) {
+          console.error('Failed to fetch profile:', error)
+        } finally {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchProfile()
+  }, [session?.dbUser?.id, getUserProfile])
+
+  console.log("profile", profile)
   
   const [uploadedMedia, setUploadedMedia] = useState<{
     url: string
@@ -41,7 +54,16 @@ export function SnapComposer() {
   const mediaUploadRef = useRef<MediaUploadHandle>(null)
   const userId = session?.dbUser?.id
 
-  // Add useEffect to monitor session changes
+  console.log('🔍 Composer Debug:', {
+    content,
+    isSubmitting,
+    mediaUrl,
+    uploadedMedia,
+    userId,
+    sessionDbUser: session?.dbUser,
+    sessionDbUserId: session?.dbUser?.id
+  })
+
   React.useEffect(() => {
     console.log('🔍 Session changed:', {
       status,
@@ -58,10 +80,8 @@ export function SnapComposer() {
     { icon: Mic, label: 'Audio', color: 'text-amber-400', type: 'audio' },
   ]
   const handleMediaUpload = (url: string) => {
-    // Now we get a permanent S3 URL, so we can use it directly
     setMediaUrl(url)
     
-    // Extract file type from the URL or set a default
     const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i)
     const isVideo = url.match(/\.(mp4|webm|ogg|mov)$/i)
     const isAudio = url.match(/\.(mp3|wav|ogg|m4a)$/i)
@@ -214,29 +234,17 @@ export function SnapComposer() {
   const hasContent = content.trim().length > 0
   const canSubmit = (hasContent || mediaUrl) && !isSubmitting && !isOverLimit
 
-  console.log('🔍 Submit Button Debug:', {
-    content: content,
-    contentTrimmed: content.trim(),
-    contentTrimmedLength: content.trim().length,
-    hasContent,
-    mediaUrl,
-    isSubmitting,
-    isOverLimit,
-    charCount,
-    canSubmit
-  })
-
   return (
     <div className="w-full bg-dark-800 backdrop-blur-sm rounded-xl p-5 shadow-xl">
       {/* Text Input */}
        <div className='flex'>
        <div className='rounded-full h-14 w-14'>
-       <Image
-  src={session?.dbUser?.avatar_url || '/4.png'}
-  alt=""
+     <Image
+  src={profile?.avatar_url && profile.avatar_url.trim() !== "" ? profile.avatar_url : "/4.png"}
+  alt="profile avatar"
   width={1000}
   height={1000}
-  className="w-12 h-12 rounded-full "
+  className="w-12 h-12 rounded-full"
 />
 
        </div>

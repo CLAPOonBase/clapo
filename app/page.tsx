@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import Leaderboard from "./components/Leaderboard";
 import { Row } from "./types";
 import RewardPoolsPage from "./components/LeaderboardBox";
+import Footer from "./components/Footer";
 
 export default function Home() {
   const [mockRows, setMockRows] = useState<Row[]>([]);
@@ -122,6 +123,7 @@ export default function Home() {
           </section>
         </main>
       </div>
+      <Footer/>
     </motion.div>
   );
 }

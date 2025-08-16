@@ -610,7 +610,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   const likePost = useCallback(async (postId: string, targetUserId: string) => {
     console.log('🔍 Like Post Call:', { postId, targetUserId, type: typeof targetUserId })
     try {
-      await apiService.likePost(postId, { likerId: targetUserId })
+      await apiService.likePost(postId, { userId: targetUserId })
       dispatch({ type: 'LIKE_POST', payload: postId })
     } catch (error) {
       console.error('Error liking post:', error)
@@ -619,7 +619,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
   const unlikePost = useCallback(async (postId: string, targetUserId: string) => {
     try {
-      await apiService.unlikePost(postId, { likerId: targetUserId })
+      await apiService.unlikePost(postId, { userId: targetUserId })
       dispatch({ type: 'UNLIKE_POST', payload: postId })
     } catch (error) {
       console.error('Error unliking post:', error)
@@ -628,7 +628,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
   const retweetPost = useCallback(async (postId: string, targetUserId: string) => {
     try {
-      await apiService.retweetPost(postId, { retweeterId: targetUserId })
+      await apiService.retweetPost(postId, { userId: targetUserId })
       dispatch({ type: 'RETWEET_POST', payload: postId })
     } catch (error) {
       console.error('Error retweeting post:', error)

@@ -24,6 +24,8 @@ export const CommunitySection = ({
   const [members, setMembers] = useState<CommunityMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [justJoined, setJustJoined] = useState<string | null>(null);
 
   const selectedCommunityData = state.communities?.find((community: any) => community.id === selectedCommunity);
 
@@ -58,6 +60,13 @@ export const CommunitySection = ({
   const handleBackToCommunities = () => {
     setShowMembers(false);
     onSelectCommunity('');
+  };
+
+  const handleJoin = (communityId: string) => {
+    onJoinCommunity(communityId);
+    setJustJoined(communityId);
+    setShowPopup(true);
+    setTimeout(() => setShowPopup(false), 2000); // close popup after 2s
   };
 
   if (showMembers && selectedCommunityData) {
@@ -152,10 +161,26 @@ export const CommunitySection = ({
   }
 
   return (
+<<<<<<< HEAD
   <div className="p-4">
     <div className="mb-4">
       {communitySection === 'my' ? (
         <div className="space-y-2">
+=======
+    <div className="p-4">
+      {/* Popup */}
+      {showPopup && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+          <div className="bg-slate-800 text-white px-6 py-4 rounded-xl shadow-lg text-center animate-fade-in">
+            🎉 Successfully joined community!
+          </div>
+        </div>
+      )}
+
+      <div className="mb-4">
+        {communitySection === 'my' ? (
+          <div className="space-y-2">
+>>>>>>> 1df5618653911bf02bb05ac127bfea3f9fb5d391
             {state.communities?.filter((community: any) => community.user_joined_at)?.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-slate-400">
               <Users className="w-12 h-12 mb-3 opacity-50" />
@@ -218,9 +243,33 @@ export const CommunitySection = ({
                   <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
                     <Hash className="w-6 h-6 text-white" />
                   </div>
+<<<<<<< HEAD
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-white">{community.name}</div>
                     <div className="text-sm text-slate-400 truncate">{community.description}</div>
+=======
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-400 flex items-center">
+                      <Users className="w-3 h-3 mr-1" />
+                      {community.member_count || 0} members
+                    </span>
+
+                    {justJoined === community.id ? (
+                      <button
+                        disabled
+                        className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg cursor-not-allowed"
+                      >
+                        Joined
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleJoin(community.id)}
+                        className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25"
+                      >
+                        Join
+                      </button>
+                    )}
+>>>>>>> 1df5618653911bf02bb05ac127bfea3f9fb5d391
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
@@ -241,6 +290,11 @@ export const CommunitySection = ({
         </div>
       ) : null}
     </div>
+<<<<<<< HEAD
   </div>
 );
 };
+=======
+  );
+};
+>>>>>>> 1df5618653911bf02bb05ac127bfea3f9fb5d391

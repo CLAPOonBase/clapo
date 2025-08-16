@@ -57,25 +57,34 @@ export const DMSection = ({
     }
   };
 
-  const searchUsers = async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults(allUsers);
-      return;
-    }
-    
-    try {
-      const response = await fetch(
-        `https://server.blazeswap.io/api/snaps/users/search?q=${encodeURIComponent(query)}`
-      );
-      const data = await response.json();
-      if (data.users) {
-        setSearchResults(data.users.filter((user: any) => user.id !== session?.dbUser?.id));
-      }
-    } catch (error) {
-      console.error('Failed to search users:', error);
-    }
-  };
+useEffect(() => {
+  const handler = setTimeout(() => {
+    searchUsers(searchQuery);
+  }, 500);
 
+  return () => clearTimeout(handler);
+}, [searchQuery]);
+
+const searchUsers = async (query: string) => {
+  if (!query.trim()) {
+    setSearchResults(allUsers);
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `https://server.blazeswap.io/api/snaps/users/search?q=${encodeURIComponent(query)}`
+    );
+    const data = await response.json();
+    if (data.users) {
+      setSearchResults(
+        data.users.filter((user: any) => user.id !== session?.dbUser?.id)
+      );
+    }
+  } catch (error) {
+    console.error("Failed to search users:", error);
+  }
+};
   const getOtherUser = (thread: any) => {
     if (!thread || !session?.dbUser?.id) return null;
     if (thread.isGroup) return null;

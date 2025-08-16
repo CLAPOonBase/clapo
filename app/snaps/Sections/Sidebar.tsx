@@ -50,13 +50,14 @@ export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
       {/* Desktop/Tablet Sidebar */}
       <div className={`
         hidden md:block
-        sticky top-0
+        sticky top-20
         h-full
         w-16 lg:w-64
         px-4
         bg-dark-800 mx-4 rounded-2xl
         space-y-4
         overflow-y-auto
+        pb-4
       `}>
         {/* User Profile Section */}
         <UserProfileCard onManageClick={() => handleNavClick('profile')} />
