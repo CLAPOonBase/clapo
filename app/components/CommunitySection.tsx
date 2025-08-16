@@ -98,15 +98,14 @@ export const CommunitySection = ({
               </span>
               <span>Created by {selectedCommunityData.creator_username || 'Unknown'}</span>
             </div>
-            <button
-              onClick={() => {
-                setShowMembers(false);
-                onSelectCommunity(selectedCommunity);
-              }}
-              className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25"
-            >
-              Start Chat
-            </button>
+            
+            {selectedCommunityData.user_is_admin && (
+              <div className="mt-2">
+                <span className="inline-block px-2 py-1 text-xs bg-purple-500/20 text-purple-300 rounded-full">
+                  Admin
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -116,40 +115,28 @@ export const CommunitySection = ({
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
               </div>
             ) : members.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-slate-400">
-                <Users className="w-8 h-8 mb-2 opacity-50" />
-                <p className="text-sm">No members found</p>
+              <div className="text-center py-8 text-slate-400">
+                <p>No members found</p>
               </div>
             ) : (
-              members.map((member) => (
+              members.map((member: CommunityMember) => (
                 <div
                   key={member.id}
-                  className="p-3 rounded-lg bg-slate-700/30 border border-slate-600/30 hover:bg-slate-700/50 transition-all duration-200"
+                  className="flex items-center justify-between p-3 bg-slate-700/30 border border-slate-600/30 rounded-lg"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                      {member.avatar_url ? (
-                        <img 
-                          src={member.avatar_url} 
-                          alt={member.username}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-white font-semibold text-sm">
-                          {member.username.charAt(0).toUpperCase()}
-                        </span>
-                      )}
+                    <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-white">
+                        {member.username?.charAt(0)?.toUpperCase() || 'U'}
+                      </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-white truncate">{member.username}</div>
-                      <div className="text-xs text-slate-400 truncate">{member.bio || 'No bio'}</div>
+                    <div>
+                      <div className="font-medium text-white">{member.username}</div>
+                      <div className="text-xs text-slate-400">{member.bio || 'No bio'}</div>
                     </div>
-                    <div className="flex flex-col items-end text-xs text-slate-400">
-                      <span>Joined {new Date(member.joined_at).toLocaleDateString()}</span>
-                      {member.is_admin && (
-                        <span className="text-purple-400 font-medium">Admin</span>
-                      )}
-                    </div>
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    {member.joined_at ? new Date(member.joined_at).toLocaleDateString() : 'Unknown'}
                   </div>
                 </div>
               ))
@@ -161,60 +148,44 @@ export const CommunitySection = ({
   }
 
   return (
-<<<<<<< HEAD
-  <div className="p-4">
-    <div className="mb-4">
-      {communitySection === 'my' ? (
-        <div className="space-y-2">
-=======
     <div className="p-4">
-      {/* Popup */}
-      {showPopup && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-          <div className="bg-slate-800 text-white px-6 py-4 rounded-xl shadow-lg text-center animate-fade-in">
-            🎉 Successfully joined community!
-          </div>
-        </div>
-      )}
-
       <div className="mb-4">
         {communitySection === 'my' ? (
           <div className="space-y-2">
->>>>>>> 1df5618653911bf02bb05ac127bfea3f9fb5d391
             {state.communities?.filter((community: any) => community.user_joined_at)?.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-              <Users className="w-12 h-12 mb-3 opacity-50" />
-              <p className="text-sm text-center">No communities yet<br />Join or create one!</p>
-            </div>
-          ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                <Users className="w-12 h-12 mb-3 opacity-50" />
+                <p className="text-sm text-center">No communities yet<br />Join or create one!</p>
+              </div>
+            ) : (
               state.communities?.filter((community: any) => community.user_joined_at)?.map((community: any) => (
-              <div
-                key={community.id}
+                <div
+                  key={community.id}
                   onClick={() => handleCommunityClick(community.id)}
-                className={`group p-4 rounded-xl cursor-pointer transition-all duration-200 border ${
-                  selectedCommunity === community.id 
-                    ? 'bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-500/50 text-white shadow-lg' 
-                    : 'bg-slate-700/30 border-slate-600/30 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500/50 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
-                    selectedCommunity === community.id ? 'bg-purple-500' : 'bg-slate-600 group-hover:bg-slate-500'
-                  }`}>
-                    <Hash className="w-5 h-5" />
+                  className={`group p-4 rounded-xl cursor-pointer transition-all duration-200 border ${
+                    selectedCommunity === community.id 
+                      ? 'bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-500/50 text-white shadow-lg' 
+                      : 'bg-slate-700/30 border-slate-600/30 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500/50 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
+                      selectedCommunity === community.id ? 'bg-purple-500' : 'bg-slate-600 group-hover:bg-slate-500'
+                    }`}>
+                      <Hash className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold truncate">{community.name}</div>
+                      <div className="text-xs opacity-70 truncate">{community.description}</div>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold truncate">{community.name}</div>
-                    <div className="text-xs opacity-70 truncate">{community.description}</div>
+                  <div className="flex items-center justify-between text-xs opacity-60">
+                    <span>Created by {community.creator_username || 'Unknown'}</span>
+                    <span className="flex items-center">
+                      <Users className="w-3 h-3 mr-1" />
+                      {community.member_count || 0}
+                    </span>
                   </div>
-                </div>
-                <div className="flex items-center justify-between text-xs opacity-60">
-                  <span>Created by {community.creator_username || 'Unknown'}</span>
-                  <span className="flex items-center">
-                    <Users className="w-3 h-3 mr-1" />
-                    {community.member_count || 0}
-                  </span>
-                </div>
                   {community.user_is_admin && (
                     <div className="mt-2">
                       <span className="inline-block px-2 py-1 text-xs bg-purple-500/20 text-purple-300 rounded-full">
@@ -222,38 +193,39 @@ export const CommunitySection = ({
                       </span>
                     </div>
                   )}
-              </div>
-            ))
-          )}
-        </div>
-      ) : communitySection === 'join' ? (
-        <div className="space-y-2">
+                </div>
+              ))
+            )}
+          </div>
+        ) : communitySection === 'join' ? (
+          <div className="space-y-2">
             {state.communities?.filter((community: any) => !community.user_joined_at)?.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-              <Users className="w-12 h-12 mb-3 opacity-50" />
-              <p className="text-sm">No communities to discover</p>
-            </div>
-          ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                <Users className="w-12 h-12 mb-3 opacity-50" />
+                <p className="text-sm">No communities to discover</p>
+              </div>
+            ) : (
               state.communities?.filter((community: any) => !community.user_joined_at)?.map((community: any) => (
-              <div
-                key={community.id}
-                className="p-4 rounded-xl bg-slate-700/30 border border-slate-600/30 hover:bg-slate-700/50 hover:border-slate-500/50 transition-all duration-200"
-              >
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                    <Hash className="w-6 h-6 text-white" />
+                <div
+                  key={community.id}
+                  className="p-4 rounded-xl bg-slate-700/30 border border-slate-600/30 hover:bg-slate-700/50 hover:border-slate-500/50 transition-all duration-200"
+                >
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                      <Hash className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-white">{community.name}</div>
+                      <div className="text-sm text-slate-400">{community.description}</div>
+                    </div>
                   </div>
-<<<<<<< HEAD
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-white">{community.name}</div>
-                    <div className="text-sm text-slate-400 truncate">{community.description}</div>
-=======
+                  
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-400 flex items-center">
                       <Users className="w-3 h-3 mr-1" />
                       {community.member_count || 0} members
                     </span>
-
+                    
                     {justJoined === community.id ? (
                       <button
                         disabled
@@ -269,32 +241,13 @@ export const CommunitySection = ({
                         Join
                       </button>
                     )}
->>>>>>> 1df5618653911bf02bb05ac127bfea3f9fb5d391
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-400 flex items-center">
-                    <Users className="w-3 h-3 mr-1" />
-                    {community.member_count || 0} members
-                  </span>
-                  <button
-                    onClick={() => onJoinCommunity(community.id)}
-                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25"
-                  >
-                    Join
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      ) : null}
+              ))
+            )}
+          </div>
+        ) : null}
+      </div>
     </div>
-<<<<<<< HEAD
-  </div>
-);
-};
-=======
   );
 };
->>>>>>> 1df5618653911bf02bb05ac127bfea3f9fb5d391
