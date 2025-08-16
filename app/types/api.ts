@@ -208,14 +208,14 @@ export interface CommentResponse {
 }
 
 export interface RetweetRequest {
-  retweeterId: string
+  userId: string
 }
 
 export interface RetweetResponse {
   message: string
   retweet: {
     id: string
-    retweeterId: string
+    userId: string
     postId: string
     createdAt: string
   }

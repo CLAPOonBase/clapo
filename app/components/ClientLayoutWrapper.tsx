@@ -11,7 +11,7 @@ interface ClientLayoutWrapperProps {
 export default function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
   const { data: session, status } = useSession();
   const [showPasswordSetup, setShowPasswordSetup] = useState(false);
-  const [isMobile, setIsMobile] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Detect mobile device
   useEffect(() => {
@@ -54,17 +54,6 @@ export default function ClientLayoutWrapper({ children }: ClientLayoutWrapperPro
     setShowPasswordSetup(false);
   };
 
-  // If mobile, show blocking message
-  if (isMobile) {
-    return (
-      <div style={{ color: 'white', backgroundColor: 'black', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '1rem' }}>
-        <div>
-          <h1>This website is only available on desktop devices.</h1>
-          <p>Please access it from a desktop browser for the best experience.</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>

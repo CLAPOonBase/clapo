@@ -260,13 +260,13 @@ export default function MessagePage() {
   }, [selectedCommunity, activeTab]);
 
   return (
-    <div className="rounded-xl shadow-2xl h-[700px] flex overflow-hidden">
+    <div className="rounded-xl md:flex-row flex-col shadow-2xl h-[700px] flex overflow-hidden">
       {/* Sidebar */}
       <div className="w-80 bg-dark-800 mr-4 rounded-md backdrop-blur-sm flex flex-col">
         {/* Header */}
         <div className="p-6 border-b border-slate-700/50">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            <h2 className="text-2xl font-bold bg-primary bg-clip-text text-transparent">
               Messages
             </h2>
             <ConnectionStatus isConnected={isConnected} />
@@ -284,7 +284,7 @@ export default function MessagePage() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+        <div className="flex-1 overflow-y-auto scrollbar-hide scrollbar-thumb-slate-600 scrollbar-track-transparent">
           {activeTab === 'dms' ? (
             <DMSection 
               dmSection={dmSection}

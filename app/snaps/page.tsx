@@ -13,10 +13,10 @@ import SearchPage from './SidebarSection/SearchPage'
 import MessagePage from './SidebarSection/MessagePage'
 import { mockUsers } from '../lib/mockdata'
 import ActivityPage from './SidebarSection/ActivityPage'
-import { motion } from 'framer-motion'
 import { useApi } from '../Context/ApiProvider'
 import { PostSkeleton, LoadingSpinner } from '../components/SkeletonLoader'
 import UserActivityFeed from './Sections/ActivityFeed'
+import { AnimatePresence, motion } from "framer-motion"
 
 export default function SocialFeedPage() {
 
@@ -112,75 +112,111 @@ export default function SocialFeedPage() {
           <>
             <SnapComposer />
 
-            <div className="sticky top-0 pt-4 backdrop-blur-sm">
-              <div className="flex justify-around space-x-8 bg-dark-800 rounded-md pt-4">
-                {['FOR YOU', 'FOLLOWING'].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => handleTabChange(tab as 'FOR YOU' | 'FOLLOWING')}
-                    className={`pb-2 font-semibold ${
-                      activeTab === tab ? 'text-white w-full border-b-4 border-orange-500' : 'text-gray-400 w-full hover:text-white'
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
+        <div className='bg-dark-800 mt-4 rounded-2xl'>
+  <div style={{zIndex :"9999"}} className="flex justify-around pt-4 sticky rounded-2xl bg-dark-800 top-20">
+    {['FOR YOU', 'FOLLOWING'].map((tab) => (
+      <button
+        key={tab}
+        onClick={() => handleTabChange(tab as 'FOR YOU' | 'FOLLOWING')}
+        className={`pb-2 font-semibold w-full ${
+          activeTab === tab ? 'text-white' : 'text-gray-400 hover:text-white'
+        }`}
+      >
+        {tab}
+      </button>
+    ))}
+
+    <motion.div
+      layout
+      className="absolute bottom-0 h-[3px] bg-orange-500 rounded-full"
+      initial={false}
+      animate={{
+        left: activeTab === "FOR YOU" ? "0%" : "50%",
+        width: "50%"
+      }}
+      // transition={{ type: "spring", stiffness: 500, damping: 30 }}
+    />
+  </div>
+
+  <div className="p-4">
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={activeTab}
+        initial={{ opacity: 0, x: activeTab === "FOR YOU" ? 0 : 0 }}
+        animate={{ opacity: 1, x: 0,y:-30 }}
+        exit={{ opacity: 0, x: activeTab === "FOR YOU" ? 40 : -40 }}
+        transition={{ duration: 0.35, ease: "easeInOut" }}
+      >
+        {activeTab === "FOR YOU" ? (
+          state.posts.loading ? (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <PostSkeleton key={i} />
+              ))}
             </div>
-            
-            <div>
-              {activeTab === 'FOR YOU' ? (
-                state.posts.loading ? (
-                  <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                      <PostSkeleton key={i} />
-                    ))}
-                  </div>
-                ) : allPosts.length > 0 ? (
-                  allPosts.map((post) => (
-                    <SnapCard
-                      key={post.id}
-                      post={post}
-                      liked={liked.has(parseInt(post.id))}
-                      bookmarked={bookmarked.has(parseInt(post.id))}
-                      retweeted={retweeted.has(parseInt(post.id))}
-                      onLike={(id) => setLiked(toggleSet(liked, typeof id === 'string' ? parseInt(id) : id))}
-                      onBookmark={(id) => setBookmarked(toggleSet(bookmarked, typeof id === 'string' ? parseInt(id) : id))}
-                      onRetweet={(id) => setRetweeted(toggleSet(retweeted, typeof id === 'string' ? parseInt(id) : id))}
-                    />
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    {status === 'authenticated' ? 'No posts yet. Be the first to share something!' : 'Sign in to see posts'}
-                  </div>
-                )
-              ) : (
-                isLoadingFollowing ? (
-                  <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                      <PostSkeleton key={i} />
-                    ))}
-                  </div>
-                ) : followingPosts.length > 0 ? (
-                  followingPosts.map((post) => (
-                    <SnapCard
-                      key={post.id}
-                      post={post}
-                      liked={liked.has(parseInt(post.id))}
-                      bookmarked={bookmarked.has(parseInt(post.id))}
-                      retweeted={retweeted.has(parseInt(post.id))}
-                      onLike={(id) => setLiked(toggleSet(liked, typeof id === 'string' ? parseInt(id) : id))}
-                      onBookmark={(id) => setBookmarked(toggleSet(bookmarked, typeof id === 'string' ? parseInt(id) : id))}
-                      onRetweet={(id) => setRetweeted(toggleSet(retweeted, typeof id === 'string' ? parseInt(id) : id))}
-                    />
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    {status === 'authenticated' ? 'No posts from people you follow yet. Try following some users!' : 'Sign in to see posts'}
-                  </div>
-                )
-              )}
+          ) : allPosts.length > 0 ? (
+            allPosts.map((post) => (
+              <SnapCard
+                key={post.id}
+                post={post}
+                liked={liked.has(parseInt(post.id))}
+                bookmarked={bookmarked.has(parseInt(post.id))}
+                retweeted={retweeted.has(parseInt(post.id))}
+                onLike={(id) =>
+                  setLiked(toggleSet(liked, typeof id === "string" ? parseInt(id) : id))
+                }
+                onBookmark={(id) =>
+                  setBookmarked(toggleSet(bookmarked, typeof id === "string" ? parseInt(id) : id))
+                }
+                onRetweet={(id) =>
+                  setRetweeted(toggleSet(retweeted, typeof id === "string" ? parseInt(id) : id))
+                }
+              />
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              {status === "authenticated"
+                ? "No posts yet. Be the first to share something!"
+                : "Sign in to see posts"}
             </div>
+          )
+        ) : isLoadingFollowing ? (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <PostSkeleton key={i} />
+            ))}
+          </div>
+        ) : followingPosts.length > 0 ? (
+          followingPosts.map((post) => (
+            <SnapCard
+              key={post.id}
+              post={post}
+              liked={liked.has(parseInt(post.id))}
+              bookmarked={bookmarked.has(parseInt(post.id))}
+              retweeted={retweeted.has(parseInt(post.id))}
+              onLike={(id) =>
+                setLiked(toggleSet(liked, typeof id === "string" ? parseInt(id) : id))
+              }
+              onBookmark={(id) =>
+                setBookmarked(toggleSet(bookmarked, typeof id === "string" ? parseInt(id) : id))
+              }
+              onRetweet={(id) =>
+                setRetweeted(toggleSet(retweeted, typeof id === "string" ? parseInt(id) : id))
+              }
+            />
+          ))
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            {status === "authenticated"
+              ? "No posts from people you follow yet. Try following some users!"
+              : "Sign in to see posts"}
+          </div>
+        )}
+      </motion.div>
+    </AnimatePresence>
+  </div>
+</div>
+
           </>
         )
     }
@@ -199,7 +235,7 @@ export default function SocialFeedPage() {
     console.log('🔍 Session state:', { status, hasSession: !!session, hasDbUser: !!session?.dbUser });
     return (
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 0 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
       >
@@ -233,7 +269,6 @@ export default function SocialFeedPage() {
     )
   }
 
-  console.log('🔍 Rendering main content with dbUser:', session?.dbUser);
   
   return (
     <motion.div
@@ -247,7 +282,7 @@ export default function SocialFeedPage() {
           {renderContent()}
         </div>
         {currentPage !== 'messages' && session?.dbUser && (
-          <div className="w-[300px] md:block hidden">
+          <div className="hidden md:block top-20 w-[300px]">
             <UserActivityFeed username={session.dbUser.username} activity={[]} />
           </div>
         )}

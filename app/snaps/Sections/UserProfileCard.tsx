@@ -1,94 +1,101 @@
-'use client';
+'use client'
 
-import Image from 'next/image';
-import { useSession, signIn } from 'next-auth/react';
+import Image from 'next/image'
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useApi } from '@/app/Context/ApiProvider'
 
 type Props = {
-  onManageClick?: () => void;
-};
-
+  onManageClick?: () => void
+}
 
 export default function UserProfileCard({ onManageClick }: Props) {
-  const { data: session, status } = useSession();
-  const isLoggedIn = status === 'authenticated' && session?.dbUser;
+  const { data: session } = useSession()
+  const { getUserProfile, updateUserProfile } = useApi()
+  const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState<any>(null)
 
-  console.log('🔍 UserProfileCard Debug:', {
-    status,
-    isLoggedIn,
-    sessionDbUser: session?.dbUser,
-    avatarUrl: session?.dbUser?.avatar_url,
-    username: session?.dbUser?.username
-  });
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (session?.dbUser?.id) {
+        try {
+          setLoading(true)
+          const profileData = await getUserProfile(session.dbUser.id)
+          setProfile(profileData.profile)
+        } catch (error) {
+          console.error('Failed to fetch profile:', error)
+        } finally {
+          setLoading(false)
+        }
+      }
+    }
 
-  
- const avatarUrl = isLoggedIn && session.dbUser?.avatar_url
-  ? session.dbUser.avatar_url.replace(/_normal(\.\w+)$/, '_400x400$1')
-  : '/4.png';
+    fetchProfile()
+  }, [session?.dbUser?.id, getUserProfile])
 
-const coverUrl = isLoggedIn && session.dbUser?.avatar_url
-  ? session.dbUser.avatar_url.replace(/_normal(\.\w+)$/, '_400x400$1')
-  : '/4.png';
 
-  const username = isLoggedIn ? session.dbUser.username : 'Guest';
-  const bio = isLoggedIn ? session.dbUser.bio : 'Guest';
-
-  return (
-    <div className="group my-4 relative rounded-2xl border border-secondary/20 overflow-hidden bg-dark-800 transition-all duration-300 hover:shadow-xl hover:border-slate-600">
-      
-      {/* Cover Image with Overlay */}
-      <div className="relative h-28 w-full overflow-hidden">
-        <Image
-          src={coverUrl || '/4.png'}
-          alt="Cover"
-          fill
-          className='object-cover'
-          priority
-        />
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent"></div>
-        {/* Animated Shimmer Effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out"></div>
-      </div>
-
-      {/* User Info Area */}
-      <div className="relative p-6 pb-4 pt-0">
-        {/* Avatar Container */}
-        <div className="flex flex-col items-center  rounded-md w-full p-2 -mt-10 relative z-10">
-          <div className="relative bg-dark-800 mx-4 rounded-full border-t border-secondary/20">
-            {/* Avatar Image */}
-            <div className="relative w-16 h-16 rounded-full transition-all duration-300 group-hover:border-orange-500/60">
-              <Image
-                src={avatarUrl || '/4.png'}
-                alt="Avatar"
-                width={64}
-                height={64}
-                className="object-cover h-16 w-16 rounded-full"
-                onError={(e) => {
-                  const target = e.currentTarget as HTMLImageElement;
-                  target.src = '/4.png';
-                }}
-              />
-              
-              {/* Online Status Indicator */}
-              {isLoggedIn && (
-                <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 shadow-lg"></div>
-              )}
-            </div>
-          </div>
-
-          {/* User Details */}
-          <div className="flex-1 min-w-0 pt-4">
-            <h3 className="text-white text-center font-bold text-sm truncate transition-colors duration-300 group-hover:text-orange-400">
-              {username}
-            </h3>
-            <p className="text-xs text-center text-gray-400 truncate mt-0.5">
-              @{isLoggedIn ? username?.toLowerCase() : 'guest'}
-            </p>
-            
-         
+  if (loading) {
+    return (
+      <div className="rounded-2xl border border-secondary/20 bg-dark-800 p-6 text-white animate-pulse">
+        <div className="h-28 bg-gray-700 rounded mb-4"></div>
+        <div className="flex items-center space-x-4">
+          <div className="w-16 h-16 bg-gray-700 rounded-full"></div>
+          <div className="flex-1">
+            <div className="h-5 bg-gray-700 rounded mb-2"></div>
+            <div className="h-4 bg-gray-700 rounded"></div>
           </div>
         </div>
       </div>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <div className="rounded-2xl border border-secondary/20 bg-dark-800 p-6 text-white">
+        <p>Failed to load profile</p>
+      </div>
+    )
+  }
+
+  const avatarUrl = profile.avatar_url || '/4.png'
+  const coverUrl = '/default-cover.jpg'
+
+  return (
+    <div className="group my-4 relative rounded-2xl border border-secondary/20 overflow-hidden bg-dark-800 transition-all duration-300 hover:shadow-xl hover:border-slate-600">
+      {/* Cover */}
+      <div className="relative h-28 w-full overflow-hidden">
+        <Image
+          src={avatarUrl}
+          alt="Cover"
+          fill
+          className="object-cover"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent"></div>
+      </div>
+
+      {/* User Info */}
+      <div className="relative p-6 pb-4 pt-0">
+        <div className="flex flex-col items-center -mt-10">
+          <div className="relative w-20 h-20">
+            <Image
+              src={avatarUrl}
+              alt={profile.username}
+              width={80}
+              height={80}
+              className="rounded-full w-20 h-20 border-4 border-dark-900 object-cover"
+              onError={(e) => {
+                const target = e.currentTarget as HTMLImageElement
+                target.src = '/4.png'
+              }}
+            />
+          </div>
+          <h3 className="text-white font-bold text-sm mt-3">{profile.username}</h3>
+          <p className="text-xs text-gray-400">@{profile.username}</p>
+          <p className="text-xs text-gray-400 mt-1">{profile.bio || 'No bio available'}</p>
+        </div>
+      </div>
+
     </div>
-  );
+  )
 }

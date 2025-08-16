@@ -72,14 +72,14 @@ const getActivityText = (type: string) => {
 export default function UserActivityFeed({ username, activity }: UserActivityFeedProps) {
   if (!activity || activity.length === 0) {
     return (
-      <div className="text-center py-8 min-h-96 mx-4 rounded-2xl bg-dark-800 text-gray-500">
+      <div className="text-center py-8 min-h-96 mx-4 rounded-2xl bg-dark-800 text-gray-500 sticky top-20">
         <p>No recent activity</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 sticky top-20">
       {activity.map((activityItem, index) => (
         <div key={index} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg">
           <div className="flex-shrink-0 mt-1">{getActivityIcon(activityItem.activity_type)}</div>

@@ -24,6 +24,8 @@ export const CommunitySection = ({
   const [members, setMembers] = useState<CommunityMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [justJoined, setJustJoined] = useState<string | null>(null);
 
   const selectedCommunityData = state.communities?.find((community: any) => community.id === selectedCommunity);
 
@@ -58,6 +60,13 @@ export const CommunitySection = ({
   const handleBackToCommunities = () => {
     setShowMembers(false);
     onSelectCommunity('');
+  };
+
+  const handleJoin = (communityId: string) => {
+    onJoinCommunity(communityId);
+    setJustJoined(communityId);
+    setShowPopup(true);
+    setTimeout(() => setShowPopup(false), 2000); // close popup after 2s
   };
 
   if (showMembers && selectedCommunityData) {
@@ -153,6 +162,15 @@ export const CommunitySection = ({
 
   return (
     <div className="p-4">
+      {/* Popup */}
+      {showPopup && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+          <div className="bg-slate-800 text-white px-6 py-4 rounded-xl shadow-lg text-center animate-fade-in">
+            🎉 Successfully joined community!
+          </div>
+        </div>
+      )}
+
       <div className="mb-4">
         {communitySection === 'my' ? (
           <div className="space-y-2">
@@ -228,12 +246,22 @@ export const CommunitySection = ({
                       <Users className="w-3 h-3 mr-1" />
                       {community.member_count || 0} members
                     </span>
-                    <button
-                      onClick={() => onJoinCommunity(community.id)}
-                      className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25"
-                    >
-                      Join
-                    </button>
+
+                    {justJoined === community.id ? (
+                      <button
+                        disabled
+                        className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg cursor-not-allowed"
+                      >
+                        Joined
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleJoin(community.id)}
+                        className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25"
+                      >
+                        Join
+                      </button>
+                    )}
                   </div>
                 </div>
               ))
