@@ -36,6 +36,7 @@ import {
   AddParticipantResponse,
   CommunityMembersResponse,
   CommunityMessagesResponse,
+  EnhancedNotificationsResponse,
 } from '../types/api'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'
@@ -463,6 +464,49 @@ class ApiService {
       offset: offset.toString(),
     })
     return this.request<NotificationsResponse>(`/notifications?${params}`)
+  }
+
+  async getEnhancedNotifications(userId: string, limit: number = 10, offset: number = 0): Promise<EnhancedNotificationsResponse> {
+    const params = new URLSearchParams({
+      userId,
+      limit: limit.toString(),
+      offset: offset.toString(),
+    })
+    return this.request<EnhancedNotificationsResponse>(`/notifications/enhanced?${params}`)
+  }
+
+  async getUnreadNotificationCount(userId: string): Promise<{ unreadCount: number }> {
+    try {
+      const response = await this.request(`/notifications/unread-count?userId=${userId}`)
+      return response as { unreadCount: number }
+    } catch (error) {
+      console.error('Error fetching unread notification count:', error)
+      throw error
+    }
+  }
+
+  async markNotificationAsRead(notificationId: string): Promise<{ notification: any }> {
+    try {
+      const response = await this.request(`/notifications/${notificationId}/read`, {
+        method: 'PUT',
+      })
+      return response as { notification: any }
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
+      throw error
+    }
+  }
+
+  async markAllNotificationsAsRead(userId: string): Promise<{ updatedCount: number }> {
+    try {
+      const response = await this.request(`/notifications/read-all?userId=${userId}`, {
+        method: 'PUT',
+      })
+      return response as { updatedCount: number }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error)
+      throw error
+    }
   }
 
   async getActivities(userId: string, limit: number = 10, offset: number = 0): Promise<ActivityResponse> {

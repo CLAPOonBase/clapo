@@ -35,6 +35,7 @@ import {
   JoinCommunityRequest,
   JoinCommunityResponse,
   NotificationsResponse,
+  EnhancedNotificationsResponse,
   ActivityResponse,
   ApiError,
   CreateMessageThreadRequest,
@@ -91,6 +92,9 @@ type Action =
   | { type: 'ADD_COMMUNITY'; payload: Community }
   | { type: 'SET_COMMUNITY_MESSAGES'; payload: { communityId: string; messages: CommunityMessage[] } }
   | { type: 'ADD_COMMUNITY_MESSAGE'; payload: { communityId: string; message: CommunityMessage } }
+  | { type: 'UPDATE_NOTIFICATION'; payload: { id: string; updates: Partial<ApiNotification> } }
+  | { type: 'MARK_ALL_NOTIFICATIONS_READ' }
+  | { type: 'SET_ENHANCED_NOTIFICATIONS'; payload: EnhancedNotification[] }
 
 // State interface
 interface ApiState {
@@ -98,6 +102,7 @@ interface ApiState {
   posts: PostState
   engagement: EngagementState
   notifications: ApiNotification[]
+  enhancedNotifications: EnhancedNotification[]
   activities: ApiActivity[]
   messageThreads: MessageThread[]
   threadMessages: Record<string, ThreadMessage[]>
@@ -126,11 +131,12 @@ const initialState: ApiState = {
     viewedPosts: new Set()
   },
   notifications: [],
+  enhancedNotifications: [],
   activities: [],
   messageThreads: [],
   threadMessages: {},
   communities: [],
-  communityMessages: {}
+  communityMessages: {},
 }
 
 // Reducer
@@ -365,6 +371,26 @@ function apiReducer(state: ApiState, action: Action): ApiState {
         }
       }
     
+    case 'UPDATE_NOTIFICATION':
+      return {
+        ...state,
+        notifications: state.notifications.map(notification =>
+          notification.id === action.payload.id ? { ...notification, ...action.payload.updates } : notification
+        )
+      }
+    
+    case 'MARK_ALL_NOTIFICATIONS_READ':
+      return {
+        ...state,
+        notifications: state.notifications.map(notification => ({ ...notification, is_read: true }))
+      }
+    
+    case 'SET_ENHANCED_NOTIFICATIONS':
+      return {
+        ...state,
+        enhancedNotifications: action.payload
+      }
+    
     default:
       return state
   }
@@ -390,6 +416,7 @@ interface ApiContextType {
   getUserProfile: (userId: string) => Promise<any>
   updateUserProfile: (userId: string, data: UpdateProfileRequest) => Promise<any>
   fetchNotifications: (userId: string) => Promise<void>
+  fetchEnhancedNotifications: (userId: string) => Promise<void>
   fetchActivities: (userId: string) => Promise<void>
   refreshUserData: (userId: string) => Promise<void>
   getMessageThreads: (userId: string) => Promise<void>
@@ -409,6 +436,9 @@ interface ApiContextType {
   getFollowingFeed: (userId: string, limit: number, offset: number) => Promise<any>
   followUser: (targetUserId: string, data: FollowRequest) => Promise<any>
   unfollowUser: (targetUserId: string, data: FollowRequest) => Promise<any>
+  getUnreadNotificationCount: (userId?: string) => Promise<number>
+  markNotificationAsRead: (notificationId: string) => Promise<ApiNotification>
+  markAllNotificationsAsRead: (userId?: string) => Promise<number>
 }
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined)
@@ -474,6 +504,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       if (session.dbUser?.id) {
         fetchPosts(session.dbUser.id)
         fetchNotifications(session.dbUser.id)
+        fetchEnhancedNotifications(session.dbUser.id)
         fetchActivities(session.dbUser.id)
       }
     } else if (status === 'unauthenticated') {
@@ -656,6 +687,64 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       console.log('✅ Notifications set in state:', response.notifications?.length || 0);
     } catch (error) {
       console.error('❌ Failed to fetch notifications:', error)
+    }
+  }, [])
+
+  const fetchEnhancedNotifications = useCallback(async (userId?: string) => {
+    const targetUserId = userId || getCurrentUserId()
+    if (!targetUserId) return
+
+    console.log('🔍 Fetching enhanced notifications for user:', targetUserId);
+    try {
+      const response = await apiService.getEnhancedNotifications(targetUserId)
+      console.log('🔍 Enhanced notifications API response:', response);
+      dispatch({ type: 'SET_ENHANCED_NOTIFICATIONS', payload: response.notifications })
+      console.log('✅ Enhanced notifications set in state:', response.notifications?.length || 0);
+    } catch (error) {
+      console.error('❌ Failed to fetch enhanced notifications:', error)
+    }
+  }, [])
+
+  const getUnreadNotificationCount = useCallback(async (userId?: string) => {
+    const targetUserId = userId || getCurrentUserId()
+    if (!targetUserId) return 0
+
+    try {
+      const response = await apiService.getUnreadNotificationCount(targetUserId)
+      return response.unreadCount
+    } catch (error) {
+      console.error('Failed to fetch unread notification count:', error)
+      return 0
+    }
+  }, [])
+
+  const markNotificationAsRead = useCallback(async (notificationId: string) => {
+    try {
+      const response = await apiService.markNotificationAsRead(notificationId)
+      // Update the notification in state
+      dispatch({ 
+        type: 'UPDATE_NOTIFICATION', 
+        payload: { id: notificationId, updates: { is_read: true } } 
+      })
+      return response.notification
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error)
+      throw error
+    }
+  }, [])
+
+  const markAllNotificationsAsRead = useCallback(async (userId?: string) => {
+    const targetUserId = userId || getCurrentUserId()
+    if (!targetUserId) return
+
+    try {
+      const response = await apiService.markAllNotificationsAsRead(targetUserId)
+      // Mark all notifications as read in state
+      dispatch({ type: 'MARK_ALL_NOTIFICATIONS_READ' })
+      return response.updatedCount
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error)
+      throw error
     }
   }, [])
 
@@ -909,6 +998,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     getUserFollowing,
     getFollowingFeed,
     fetchNotifications,
+    fetchEnhancedNotifications,
     fetchActivities,
     refreshUserData,
     getMessageThreads,
@@ -923,6 +1013,9 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     sendCommunityMessage,
     getCommunityMessages,
     getUserCommunities,
+    getUnreadNotificationCount,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
   }
 
   return (

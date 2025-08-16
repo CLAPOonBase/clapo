@@ -1,38 +1,24 @@
 "use client"
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useApi } from '../../Context/ApiProvider';
-import { Notification } from '../../types/api';
-import { Bell, Heart, MessageCircle, UserPlus, AtSign, Eye, EyeOff } from 'lucide-react';
+import { useNotifications } from '../../hooks/useNotifications';
+import { EnhancedNotification } from '../../types/api';
+import { Bell, Heart, MessageCircle, UserPlus, AtSign, Eye, EyeOff, Check, ExternalLink, Wifi, WifiOff, Bookmark, Users, AlertCircle, RefreshCw } from 'lucide-react';
+import Image from 'next/image';
 
 const NotificationPage = () => {
   const { data: session } = useSession();
-  const { state, fetchNotifications } = useApi();
-  const [loading, setLoading] = useState(false);
+  const { 
+    notifications,
+    unreadCount,
+    loading,
+    isConnected,
+    markAsRead,
+    getNotificationStats
+  } = useNotifications(session?.dbUser?.id);
+
   const [showRead, setShowRead] = useState(true);
-
-  const notifications = state.notifications || [];
-
-  useEffect(() => {
-    if (session?.dbUser?.id) {
-      loadNotifications();
-    }
-  }, [session?.dbUser?.id]);
-
-  const loadNotifications = async () => {
-    if (!session?.dbUser?.id) return;
-    
-    console.log('🔍 Loading notifications for user:', session.dbUser.id);
-    setLoading(true);
-    try {
-      await fetchNotifications(session.dbUser.id);
-      console.log('✅ Notifications loaded successfully');
-    } catch (error) {
-      console.error('❌ Failed to load notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [error, setError] = useState<string | null>(null);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -44,6 +30,14 @@ const NotificationPage = () => {
         return <UserPlus className="w-5 h-5 text-green-500" />;
       case 'mention':
         return <AtSign className="w-5 h-5 text-purple-500" />;
+      case 'retweet':
+        return <RefreshCw className="w-5 h-5 text-green-500" />;
+      case 'bookmark':
+        return <Bookmark className="w-5 h-5 text-yellow-500" />;
+      case 'dm':
+        return <MessageCircle className="w-5 h-5 text-blue-500" />;
+      case 'community_message':
+        return <Users className="w-5 h-5 text-purple-500" />;
       default:
         return <Bell className="w-5 h-5 text-gray-500" />;
     }
@@ -59,8 +53,41 @@ const NotificationPage = () => {
         return 'border-l-green-500 bg-green-500/10';
       case 'mention':
         return 'border-l-purple-500 bg-purple-500/10';
+      case 'retweet':
+        return 'border-l-green-500 bg-green-500/10';
+      case 'bookmark':
+        return 'border-l-yellow-500 bg-yellow-500/10';
+      case 'dm':
+        return 'border-l-blue-500 bg-blue-500/10';
+      case 'community_message':
+        return 'border-l-purple-500 bg-purple-500/10';
       default:
         return 'border-l-gray-500 bg-gray-500/10';
+    }
+  };
+
+  const getNotificationMessage = (notification: EnhancedNotification) => {
+    const actorName = notification.from_user?.username || 'Someone';
+    
+    switch (notification.type) {
+      case 'like':
+        return `${actorName} liked your post`;
+      case 'comment':
+        return `${actorName} commented on your post`;
+      case 'follow':
+        return `${actorName} started following you`;
+      case 'mention':
+        return `${actorName} mentioned you in a comment`;
+      case 'retweet':
+        return `${actorName} retweeted your post`;
+      case 'bookmark':
+        return `${actorName} bookmarked your post`;
+      case 'dm':
+        return `${actorName} sent you a message`;
+      case 'community_message':
+        return `${actorName} sent a message in community`;
+      default:
+        return notification.context?.action || `${actorName} interacted with your content`;
     }
   };
 
@@ -80,7 +107,15 @@ const NotificationPage = () => {
     ? notifications 
     : notifications.filter(notification => !notification.is_read);
 
-  if (loading) {
+  // Clear error after 5 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  if (loading && notifications.length === 0) {
     return (
       <div className="h-screen flex flex-col items-center justify-center text-white">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mb-4"></div>
@@ -97,26 +132,51 @@ const NotificationPage = () => {
           <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             Notifications
           </h2>
-          <button
-            onClick={() => setShowRead(!showRead)}
-            className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-slate-700/50 hover:bg-slate-700/70 transition-colors"
-          >
-            {showRead ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            <span className="text-sm">{showRead ? 'Hide Read' : 'Show All'}</span>
-          </button>
+          <div className="flex items-center space-x-3">
+            {/* WebSocket Status */}
+            <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
+              isConnected 
+                ? 'bg-green-600/20 text-green-400 border border-green-500/30' 
+                : 'bg-red-600/20 text-red-400 border border-red-500/30'
+            }`}>
+              {isConnected ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
+              <span className="text-sm">{isConnected ? 'Live' : 'Offline'}</span>
+            </div>
+
+            <button
+              onClick={() => setShowRead(!showRead)}
+              className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-slate-700/50 hover:bg-slate-700/70 transition-colors"
+            >
+              {showRead ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              <span className="text-sm">{showRead ? 'Hide Read' : 'Show All'}</span>
+            </button>
+          </div>
         </div>
         
         <div className="flex items-center space-x-4 text-sm text-slate-400">
           <span>Total: {notifications.length}</span>
-          <span>Unread: {notifications.filter(n => !n.is_read).length}</span>
+          <span>Unread: {unreadCount}</span>
+          {isConnected && (
+            <span className="text-green-400 font-medium">
+              ✨ Real-time updates active
+            </span>
+          )}
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center space-x-2 text-red-400">
+            <AlertCircle className="w-4 h-4" />
+            <span className="text-sm">{error}</span>
+          </div>
+        )}
       </div>
 
       {/* Notifications List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {filteredNotifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-            <Bell className="w-16 h-16 mb-4 opacity-50" />
+            <Bell className="w-16 h-16 mb-2 opacity-50" />
             <h3 className="text-lg font-semibold mb-2">No Notifications</h3>
             <p className="text-sm text-center">
               {showRead 
@@ -126,7 +186,7 @@ const NotificationPage = () => {
             </p>
           </div>
         ) : (
-          filteredNotifications.map((notification: Notification) => (
+          filteredNotifications.map((notification: EnhancedNotification) => (
             <div
               key={notification.id}
               className={`p-4 rounded-xl border-l-4 transition-all duration-200 hover:bg-slate-700/30 ${
@@ -134,26 +194,109 @@ const NotificationPage = () => {
               } ${notification.is_read ? 'opacity-70' : 'opacity-100'}`}
             >
               <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 mt-1">
-                  {getNotificationIcon(notification.type)}
+                {/* Actor Avatar */}
+                <div className="flex-shrink-0">
+                  {notification.from_user?.avatar_url ? (
+                    <Image
+                      src={notification.from_user.avatar_url}
+                      alt={notification.from_user.username || 'User'}
+                      width={40}
+                      height={40}
+                      className="w-10 h-10 rounded-full object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center">
+                      <span className="text-white text-sm font-medium">
+                        {notification.from_user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                
+
+                {/* Notification Content */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-white">
-                      {notification.content}
-                    </span>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-white">
+                        {getNotificationMessage(notification)}
+                      </span>
+                      {!notification.is_read && (
+                        <span className="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
+                      )}
+                    </div>
                     <span className="text-xs text-slate-400">
                       {formatTimeAgo(notification.created_at)}
                     </span>
                   </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <span className="inline-block px-2 py-1 text-xs bg-slate-600/50 text-slate-300 rounded-full">
-                      {notification.type}
-                    </span>
+
+                  {/* Content Preview */}
+                  {notification.content && (
+                    <div className="mb-3 p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                      <div className="flex items-start space-x-2">
+                        {notification.content.media_url && (
+                          <div className="flex-shrink-0">
+                            <Image
+                              src={notification.content.media_url}
+                              alt="Post media"
+                              width={60}
+                              height={60}
+                              className="w-15 h-15 rounded-md object-cover"
+                              unoptimized
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-slate-300 line-clamp-2">
+                            {notification.content.content}
+                          </p>
+                          <div className="mt-2 flex items-center space-x-4 text-xs text-slate-400">
+                            <span>👁️ {notification.content.view_count}</span>
+                            <span>❤️ {notification.content.like_count}</span>
+                            <span>💬 {notification.content.comment_count}</span>
+                            <span>🔄 {notification.content.retweet_count}</span>
+                          </div>
+                          {notification.ref_id && (
+                            <button className="mt-2 flex items-center space-x-1 text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                              <ExternalLink className="w-3 h-3" />
+                              <span>View content</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Context Information */}
+                  {notification.context && (
+                    <div className="mb-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                      <p className="text-sm text-blue-300">
+                        {notification.context.preview}
+                      </p>
+                      {notification.context.engagement && (
+                        <p className="text-xs text-blue-400 mt-1">
+                          {notification.context.engagement}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="inline-block px-2 py-1 text-xs bg-slate-600/50 text-slate-300 rounded-full">
+                        {notification.type}
+                      </span>
+                    </div>
+                    
                     {!notification.is_read && (
-                      <span className="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
+                      <button
+                        onClick={() => markAsRead(notification.id)}
+                        className="flex items-center space-x-1 px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                      >
+                        <Check className="w-3 h-3" />
+                        <span>Mark read</span>
+                      </button>
                     )}
                   </div>
                 </div>
@@ -161,16 +304,6 @@ const NotificationPage = () => {
             </div>
           ))
         )}
-      </div>
-
-      {/* Refresh Button */}
-      <div className="p-4 border-t border-slate-700/50">
-        <button
-          onClick={loadNotifications}
-          className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white font-medium rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25"
-        >
-          Refresh Notifications
-        </button>
       </div>
     </div>
   );

@@ -413,11 +413,61 @@ export interface Notification {
   related_id: string
   is_read: boolean
   created_at: string
+  // Enhanced notification data
+  actor_id?: string
+  actor_username?: string
+  actor_avatar_url?: string
+  post_id?: string
+  post_content_preview?: string
+  post_media_url?: string
+  comment_content?: string
+  mention_context?: string
+}
+
+// Enhanced Notification Types (new backend API)
+export interface EnhancedNotification {
+  id: string
+  type: 'like' | 'comment' | 'retweet' | 'bookmark' | 'follow' | 'dm' | 'community_message'
+  user_id: string
+  from_user_id: string
+  ref_id: string
+  is_read: boolean
+  created_at: string
+  from_user: {
+    id: string
+    username: string
+    email: string
+    bio: string
+    avatar_url: string
+    created_at: string
+  }
+  content: {
+    id: string
+    content: string
+    media_url: string | null
+    created_at: string
+    view_count: number
+    like_count: number
+    comment_count: number
+    retweet_count: number
+    author_username: string
+    author_avatar: string
+  }
+  context: {
+    action: string
+    preview: string
+    engagement: string
+  }
 }
 
 export interface NotificationsResponse {
   message: string
   notifications: Notification[]
+}
+
+export interface EnhancedNotificationsResponse {
+  message: string
+  notifications: EnhancedNotification[]
 }
 
 // Activity Types
