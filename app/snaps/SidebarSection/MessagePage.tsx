@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useApi } from '../../Context/ApiProvider';
-import { MessageCircle, Users, Plus, Search, ChevronDown, Hash, Dot } from 'lucide-react';
+import { MessageCircle, Users, Plus, Search, ChevronDown, Hash, Dot, ArrowLeft } from 'lucide-react';
 import { useSocket } from '../../hooks/useSocket';
 import { MessageList } from '../../components/MessageList';
 import { MessageInput } from '../../components/MessageInput';
@@ -12,6 +12,7 @@ import { TabNavigation } from '@/app/components/TabNavigation';
 import { DMSection } from '@/app/components/DMSection';
 import { CommunitySection } from '@/app/components/CommunitySection';
 import { ChatHeader } from '@/app/components/ChatHeader';
+
 export default function MessagePage() {
   const { data: session } = useSession();
   const { 
@@ -28,7 +29,7 @@ export default function MessagePage() {
     sendCommunityMessage
   } = useApi();
   
-   const handleStartChatWithUser = async (user: { id: string; username: string }) => {
+  const handleStartChatWithUser = async (user: { id: string; username: string }) => {
     if (!session?.dbUser?.id) return
 
     try {
@@ -50,10 +51,10 @@ export default function MessagePage() {
       if (thread && thread.id) {
         setSelectedThread(thread.id)
         await getThreadMessages(thread.id)
-        
         await getMessageThreads(session.dbUser.id)
-        
         setDmSection('threads')
+        // On mobile, show chat view when a thread is selected
+        setMobileView('chat')
       } else {
         console.error('❌ Thread creation failed - no thread in response')
       }
@@ -61,6 +62,7 @@ export default function MessagePage() {
       console.error('❌ Failed to start chat with user:', error)
     }
   }
+
   const [activeTab, setActiveTab] = useState<'dms' | 'communities'>('dms');
   const [dmSection, setDmSection] = useState<'threads' | 'search'>('threads');
   const [communitySection, setCommunitySection] = useState<'my' | 'join' | 'create'>('my');
@@ -69,6 +71,9 @@ export default function MessagePage() {
   const [messageContent, setMessageContent] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateCommunityModal, setShowCreateCommunityModal] = useState(false);
+  
+  // Mobile view state: 'sidebar' or 'chat'
+  const [mobileView, setMobileView] = useState<'sidebar' | 'chat'>('sidebar');
 
   const { socket, isConnected } = useSocket(selectedThread, selectedCommunity);
 
@@ -99,7 +104,6 @@ export default function MessagePage() {
 
   useEffect(() => {
     if (session?.dbUser?.id) {
-      // getCommunities now handles both all communities and user communities merging
       getCommunities();
       getMessageThreads(session.dbUser.id);
     }
@@ -145,10 +149,10 @@ export default function MessagePage() {
     }
   };
 
-   const [newCommunityName, setNewCommunityName] = useState('')
+  const [newCommunityName, setNewCommunityName] = useState('')
   const [newCommunityDescription, setNewCommunityDescription] = useState('')
 
-    const handleCreateCommunity = async () => {
+  const handleCreateCommunity = async () => {
     if (!session?.dbUser?.id || !newCommunityName.trim() || !newCommunityDescription.trim()) return
 
     try {
@@ -161,8 +165,6 @@ export default function MessagePage() {
       setShowCreateCommunityModal(false)
       setNewCommunityName('')
       setNewCommunityDescription('')
-      
-      // Refresh communities (now handles both all and user communities)
       getCommunities()
     } catch (error) {
       console.error('Failed to create community:', error)
@@ -206,15 +208,11 @@ export default function MessagePage() {
     }
   };
 
-   
-
- const handleJoinCommunity = async (communityId: string) => {
+  const handleJoinCommunity = async (communityId: string) => {
     if (!session?.dbUser?.id) return
 
     try {
       await joinCommunity(communityId, { userId: session.dbUser.id })
-      
-      // Refresh communities (now handles both all and user communities)
       getCommunities()
     } catch (error) {
       console.error('Failed to join community:', error)
@@ -222,7 +220,6 @@ export default function MessagePage() {
   }
 
   const [hasInitializedUsers, setHasInitializedUsers] = useState(false);
-
 
   const fetchCommunityMessages = async () => {
     if (!selectedCommunity) return;
@@ -239,6 +236,8 @@ export default function MessagePage() {
   const handleSelectThread = async (threadId: string) => {
     setSelectedThread(threadId);
     await getThreadMessages(threadId);
+    // On mobile, show chat view when a thread is selected
+    setMobileView('chat');
   };
 
   const handleSelectCommunity = async (communityId: string) => {
@@ -247,10 +246,19 @@ export default function MessagePage() {
     if (communityId) {
       console.log('🔍 About to fetch community messages for:', communityId);
       await fetchCommunityMessages();
+      // On mobile, show chat view when a community is selected
+      setMobileView('chat');
     }
   };
 
-  // Add useEffect to monitor selectedCommunity changes
+  // Handle back button on mobile
+  const handleBackToSidebar = () => {
+    setMobileView('sidebar');
+    // Optionally clear selections
+    // setSelectedThread(null);
+    // setSelectedCommunity(null);
+  };
+
   useEffect(() => {
     console.log('🔍 selectedCommunity changed to:', selectedCommunity);
     if (selectedCommunity && activeTab === 'communities') {
@@ -259,59 +267,155 @@ export default function MessagePage() {
     }
   }, [selectedCommunity, activeTab]);
 
+  // Reset mobile view when no thread/community is selected
+  useEffect(() => {
+    if (!selectedThread && !selectedCommunity) {
+      setMobileView('sidebar');
+    }
+  }, [selectedThread, selectedCommunity]);
+
   return (
-    <div className="rounded-xl md:flex-row flex-col shadow-2xl h-[700px] flex overflow-hidden">
-      {/* Sidebar */}
-      <div className="w-80 bg-dark-800 mr-4 rounded-md backdrop-blur-sm flex flex-col">
-        {/* Header */}
-        <div className="p-6 border-b border-slate-700/50">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold bg-primary bg-clip-text text-transparent">
-              Messages
-            </h2>
-            <ConnectionStatus isConnected={isConnected} />
+    <div className="h-[700px] flex overflow-hidden">
+      {/* Mobile Layout */}
+      <div className="md:hidden w-full flex">
+        {/* Sidebar View */}
+        <div className={`w-full bg-dark-800 rounded-xl backdrop-blur-sm flex flex-col transition-transform duration-300 ${
+          mobileView === 'chat' ? '-translate-x-full absolute' : 'translate-x-0'
+        }`}>
+          {/* Header */}
+          <div className="p-4 border-b border-slate-700/50">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold bg-primary bg-clip-text text-transparent">
+                Messages
+              </h2>
+              <ConnectionStatus isConnected={isConnected} />
+            </div>
+            
+            <TabNavigation 
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              dmSection={dmSection}
+              setDmSection={setDmSection}
+              communitySection={communitySection}
+              setCommunitySection={setCommunitySection}
+              setShowCreateCommunityModal={setShowCreateCommunityModal}
+            />
           </div>
-          
-          <TabNavigation 
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            dmSection={dmSection}
-            setDmSection={setDmSection}
-            communitySection={communitySection}
-            setCommunitySection={setCommunitySection}
-            setShowCreateCommunityModal={setShowCreateCommunityModal}
-          />
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto scrollbar-hide">
+            {activeTab === 'dms' ? (
+              <DMSection 
+                dmSection={dmSection}
+                state={state}
+                session={session}
+                selectedThread={selectedThread}
+                onSelectThread={handleSelectThread}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                onStartChat={handleStartChatWithUser}
+              />
+            ) : (
+              <CommunitySection 
+                communitySection={communitySection}
+                state={state}
+                session={session}
+                selectedCommunity={selectedCommunity}
+                onSelectCommunity={handleSelectCommunity}
+                onJoinCommunity={handleJoinCommunity}
+              />
+            )}
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide scrollbar-thumb-slate-600 scrollbar-track-transparent">
-          {activeTab === 'dms' ? (
-            <DMSection 
-              dmSection={dmSection}
-              state={state}
-              session={session}
-              selectedThread={selectedThread}
-              onSelectThread={handleSelectThread}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              onStartChat={handleStartChatWithUser}
+        {/* Chat View */}
+        <div className={`w-full bg-dark-800 rounded-xl backdrop-blur-sm flex flex-col transition-transform duration-300 ${
+          mobileView === 'sidebar' ? 'translate-x-full absolute' : 'translate-x-0'
+        }`}>
+          {/* Back Button + Chat Header */}
+          <div className="flex items-center p-4 border-b border-slate-700/50">
+            <button
+              onClick={handleBackToSidebar}
+              className="mr-3 p-2 hover:bg-slate-700 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-slate-300" />
+            </button>
+            <div className="flex-1">
+              <ChatHeader 
+                activeTab={activeTab}
+                currentThread={currentThread}
+                currentCommunity={currentCommunity}
+                session={session}
+              />
+            </div>
+          </div>
+
+          <MessageList 
+            messages={currentMessages} 
+            currentUserId={session?.dbUser?.id} 
+          />
+
+          <div className="p-4">
+            <MessageInput 
+              onSend={handleSendMessage}
+              disabled={!selectedThread && !selectedCommunity}
             />
-          ) : (
-            <CommunitySection 
-              communitySection={communitySection}
-              state={state}
-              session={session}
-              selectedCommunity={selectedCommunity}
-              onSelectCommunity={handleSelectCommunity}
-              onJoinCommunity={handleJoinCommunity}
-            />
-          )}
+          </div>
         </div>
       </div>
 
-      {/* Chat Area */}
-      <div className='flex w-full mr-6 rounded-md'>
-        <div className="flex-1 flex flex-col bg-dark-800 rounded-md backdrop-blur-sm">
+      {/* Desktop Layout */}
+      <div className="hidden md:flex w-full rounded-xl shadow-2xl overflow-hidden">
+        {/* Sidebar */}
+        <div className="w-80 bg-dark-800 backdrop-blur-sm flex flex-col border-r border-slate-700/50">
+          {/* Header */}
+          <div className="p-6 border-b border-slate-700/50">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold bg-primary bg-clip-text text-transparent">
+                Messages
+              </h2>
+              <ConnectionStatus isConnected={isConnected} />
+            </div>
+            
+            <TabNavigation 
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              dmSection={dmSection}
+              setDmSection={setDmSection}
+              communitySection={communitySection}
+              setCommunitySection={setCommunitySection}
+              setShowCreateCommunityModal={setShowCreateCommunityModal}
+            />
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto scrollbar-hide scrollbar-thumb-slate-600 scrollbar-track-transparent">
+            {activeTab === 'dms' ? (
+              <DMSection 
+                dmSection={dmSection}
+                state={state}
+                session={session}
+                selectedThread={selectedThread}
+                onSelectThread={handleSelectThread}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                onStartChat={handleStartChatWithUser}
+              />
+            ) : (
+              <CommunitySection 
+                communitySection={communitySection}
+                state={state}
+                session={session}
+                selectedCommunity={selectedCommunity}
+                onSelectCommunity={handleSelectCommunity}
+                onJoinCommunity={handleJoinCommunity}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Chat Area */}
+        <div className="flex-1 flex flex-col bg-dark-800 backdrop-blur-sm">
           <ChatHeader 
             activeTab={activeTab}
             currentThread={currentThread}
@@ -324,7 +428,7 @@ export default function MessagePage() {
             currentUserId={session?.dbUser?.id} 
           />
 
-          <div className="px-6 py-2">
+          <div className="px-6 py-4">
             <MessageInput 
               onSend={handleSendMessage}
               disabled={!selectedThread && !selectedCommunity}
