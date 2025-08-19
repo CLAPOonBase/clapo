@@ -1,0 +1,11 @@
+# Ignore specific files with ESLint issues
+app/components/CommentSection.tsx
+app/hooks/useWebSocket.ts
+
+# Ignore build artifacts
+.next/
+out/
+dist/
+
+# Ignore node modules
+node_modules/
