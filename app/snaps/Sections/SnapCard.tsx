@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useEffect } from 'react'
-import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume2 } from 'lucide-react'
+import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume2, Paperclip, Smile, Send } from 'lucide-react'
 import { Post, ApiPost } from '@/app/types'
 import { useApi } from '../../Context/ApiProvider'
 import { useSession } from 'next-auth/react'
@@ -26,11 +26,14 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   const [showCommentSection, setShowCommentSection] = useState(false)
   const [showEngagement, setShowEngagement] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: any } | null>(null)
-  const [isLoading, setIsLoading] = useState({ like: false, retweet: false, bookmark: false })
+  const [isLoading, setIsLoading] = useState({ like: false, retweet: false, bookmark: false, comment: false })
   const [localEngagement, setLocalEngagement] = useState({ likes: 0, comments: 0, retweets: 0, bookmarks: 0 })
   const [userEngagement, setUserEngagement] = useState({ liked: false, retweeted: false, bookmarked: false })
+  const [commentText, setCommentText] = useState('')
+  const [showInlineComments, setShowInlineComments] = useState(false)
+  const [comments, setComments] = useState<any[]>([])
 
-  const { likePost, unlikePost, retweetPost, bookmarkPost, unbookmarkPost, viewPost, state } = useApi()
+  const { likePost, unlikePost, retweetPost, bookmarkPost, unbookmarkPost, viewPost, addComment, getPostComments, state } = useApi()
   const { data: session } = useSession()
 
   const isApiPost = 'user_id' in post
@@ -44,6 +47,7 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
     : (post.time || 'Unknown')
   const postAvatar = isApiPost ? post.avatar_url : undefined
   const currentUserId = session?.dbUser?.id
+  const currentUserAvatar = session?.dbUser?.avatar_url
 
   const isUserInLikes = isApiPost && post.likes?.some(u => u.user_id === currentUserId)
   const isUserInRetweets = isApiPost && post.retweets?.some(u => u.user_id === currentUserId)
@@ -62,7 +66,12 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
       retweeted: isUserInRetweets || retweeted || state.engagement.retweetedPosts.has(postId),
       bookmarked: isUserInBookmarks || bookmarked || state.engagement.bookmarkedPosts.has(postId)
     })
-  }, [isUserInLikes, isUserInRetweets, isUserInBookmarks, liked, retweeted, bookmarked, postId, state.engagement])
+
+    // Load existing comments if it's an API post
+    if (isApiPost && post.comments) {
+      setComments(post.comments)
+    }
+  }, [isUserInLikes, isUserInRetweets, isUserInBookmarks, liked, retweeted, bookmarked, postId, state.engagement, post])
 
   const handleAction = async (
     type: 'like' | 'retweet' | 'bookmark',
@@ -97,76 +106,162 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
 
   const handleView = () => currentUserId && viewPost(postId, currentUserId).catch(() => {})
 
-  const handleCommentAdded = (comments: any[]) =>
-    setLocalEngagement(prev => ({ ...prev, comments: comments.length }))
+  const handleCommentAdded = (newComments: any[]) => {
+    setComments(newComments)
+    setLocalEngagement(prev => ({ ...prev, comments: newComments.length }))
+  }
 
-const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(false)
 
-const words = postContent?.trim().split(/\s+/) || []
-const isLong = words.length > 50
-const displayedText = expanded ? postContent : words.slice(0, 50).join(" ") + (isLong ? "..." : "")
+  const words = postContent?.trim().split(/\s+/) || []
+  const isLong = words.length > 50
+  const displayedText = expanded ? postContent : words.slice(0, 50).join(" ") + (isLong ? "..." : "")
 
+  // Handle inline comment submission
+  const handleCommentSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    if (!commentText.trim() || !currentUserId || isLoading.comment) return
+
+    setIsLoading(prev => ({ ...prev, comment: true }))
+    try {
+      // Create new comment object
+      const newComment = {
+        id: Date.now().toString(), // Temporary ID
+        content: commentText.trim(),
+        created_at: new Date().toISOString(),
+        user_id: currentUserId,
+        username: session?.dbUser?.username || 'Unknown',
+        avatar_url: currentUserAvatar
+      }
+
+      // Add comment via API if available
+      if (addComment) {
+        await addComment(postId, commentText.trim(), currentUserId)
+      }
+
+      // Update local state
+      const updatedComments = [...comments, newComment]
+      setComments(updatedComments)
+      setLocalEngagement(prev => ({ ...prev, comments: prev.comments + 1 }))
+      setCommentText('')
+      setToast({ message: 'Comment added', type: 'success' })
+
+      // Show inline comments if they weren't visible
+      if (!showInlineComments) {
+        setShowInlineComments(true)
+      }
+
+    } catch (error) {
+      setToast({ message: 'Failed to add comment', type: 'error' })
+    } finally {
+      setIsLoading(prev => ({ ...prev, comment: false }))
+    }
+  }
+
+  // Handle showing/hiding inline comments
+  const toggleInlineComments = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    
+    if (!showInlineComments && comments.length === 0 && isApiPost) {
+      // Load comments from API if not loaded yet
+      try {
+        if (getPostComments) {
+          const fetchedComments = await getPostComments(postId)
+          setComments(fetchedComments || [])
+        }
+      } catch (error) {
+        console.error('Failed to load comments:', error)
+      }
+    }
+    
+    setShowInlineComments(prev => !prev)
+  }
+
+  // Format comment time
+  const formatCommentTime = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
+    
+    if (diffInMinutes < 1) return 'now'
+    if (diffInMinutes < 60) return `${diffInMinutes}m`
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`
+    return `${Math.floor(diffInMinutes / 1440)}d`
+  }
 
   return (
     <>
-      <div className="bg-dark-700 text-secondary rounded-2xl p-2 md:p-6 mt-8 shadow-sm hover:shadow-md transition-all duration-200 my-4" onClick={handleView}>
+      <div 
+style={{
+  boxShadow:
+    "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
+  // borderRadius: "8px",
+}}
+
+      className="bg-dark-700/70 rounded-3xl mt-12 p-6 mb-6 shadow-sm hover:shadow-md transition-all duration-200" onClick={handleView}>
         <div className="flex flex-col space-y-4">
-          <div className='flex space-x-2'>
+          {/* Header */}
+          <div className='flex space-x-3'>
             <div className="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden">
-            {postAvatar ? (
-              <img src={postAvatar} alt={postAuthor} className="w-full h-full object-cover bg-primary"
-                onError={e => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${postAuthor}` }} />
-            ) : (
-              <div className="w-full h-full bg-indigo-500 flex items-center justify-center text-sm font-semibold">
-                {postAuthor?.substring(0, 2)?.toUpperCase() || 'U'}
+              {postAvatar ? (
+                <img src={postAvatar} alt={postAuthor} className="w-full h-full object-cover bg-gray-200"
+                  onError={e => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${postAuthor}` }} />
+              ) : (
+                <div className="w-full h-full bg-indigo-500 flex items-center justify-center text-sm font-semibold text-white">
+                  {postAuthor?.substring(0, 2)?.toUpperCase() || 'U'}
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-1 min-w-0 items-center justify-between">
+              <div className="flex flex-col min-w-0">
+                <UserProfileHover 
+                  userId={isApiPost ? post.user_id.toString() : post.id.toString()} 
+                  username={postAuthor}
+                  avatarUrl={postAvatar}
+                  position="bottom"
+                >
+                  <span className="font-semibold text-white text-lg truncate cursor-pointer hover:text-blue-500 transition-colors">
+                    {postAuthor}
+                  </span>
+                </UserProfileHover>
+                <span className="text-secondary text-sm">                    {postAuthor}</span>
               </div>
-            )}
-          </div>
-             <div className="flex flex-1 min-w-0 items-center space-x-2 mb-3">
-            <span className='flex flex-col'>  
-              <UserProfileHover 
-                userId={isApiPost ? post.user_id.toString() : post.id.toString()} 
-                username={postAuthor}
-                avatarUrl={postAvatar}
-                position="bottom"
-              >
-                <span className="font-semibold text-white truncate cursor-pointer hover:text-blue-400 transition-colors">
-                  {postAuthor}
-                </span>
-              </UserProfileHover>
-              <span className="text-secondary truncate">{postHandle}</span>
-            </span>
-             
-              <span className="text-secondary text-sm w-full text-end">{postTime}</span>
+
+              <div className="flex items-center space-x-3">
+                <span className="text-secondary text-sm">{postTime}</span>
+                <button className="text-secondary hover:text-gray-600 p-1" onClick={(e) => e.stopPropagation()}>
+                  <MoreHorizontal className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="">
-         
-
-         <p className=" text-secondary leading-relaxed whitespace-pre-wrap">
-  {displayedText}
-</p>
-{isLong && (
-  <button
-    onClick={(e) => {
-      e.stopPropagation()
-      setExpanded(prev => !prev)
-    }}
-    className="text-blue-500 hover:underline text-sm w-full text-end"
-  >
-    {expanded ? "View Less" : "View More"}
-  </button>
-)}
-
+          {/* Content */}
+          <div className="space-y-4">
+            <p className="text-secondary text-base leading-relaxed whitespace-pre-wrap">
+              {displayedText}
+            </p>
+            
+            {isLong && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setExpanded(prev => !prev)
+                }}
+                className="text-blue-500 hover:underline text-sm"
+              >
+                {expanded ? "View Less" : "View More"}
+              </button>
+            )}
 
             {postImage && (
-              <div className="mt-4 rounded-xl overflow-hidden">
+              <div className="rounded-2xl overflow-hidden">
                 {/\.(jpg|jpeg|png|gif|webp)$/i.test(postImage) ? (
-                  <img src={postImage} alt="Post content" className="w-full max-h-96 object-cover cursor-pointer hover:opacity-95"
+                  <img src={postImage} alt="Post content" className="w-full max-h-80 object-cover cursor-pointer hover:opacity-95"
                     onClick={e => { e.stopPropagation(); setShowImageModal(true) }} />
                 ) : /\.(mp4|webm|ogg|mov)$/i.test(postImage) ? (
-                  <video src={postImage} controls className="w-full max-h-96 bg-gray-50" />
+                  <video src={postImage} controls className="w-full max-h-80 bg-black" />
                 ) : /\.(mp3|wav|ogg|m4a)$/i.test(postImage) ? (
                   <div className="bg-gray-50 p-4 flex items-center space-x-3">
                     <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -175,7 +270,7 @@ const displayedText = expanded ? postContent : words.slice(0, 50).join(" ") + (i
                     <audio src={postImage} controls className="flex-1" />
                   </div>
                 ) : (
-                  <div className="bg-gray-50 p-4 text-center">
+                  <div className="bg-gray-50 p-4 text-center rounded-2xl">
                     <p className="text-gray-600 text-sm mb-2">Media file</p>
                     <a href={postImage} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
                       View media
@@ -184,51 +279,170 @@ const displayedText = expanded ? postContent : words.slice(0, 50).join(" ") + (i
                 )}
               </div>
             )}
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-6">
-                <button onClick={e => { e.stopPropagation(); handleAction('like', () => likePost(postId, currentUserId!), () => unlikePost(postId, currentUserId!), 'likes', 'liked', { do: 'Post liked', undo: 'Post unliked' }, onLike) }}
-                  disabled={isLoading.like}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all group ${isLoading.like ? 'text-gray-400' : userEngagement.liked ? 'text-red-600' : ' hover:text-red-600 hover:bg-red-50'}`}>
-                  <Heart className={`w-5 h-5 ${userEngagement.liked ? 'fill-red-600' : ''}`} />
-                  <span className="text-sm">{localEngagement.likes}</span>
-                </button>
-
-                <button onClick={e => { e.stopPropagation(); setShowCommentSection(true) }}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50">
-                  <MessageCircle className="w-5 h-5" />
-                  <span className="text-sm">{localEngagement.comments}</span>
-                </button>
-
-                <button onClick={e => { e.stopPropagation(); handleAction('retweet', () => retweetPost(postId, currentUserId!), async () => {}, 'retweets', 'retweeted', { do: 'Post retweeted', undo: '' }, onRetweet) }}
-                  disabled={isLoading.retweet || userEngagement.retweeted}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all group ${userEngagement.retweeted ? 'text-green-600' : 'text-gray-500 hover:text-green-600 hover:bg-green-50'}`}>
-                  <Repeat2 className={`w-5 h-5 ${userEngagement.retweeted ? 'fill-green-600' : ''}`} />
-                  <span className="text-sm">{localEngagement.retweets}</span>
-                </button>
-
-                <button onClick={e => { e.stopPropagation(); handleAction('bookmark', () => bookmarkPost(postId, currentUserId!), () => unbookmarkPost(postId, currentUserId!), 'bookmarks', 'bookmarked', { do: 'Post bookmarked', undo: 'Bookmark removed' }, onBookmark) }}
-                  disabled={isLoading.bookmark}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all group ${userEngagement.bookmarked ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'}`}>
-                  <Bookmark className={`w-5 h-5 ${userEngagement.bookmarked ? 'fill-blue-600' : ''}`} />
-                  <span className="text-sm">{localEngagement.bookmarks}</span>
-                </button>
-
-                <button onClick={e => { e.stopPropagation(); setShowEngagement(true) }}
-                  className="flex items-center px-3 py-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-50">
-                  <MoreHorizontal className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="flex items-center space-x-2 text-gray-400">
-                <Eye className="w-4 h-4" />
-                <span className="text-sm">{isApiPost ? (post.post_popularity_score || 0).toLocaleString() : '0'}</span>
-              </div>
-            </div>
           </div>
+
+          {/* Engagement Stats */}
+          <div className="flex items-center justify-between py-4 ">
+            <div className="flex items-center space-x-6">
+              <button 
+                onClick={e => { 
+                  e.stopPropagation(); 
+                  handleAction('like', () => likePost(postId, currentUserId!), () => unlikePost(postId, currentUserId!), 'likes', 'liked', { do: 'Post liked', undo: 'Post unliked' }, onLike) 
+                }}
+                disabled={isLoading.like}
+                className={`flex items-center space-x-2 text-gray-500 hover:text-red-500 transition-colors ${userEngagement.liked ? 'text-red-500' : ''}`}
+              >
+                <Heart className={`w-5 h-5 ${userEngagement.liked ? 'fill-red-500' : ''}`} />
+                <span className="text-sm font-medium">{localEngagement.likes} Likes</span>
+              </button>
+
+              <button 
+                onClick={toggleInlineComments}
+                className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors"
+              >
+                <MessageCircle className="w-5 h-5" />
+                <span className="text-sm font-medium">{localEngagement.comments} Comments</span>
+              </button>
+
+              <button 
+                onClick={e => { 
+                  e.stopPropagation(); 
+                  handleAction('retweet', () => retweetPost(postId, currentUserId!), async () => {}, 'retweets', 'retweeted', { do: 'Post retweeted', undo: '' }, onRetweet) 
+                }}
+                disabled={isLoading.retweet || userEngagement.retweeted}
+                className={`flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors ${userEngagement.retweeted ? 'text-green-500' : ''}`}
+              >
+                <Repeat2 className={`w-5 h-5 ${userEngagement.retweeted ? 'fill-green-500' : ''}`} />
+                <span className="text-sm font-medium">{localEngagement.retweets} Share</span>
+              </button>
+            </div>
+
+            <button 
+              onClick={e => { 
+                e.stopPropagation(); 
+                handleAction('bookmark', () => bookmarkPost(postId, currentUserId!), () => unbookmarkPost(postId, currentUserId!), 'bookmarks', 'bookmarked', { do: 'Post bookmarked', undo: 'Bookmark removed' }, onBookmark) 
+              }}
+              disabled={isLoading.bookmark}
+              className={`flex items-center space-x-2 text-gray-500 hover:text-purple-500 transition-colors ${userEngagement.bookmarked ? 'text-purple-500' : ''}`}
+            >
+              <Bookmark className={`w-5 h-5 ${userEngagement.bookmarked ? 'fill-purple-500' : ''}`} />
+              <span className="text-sm font-medium">{localEngagement.bookmarks} Saved</span>
+            </button>
+          </div>
+
+          {/* Inline Comments Section */}
+          <AnimatePresence>
+            {showInlineComments && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-4 pt-4"
+              >
+                {/* Comments List */}
+                {comments.length > 0 && (
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {comments.slice(0, 3).map((comment) => (
+                      <div key={comment.id} className="flex space-x-3">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden">
+                          {comment.avatar_url ? (
+                            <img src={comment.avatar_url} alt={comment.username} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-gray-300 flex items-center justify-center text-xs font-semibold text-gray-600">
+                              {comment.username?.substring(0, 2)?.toUpperCase() || 'U'}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="bg-gray-50 rounded-2xl px-3 py-2">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className="font-semibold text-sm text-gray-900">{comment.username}</span>
+                              <span className="text-xs text-gray-500">{formatCommentTime(comment.created_at)}</span>
+                            </div>
+                            <p className="text-sm text-gray-800">{comment.content}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {comments.length > 3 && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowCommentSection(true); }}
+                        className="text-sm text-blue-500 hover:underline pl-11"
+                      >
+                        View all {comments.length} comments
+                      </button>
+                    )}
+                  </div>
+                )}
+                
+                {comments.length === 0 && (
+                  <p className="text-gray-500 text-sm text-center py-4">No comments yet. Be the first to comment!</p>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Comment Input */}
+          <form onSubmit={handleCommentSubmit} className="flex items-center space-x-3 pt-4 ">
+            <div className="relative w-10 h-10 flex-shrink-0">
+              {currentUserAvatar ? (
+                <img src={currentUserAvatar} alt="Your avatar" className="w-full h-full rounded-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-indigo-500 rounded-full flex items-center justify-center text-sm font-semibold text-white">
+                  {session?.dbUser?.username?.substring(0, 2)?.toUpperCase() || 'U'}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                placeholder="Write your comment.."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                disabled={isLoading.comment}
+                className="w-full py-3 px-4 bg-dark-800 rounded-full text-secondary placeholder:text-secondary placeholder-dark-800 focus:outline-none focus:ring-2 focus:bg-dark-800 transition-all disabled:opacity-50"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button 
+                type="button"
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Paperclip className="w-5 h-5" />
+              </button>
+              
+              <button 
+                type="button"
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Smile className="w-5 h-5" />
+              </button>
+
+              <button 
+                type="submit"
+                disabled={!commentText.trim() || isLoading.comment}
+                className="p-2 bg-primary text-white rounded-full hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {isLoading.comment ? (
+                  <div className="w-5 h-5  rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 
+      {/* Image Modal */}
       {showImageModal && postImage && (
         <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4" onClick={() => setShowImageModal(false)}>
           <div className="relative max-w-5xl max-h-full">
@@ -241,33 +455,33 @@ const displayedText = expanded ? postContent : words.slice(0, 50).join(" ") + (i
         </div>
       )}
 
-  
+      {/* Full Comment Section Modal */}
+      <AnimatePresence>
+        {showCommentSection && isApiPost && (
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="fixed inset-0 z-50 flex justify-center items-end sm:items-center sm:p-4"
+          >
+            <div className="bg-white w-full sm:w-[600px] rounded-t-2xl sm:rounded-2xl shadow-lg max-h-[90%] overflow-y-auto">
+              <CommentSection
+                post={post}
+                onClose={() => setShowCommentSection(false)}
+                onCommentAdded={handleCommentAdded}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-<AnimatePresence>
-  {showCommentSection && isApiPost && (
-    <motion.div
-      initial={{ y: "100%" }}
-      animate={{ y: 0 }}
-      exit={{ y: "100%" }}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="fixed inset-0 z-50 flex justify-center items-end sm:items-center sm:p-4"
-    >
-      <div className="bg-dark-800 w-full sm:w-[600px] rounded-t-2xl sm:rounded-2xl shadow-lg max-h-[90%] overflow-y-auto">
-        <CommentSection
-          post={post}
-          onClose={() => setShowCommentSection(false)}
-          onCommentAdded={handleCommentAdded}
-        />
-      </div>
-    </motion.div>
-  )}
-</AnimatePresence>
-
-
+      {/* Engagement Details */}
       {showEngagement && isApiPost && (
         <EngagementDetails likes={post.likes} retweets={post.retweets} bookmarks={post.bookmarks} onClose={() => setShowEngagement(false)} />
       )}
 
+      {/* Toast */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </>
   )

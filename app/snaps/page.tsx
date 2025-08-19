@@ -112,31 +112,49 @@ export default function SocialFeedPage() {
           <>
             <SnapComposer />
 
-        <div className='bg-dark-800 mt-4 rounded-2xl'>
-  <div style={{zIndex :"9999"}} className="flex justify-around pt-4 sticky rounded-2xl bg-dark-800 top-20">
-    {['FOR YOU', 'FOLLOWING'].map((tab) => (
-      <button
-        key={tab}
-        onClick={() => handleTabChange(tab as 'FOR YOU' | 'FOLLOWING')}
-        className={`pb-2 font-semibold w-full ${
-          activeTab === tab ? 'text-white' : 'text-gray-400 hover:text-white'
-        }`}
-      >
-        {tab}
-      </button>
-    ))}
+        <div
+        style={{
+  boxShadow:
+    "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
+  // borderRadius: "8px",
+}}
+        className='bg-dark-800 mt-4 rounded-2xl'>
+<div
+  style={{ zIndex: "9999" }}
+  className="relative flex justify-around items-center pt-4 sticky rounded-2xl top-20"
+>
+  {["FOR YOU", "FOLLOWING"].map((tab) => (
+    <button
+      key={tab}
+      onClick={() => handleTabChange(tab as "FOR YOU" | "FOLLOWING")}
+      className={`pb-2 font-semibold w-full relative z-10 ${
+        activeTab === tab ? "text-white" : "text-secondary"
+      }`}
+    >
+      {tab}
+    </button>
+  ))}
 
-    <motion.div
-      layout
-      className="absolute bottom-0 h-[3px] bg-orange-500 rounded-full"
-      initial={false}
-      animate={{
-        left: activeTab === "FOR YOU" ? "0%" : "50%",
-        width: "50%"
-      }}
-      // transition={{ type: "spring", stiffness: 500, damping: 30 }}
-    />
-  </div>
+  <motion.div
+    className="absolute top-2.5 h-[40px] bg-dark-700/70 rounded-full"
+    style={{
+       boxShadow:
+          "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(26, 19, 161, 0.50), 0px 0px 0px 1px #4F47EB",
+        backgroundColor: "#4F47EB",
+        color: "white",
+        padding: "8px 16px"
+    }}
+    initial={false}
+    animate={{
+      left: activeTab === "FOR YOU" ? "5%" : "55%", // centers under button
+      width: "40%", // same width for both
+    }}
+    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+  />
+</div>
+
+
+
 
   <div className="p-4">
     <AnimatePresence mode="wait">
@@ -248,6 +266,14 @@ export default function SocialFeedPage() {
               <div className="flex gap-4 justify-center">
                 <button
                   onClick={() => signIn('twitter')}
+                        style={{
+        boxShadow:
+          "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(26, 19, 161, 0.50), 0px 0px 0px 1px #4F47EB",
+        backgroundColor: "#4F47EB",
+        color: "white",
+        padding: "8px 16px",
+        borderRadius: "8px",
+      }}
                   className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -257,6 +283,7 @@ export default function SocialFeedPage() {
                 </button>
                 <button
                   onClick={() => signIn()}
+
                   className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
                 >
                   Sign in with Email

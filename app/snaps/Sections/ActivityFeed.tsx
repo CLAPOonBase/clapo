@@ -72,7 +72,13 @@ const getActivityText = (type: string) => {
 export default function UserActivityFeed({ username, activity }: UserActivityFeedProps) {
   if (!activity || activity.length === 0) {
     return (
-      <div className="text-center py-8 min-h-96 mx-4 rounded-2xl bg-dark-800 text-gray-500 sticky top-20">
+      <div 
+      style={{
+  boxShadow:
+    "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
+  // borderRadius: "8px",
+}}
+      className="text-center py-8 min-h-96 mx-4 rounded-2xl bg-dark-800 text-gray-500 sticky top-20">
         <p>No recent activity</p>
       </div>
     )
