@@ -573,14 +573,14 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const createPost = useCallback(async (postData: any) => {
-    const userId = getCurrentUserId()
-    if (!userId) return
-
     try {
+      console.log('🚀 Calling apiService.createPost with data:', postData)
       const response = await apiService.createPost(postData)
+      console.log('✅ API response:', response)
       dispatch({ type: 'ADD_POST', payload: response.post })
+      return response
     } catch (error) {
-      console.error('Failed to create post:', error)
+      console.error('❌ Failed to create post:', error)
       throw error
     }
   }, [])

@@ -30,6 +30,15 @@ export function SnapComposer() {
   const mediaUploadRef = useRef<MediaUploadHandle>(null)
   const userId = session?.dbUser?.id
 
+  // Debug session data
+  console.log('🔍 SnapComposer Session Debug:', {
+    status,
+    session,
+    dbUser: session?.dbUser,
+    userId,
+    sessionKeys: session ? Object.keys(session) : []
+  })
+
   const actions = [
     { icon: ImageIcon, label: 'Photo', color: 'text-blue-400 border-blue-300 hover:text-blue-300', type: 'image' },
     { icon: Video, label: 'Video', color: 'text-purple-400 border-purple-300 hover:text-purple-300', type: 'video' },
@@ -75,6 +84,8 @@ export function SnapComposer() {
     setIsSubmitting(true)
 
     try {
+      console.log('🚀 Submitting post with data:', { userId, content: content.trim(), mediaUrl })
+      
       const postData = {
         userId,
         content: content.trim(),
@@ -84,18 +95,18 @@ export function SnapComposer() {
         retweetRefId: undefined,
       }
 
-      await createPost(postData)
+      const response = await createPost(postData)
+      console.log('✅ Post created successfully:', response)
 
       setContent('')
       setMediaUrl(undefined)
       setUploadedMedia(null)
       
-      if (typeof window !== 'undefined' && window.alert) {
-        window.alert('Post created successfully!')
-      }
+      // Refresh posts to show the new post
       await fetchPosts(userId)
     } catch (error) {
-      console.error('Failed to create post:', error)
+      console.error('❌ Failed to create post:', error)
+      // You can add a toast notification here instead of alert
     } finally {
       setIsSubmitting(false)
     }
