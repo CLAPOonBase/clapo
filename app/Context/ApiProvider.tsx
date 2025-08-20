@@ -58,7 +58,8 @@ import type {
   ApiUser,
   ApiPost,
   ApiNotification,
-  ApiActivity
+  ApiActivity,
+  EnhancedNotification
 } from '../types'
 
 // Action types
