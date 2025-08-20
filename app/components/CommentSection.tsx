@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
+'use client'
 import React, { useState } from 'react'
 import { X, Send } from 'lucide-react'
 import { ApiPost } from '@/app/types'

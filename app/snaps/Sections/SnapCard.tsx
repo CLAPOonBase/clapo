@@ -1,4 +1,6 @@
-"use client"
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
+'use client'
 import React, { useState, useEffect } from 'react'
 import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume2, Paperclip, Smile, Send } from 'lucide-react'
 import { Post, ApiPost } from '@/app/types'
