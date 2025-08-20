@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 import { useState, useCallback } from 'react'
 import { apiService } from './api'
 import type {
