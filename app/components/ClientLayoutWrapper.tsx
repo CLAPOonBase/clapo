@@ -28,14 +28,18 @@ export default function ClientLayoutWrapper({ children }: ClientLayoutWrapperPro
 
   // Password setup modal logic
   useEffect(() => {
+    if (status === 'unauthenticated') {
+      setShowPasswordSetup(false);
+      return;
+    }
+
     if (
       status === 'authenticated' &&
-      session?.needsPasswordSetup &&
+      session?.needsPasswordSetup === true &&
       session?.provider === 'twitter' &&
       session?.twitterData &&
       !session?.dbUser
     ) {
-      console.log('🔐 Showing password setup modal for Twitter user:', session.twitterData.username);
       setShowPasswordSetup(true);
     } else {
       setShowPasswordSetup(false);
@@ -44,25 +48,12 @@ export default function ClientLayoutWrapper({ children }: ClientLayoutWrapperPro
 
   const handlePasswordComplete = async () => {
     setShowPasswordSetup(false);
-    console.log('✅ Password setup completed for user:', session?.dbUser?.username);
   };
 
   const handlePasswordSkip = () => {
     setShowPasswordSetup(false);
-    console.log('⏭️ Password setup skipped for user:', session?.dbUser?.username);
   };
 
-  // If mobile, show blocking message
-  if (isMobile) {
-    return (
-      <div style={{ color: 'white', backgroundColor: 'black', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '1rem' }}>
-        <div>
-          <h1>This website is only available on desktop devices.</h1>
-          <p>Please access it from a desktop browser for the best experience.</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>

@@ -34,6 +34,9 @@ import {
   ThreadMessagesResponse,
   AddParticipantRequest,
   AddParticipantResponse,
+  CommunityMembersResponse,
+  CommunityMessagesResponse,
+  EnhancedNotificationsResponse,
 } from '../types/api'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'
@@ -47,20 +50,48 @@ class ApiService {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    authToken?: string
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`
+    console.log('🔍 API Request:', {
+      baseUrl: this.baseUrl,
+      endpoint,
+      fullUrl: url,
+      method: options.method || 'GET',
+      body: options.body,
+      hasAuthToken: !!authToken
+    })
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+    
+    if (options.headers) {
+      Object.entries(options.headers).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          headers[key] = value
+        }
+      })
+    }
+    
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`
+    }
     
     const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+      headers,
       ...options,
     }
 
     try {
+      console.log('🚀 Making fetch request to:', url)
       const response = await fetch(url, config)
+      console.log('📡 Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      })
       
       if (!response.ok) {
         const errorText = await response.text()
@@ -81,9 +112,10 @@ class ApiService {
       }
 
       const responseData = await response.json()
+      console.log('✅ Response data:', responseData)
       return responseData
     } catch (error) {
-      console.error('Request failed:', error)
+      console.error('❌ Request failed:', error)
       throw error
     }
   }
@@ -114,7 +146,9 @@ class ApiService {
   }
 
   async getUserProfile(userId: string): Promise<ProfileResponse> {
+    console.log('🔍 API Service: Getting user profile for userId:', userId)
     const response = await this.request<ProfileResponse>(`/users/${userId}/profile/posts`);
+    console.log('🔍 API Service: Raw response from getUserProfile:', response)
     return response;
   }
 
@@ -276,33 +310,33 @@ class ApiService {
     }
   }
 
-  async getCommunityMembers(communityId: string, limit = 50, offset = 0): Promise<unknown> {
+  async getCommunityMembers(communityId: string, limit = 50, offset = 0): Promise<CommunityMembersResponse> {
     try {
       const response = await this.request(`/communities/${communityId}/members?limit=${limit}&offset=${offset}`)
-      return response
+      return response as CommunityMembersResponse
     } catch (error) {
       console.error('Error fetching community members:', error)
       throw error
     }
   }
 
-  async sendCommunityMessage(communityId: string, data: SendMessageRequest): Promise<unknown> {
+  async sendCommunityMessage(communityId: string, data: SendMessageRequest): Promise<CommunityMessagesResponse> {
     try {
       const response = await this.request(`/communities/${communityId}/messages`, {
         method: 'POST',
         body: JSON.stringify(data),
       })
-      return response
+      return response as CommunityMessagesResponse
     } catch (error) {
       console.error('Error sending community message:', error)
       throw error
     }
   }
 
-  async getCommunityMessages(communityId: string, limit = 50, offset = 0): Promise<unknown> {
+  async getCommunityMessages(communityId: string, limit = 50, offset = 0): Promise<CommunityMessagesResponse> {
     try {
       const response = await this.request(`/communities/${communityId}/messages?limit=${limit}&offset=${offset}`)
-      return response
+      return response as CommunityMessagesResponse
     } catch (error) {
       console.error('Error fetching community messages:', error)
       throw error
@@ -310,12 +344,18 @@ class ApiService {
   }
 
   async searchUsers(query: string, limit: number = 10, offset: number = 0): Promise<SearchUsersResponse> {
+    
     const params = new URLSearchParams({
       q: query,
       limit: limit.toString(),
       offset: offset.toString(),
     })
-    return this.request<SearchUsersResponse>(`/users/search?${params}`)
+    
+    const url = `/users/search?${params}`;
+    
+    const response = await this.request<SearchUsersResponse>(url);
+    
+    return response;
   }
 
   async createPost(data: CreatePostRequest): Promise<CreatePostResponse> {
@@ -325,7 +365,7 @@ class ApiService {
     })
   }
 
-  async getPosts(userId: string, limit: number = 10, offset: number = 0): Promise<FeedResponse> {
+  async getPosts(userId: string, limit: number = 50, offset: number = 0): Promise<FeedResponse> {
     const params = new URLSearchParams({
       userId,
       limit: limit.toString(),
@@ -334,7 +374,7 @@ class ApiService {
     return this.request<FeedResponse>(`/feed/foryou?${params}`)
   }
 
-  async getPersonalizedFeed(userId: string, limit: number = 10, offset: number = 0): Promise<FeedResponse> {
+  async getPersonalizedFeed(userId: string, limit: number = 50, offset: number = 0): Promise<FeedResponse> {
     const params = new URLSearchParams({
       userId,
       limit: limit.toString(),
@@ -351,7 +391,6 @@ class ApiService {
   }
 
   async likePost(postId: string, data: LikePostRequest): Promise<LikeResponse> {
-    console.log('🔍 Like API Request:', { postId, data })
     return this.request<LikeResponse>(`/posts/${postId}/like`, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -372,6 +411,10 @@ class ApiService {
     })
   }
 
+  async getPostComments(postId: string): Promise<CommentResponse[]> {
+    return this.request<CommentResponse[]>(`/posts/${postId}/comments`)
+  }
+
   async retweetPost(postId: string, data: LikePostRequest): Promise<RetweetResponse> {
     return this.request<RetweetResponse>(`/posts/${postId}/retweet`, {
       method: 'POST',
@@ -380,7 +423,6 @@ class ApiService {
   }
 
   async bookmarkPost(postId: string, data: BookmarkRequest): Promise<BookmarkResponse> {
-    console.log('🔍 Bookmark API Request:', { postId, data })
     return this.request<BookmarkResponse>(`/posts/${postId}/bookmark`, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -388,7 +430,6 @@ class ApiService {
   }
 
   async unbookmarkPost(postId: string, data: BookmarkRequest): Promise<unknown> {
-    console.log('🔍 Unbookmark API Request:', { postId, data })
     try {
       return this.request(`/posts/${postId}/bookmark`, {
         method: 'DELETE',
@@ -406,18 +447,18 @@ class ApiService {
 
 
 
-  async followUser(userId: string, data: FollowRequest): Promise<FollowResponse> {
+  async followUser(userId: string, data: FollowRequest, authToken?: string): Promise<FollowResponse> {
     return this.request<FollowResponse>(`/users/${userId}/follow`, {
       method: 'POST',
       body: JSON.stringify(data),
-    })
+    }, authToken)
   }
 
-  async unfollowUser(userId: string, data: FollowRequest): Promise<UnfollowResponse> {
+  async unfollowUser(userId: string, data: FollowRequest, authToken?: string): Promise<UnfollowResponse> {
     return this.request<UnfollowResponse>(`/users/${userId}/follow`, {
       method: 'DELETE',
       body: JSON.stringify(data),
-    })
+    }, authToken)
   }
 
   async getNotifications(userId: string, limit: number = 10, offset: number = 0): Promise<NotificationsResponse> {
@@ -427,6 +468,49 @@ class ApiService {
       offset: offset.toString(),
     })
     return this.request<NotificationsResponse>(`/notifications?${params}`)
+  }
+
+  async getEnhancedNotifications(userId: string, limit: number = 10, offset: number = 0): Promise<EnhancedNotificationsResponse> {
+    const params = new URLSearchParams({
+      userId,
+      limit: limit.toString(),
+      offset: offset.toString(),
+    })
+    return this.request<EnhancedNotificationsResponse>(`/notifications/enhanced?${params}`)
+  }
+
+  async getUnreadNotificationCount(userId: string): Promise<{ unreadCount: number }> {
+    try {
+      const response = await this.request(`/notifications/unread-count?userId=${userId}`)
+      return response as { unreadCount: number }
+    } catch (error) {
+      console.error('Error fetching unread notification count:', error)
+      throw error
+    }
+  }
+
+  async markNotificationAsRead(notificationId: string): Promise<{ notification: any }> {
+    try {
+      const response = await this.request(`/notifications/${notificationId}/read`, {
+        method: 'PUT',
+      })
+      return response as { notification: any }
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
+      throw error
+    }
+  }
+
+  async markAllNotificationsAsRead(userId: string): Promise<{ updatedCount: number }> {
+    try {
+      const response = await this.request(`/notifications/read-all?userId=${userId}`, {
+        method: 'PUT',
+      })
+      return response as { updatedCount: number }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error)
+      throw error
+    }
   }
 
   async getActivities(userId: string, limit: number = 10, offset: number = 0): Promise<ActivityResponse> {
@@ -445,6 +529,31 @@ class ApiService {
       offset: offset.toString(),
     })
     return this.request<ActivityResponse>(`/activity/recent?${params}`)
+  }
+
+  async getUserFollowers(userId: string, limit: number = 50, offset: number = 0): Promise<{ followers: any[] }> {
+    const params = new URLSearchParams({
+      limit: limit.toString(),
+      offset: offset.toString(),
+    })
+    return this.request<{ followers: any[] }>(`/users/${userId}/followers?${params}`)
+  }
+
+  async getUserFollowing(userId: string, limit: number = 50, offset: number = 0): Promise<{ following: any[] }> {
+    const params = new URLSearchParams({
+      limit: limit.toString(),
+      offset: offset.toString(),
+    })
+    return this.request<{ following: any[] }>(`/users/${userId}/following?${params}`)
+  }
+
+  async getFollowingFeed(userId: string, limit: number = 50, offset: number = 0): Promise<FeedResponse> {
+    const params = new URLSearchParams({
+      userId,
+      limit: limit.toString(),
+      offset: offset.toString(),
+    })
+    return this.request<FeedResponse>(`/feed/following?${params}`)
   }
 }
 

@@ -27,7 +27,7 @@ interface ExtendedSession {
     username: string;
     email: string;
     bio: string;
-    avatarUrl: string;
+    avatar_url: string;
     createdAt: string;
   };
   dbUserId?: string;
@@ -44,6 +44,7 @@ export default function Navbar() {
     { label: "CLAPS", href: "/" },
     { label: "SNAPS", href: "/snaps" },
     { label: "OPINIO", href: "/opinio" },
+    { label: "SMART CONTRACT", href: "/smart-contract-demo" },
   ];
 
   const openDialog = (type: "x" | "wallet") => setActiveDialog(type);
@@ -54,8 +55,10 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="w-full sticky top-0 md:relative p-4 md:p-6 flex items-center justify-between bg-black font-mono z-[9999]">
-        <div className="md:hidden z-50">
+      <nav className="w-full sticky top-0 p-4 md:p-6 flex items-center justify-between backdrop-blur-lg font-mono z-[9999]">
+        
+        {/* Mobile + iPad Menu Drawer (visible until lg) */}
+        <div className="lg:hidden z-50">
           <Drawer>
             <DrawerTrigger className="p-2 text-white">
               <Menu size={24} />
@@ -74,14 +77,6 @@ export default function Navbar() {
                         ? "text-[#E4761B]"
                         : "text-[#A0A0A0] hover:text-white"
                     }`}
-                    onClick={() => {
-                      const drawerTrigger = document.querySelector(
-                        "[data-radix-popper-content-wrapper]"
-                      );
-                      if (drawerTrigger) {
-                        drawerTrigger.classList.remove("open");
-                      }
-                    }}
                   >
                     {item.label}
                   </Link>
@@ -91,6 +86,7 @@ export default function Navbar() {
           </Drawer>
         </div>
 
+        {/* Logo (always visible) */}
         <div className="flex items-center z-50">
           <Image
             src="/navlogo.png"
@@ -101,14 +97,15 @@ export default function Navbar() {
           />
         </div>
 
-        <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 gap-8 items-center">
+        {/* Desktop Nav Links (only lg and up) */}
+        <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 gap-8 items-center">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={`tracking-widest text-sm font-bold transition-colors ${
                 pathname === item.href
-                  ? "text-[#E4761B]"
+                  ? "text-blue-600"
                   : "text-[#A0A0A0] hover:text-white"
               }`}
             >
@@ -117,20 +114,31 @@ export default function Navbar() {
           ))}
         </div>
 
-        <div className="hidden md:flex gap-2 items-center">
+        {/* Desktop Buttons (only lg and up) */}
+        <div className="hidden lg:flex gap-2 items-center">
+          
           <button
+     
             onClick={() => openDialog("x")}
-            className="text-[#E4761B] bg-white rounded px-3 py-1 text-xs font-bold shadow hover:text-white hover:bg-[#E4761B] transition"
+            className="inline-flex items-center justify-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 gap-[6px] min-w-[105px] transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)] bg-[hsla(220,10%,12%,1)] text-white shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000] hover:bg-[hsla(220,10%,18%,1)] px-3 py-1.5 text-xs rounded-full leading-[24px] font-bold w-full sm:w-auto whitespace-nowrap"
           >
             {isLoggedIn
-              ? session.dbUser?.username || session.user?.name || "CONNECTED"
+              ? session.dbUser?.username || "CONNECTED"
               : "CONNECT X"}
           </button>
           <button
+         style={{
+        boxShadow:
+          "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(26, 19, 161, 0.50), 0px 0px 0px 1px #4F47EB",
+        backgroundColor: "#4F47EB",
+        color: "white",
+        padding: "8px 16px",
+        // borderRadius: "8px",
+      }}
             onClick={() => {
               openDialog("wallet");
             }}
-            className="bg-[#23272B] text-white rounded px-3 py-1 text-xs font-bold shadow"
+            className="bg-[#23272B] text-white rounded-full px-3 py-1 text-xs font-bold shadow"
           >
             {isWalletConnected
               ? `${address?.slice(0, 6)}...${address?.slice(-4)}`
@@ -138,18 +146,28 @@ export default function Navbar() {
           </button>
         </div>
 
-        <div className="flex md:hidden justify-center">
+        {/* Mobile + iPad Connect Button */}
+        <div className="flex lg:hidden justify-center">
           <button
+           style={{
+    boxShadow:
+      "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(161, 87, 19, 0.50), 0px 0px 0px 1px #F97316",
+    backgroundColor: "#6C54F8",
+    color: "white",
+    padding: "8px 16px",
+  }}
             onClick={() => openDialog("x")}
-            className="text-[#E4761B] bg-white rounded px-3 py-1 text-xs font-bold shadow hover:text-white hover:bg-[#E4761B] transition"
+            className="text-[#E4761B] bg-white rounded-full px-3 py-1 text-xs font-bold shadow hover:text-white hover:bg-[#E4761B] transition"
           >
+
             {isLoggedIn
-              ? session.dbUser?.username || session.user?.name || "Connected"
+              ? session.dbUser?.username || "Connected"
               : "Connect"}
           </button>
         </div>
       </nav>
 
+      {/* Dialogs */}
       <AnimatePresence>
         {activeDialog && (
           <motion.div
@@ -193,7 +211,7 @@ export default function Navbar() {
                       className="w-full px-4 py-2 bg-[#333] text-white rounded hover:bg-[#444] font-semibold transition-colors"
                     >
                       Logout (
-                      {session.dbUser?.username || session.user?.name || "User"}
+                      {session.dbUser?.username || "User"}
                       )
                     </button>
                   ) : (
@@ -202,7 +220,8 @@ export default function Navbar() {
                         signIn("twitter");
                         closeDialog();
                       }}
-                      className="w-full px-4 py-2 bg-[#E4761B] text-white rounded hover:bg-[#c86619] font-semibold transition-colors"
+
+                      className="border"
                     >
                       Connect X Now
                     </button>

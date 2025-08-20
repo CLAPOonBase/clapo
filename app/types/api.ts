@@ -89,8 +89,10 @@ export interface SearchUsersResponse {
   users: Array<{
     id: string
     username: string
+    email: string
     bio: string
-    avatarUrl: string
+    avatar_url: string | null
+    created_at: string
   }>
 }
 
@@ -157,7 +159,7 @@ export interface FeedResponse {
 
 // Engagement Types
 export interface ViewPostRequest {
-  userId: string
+  viewerId: string
 }
 
 export interface ViewPostResponse {
@@ -166,14 +168,14 @@ export interface ViewPostResponse {
 }
 
 export interface LikePostRequest {
-  userId: string
+  likerId: string
 }
 
 export interface LikeResponse {
   message: string
   like: {
     id: string
-    userId: string
+    likerId: string
     postId: string
     createdAt: string
   }
@@ -183,13 +185,13 @@ export interface UnlikeResponse {
   message: string
   unlike: {
     id: string
-    userId: string
+    likerId: string
     postId: string
   }
 }
 
 export interface CommentRequest {
-  userId: string
+  commenterId: string
   content: string
   mediaUrl?: string
 }
@@ -198,7 +200,7 @@ export interface CommentResponse {
   message: string
   comment: {
     id: string
-    userId: string
+    commenterId: string
     postId: string
     content: string
     createdAt: string
@@ -220,16 +222,15 @@ export interface RetweetResponse {
 }
 
 export interface BookmarkRequest {
-  userId: string
+  bookmarkerId: string
 }
 
 export interface BookmarkResponse {
   message: string
   bookmark: {
     id: string
-    userId: string
+    bookmarkerId: string
     postId: string
-    createdAt: string
   }
 }
 
@@ -348,8 +349,13 @@ export interface Community {
   id: string
   name: string
   description: string
-  creatorId: string
-  createdAt: string
+  creator_id: string
+  created_at: string
+  creator_username: string
+  creator_avatar: string
+  user_joined_at?: string | null
+  user_is_admin?: boolean
+  member_count: number
 }
 
 export interface CreateCommunityResponse {
@@ -374,10 +380,13 @@ export interface JoinCommunityResponse {
 
 export interface CommunityMember {
   id: string
-  communityId: string
-  userId: string
-  joinedAt: string
-  isAdmin: boolean
+  community_id: string
+  user_id: string
+  joined_at: string
+  is_admin: boolean
+  username: string
+  avatar_url: string
+  bio: string
 }
 
 export interface CommunitiesResponse {
@@ -398,17 +407,67 @@ export interface CommunityMessagesResponse {
 // Notification Types
 export interface Notification {
   id: string
-  userId: string
+  user_id: string
   type: 'like' | 'retweet' | 'follow' | 'comment' | 'mention'
-  refId: string
-  fromUserId: string
-  isRead: boolean
-  createdAt: string
+  content: string
+  related_id: string
+  is_read: boolean
+  created_at: string
+  // Enhanced notification data
+  actor_id?: string
+  actor_username?: string
+  actor_avatar_url?: string
+  post_id?: string
+  post_content_preview?: string
+  post_media_url?: string
+  comment_content?: string
+  mention_context?: string
+}
+
+// Enhanced Notification Types (new backend API)
+export interface EnhancedNotification {
+  id: string
+  type: 'like' | 'comment' | 'retweet' | 'bookmark' | 'follow' | 'dm' | 'community_message'
+  user_id: string
+  from_user_id: string
+  ref_id: string
+  is_read: boolean
+  created_at: string
+  from_user: {
+    id: string
+    username: string
+    email: string
+    bio: string
+    avatar_url: string
+    created_at: string
+  }
+  content: {
+    id: string
+    content: string
+    media_url: string | null
+    created_at: string
+    view_count: number
+    like_count: number
+    comment_count: number
+    retweet_count: number
+    author_username: string
+    author_avatar: string
+  }
+  context: {
+    action: string
+    preview: string
+    engagement: string
+  }
 }
 
 export interface NotificationsResponse {
   message: string
   notifications: Notification[]
+}
+
+export interface EnhancedNotificationsResponse {
+  message: string
+  notifications: EnhancedNotification[]
 }
 
 // Activity Types
@@ -447,15 +506,15 @@ export interface ThreadMessage {
   content: string
   mediaUrl?: string
   createdAt: string
-  senderUsername?: string
 }
 
 export interface CommunityMessage {
   id: string
-  communityId: string
-  senderId: string
+  community_id: string
+  sender_id: string
   content: string
-  mediaUrl?: string
-  createdAt: string
-  senderUsername?: string
+  media_url?: string
+  created_at: string
+  sender_username?: string
+  sender_avatar?: string
 } 

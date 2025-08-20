@@ -5,7 +5,7 @@ import { User, Post } from "@/app/types"
 import { Ellipsis } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useApi } from "../../Context/ApiProvider"
-import { Button } from "../../components/ui/button"
+import { UpdateProfileModal } from "@/app/components/UpdateProfileModal"
 
 type Props = {
   user?: User
@@ -16,10 +16,11 @@ type Tab = "Posts" | "Activity"
 
 export function ProfilePage({ user, posts }: Props) {
   const { data: session } = useSession()
-  const { getUserProfile } = useApi()
+  const { getUserProfile, updateUserProfile } = useApi()
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>("Posts")
+  const [showUpdateModal, setShowUpdateModal] = useState(false)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -27,6 +28,8 @@ export function ProfilePage({ user, posts }: Props) {
         try {
           setLoading(true)
           const profileData = await getUserProfile(session.dbUser.id)
+          console.log('🔍 Profile data from backend:', profileData)
+          console.log('🔍 Avatar URL from backend:', profileData.profile?.avatar_url)
           setProfile(profileData.profile)
         } catch (error) {
           console.error('Failed to fetch profile:', error)
@@ -38,6 +41,25 @@ export function ProfilePage({ user, posts }: Props) {
 
     fetchProfile()
   }, [session?.dbUser?.id, getUserProfile])
+
+  const handleUpdateProfile = async (updateData: { username?: string; bio?: string; avatarUrl?: string }) => {
+    if (!session?.dbUser?.id) return
+
+    try {
+      console.log('🔍 Updating profile with data:', updateData)
+      const response = await updateUserProfile(session.dbUser.id, updateData)
+      console.log('🔍 Update response:', response)
+      
+              if (response.profile) {
+          console.log('🔍 Setting new profile:', response.profile)
+          setProfile(response.profile)
+          console.log('🔍 Profile updated successfully')
+        }
+    } catch (error) {
+      console.error('Failed to update profile:', error)
+      throw error
+    }
+  }
 
   if (loading) {
     return (
@@ -63,6 +85,7 @@ export function ProfilePage({ user, posts }: Props) {
       </div>
     )
   }
+  console.log('🔍 Profile data:', profile)
 
   return (
     <div className="text-white bg-dark-800 rounded-md">
@@ -80,7 +103,9 @@ export function ProfilePage({ user, posts }: Props) {
             alt={profile.username}
             className="w-24 h-24 rounded-full border-4 border-dark-900 object-cover"
             onError={(e) => {
-              e.currentTarget.src = "https://robohash.org/default.png"
+              // Only fallback to default image
+              const target = e.target as HTMLImageElement;
+              target.src = "https://robohash.org/default.png";
             }}
           />
         </div>
@@ -90,9 +115,12 @@ export function ProfilePage({ user, posts }: Props) {
             <button className="text-[#E4761B] bg-white rounded px-3 py-1 text-xs font-bold hover:text-white hover:bg-[#E4761B] transition">
               Buy Ticket
             </button>
-            <Button className="text-xs px-3 py-1 h-8">
+            <button 
+              onClick={() => setShowUpdateModal(true)}
+              className="bg-[#23272B] text-primary rounded px-3 py-1 text-xs font-bold hover:bg-[#2A2F35] transition"
+            >
               Edit Profile
-            </Button>
+            </button>
             <Ellipsis className="text-gray-400 hover:text-white cursor-pointer" />
           </div>
         </div>
@@ -101,9 +129,9 @@ export function ProfilePage({ user, posts }: Props) {
       <div className="p-4">
         <h2 className="text-xl font-bold text-white">{profile.username}</h2>
         <p className="text-gray-400 text-sm">@{profile.username}</p>
-                            <p className="text-gray-400 text-xs mt-1">{profile.bio || 'No bio available'}</p>
+        <p className="text-gray-400 text-xs mt-1">{profile.bio || 'No bio available'}</p>
       </div>
-
+      
       <div className="mt-6">
         <div className="flex justify-around space-x-4 bg-dark-800 p-2 border-b border-secondary">
           {(["Posts", "Activity"] as Tab[]).map((tab) => (
@@ -135,7 +163,9 @@ export function ProfilePage({ user, posts }: Props) {
                           alt={profile.username}
                           className="w-10 h-10 rounded-full object-cover"
                           onError={(e) => {
-                            e.currentTarget.src = "https://robohash.org/default.png"
+                            // Only fallback to default image
+                            const target = e.target as HTMLImageElement;
+                            target.src = "https://robohash.org/default.png";
                           }}
                         />
                         <div className="flex-1">
@@ -147,7 +177,7 @@ export function ProfilePage({ user, posts }: Props) {
                             {post.is_retweet && (
                               <span className="text-green-500 text-sm">🔁 Retweeted</span>
                             )}
-                  </div>
+                          </div>
                           <p className="text-white mb-3">{post.content}</p>
                           
                           {/* Media content */}
@@ -248,13 +278,13 @@ export function ProfilePage({ user, posts }: Props) {
                           <p className="text-gray-300 text-sm">{activity.post_content}</p>
                         </div>
                       </div>
-                  </div>
+                    </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-8">
                   <p className="text-gray-400">No recent activity</p>
-              </div>
+                </div>
               )}
             </div>
           )}
@@ -271,11 +301,11 @@ export function ProfilePage({ user, posts }: Props) {
             <div className="bg-dark-700 rounded-lg p-3">
               <div className="text-2xl font-bold text-blue-500">{profile.total_comments_made || 0}</div>
               <div className="text-sm text-gray-400">Comments</div>
-                  </div>
+            </div>
             <div className="bg-dark-700 rounded-lg p-3">
               <div className="text-2xl font-bold text-green-500">{profile.total_retweets_made || 0}</div>
               <div className="text-sm text-gray-400">Retweets</div>
-              </div>
+            </div>
             <div className="bg-dark-700 rounded-lg p-3">
               <div className="text-2xl font-bold text-purple-500">{profile.total_bookmarks_made || 0}</div>
               <div className="text-sm text-gray-400">Bookmarks</div>
@@ -283,6 +313,14 @@ export function ProfilePage({ user, posts }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Update Profile Modal */}
+      <UpdateProfileModal
+        show={showUpdateModal}
+        onClose={() => setShowUpdateModal(false)}
+        onUpdate={handleUpdateProfile}
+        currentProfile={profile}
+      />
     </div>
   )
 }

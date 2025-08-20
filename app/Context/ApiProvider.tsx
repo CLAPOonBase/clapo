@@ -35,6 +35,7 @@ import {
   JoinCommunityRequest,
   JoinCommunityResponse,
   NotificationsResponse,
+  EnhancedNotificationsResponse,
   ActivityResponse,
   ApiError,
   CreateMessageThreadRequest,
@@ -91,6 +92,9 @@ type Action =
   | { type: 'ADD_COMMUNITY'; payload: Community }
   | { type: 'SET_COMMUNITY_MESSAGES'; payload: { communityId: string; messages: CommunityMessage[] } }
   | { type: 'ADD_COMMUNITY_MESSAGE'; payload: { communityId: string; message: CommunityMessage } }
+  | { type: 'UPDATE_NOTIFICATION'; payload: { id: string; updates: Partial<ApiNotification> } }
+  | { type: 'MARK_ALL_NOTIFICATIONS_READ' }
+  | { type: 'SET_ENHANCED_NOTIFICATIONS'; payload: EnhancedNotification[] }
 
 // State interface
 interface ApiState {
@@ -98,6 +102,7 @@ interface ApiState {
   posts: PostState
   engagement: EngagementState
   notifications: ApiNotification[]
+  enhancedNotifications: EnhancedNotification[]
   activities: ApiActivity[]
   messageThreads: MessageThread[]
   threadMessages: Record<string, ThreadMessage[]>
@@ -126,11 +131,12 @@ const initialState: ApiState = {
     viewedPosts: new Set()
   },
   notifications: [],
+  enhancedNotifications: [],
   activities: [],
   messageThreads: [],
   threadMessages: {},
   communities: [],
-  communityMessages: {}
+  communityMessages: {},
 }
 
 // Reducer
@@ -365,6 +371,26 @@ function apiReducer(state: ApiState, action: Action): ApiState {
         }
       }
     
+    case 'UPDATE_NOTIFICATION':
+      return {
+        ...state,
+        notifications: state.notifications.map(notification =>
+          notification.id === action.payload.id ? { ...notification, ...action.payload.updates } : notification
+        )
+      }
+    
+    case 'MARK_ALL_NOTIFICATIONS_READ':
+      return {
+        ...state,
+        notifications: state.notifications.map(notification => ({ ...notification, is_read: true }))
+      }
+    
+    case 'SET_ENHANCED_NOTIFICATIONS':
+      return {
+        ...state,
+        enhancedNotifications: action.payload
+      }
+    
     default:
       return state
   }
@@ -387,8 +413,12 @@ interface ApiContextType {
 
   viewPost: (postId: string, userId: string) => Promise<void>
   commentPost: (postId: string, data: CommentRequest) => Promise<any>
+  addComment: (postId: string, content: string, userId: string) => Promise<any>
+  getPostComments: (postId: string) => Promise<CommentResponse[]>
   getUserProfile: (userId: string) => Promise<any>
+  updateUserProfile: (userId: string, data: UpdateProfileRequest) => Promise<any>
   fetchNotifications: (userId: string) => Promise<void>
+  fetchEnhancedNotifications: (userId: string) => Promise<void>
   fetchActivities: (userId: string) => Promise<void>
   refreshUserData: (userId: string) => Promise<void>
   getMessageThreads: (userId: string) => Promise<void>
@@ -399,10 +429,18 @@ interface ApiContextType {
   createCommunity: (data: CreateCommunityRequest) => Promise<void>
   getCommunities: (searchQuery?: string) => Promise<void>
   joinCommunity: (communityId: string, data: JoinCommunityRequest) => Promise<void>
-  getCommunityMembers: (communityId: string) => Promise<void>
+  getCommunityMembers: (communityId: string) => Promise<any>
   sendCommunityMessage: (communityId: string, data: SendMessageRequest) => Promise<void>
   getCommunityMessages: (communityId: string) => Promise<void>
   getUserCommunities: (userId: string) => Promise<void>
+  getUserFollowers: (userId: string, limit: number, offset: number) => Promise<any>
+  getUserFollowing: (userId: string, limit: number, offset: number) => Promise<any>
+  getFollowingFeed: (userId: string, limit: number, offset: number) => Promise<any>
+  followUser: (targetUserId: string, data: FollowRequest) => Promise<any>
+  unfollowUser: (targetUserId: string, data: FollowRequest) => Promise<any>
+  getUnreadNotificationCount: (userId?: string) => Promise<number>
+  markNotificationAsRead: (notificationId: string) => Promise<ApiNotification>
+  markAllNotificationsAsRead: (userId?: string) => Promise<number>
 }
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined)
@@ -411,22 +449,6 @@ const ApiContext = createContext<ApiContextType | undefined>(undefined)
 export function ApiProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(apiReducer, initialState)
   const { data: session, status, update } = useSession()
-
-  const fixAvatarUrl = useCallback(async () => {
-    if (session?.dbUser && session?.user?.image && !session.dbUser.avatarUrl) {
-      const updatedUserData = {
-        ...session.dbUser,
-        avatarUrl: session.user.image
-      };
-      
-      await update({
-        dbUserId: session.dbUser,
-        dbUser: updatedUserData,
-        needsPasswordSetup: false,
-        twitterData: session.dbUser || null
-      });
-    }
-  }, [session, update]);
 
   const testUserProfile = useCallback(async (userId: string) => {
     try {
@@ -460,16 +482,21 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_LOADING', payload: true })
     } else if (status === 'authenticated' && session?.dbUser) {
       const userData = { ...session.dbUser };
-      if (!userData.avatarUrl && session.user?.image) {
-        userData.avatarUrl = session.user.image;
-      }
+      
+      console.log('🔍 ApiProvider Debug:', {
+        status,
+        sessionDbUser: session.dbUser,
+        userData,
+        avatarUrl: userData.avatar_url,
+        hasAvatar: !!userData.avatar_url
+      });
       
       const apiUser: ApiUser = {
-        id: session.user ,
+        id: userData.id,
         username: userData.username,
         email: userData.username,
         bio: userData.bio,
-        avatarUrl: userData.avatarUrl,
+        avatarUrl: userData.avatar_url,
         createdAt: userData.holdings ? new Date().toISOString() : new Date().toISOString(),
         followerCount: 0,
         followingCount: 0
@@ -479,10 +506,9 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       if (session.dbUser?.id) {
         fetchPosts(session.dbUser.id)
         fetchNotifications(session.dbUser.id)
+        fetchEnhancedNotifications(session.dbUser.id)
         fetchActivities(session.dbUser.id)
       }
-    } else if (status === 'authenticated' && session?.twitterData) {
-      dispatch({ type: 'SET_LOADING', payload: false })
     } else if (status === 'unauthenticated') {
       dispatch({ type: 'CLEAR_USER' })
     }
@@ -520,18 +546,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   }
 
   // Get current user ID from session
-  const getCurrentUserId = (): string | null => {
-    console.log('🔍 Session Debug:', { 
-      sessionDbUser: session?.dbUser,
-      sessionDbUserId: session?.dbUser?.id,
-      sessionDbUserType: typeof session?.dbUser,
-      sessionDbUserIdType: typeof session?.dbUser?.id,
-      sessionTwitterData: session?.twitterData,
-      stateUser: state.user.currentUser,
-      sessionKeys: session ? Object.keys(session) : []
-    })
-    
-    // The session.dbUser object has an id field
+  const getCurrentUserId = useCallback(() => {
     if (session?.dbUser?.id) {
       console.log('✅ Found user ID:', session.dbUser.id)
       return session.dbUser.id
@@ -552,9 +567,8 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       return session.user.id
     }
     
-    if (session?.twitterData?.username) return session.twitterData.username
     return state.user.currentUser?.id || null
-  }
+  }, [session, state.user.currentUser?.id])
 
   const fetchPosts = useCallback(async (userId?: string) => {
     const targetUserId = userId || getCurrentUserId()
@@ -573,13 +587,25 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const createPost = useCallback(async (postData: any) => {
+    console.log('🔍 createPost called with data:', postData)
+    
+    // Use the userId from postData since it's already validated in SnapComposer
+    const userId = postData.userId
+    console.log('🔍 Using userId from postData:', userId)
+    
+    if (!userId) {
+      console.error('❌ No user ID found in postData, returning early')
+      throw new Error('User ID is required to create a post')
+    }
+
     try {
-      console.log('🚀 Calling apiService.createPost with data:', postData)
+      console.log('🚀 Calling apiService.createPost...')
       const response = await apiService.createPost(postData)
-      console.log('✅ API response:', response)
+      console.log('✅ apiService.createPost response:', response)
       dispatch({ type: 'ADD_POST', payload: response.post })
       return response
     } catch (error) {
+      console.error('❌ Failed to create post:', error)
       console.error('❌ Failed to create post:', error)
       throw error
     }
@@ -637,7 +663,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
   const viewPost = useCallback(async (postId: string, targetUserId: string) => {
     try {
-      await apiService.viewPost(postId, { userId: targetUserId })
+      await apiService.viewPost(postId, { viewerId: targetUserId })
     } catch (error) {
       console.error('Error viewing post:', error)
     }
@@ -653,15 +679,96 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const addComment = useCallback(async (postId: string, content: string, userId: string) => {
+    try {
+      const response = await apiService.commentOnPost(postId, { content, userId })
+      return response
+    } catch (error) {
+      console.error('Failed to add comment:', error)
+      throw error
+    }
+  }, [])
+
+  const getPostComments = useCallback(async (postId: string) => {
+    try {
+      const response = await apiService.getPostComments(postId)
+      return response
+    } catch (error) {
+      console.error('Failed to get post comments:', error)
+      throw error
+    }
+  }, [])
+
   const fetchNotifications = useCallback(async (userId?: string) => {
     const targetUserId = userId || getCurrentUserId()
     if (!targetUserId) return
 
+    console.log('🔍 Fetching notifications for user:', targetUserId);
     try {
       const response = await apiService.getNotifications(targetUserId)
+      console.log('🔍 Notifications API response:', response);
       dispatch({ type: 'SET_NOTIFICATIONS', payload: response.notifications })
+      console.log('✅ Notifications set in state:', response.notifications?.length || 0);
     } catch (error) {
-      console.error('Failed to fetch notifications:', error)
+      console.error('❌ Failed to fetch notifications:', error)
+    }
+  }, [])
+
+  const fetchEnhancedNotifications = useCallback(async (userId?: string) => {
+    const targetUserId = userId || getCurrentUserId()
+    if (!targetUserId) return
+
+    console.log('🔍 Fetching enhanced notifications for user:', targetUserId);
+    try {
+      const response = await apiService.getEnhancedNotifications(targetUserId)
+      console.log('🔍 Enhanced notifications API response:', response);
+      dispatch({ type: 'SET_ENHANCED_NOTIFICATIONS', payload: response.notifications })
+      console.log('✅ Enhanced notifications set in state:', response.notifications?.length || 0);
+    } catch (error) {
+      console.error('❌ Failed to fetch enhanced notifications:', error)
+    }
+  }, [])
+
+  const getUnreadNotificationCount = useCallback(async (userId?: string) => {
+    const targetUserId = userId || getCurrentUserId()
+    if (!targetUserId) return 0
+
+    try {
+      const response = await apiService.getUnreadNotificationCount(targetUserId)
+      return response.unreadCount
+    } catch (error) {
+      console.error('Failed to fetch unread notification count:', error)
+      return 0
+    }
+  }, [])
+
+  const markNotificationAsRead = useCallback(async (notificationId: string) => {
+    try {
+      const response = await apiService.markNotificationAsRead(notificationId)
+      // Update the notification in state
+      dispatch({ 
+        type: 'UPDATE_NOTIFICATION', 
+        payload: { id: notificationId, updates: { is_read: true } } 
+      })
+      return response.notification
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error)
+      throw error
+    }
+  }, [])
+
+  const markAllNotificationsAsRead = useCallback(async (userId?: string) => {
+    const targetUserId = userId || getCurrentUserId()
+    if (!targetUserId) return
+
+    try {
+      const response = await apiService.markAllNotificationsAsRead(targetUserId)
+      // Mark all notifications as read in state
+      dispatch({ type: 'MARK_ALL_NOTIFICATIONS_READ' })
+      return response.updatedCount
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error)
+      throw error
     }
   }, [])
 
@@ -734,11 +841,38 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   const getCommunities = useCallback(async (searchQuery?: string) => {
     try {
       const response = await apiService.getCommunities(searchQuery)
-      dispatch({ type: 'SET_COMMUNITIES', payload: response.communities })
+      const allCommunities = response.communities
+      
+      // If we have a current user, also fetch their communities to merge membership info
+      if (session?.dbUser?.id) {
+        try {
+          const userCommunitiesResponse = await apiService.getUserCommunities(session.dbUser.id)
+          const userCommunities = userCommunitiesResponse.communities
+          
+          // Merge the data: add user membership info to all communities
+          const mergedCommunities = allCommunities.map(community => {
+            const userCommunity = userCommunities.find(uc => uc.id === community.id)
+            return {
+              ...community,
+              user_joined_at: userCommunity?.user_joined_at || null,
+              user_is_admin: userCommunity?.user_is_admin || false
+            }
+          })
+          
+          dispatch({ type: 'SET_COMMUNITIES', payload: mergedCommunities })
+        } catch (userCommunitiesError) {
+          console.error('Failed to fetch user communities for merging:', userCommunitiesError)
+          // Fallback to just all communities without user membership info
+          dispatch({ type: 'SET_COMMUNITIES', payload: allCommunities })
+        }
+      } else {
+        // No user session, just set all communities
+        dispatch({ type: 'SET_COMMUNITIES', payload: allCommunities })
+      }
     } catch (error) {
       console.error('Failed to fetch communities:', error)
     }
-  }, [])
+  }, [session?.dbUser?.id])
 
   const joinCommunity = useCallback(async (communityId: string, data: JoinCommunityRequest) => {
     try {
@@ -750,9 +884,11 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
   const getCommunityMembers = useCallback(async (communityId: string) => {
     try {
-      await apiService.getCommunityMembers(communityId)
+      const response = await apiService.getCommunityMembers(communityId)
+      return response
     } catch (error) {
       console.error('Failed to fetch community members:', error)
+      throw error
     }
   }, [])
 
@@ -766,11 +902,14 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const getCommunityMessages = useCallback(async (communityId: string) => {
+    console.log('🔍 getCommunityMessages called for community:', communityId);
     try {
       const response = await apiService.getCommunityMessages(communityId)
+      console.log('🔍 Community messages API response:', response);
       dispatch({ type: 'SET_COMMUNITY_MESSAGES', payload: { communityId, messages: response.messages } })
+      console.log('✅ Community messages set in state for community:', communityId, 'Count:', response.messages?.length || 0);
     } catch (error) {
-      console.error('Failed to fetch community messages:', error)
+      console.error('❌ Failed to fetch community messages:', error)
     }
   }, [])
 
@@ -793,6 +932,73 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const updateUserProfile = useCallback(async (userId: string, data: UpdateProfileRequest) => {
+    try {
+      const response = await apiService.updateUserProfile(userId, data)
+      return response
+    } catch (error) {
+      console.error('Failed to update user profile:', error)
+      throw error
+    }
+  }, [])
+
+  const followUser = useCallback(async (targetUserId: string, data: FollowRequest) => {
+    try {
+      console.log('🔍 Session Debug for followUser:', {
+        sessionKeys: session ? Object.keys(session) : [],
+        sessionData: session
+      })
+      const authToken = session?.accessToken || session?.token
+      console.log('🔍 Using auth token:', authToken)
+      const response = await apiService.followUser(targetUserId, data, authToken)
+      return response
+    } catch (error) {
+      console.error('Failed to follow user:', error)
+      throw error
+    }
+  }, [session])
+
+  const unfollowUser = useCallback(async (targetUserId: string, data: FollowRequest) => {
+    try {
+      const authToken = session?.accessToken || session?.token
+      const response = await apiService.unfollowUser(targetUserId, data, authToken)
+      return response
+    } catch (error) {
+      console.error('Failed to unfollow user:', error)
+      throw error
+    }
+  }, [session])
+
+  const getUserFollowers = useCallback(async (userId: string, limit: number = 50, offset: number = 0) => {
+    try {
+      const response = await apiService.getUserFollowers(userId, limit, offset)
+      return response
+    } catch (error) {
+      console.error('Failed to fetch user followers:', error)
+      throw error
+    }
+  }, [])
+
+  const getUserFollowing = useCallback(async (userId: string, limit: number = 50, offset: number = 0) => {
+    try {
+      const response = await apiService.getUserFollowing(userId, limit, offset)
+      return response
+    } catch (error) {
+      console.error('Failed to fetch user following:', error)
+      throw error
+    }
+  }, [])
+
+  const getFollowingFeed = useCallback(async (userId: string, limit: number = 50, offset: number = 0) => {
+    try {
+      const response = await apiService.getFollowingFeed(userId, limit, offset)
+      return response
+    } catch (error) {
+      console.error('Failed to fetch following feed:', error)
+      throw error
+    }
+  }, [])
+
   const value: ApiContextType = {
     state,
     dispatch,
@@ -806,11 +1012,19 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     retweetPost,
     bookmarkPost,
     unbookmarkPost,
-
     viewPost,
     commentPost,
+    addComment,
+    getPostComments,
+    followUser,
+    unfollowUser,
     getUserProfile,
+    updateUserProfile,
+    getUserFollowers,
+    getUserFollowing,
+    getFollowingFeed,
     fetchNotifications,
+    fetchEnhancedNotifications,
     fetchActivities,
     refreshUserData,
     getMessageThreads,
@@ -825,6 +1039,9 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     sendCommunityMessage,
     getCommunityMessages,
     getUserCommunities,
+    getUnreadNotificationCount,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
   }
 
   return (

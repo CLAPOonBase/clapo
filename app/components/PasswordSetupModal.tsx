@@ -132,9 +132,16 @@ export default function PasswordSetupModal({ isOpen, onClose, onComplete }: Pass
         console.log('🔍 No access token available, using fallback data');
       }
       
+      console.log('🔍 Session data for signup:', {
+        twitterData: session?.twitterData,
+        accurateTwitterData: accurateTwitterData,
+        provider: session?.provider,
+        email: session?.twitterData?.email || `${session?.twitterData?.username || 'user'}@twitter.com`
+      });
+      
       const signupData = {
-        username: (accurateTwitterData?.username || session?.twitterData?.username || '').replace(/\s+/g, '_').toLowerCase(),
-        email: session?.twitterData?.email || '',
+        username: accurateTwitterData?.username || session?.twitterData?.username || '',
+        email: session?.twitterData?.email || `${session?.twitterData?.username || 'user'}@twitter.com`, // Fallback email
         password: passwordData.password,
         bio: accurateTwitterData?.description || session?.twitterData?.bio || 'Twitter user',
         avatarUrl: accurateTwitterData?.avatarUrl || session?.twitterData?.avatarUrl || '',

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
 import Image from 'next/image'
 import {
@@ -21,6 +21,30 @@ export function SnapComposer() {
   const [mediaUrl, setMediaUrl] = useState<string | undefined>()
   const { createPost, fetchPosts } = useApi();
   const { data: session, status } = useSession();
+  const { getUserProfile, updateUserProfile } = useApi()
+  const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState<any>(null)
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (session?.dbUser?.id) {
+        try {
+          setLoading(true)
+          const profileData = await getUserProfile(session.dbUser.id)
+          setProfile(profileData.profile)
+        } catch (error) {
+          console.error('Failed to fetch profile:', error)
+        } finally {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchProfile()
+  }, [session?.dbUser?.id, getUserProfile])
+
+  console.log("profile", profile)
+  
   const [uploadedMedia, setUploadedMedia] = useState<{
     url: string
     name: string
@@ -30,70 +54,48 @@ export function SnapComposer() {
   const mediaUploadRef = useRef<MediaUploadHandle>(null)
   const userId = session?.dbUser?.id
 
-  // Debug session data
-  console.log('🔍 SnapComposer Session Debug:', {
-    status,
-    session,
-    dbUser: session?.dbUser,
+  console.log('🔍 Composer Debug:', {
+    content,
+    isSubmitting,
+    mediaUrl,
+    uploadedMedia,
     userId,
-    sessionKeys: session ? Object.keys(session) : []
+    sessionDbUser: session?.dbUser,
+    sessionDbUserId: session?.dbUser?.id
   })
 
+  React.useEffect(() => {
+    console.log('🔍 Session changed:', {
+      status,
+      session,
+      userId,
+      sessionDbUser: session?.dbUser
+    })
+  }, [session, status, userId])
+
   const actions = [
-    { icon: ImageIcon, label: 'Photo', color: 'text-blue-400 border-blue-300 hover:text-blue-300', type: 'image' },
-    { icon: Video, label: 'Video', color: 'text-purple-400 border-purple-300 hover:text-purple-300', type: 'video' },
-    { icon: File, label: 'File', color: 'text-emerald-400 border-emerald-300 hover:text-emerald-300', type: 'any' },
-    { icon: Mic, label: 'Audio', color: 'text-amber-400 border-amber-300 hover:text-amber-300', type: 'audio' },
+    { icon: ImageIcon, label: 'Photo', color: 'text-blue-400', type: 'image' },
+    { icon: Video, label: 'Video', color: 'text-purple-400', type: 'video' },
+    { icon: File, label: 'File', color: 'text-emerald-400', type: 'any' },
+    { icon: Mic, label: 'Audio', color: 'text-amber-400', type: 'audio' },
   ]
-
   const handleMediaUpload = (url: string) => {
-    console.log('🔍 handleMediaUpload called with URL:', url)
+    setMediaUrl(url)
     
-    // Check if it's an S3 URL (starts with https://snappostmedia.s3)
-    if (url.startsWith('https://snappostmedia.s3')) {
-      // For S3 URLs, determine type from the URL extension
-      const urlLower = url.toLowerCase()
-      let mediaType: 'image' | 'video' | 'audio' | 'other' = 'other'
-      
-      if (urlLower.includes('.jpg') || urlLower.includes('.jpeg') || urlLower.includes('.png') || urlLower.includes('.gif') || urlLower.includes('.webp')) {
-        mediaType = 'image'
-      } else if (urlLower.includes('.mp4') || urlLower.includes('.webm') || urlLower.includes('.ogg') || urlLower.includes('.mov')) {
-        mediaType = 'video'
-      } else if (urlLower.includes('.mp3') || urlLower.includes('.wav') || urlLower.includes('.m4a')) {
-        mediaType = 'audio'
-      }
+    const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+    const isVideo = url.match(/\.(mp4|webm|ogg|mov)$/i)
+    const isAudio = url.match(/\.(mp3|wav|ogg|m4a)$/i)
+    
+    let mediaType: 'image' | 'video' | 'audio' | 'other' = 'other'
+    if (isImage) mediaType = 'image'
+    else if (isVideo) mediaType = 'video'
+    else if (isAudio) mediaType = 'audio'
 
-      console.log('✅ Setting S3 media:', { url, type: mediaType })
-      setUploadedMedia({
-        url,
-        name: 'uploaded-file',
-        type: mediaType,
-      })
-      setMediaUrl(url)
-    } else {
-      // For local blob URLs, fetch and determine type
-      fetch(url)
-        .then((res) => res.blob())
-        .then((blob) => {
-          const type = blob.type
-          let mediaType: 'image' | 'video' | 'audio' | 'other' = 'other'
-
-          if (type.startsWith('image/')) mediaType = 'image'
-          else if (type.startsWith('video/')) mediaType = 'video'
-          else if (type.startsWith('audio/')) mediaType = 'audio'
-
-          console.log('✅ Setting blob media:', { url, type: mediaType })
-          setUploadedMedia({
-            url,
-            name: 'uploaded-file',
-            type: mediaType,
-          })
-          setMediaUrl(url)
-        })
-        .catch((err) => {
-          console.error('Failed to parse uploaded media', err)
-        })
-    }
+    setUploadedMedia({
+      url,
+      name: 'uploaded-file',
+      type: mediaType,
+    })
   }
 
   const handleRemoveMedia = () => {
@@ -102,9 +104,26 @@ export function SnapComposer() {
   }
 
   const handleSubmit = async () => {
-    if (!content.trim() && !mediaUrl) return
+    console.log('🚀 handleSubmit function called!')
+    
+    // Check if there's any content or media
+    if (!hasContent && !mediaUrl) {
+      alert('Please add some content or media before posting')
+      return
+    }
+    
+    console.log('🔍 Submit Debug:', {
+      session,
+      sessionDbUser: session?.dbUser,
+      sessionDbUserId: session?.dbUser?.id,
+      userId,
+      content: content.trim(),
+      mediaUrl
+    })
+    
     if (!userId) {
       console.error('User ID is missing from session')
+      alert('Please log in to create a post')
       return
     }
 
@@ -122,19 +141,31 @@ export function SnapComposer() {
         retweetRefId: undefined,
       }
 
-      const response = await createPost(postData)
-      console.log('✅ Post created successfully:', response)
+      console.log('🚀 About to call createPost with data:', postData)
+      await createPost(postData)
+      console.log('✅ createPost completed successfully')
 
+      // Reset form immediately after successful post creation
       setContent('')
       setMediaUrl(undefined)
       setUploadedMedia(null)
       
-      // Refresh posts to show the new post
-      await fetchPosts(userId)
+      // Reset loading state immediately
+      setIsSubmitting(false)
+      
+      if (typeof window !== 'undefined' && window.alert) {
+        window.alert('Post created successfully!')
+      }
+      
+      // Fetch posts in background (don't wait for it)
+      fetchPosts(userId).catch(error => {
+        console.error('Failed to fetch posts after creation:', error)
+      })
+      
     } catch (error) {
-      console.error('❌ Failed to create post:', error)
-      // You can add a toast notification here instead of alert
-    } finally {
+      console.error('Failed to create post:', error)
+      alert('Failed to create post. Please try again.')
+      // Reset loading state on error
       setIsSubmitting(false)
     }
   }
@@ -152,9 +183,11 @@ export function SnapComposer() {
     if (!uploadedMedia || !uploadedMedia.url) return null
 
     return (
-      <div className="relative group mt-3">
-        <div className="relative overflow-hidden rounded-lg flex justify-center bg-dark-800/50 border border-dark-700/50">
-          {uploadedMedia.type === 'image' && uploadedMedia.url && (
+      <div        className="relative group mt-3">
+        <div
+
+        className="relative overflow-hidden rounded-lg flex justify-center bg-dark-800/50 border border-dark-700/50">
+          {uploadedMedia.type === 'image' && (
             <Image
               src={uploadedMedia.url}
               alt={uploadedMedia.name || 'Uploaded image'}
@@ -202,33 +235,50 @@ export function SnapComposer() {
 
   const charCount = content.length
   const isOverLimit = charCount > 200
-  const canSubmit = (content.trim() || mediaUrl) && !isSubmitting && !isOverLimit
+  const hasContent = content.trim().length > 0
+  const canSubmit = (hasContent || mediaUrl) && !isSubmitting && !isOverLimit
 
   return (
-    <div className="w-full bg-dark-800 backdrop-blur-sm rounded-xl p-5 shadow-xl">
+    <div 
+     style={{
+  boxShadow:
+    "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
+  // borderRadius: "8px",
+}} 
+    
+    className="w-full bg-dark-800 backdrop-blur-sm rounded-xl p-5 shadow-xl">
       {/* Text Input */}
-      <div className="relative">
+       <div className='flex'>
+       <div className='rounded-full h-14 w-14'>
+     <Image
+  src={profile?.avatar_url && profile.avatar_url.trim() !== "" ? profile.avatar_url : "/4.png"}
+  alt="profile avatar"
+  width={1000}
+  height={1000}
+  className="w-12 h-12 rounded-full"
+/>
+
+       </div>
+      <div className="relative w-full ">
         <TextareaAutosize
           minRows={3}
           maxRows={8}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="What's happening?"
-          className="w-full resize-none bg-dark-700 p-2 rounded-md text-white placeholder-dark-400 text-base leading-relaxed focus:outline-none"
+          className="w-full resize-none bg-transparent p-2 rounded-md text-white placeholder-dark-400 text-base leading-relaxed focus:outline-none"
         />
-        {/* Character Counter */}
-         
-          <div className={`absolute bottom-2 right-2 text-xs font-medium px-2 py-1 rounded ${
-            isOverLimit 
-              ? 'text-red-400 bg-red-900/20' 
-              : charCount > 180 
-                ? 'text-amber-400 bg-amber-900/20'
-                : 'text-dark-400 bg-dark-800/50'
-          }`}>
-            {charCount}/200
-          </div>
-        
+        <div className={`absolute bottom-2 right-2 text-xs font-medium px-2 py-1 rounded ${
+          isOverLimit 
+            ? 'text-red-400 bg-red-900/20' 
+            : charCount > 180 
+              ? 'text-amber-400 bg-amber-900/20'
+              : 'text-dark-400 bg-dark-800/50'
+        }`}>
+          {charCount}/200
+        </div>
       </div>
+     </div>
 
       {/* Hidden Media Upload Component */}
       <MediaUpload
@@ -252,7 +302,8 @@ export function SnapComposer() {
                 key={label}
                 onClick={() => mediaUploadRef.current?.openFileDialog()}
                 disabled={isSubmitting}
-                className={`flex border border-opacity-30 items-center gap-2 px-3 py-2 rounded-lg hover:bg-dark-800/50 transition-all duration-200 ${color} ${
+                // className={`flex items-center gap-2 px-3 py-2 rounded-lg ${color} ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-dark-800/50 transition-all duration-200 ${color} ${
                   isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                 }`}
                 title={label}
@@ -267,7 +318,11 @@ export function SnapComposer() {
 
           {/* Submit Button */}
           <button
-            onClick={handleSubmit}
+            onClick={() => {
+              console.log('🔍 Submit button clicked!')
+              console.log('🔍 Button state:', { canSubmit, content, mediaUrl, isSubmitting, isOverLimit })
+              handleSubmit()
+            }}
             disabled={!canSubmit}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
               canSubmit

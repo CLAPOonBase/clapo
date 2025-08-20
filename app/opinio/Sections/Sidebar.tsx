@@ -100,6 +100,14 @@ export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
             ))}
         </nav>
         <div
+           style={{
+        boxShadow:
+          "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(26, 19, 161, 0.50), 0px 0px 0px 1px #4F47EB",
+        backgroundColor: "#4F47EB",
+        color: "white",
+        padding: "8px 16px",
+        // borderRadius: "8px",
+      }}
           onClick={() => handleNavClick("createmarket")}
           className={`flex justify-center items-center py-3 bg-[#6E54FF] text-white rounded-[100px] hover:bg-[#836EF9] cursor-pointer transition-all duration-200 shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB] hover:shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB] ${
             currentPage === "createmarket" ? "bg-[#836EF9]" : ""

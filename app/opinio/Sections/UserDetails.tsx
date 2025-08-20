@@ -81,7 +81,7 @@ const UserDetails = () => {
       <div className="w-full rounded-md md:flex md:space-x-4 space-y-4 md:space-y-0 justify-between">
         <div className="bg-[#1A1A1A] p-4 rounded-md w-full flex flex-col text-left border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
           <div className="flex items-center space-x-2 mb-2">
-            <span className="text-2xl">
+            <span className="text-2xl text-secondary">
               Hey, {address ? formatAddress(address) : "Guest"}
             </span>
             <div className="flex items-center space-x-1">
@@ -106,10 +106,10 @@ const UserDetails = () => {
             <button
               onClick={handleWalletAction}
               disabled={isConnecting}
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+              className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 address
                   ? "bg-red-600 hover:bg-red-700 text-white"
-                  : "bg-[#6E54FF] hover:bg-[#836EF9] text-white shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]"
+                  : "bg-[#6E54FF] hover:bg-[#836EF9] text-white"
               } ${isConnecting ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <Wallet size={16} />

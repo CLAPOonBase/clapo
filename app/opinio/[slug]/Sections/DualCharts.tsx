@@ -101,8 +101,8 @@ const DualCharts: React.FC = () => {
   }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="">
-          <p className="text-gray-300 text-sm mb-2">{label}</p>
+        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg p-3 shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+          <p className="text-white text-sm mb-2 font-medium">{label}</p>
           {payload.map((entry, index) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
               {entry.name === "fedMaintain"
@@ -122,7 +122,7 @@ const DualCharts: React.FC = () => {
   const CandlestickChart = ({ data }: { data: DataPoint[] }) => (
     <ResponsiveContainer width="100%" height="100%">
       <ComposedChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#2A2A2A" opacity={0.5} />
         <XAxis
           dataKey="name"
           axisLine={false}
@@ -172,15 +172,15 @@ const DualCharts: React.FC = () => {
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="fedGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#6E54FF" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#6E54FF" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="cutGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#F97316" stopOpacity={0.3} />
                   <stop offset="95%" stopColor="#F97316" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#2A2A2A" opacity={0.5} />
               <XAxis
                 dataKey="name"
                 axisLine={false}
@@ -207,11 +207,11 @@ const DualCharts: React.FC = () => {
               <Area
                 type="monotone"
                 dataKey="fedMaintain"
-                stroke="#10B981"
+                stroke="#6E54FF"
                 strokeWidth={2}
                 fill="url(#fedGradient)"
-                dot={{ fill: "#10B981", r: 2 }}
-                activeDot={{ r: 4, fill: "#10B981" }}
+                dot={{ fill: "#6E54FF", r: 2 }}
+                activeDot={{ r: 4, fill: "#6E54FF" }}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -221,7 +221,7 @@ const DualCharts: React.FC = () => {
         return (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} barGap={2}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#2A2A2A" opacity={0.5} />
               <XAxis
                 dataKey="name"
                 axisLine={false}
@@ -238,7 +238,7 @@ const DualCharts: React.FC = () => {
               <Tooltip content={<CustomTooltip />} />
               <Bar
                 dataKey="fedMaintain"
-                fill="#10B981"
+                fill="#6E54FF"
                 radius={[2, 2, 0, 0]}
                 opacity={0.8}
               />
@@ -258,33 +258,33 @@ const DualCharts: React.FC = () => {
   };
 
   return (
-    <div className="w-full relative pb-12">
+    <div className="w-full relative pb-12 bg-[#1A1A1A] rounded-lg p-6 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-8">
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-emerald-500 rounded-full" />
-            <span className="text-gray-300 text-sm font-medium">
+            <div className="w-3 h-3 bg-[#6E54FF] rounded-full shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]" />
+            <span className="text-white text-sm font-medium">
               Fed Maintain Rate {currentValues.fedMaintain}%
             </span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-orange-500 rounded-full" />
-            <span className="text-gray-300 text-sm font-medium">
+            <span className="text-white text-sm font-medium">
               Rate Cut {currentValues.rateCut}%
             </span>
           </div>
         </div>
 
         <div className="flex absolute bottom-0 left-1/2 -translate-x-1/2 items-center space-x-4">
-          <div className="flex bg-gray-800 rounded-lg p-1">
+          <div className="flex bg-[#2A2A2A] rounded-lg p-1 border border-[#2A2A2A] shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000]">
             {(["line", "bar", "candle"] as ChartType[]).map((type) => (
               <button
                 key={type}
                 onClick={() => setChartType(type)}
                 className={`px-1.5 py-1 md:px-3 md:py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
                   chartType === type
-                    ? "text-white bg-gray-700 shadow-sm"
-                    : "text-gray-400 hover:text-white hover:bg-gray-750"
+                    ? "text-white bg-[#6E54FF] shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]"
+                    : "text-gray-400 hover:text-white hover:bg-[#2A2A2A]/70"
                 }`}
               >
                 {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -292,15 +292,15 @@ const DualCharts: React.FC = () => {
             ))}
           </div>
 
-          <div className="flex bg-gray-800 rounded-lg p-1">
+          <div className="flex bg-[#2A2A2A] rounded-lg p-1 border border-[#2A2A2A] shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000]">
             {(["day", "month", "year"] as Period[]).map((period) => (
               <button
                 key={period}
                 onClick={() => setSelectedPeriod(period)}
                 className={`px-1.5 py-1 md:px-3 md:py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
                   selectedPeriod === period
-                    ? "text-white bg-gray-700 shadow-sm"
-                    : "text-gray-400 hover:text-white hover:bg-gray-750"
+                    ? "text-white bg-[#6E54FF] shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]"
+                    : "text-gray-400 hover:text-white hover:bg-[#2A2A2A]/70"
                 }`}
               >
                 {period.charAt(0).toUpperCase() + period.slice(1)}
@@ -313,15 +313,15 @@ const DualCharts: React.FC = () => {
       <div className="relative w-full h-80">
         {renderChart()}
 
-        <div className="absolute bottom-4 left-4 text-xs text-gray-500 font-mono">
+        <div className="absolute bottom-4 left-4 text-xs text-gray-400 font-mono">
           {selectedPeriod.toUpperCase()} VIEW
         </div>
-        <div className="absolute bottom-4 right-4 text-xs text-gray-500 font-mono">
+        <div className="absolute bottom-4 right-4 text-xs text-gray-400 font-mono">
           {chartType.toUpperCase()} CHART
         </div>
       </div>
 
-      <div className="flex justify-between text-xs text-gray-500 mt-4 px-4">
+      <div className="flex justify-between text-xs text-gray-400 mt-4 px-4">
         <span>Start</span>
         <span>Current Period</span>
         <span>End</span>

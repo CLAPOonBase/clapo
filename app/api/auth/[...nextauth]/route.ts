@@ -47,18 +47,103 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt" as const,
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // 24 hours
+    maxAge: 30 * 24 * 60 * 60,
+    updateAge: 24 * 60 * 60,
   },
   jwt: {
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account?.provider === 'twitter' && user) {
+        const twitterUsername = (profile as any)?.data?.username || user.name;
+
+        try {
+          if (twitterUsername) {
+            const searchResponse = await apiService.searchUsers(twitterUsername, 1, 0);
+            
+            if (searchResponse.users.length === 0) {
+              try {
+                const directResponse = await fetch(`https://server.blazeswap.io/api/snaps/users/search?q=${encodeURIComponent(twitterUsername)}&limit=10&offset=0`);
+                const directData = await directResponse.json();
+                
+                if (directData.users && directData.users.length > 0) {
+                  const existingUser = directData.users.find(u => u.username === twitterUsername);
+                  if (existingUser) {
+                    user.dbUser = {
+                      id: existingUser.id,
+                      username: existingUser.username,
+                      email: existingUser.email,
+                      bio: existingUser.bio,
+                      avatar_url: existingUser.avatar_url || '',
+                      createdAt: existingUser.created_at
+                    };
+                    user.provider = 'twitter';
+                    user.needsPasswordSetup = false;
+                    return true;
+                  }
+                }
+              } catch (directError) {
+                console.error('Direct fetch failed:', directError);
+              }
+            }
+            
+            const existingUser = searchResponse.users.find(u => 
+              u.username === twitterUsername
+            );
+
+            if (existingUser) {
+              user.dbUser = {
+                id: existingUser.id,
+                username: existingUser.username,
+                email: existingUser.email,
+                bio: existingUser.bio,
+                avatar_url: existingUser.avatar_url || '',
+                createdAt: existingUser.created_at
+              };
+              user.provider = 'twitter';
+              user.needsPasswordSetup = false;
+              return true;
+            } else {
+              user.provider = 'twitter';
+              user.needsPasswordSetup = true;
+              user.twitterData = {
+                username: twitterUsername,
+                email: user.email || `${twitterUsername}@twitter.com`,
+                bio: (profile as any)?.description || '',
+                avatarUrl: user.image || ''
+              };
+              return true;
+            }
+          } else {
+            user.provider = 'twitter';
+            user.needsPasswordSetup = true;
+            return true;
+          }
+        } catch (error) {
+          console.error('Error checking existing user:', error);
+          user.provider = 'twitter';
+          user.needsPasswordSetup = true;
+          user.twitterData = {
+            username: twitterUsername || user.name || '',
+            email: user.email || `${twitterUsername || user.name || 'user'}@twitter.com`,
+            bio: (profile as any)?.description || '',
+            avatarUrl: user.image || ''
+          };
+          return true;
+        }
+      }
+      return true;
+    },
     async jwt({ token, user, account }) {
       if (account?.provider === 'twitter' && user) {
         token.provider = 'twitter'
-        token.twitterData = user as any
-        token.needsPasswordSetup = true
+        token.twitterData = user.twitterData
+        token.needsPasswordSetup = user.needsPasswordSetup
+        
+        if (user.dbUser) {
+          token.dbUser = user.dbUser
+        }
       }
       
       if (user?.dbUser) {
@@ -71,6 +156,10 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token.dbUser) {
         session.dbUser = token.dbUser
+        session.provider = token.provider as string
+        session.needsPasswordSetup = token.needsPasswordSetup as boolean
+        session.twitterData = token.twitterData
+      } else if (token.provider === 'twitter' && token.needsPasswordSetup) {
         session.provider = token.provider as string
         session.needsPasswordSetup = token.needsPasswordSetup as boolean
         session.twitterData = token.twitterData
