@@ -19,6 +19,7 @@ const eslintConfig = [
       "@next/next/no-img-element": "off",
       "prefer-const": "off",
       "@typescript-eslint/ban-types": "off",
+      "@typescript-eslint/no-unsafe-function-type": "off",
       "react-hooks/exhaustive-deps": "warn",
     },
   },
