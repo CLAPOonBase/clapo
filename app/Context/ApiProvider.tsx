@@ -58,11 +58,7 @@ import type {
   ApiUser,
   ApiPost,
   ApiNotification,
-  ApiActivity,
-  MessageThread,
-  ThreadMessage,
-  Community,
-  CommunityMessage
+  ApiActivity
 } from '../types'
 
 // Action types
