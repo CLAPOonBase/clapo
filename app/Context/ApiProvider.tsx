@@ -601,7 +601,9 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       const response = await apiService.createPost(postData)
       console.log('✅ apiService.createPost response:', response)
       dispatch({ type: 'ADD_POST', payload: response.post })
+      return response
     } catch (error) {
+      console.error('❌ Failed to create post:', error)
       console.error('❌ Failed to create post:', error)
       throw error
     }

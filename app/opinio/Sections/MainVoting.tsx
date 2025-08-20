@@ -67,7 +67,7 @@ export default function MainVoting() {
           ))}
         </div>
 
-        <div className="w-full mt-4 flex justify-center items-center px-4 rounded-md bg-dark-800">
+        <div className="w-full mt-4 flex justify-center items-center px-4 rounded-md bg-black">
           <Search className="text-secondary" />
           <input
             type="search"

@@ -130,6 +130,8 @@ export function SnapComposer() {
     setIsSubmitting(true)
 
     try {
+      console.log('🚀 Submitting post with data:', { userId, content: content.trim(), mediaUrl })
+      
       const postData = {
         userId,
         content: content.trim(),

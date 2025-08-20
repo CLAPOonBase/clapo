@@ -74,11 +74,11 @@ export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
      
       `}
       >
-        <div className="flex items-center pt-4 rounded-md bg-dark-800">
+        <div className="flex items-center pt-4 rounded-md bg-black">
           <Hero />
         </div>
 
-        <nav className="space-y-2 bg-dark-800 rounded-md p-4 text-secondary">
+        <nav className="space-y-2 bg-black rounded-md p-4 text-secondary">
           {navItems
             .filter((item) => item.showOnDesktop !== false)
             .map(({ label, value, icon }) => (
@@ -100,6 +100,14 @@ export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
             ))}
         </nav>
         <div
+           style={{
+        boxShadow:
+          "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(26, 19, 161, 0.50), 0px 0px 0px 1px #4F47EB",
+        backgroundColor: "#4F47EB",
+        color: "white",
+        padding: "8px 16px",
+        // borderRadius: "8px",
+      }}
           onClick={() => handleNavClick("createmarket")}
           className={`flex justify-center items-center py-2 bg-primary text-white rounded-md hover:bg-orange-700 cursor-pointer ${
             currentPage === "createmarket" ? "bg-orange-700" : ""

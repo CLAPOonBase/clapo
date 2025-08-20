@@ -79,9 +79,9 @@ const UserDetails = () => {
   return (
     <div>
       <div className="w-full rounded-md md:flex md:space-x-4 space-y-4 md:space-y-0 justify-between">
-        <div className="bg-dark-800 p-4 rounded-md w-full flex flex-col text-left">
+        <div className="bg-black p-4 rounded-md w-full flex flex-col text-left">
           <div className="flex items-center space-x-2 mb-2">
-            <span className="text-2xl">
+            <span className="text-2xl text-secondary">
               Hey, {address ? formatAddress(address) : "Guest"}
             </span>
             <div className="flex items-center space-x-1">
@@ -104,9 +104,10 @@ const UserDetails = () => {
           </span>
           <div className="flex items-center space-x-2 mt-3">
             <button
+            
               onClick={handleWalletAction}
               disabled={isConnecting}
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+              className={`flex className="inline-flex items-center justify-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 gap-[6px] min-w-[105px] transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)] bg-[hsla(220,10%,12%,1)] text-white shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000] hover:bg-[hsla(220,10%,18%,1)] px-3 py-1.5 text-xs rounded-full leading-[24px] font-bold w-full sm:w-auto whitespace-nowrap" ${
                 address
                   ? "bg-red-600 hover:bg-red-700 text-white"
                   : "bg-primary hover:bg-primary/90 text-white"
@@ -138,7 +139,7 @@ const UserDetails = () => {
           </div>
         </div>
 
-        <div className="bg-dark-800 p-4 rounded-md w-full flex justify-between items-center">
+        <div className="bg-black p-4 rounded-md w-full flex justify-between items-center">
           <div className="flex flex-col items-start text-secondary w-full">
             <span>Balances</span>
 
