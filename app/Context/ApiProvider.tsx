@@ -49,7 +49,8 @@ import {
   MessageThread,
   ThreadMessage,
   Community,
-  CommunityMessage
+  CommunityMessage,
+  EnhancedNotification
 } from '../types/api'
 import type { 
   UserState, 
@@ -58,8 +59,7 @@ import type {
   ApiUser,
   ApiPost,
   ApiNotification,
-  ApiActivity,
-  EnhancedNotification
+  ApiActivity
 } from '../types'
 
 // Action types
