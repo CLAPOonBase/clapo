@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ["api.dicebear.com", "robohash.org","picsum.photos","source.unsplash.com"],
+    domains: ["api.dicebear.com", "robohash.org","picsum.photos","source.unsplash.com", "snappostmedia.s3.ap-southeast-1.amazonaws.com"],
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {

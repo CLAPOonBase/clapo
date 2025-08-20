@@ -79,7 +79,7 @@ const UserDetails = () => {
   return (
     <div>
       <div className="w-full rounded-md md:flex md:space-x-4 space-y-4 md:space-y-0 justify-between">
-        <div className="bg-dark-800 p-4 rounded-md w-full flex flex-col text-left">
+        <div className="bg-[#1A1A1A] p-4 rounded-md w-full flex flex-col text-left border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
           <div className="flex items-center space-x-2 mb-2">
             <span className="text-2xl">
               Hey, {address ? formatAddress(address) : "Guest"}
@@ -99,7 +99,7 @@ const UserDetails = () => {
               </span>
             </div>
           </div>
-          <span className="text-secondary">
+          <span className="text-gray-400">
             Welcome back! Here&apos;s what&apos;s trending in the markets.
           </span>
           <div className="flex items-center space-x-2 mt-3">
@@ -109,7 +109,7 @@ const UserDetails = () => {
               className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
                 address
                   ? "bg-red-600 hover:bg-red-700 text-white"
-                  : "bg-primary hover:bg-primary/90 text-white"
+                  : "bg-[#6E54FF] hover:bg-[#836EF9] text-white shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]"
               } ${isConnecting ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <Wallet size={16} />
@@ -138,8 +138,8 @@ const UserDetails = () => {
           </div>
         </div>
 
-        <div className="bg-dark-800 p-4 rounded-md w-full flex justify-between items-center">
-          <div className="flex flex-col items-start text-secondary w-full">
+        <div className="bg-[#1A1A1A] p-4 rounded-md w-full flex justify-between items-center border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+          <div className="flex flex-col items-start text-gray-400 w-full">
             <span>Balances</span>
 
             {address ? (

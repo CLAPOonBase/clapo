@@ -24,9 +24,10 @@ export interface UploadedMedia {
 }
 
 const MediaUpload = forwardRef<MediaUploadHandle, MediaUploadProps>(
-  ({ onMediaUploaded, className = '' }, ref) => {
+  ({ onMediaUploaded, onMediaRemoved, userId, className = '' }, ref) => {
     const [acceptType, setAcceptType] = useState<'image' | 'video' | 'audio' | 'any'>('any')
     const [inputKey, setInputKey] = useState(0) // to force re-render of <input>
+    const [isUploading, setIsUploading] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     useImperativeHandle(ref, () => ({
@@ -52,11 +53,41 @@ const MediaUpload = forwardRef<MediaUploadHandle, MediaUploadProps>(
       }
     }
 
-    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0]
       if (file) {
-        const fileUrl = URL.createObjectURL(file)
-        onMediaUploaded(fileUrl)
+        setIsUploading(true)
+        try {
+          // Create FormData for upload
+          const formData = new FormData()
+          formData.append('file', file)
+          formData.append('userId', userId || 'temp')
+
+          // Upload to S3 via API
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          })
+
+          if (!response.ok) {
+            throw new Error('Upload failed')
+          }
+
+          const result = await response.json()
+          
+          if (result.success) {
+            onMediaUploaded(result.url)
+          } else {
+            throw new Error(result.error || 'Upload failed')
+          }
+        } catch (error) {
+          console.error('Failed to upload file:', error)
+          // Fallback to local blob URL for now
+          const fileUrl = URL.createObjectURL(file)
+          onMediaUploaded(fileUrl)
+        } finally {
+          setIsUploading(false)
+        }
       }
     }
 

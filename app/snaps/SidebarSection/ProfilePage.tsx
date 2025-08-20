@@ -5,6 +5,7 @@ import { User, Post } from "@/app/types"
 import { Ellipsis } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useApi } from "../../Context/ApiProvider"
+import { Button } from "../../components/ui/button"
 
 type Props = {
   user?: User
@@ -89,9 +90,9 @@ export function ProfilePage({ user, posts }: Props) {
             <button className="text-[#E4761B] bg-white rounded px-3 py-1 text-xs font-bold hover:text-white hover:bg-[#E4761B] transition">
               Buy Ticket
             </button>
-            <button className="bg-[#23272B] text-primary rounded px-3 py-1 text-xs font-bold">
+            <Button className="text-xs px-3 py-1 h-8">
               Edit Profile
-            </button>
+            </Button>
             <Ellipsis className="text-gray-400 hover:text-white cursor-pointer" />
           </div>
         </div>
@@ -126,8 +127,8 @@ export function ProfilePage({ user, posts }: Props) {
               <h3 className="text-lg font-semibold text-white mb-4">User Posts</h3>
               {profile.posts && profile.posts.length > 0 ? (
                 <div className="space-y-4">
-                  {profile.posts.map((post: any) => (
-                    <div key={post.id} className="bg-dark-700 rounded-lg p-4">
+                                     {profile.posts.map((post: any) => (
+                     <div key={post.id} className="bg-dark-700 rounded-lg p-4">
                       <div className="flex items-start space-x-3">
                         <img
                           src={profile.avatar_url || "https://robohash.org/default.png"}

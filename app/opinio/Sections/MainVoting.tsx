@@ -51,15 +51,15 @@ export default function MainVoting() {
       <UserDetails />
 
       <div>
-        <div className="flex space-x-6 justify-center items-center border-b border-secondary-light/10 overflow-x-auto">
+        <div className="flex space-x-6 justify-center items-center border-b border-[#2A2A2A] overflow-x-auto pb-4">
           {navItems.map(({ label }) => (
             <button
               key={label}
               onClick={() => setSelectedCategory(label)}
               className={`pb-2 px-1 text-sm font-medium transition-colors whitespace-nowrap ${
                 selectedCategory === label
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-secondary hover:text-white"
+                  ? "text-[#6E54FF] border-b-2 border-[#6E54FF]"
+                  : "text-gray-400 hover:text-white"
               }`}
             >
               {label}
@@ -67,12 +67,12 @@ export default function MainVoting() {
           ))}
         </div>
 
-        <div className="w-full mt-4 flex justify-center items-center px-4 rounded-md bg-dark-800">
-          <Search className="text-secondary" />
+        <div className="w-full mt-4 flex justify-center items-center px-4 py-3 rounded-md bg-[#1A1A1A] border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+          <Search className="text-gray-400 mr-2" />
           <input
             type="search"
             placeholder="Search Market"
-            className="w-full p-2 bg-transparent"
+            className="w-full p-2 bg-transparent text-white placeholder-gray-400 focus:outline-none"
           />
         </div>
       </div>
@@ -91,7 +91,7 @@ export default function MainVoting() {
               <OpinionCard key={opinion.id} opinion={opinion} />
             ))
           ) : (
-            <p className="text-center col-span-full text-secondary">
+            <p className="text-center col-span-full text-gray-400">
               No opinions found in this category.
             </p>
           )}

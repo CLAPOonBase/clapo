@@ -62,7 +62,7 @@ const CreateMarketPage = () => {
   return (
     <div className="space-y-6 px-4 sm:px-6 text-left">
       <UserDetails />
-      <div className="p-4 sm:p-6 bg-dark-800 text-white rounded-lg space-y-4">
+      <div className="p-4 sm:p-6 bg-[#1A1A1A] text-white rounded-lg space-y-4 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
         <h2 className="text-xl font-semibold tracking-widest">CREATE MARKET</h2>
 
         <div>
@@ -75,7 +75,7 @@ const CreateMarketPage = () => {
                 value="no-options"
                 checked={questionType === "no-options"}
                 onChange={(e) => handleQuestionTypeChange(e.target.value)}
-                className="mr-2 accent-orange-500"
+                className="mr-2 accent-[#6E54FF]"
               />
               <span className="text-sm">NO OPTIONS</span>
             </label>
@@ -86,7 +86,7 @@ const CreateMarketPage = () => {
                 value="with-options"
                 checked={questionType === "with-options"}
                 onChange={(e) => handleQuestionTypeChange(e.target.value)}
-                className="mr-2 accent-orange-500"
+                className="mr-2 accent-[#6E54FF]"
               />
               <span className="text-sm">WITH OPTIONS</span>
             </label>
@@ -102,7 +102,7 @@ const CreateMarketPage = () => {
                 ? "WRITE YOUR QUESTION (e.g., Will it rain tomorrow?)"
                 : "WRITE YOUR QUESTION"
             }
-            className="w-full bg-transparent border border-secondary/20 px-4 py-2 rounded text-sm outline-none"
+            className="w-full bg-transparent border border-[#2A2A2A] px-4 py-2 rounded text-sm outline-none text-white placeholder-gray-400"
           />
         </div>
 
@@ -116,7 +116,7 @@ const CreateMarketPage = () => {
                   placeholder={`CANDIDATES ${String.fromCharCode(65 + idx)}`}
                   value={opt}
                   onChange={(e) => handleOptionChange(idx, e.target.value)}
-                  className="flex-1 bg-transparent border border-secondary/20 px-4 py-2 rounded text-sm outline-none"
+                  className="flex-1 bg-transparent border border-[#2A2A2A] px-4 py-2 rounded text-sm outline-none text-white placeholder-gray-400"
                 />
                 {options.length > 2 && (
                   <button
@@ -130,7 +130,7 @@ const CreateMarketPage = () => {
             ))}
             <button
               onClick={addOption}
-              className="text-xs text-blue-400 hover:underline"
+              className="text-xs text-[#6E54FF] hover:text-[#836EF9] transition-colors"
             >
               + ADD OPTION
             </button>
@@ -143,17 +143,17 @@ const CreateMarketPage = () => {
               <input
                 type="text"
                 placeholder="DAY"
-                className="flex-1 bg-transparent border border-secondary/20 px-3 py-2 rounded text-sm outline-none"
+                className="flex-1 bg-transparent border border-[#2A2A2A] px-3 py-2 rounded text-sm outline-none text-white placeholder-gray-400"
               />
               <input
                 type="text"
                 placeholder="MONTH"
-                className="flex-1 bg-transparent border border-secondary/20 px-3 py-2 rounded text-sm outline-none"
+                className="flex-1 bg-transparent border border-[#2A2A2A] px-3 py-2 rounded text-sm outline-none text-white placeholder-gray-400"
               />
               <input
                 type="text"
                 placeholder="YEAR"
-                className="flex-1 bg-transparent border border-secondary/20 px-3 py-2 rounded text-sm outline-none"
+                className="flex-1 bg-transparent border border-[#2A2A2A] px-3 py-2 rounded text-sm outline-none text-white placeholder-gray-400"
               />
             </div>
           </div>
@@ -163,7 +163,7 @@ const CreateMarketPage = () => {
               <button
                 type="button"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="w-full bg-transparent border border-secondary/20 px-4 py-2 rounded text-sm outline-none text-left flex items-center justify-between hover:border-orange-500/50"
+                className="w-full bg-transparent border border-[#2A2A2A] px-4 py-2 rounded text-sm outline-none text-left flex items-center justify-between hover:border-[#6E54FF]/50 transition-colors"
               >
                 <span className="text-gray-400">
                   {selectedTags.length > 0
@@ -179,21 +179,21 @@ const CreateMarketPage = () => {
                 </span>
               </button>
               {isDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-dark-700 border border-secondary/20 rounded max-h-48 overflow-y-auto z-10">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[#1A1A1A] border border-[#2A2A2A] rounded max-h-48 overflow-y-auto z-10 shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
                   {availableTags.map((tag) => (
                     <button
                       key={tag.label}
                       type="button"
                       onClick={() => toggleTag(tag.label)}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-dark-600 flex items-center justify-between ${
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-[#2A2A2A] flex items-center justify-between transition-colors ${
                         selectedTags.includes(tag.label)
-                          ? "text-orange-400"
+                          ? "text-[#6E54FF]"
                           : "text-gray-300"
                       }`}
                     >
                       <span>{tag.label}</span>
                       {selectedTags.includes(tag.label) && (
-                        <span className="text-orange-400">✓</span>
+                        <span className="text-[#6E54FF]">✓</span>
                       )}
                     </button>
                   ))}
@@ -205,13 +205,13 @@ const CreateMarketPage = () => {
                   {selectedTags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-orange-500 text-white text-xs rounded"
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-[#6E54FF] text-white text-xs rounded shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]"
                     >
                       {tag}
                       <button
                         type="button"
                         onClick={() => removeTag(tag)}
-                        className="hover:text-orange-200"
+                        className="hover:text-[#836EF9] transition-colors"
                       >
                         ✕
                       </button>
@@ -232,11 +232,11 @@ const CreateMarketPage = () => {
                 : "ENTER DESCRIPTION"
             }
             rows={3}
-            className="w-full bg-transparent border border-secondary/20 px-4 py-2 rounded text-sm outline-none resize-none"
+            className="w-full bg-transparent border border-[#2A2A2A] px-4 py-2 rounded text-sm outline-none resize-none text-white placeholder-gray-400"
           />
         </div>
 
-        <button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded transition-colors">
+        <button className="w-full bg-[#6E54FF] hover:bg-[#836EF9] text-white font-semibold py-3 rounded-[100px] transition-all duration-200 shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB] hover:shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]">
           CREATE MARKET
         </button>
       </div>

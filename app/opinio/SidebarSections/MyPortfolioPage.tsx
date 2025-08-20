@@ -87,7 +87,7 @@ const MyPortfolioPage = () => {
       <UserDetails />
 
       <div className="w-full flex flex-col lg:flex-row gap-4">
-        <div className="bg-dark-800 p-4 space-y-4 rounded-md w-full flex flex-col text-left group">
+        <div className="bg-[#1A1A1A] p-4 space-y-4 rounded-md w-full flex flex-col text-left group border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
           <div className="justify-between flex">
             <span className="flex items-center">
               <ArrowRight className="-rotate-45 text-green-500 transition-transform duration-200" />
@@ -116,19 +116,19 @@ const MyPortfolioPage = () => {
               }`}
             ></span>
             {isProfit ? '+' : '-'}${Math.abs(profitLoss).toFixed(2)}{' '}
-            <span className="text-secondary">Today</span>
+            <span className="text-gray-400">Today</span>
           </span>
           <div className="flex space-x-2">
-            <button className="bg-white text-primary rounded-md px-4 py-2 w-full hover:bg-gray-100 hover:shadow-md transition-all duration-200 font-medium">
+            <button className="bg-[#2A2A2A] text-white rounded-md px-4 py-2 w-full hover:bg-[#3A3A3A] transition-all duration-200 font-medium border border-[#2A2A2A]">
               Deposit
             </button>
-            <button className="bg-primary text-white rounded-md px-4 py-2 w-full hover:opacity-90 hover:shadow-md transition-all duration-200 font-medium">
+            <button className="bg-[#6E54FF] text-white rounded-md px-4 py-2 w-full hover:bg-[#836EF9] transition-all duration-200 font-medium shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]">
               Withdraw
             </button>
           </div>
         </div>
 
-        <div className="bg-dark-800 p-4 space-y-4 rounded-md w-full flex flex-col text-left">
+        <div className="bg-[#1A1A1A] p-4 space-y-4 rounded-md w-full flex flex-col text-left border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
           <div className="justify-between flex">
             <span className="flex items-center">
               {isProfit ? (
@@ -145,8 +145,8 @@ const MyPortfolioPage = () => {
                   onClick={() => setSelectedPeriod(period.key)}
                   className={`transition-colors duration-200 hover:text-white ${
                     selectedPeriod === period.key
-                      ? 'text-white bg-black rounded-md px-3 font-bold'
-                      : 'text-secondary px-3'
+                      ? 'text-white bg-[#6E54FF] rounded-md px-3 font-bold shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]'
+                      : 'text-gray-400 px-3'
                   }`}
                 >
                   {period.label}
@@ -163,7 +163,7 @@ const MyPortfolioPage = () => {
             } text-[8px]`}
           >
             {isProfit ? '+' : '-'}${Math.abs(profitLoss).toFixed(2)}{' '}
-            <span className="text-secondary">
+            <span className="text-gray-400">
               {selectedPeriod === '1d'
                 ? 'Today'
                 : selectedPeriod === '1w'

@@ -47,26 +47,53 @@ export function SnapComposer() {
   ]
 
   const handleMediaUpload = (url: string) => {
-    fetch(url)
-      .then((res) => res.blob())
-      .then((blob) => {
-        const type = blob.type
-        let mediaType: 'image' | 'video' | 'audio' | 'other' = 'other'
+    console.log('🔍 handleMediaUpload called with URL:', url)
+    
+    // Check if it's an S3 URL (starts with https://snappostmedia.s3)
+    if (url.startsWith('https://snappostmedia.s3')) {
+      // For S3 URLs, determine type from the URL extension
+      const urlLower = url.toLowerCase()
+      let mediaType: 'image' | 'video' | 'audio' | 'other' = 'other'
+      
+      if (urlLower.includes('.jpg') || urlLower.includes('.jpeg') || urlLower.includes('.png') || urlLower.includes('.gif') || urlLower.includes('.webp')) {
+        mediaType = 'image'
+      } else if (urlLower.includes('.mp4') || urlLower.includes('.webm') || urlLower.includes('.ogg') || urlLower.includes('.mov')) {
+        mediaType = 'video'
+      } else if (urlLower.includes('.mp3') || urlLower.includes('.wav') || urlLower.includes('.m4a')) {
+        mediaType = 'audio'
+      }
 
-        if (type.startsWith('image/')) mediaType = 'image'
-        else if (type.startsWith('video/')) mediaType = 'video'
-        else if (type.startsWith('audio/')) mediaType = 'audio'
+      console.log('✅ Setting S3 media:', { url, type: mediaType })
+      setUploadedMedia({
+        url,
+        name: 'uploaded-file',
+        type: mediaType,
+      })
+      setMediaUrl(url)
+    } else {
+      // For local blob URLs, fetch and determine type
+      fetch(url)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const type = blob.type
+          let mediaType: 'image' | 'video' | 'audio' | 'other' = 'other'
 
-        setUploadedMedia({
-          url,
-          name: 'uploaded-file',
-          type: mediaType,
+          if (type.startsWith('image/')) mediaType = 'image'
+          else if (type.startsWith('video/')) mediaType = 'video'
+          else if (type.startsWith('audio/')) mediaType = 'audio'
+
+          console.log('✅ Setting blob media:', { url, type: mediaType })
+          setUploadedMedia({
+            url,
+            name: 'uploaded-file',
+            type: mediaType,
+          })
+          setMediaUrl(url)
         })
-        setMediaUrl(url)
-      })
-      .catch((err) => {
-        console.error('Failed to parse uploaded media', err)
-      })
+        .catch((err) => {
+          console.error('Failed to parse uploaded media', err)
+        })
+    }
   }
 
   const handleRemoveMedia = () => {
@@ -122,15 +149,15 @@ export function SnapComposer() {
   }
 
   const renderMediaPreview = () => {
-    if (!uploadedMedia) return null
+    if (!uploadedMedia || !uploadedMedia.url) return null
 
     return (
       <div className="relative group mt-3">
         <div className="relative overflow-hidden rounded-lg flex justify-center bg-dark-800/50 border border-dark-700/50">
-          {uploadedMedia.type === 'image' && (
+          {uploadedMedia.type === 'image' && uploadedMedia.url && (
             <Image
               src={uploadedMedia.url}
-              alt={uploadedMedia.name}
+              alt={uploadedMedia.name || 'Uploaded image'}
               width={400}
               height={192}
               className="w-auto h-48 object-cover rounded-lg"
@@ -140,14 +167,14 @@ export function SnapComposer() {
               }}
             />
           )}
-          {uploadedMedia.type === 'video' && (
+          {uploadedMedia.type === 'video' && uploadedMedia.url && (
             <video
               src={uploadedMedia.url}
               className="w-auto h-48 object-cover rounded-lg"
               controls
             />
           )}
-          {uploadedMedia.type === 'audio' && (
+          {uploadedMedia.type === 'audio' && uploadedMedia.url && (
             <div className="p-6 flex items-center justify-center">
               <audio src={uploadedMedia.url} controls className="w-full" />
             </div>
@@ -157,7 +184,7 @@ export function SnapComposer() {
               <div className="text-center">
                 {getMediaIcon(uploadedMedia.type)}
                 <p className="mt-3 text-sm text-dark-400">
-                  {uploadedMedia.name}
+                  {uploadedMedia.name || 'Uploaded file'}
                 </p>
               </div>
             </div>
@@ -208,7 +235,7 @@ export function SnapComposer() {
         ref={mediaUploadRef}
         onMediaUploaded={handleMediaUpload}
         onMediaRemoved={handleRemoveMedia}
-        userId={userId}
+        userId={userId || ''}
         className="hidden"
       />
 

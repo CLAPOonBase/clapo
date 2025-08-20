@@ -74,19 +74,19 @@ export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
      
       `}
       >
-        <div className="flex items-center pt-4 rounded-md bg-dark-800">
+        <div className="flex items-center pt-4 rounded-md bg-[#1A1A1A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)] border border-[#2A2A2A]">
           <Hero />
         </div>
 
-        <nav className="space-y-2 bg-dark-800 rounded-md p-4 text-secondary">
+        <nav className="space-y-2 bg-[#1A1A1A] rounded-md p-4 text-gray-300 shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)] border border-[#2A2A2A]">
           {navItems
             .filter((item) => item.showOnDesktop !== false)
             .map(({ label, value, icon }) => (
               <div
                 key={value}
                 onClick={() => handleNavClick(value)}
-                className={`flex items-center p-3 rounded-lg hover:bg-gray-800 cursor-pointer group relative ${
-                  currentPage === value ? "text-white" : ""
+                className={`flex items-center p-3 rounded-lg hover:bg-[#2A2A2A] cursor-pointer group relative transition-all duration-200 ${
+                  currentPage === value ? "text-white bg-[#6E54FF] shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]" : ""
                 }`}
                 title={label}
               >
@@ -101,8 +101,8 @@ export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
         </nav>
         <div
           onClick={() => handleNavClick("createmarket")}
-          className={`flex justify-center items-center py-2 bg-primary text-white rounded-md hover:bg-orange-700 cursor-pointer ${
-            currentPage === "createmarket" ? "bg-orange-700" : ""
+          className={`flex justify-center items-center py-3 bg-[#6E54FF] text-white rounded-[100px] hover:bg-[#836EF9] cursor-pointer transition-all duration-200 shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB] hover:shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB] ${
+            currentPage === "createmarket" ? "bg-[#836EF9]" : ""
           }`}
         >
           Create a Market
@@ -111,7 +111,7 @@ export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
 
       <div
         style={{ zIndex: "1000" }}
-        className="md:hidden fixed bottom-0 left-0 right-0 bg-dark-800 border-t border-gray-700 z-30"
+        className="md:hidden fixed bottom-0 left-0 right-0 bg-[#1A1A1A] border-t border-[#2A2A2A] z-30 shadow-[0px_-4px_20px_0px_rgba(0,0,0,0.3)]"
       >
         <div className="flex justify-around items-center py-2 px-4">
           {navItems
@@ -120,9 +120,9 @@ export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
               <button
                 key={value}
                 onClick={() => handleNavClick(value)}
-                className={`flex flex-col items-center justify-center p-2 min-w-0 flex-1 ${
+                className={`flex flex-col items-center justify-center p-2 min-w-0 flex-1 transition-all duration-200 ${
                   currentPage === value
-                    ? "text-white bg-gray-700 rounded-full"
+                    ? "text-white bg-[#6E54FF] rounded-full shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]"
                     : "text-gray-400 hover:text-white"
                 }`}
               >
