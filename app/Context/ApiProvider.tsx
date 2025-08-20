@@ -494,7 +494,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
         email: userData.username,
         bio: userData.bio,
         avatarUrl: userData.avatar_url,
-        createdAt: userData.holdings ? new Date().toISOString() : new Date().toISOString(),
+        createdAt: new Date().toISOString(),
         followerCount: 0,
         followingCount: 0
       }
