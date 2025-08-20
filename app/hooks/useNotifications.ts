@@ -153,6 +153,7 @@ export const useNotifications = (userId?: string) => {
         id: `community-${Date.now()}`,
         type: 'community_message',
         user_id: userId,
+        from_user_id: data.senderId || 'unknown',
         ref_id: data.communityId || 'unknown',
         is_read: false,
         created_at: new Date().toISOString(),
