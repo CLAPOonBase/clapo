@@ -285,7 +285,7 @@ export default function MessagePage() {
           {/* Header */}
           <div className="p-4 border-b border-slate-700/50">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold bg-primary bg-clip-text text-transparent">
+              <h2 className="text-xl font-bold bg-[#6E54FF] bg-clip-text text-transparent">
                 Messages
               </h2>
               <ConnectionStatus isConnected={isConnected} />
@@ -365,13 +365,13 @@ export default function MessagePage() {
       </div>
 
       {/* Desktop Layout */}
-      <div className="hidden md:flex w-full rounded-xl shadow-2xl overflow-hidden">
+      <div  className="hidden md:flex w-full rounded-xl shadow-2xl overflow-hidden">
         {/* Sidebar */}
-        <div className="w-80 bg-dark-800 backdrop-blur-sm flex flex-col border-r border-slate-700/50">
+        <div  className="w-80 flex flex-col border-r border-secondary/50">
           {/* Header */}
           <div className="p-6 border-b border-slate-700/50">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold bg-primary bg-clip-text text-transparent">
+              <h2 className="text-2xl font-bold bg-[#6e54ff] bg-clip-text text-transparent">
                 Messages
               </h2>
               <ConnectionStatus isConnected={isConnected} />
@@ -415,7 +415,7 @@ export default function MessagePage() {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col bg-dark-800 backdrop-blur-sm">
+        <div className="flex-1 flex flex-col">
           <ChatHeader 
             activeTab={activeTab}
             currentThread={currentThread}

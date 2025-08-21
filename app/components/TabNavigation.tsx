@@ -1,13 +1,15 @@
-import { motion } from 'framer-motion';
-import { MessageCircle, Users, Plus, Search } from 'lucide-react';
+"use client";
+
+import { motion } from "framer-motion";
+import { MessageCircle, Users, Plus, Search } from "lucide-react";
 
 interface TabNavigationProps {
-  activeTab: 'dms' | 'communities';
-  setActiveTab: (tab: 'dms' | 'communities') => void;
-  dmSection: 'threads' | 'search';
-  setDmSection: (section: 'threads' | 'search') => void;
-  communitySection: 'my' | 'join' | 'create';
-  setCommunitySection: (section: 'my' | 'join' | 'create') => void;
+  activeTab: "dms" | "communities";
+  setActiveTab: (tab: "dms" | "communities") => void;
+  dmSection: "threads" | "search";
+  setDmSection: (section: "threads" | "search") => void;
+  communitySection: "my" | "join" | "create";
+  setCommunitySection: (section: "my" | "join" | "create") => void;
   setShowCreateCommunityModal: (show: boolean) => void;
 }
 
@@ -18,124 +20,137 @@ export const TabNavigation = ({
   setDmSection,
   communitySection,
   setCommunitySection,
-  setShowCreateCommunityModal
-}: TabNavigationProps) => (
-  <div className="space-y-4">
-    {/* Main Tabs */}
-  <div className="relative flex gap-1 p-1 text-sm">
-      {/* Messages */}
-      <button
-        onClick={() => setActiveTab("dms")}
-        className={`relative flex items-center justify-center gap-2 py-3 px-4 font-medium flex-1 ${
-          activeTab === "dms" ? "text-primary" : "text-secondary"
-        }`}
-      >
-        <MessageCircle className="w-4 h-4" />
-        <span>Messages</span>
-        {activeTab === "dms" && (
-          <motion.div
-            layoutId="activeTab"
-            className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary"
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          />
-        )}
-      </button>
+  setShowCreateCommunityModal,
+}: TabNavigationProps) => {
+  const handleSearchClick = () => {
+    // Switch to DMs tab if not already active
+    if (activeTab !== "dms") {
+      setActiveTab("dms");
+    }
+    // Switch to search section
+    setDmSection("search");
+  };
 
-      {/* Communities */}
-      <button
-        onClick={() => setActiveTab("communities")}
-        className={`relative flex items-center justify-center gap-2 py-3 px-4 font-medium flex-1 ${
-          activeTab === "communities" ? "text-primary" : "text-secondary"
-        }`}
-      >
-        <Users className="w-4 h-4" />
-        <span>Communities</span>
-        {activeTab === "communities" && (
-          <motion.div
-            layoutId="activeTab"
-            className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary"
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          />
-        )}
-      </button>
-    </div>
+  return (
+    <div
+      className="bg-dark-800 mt-4 rounded-2xl space-y-4"
+    >
+      {/* Main Tabs */}
+      <div className="relative flex justify-between items-center py-2 rounded-2xl">
+        {[
+          { key: "dms", label: "DM", icon: <MessageCircle className="w-4 h-4" /> },
+          { key: "communities", label: "Communities", icon: <Users className="w-4 h-4" /> },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key as "dms" | "communities")}
+            className={`flex items-center w-full justify-center py-2 font-medium relative z-10 ${
+              activeTab === tab.key ? "text-white" : "text-secondary"
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
 
-    {/* Sub Navigation */}
-    <div>
+        {/* Animated background highlight */}
+        <motion.div
+          className="absolute h-[40px] rounded-full"
+          style={{
+            boxShadow:
+              "0px 1px 0.5px 0px rgba(255,255,255,0.5) inset, 0px 1px 2px 0px rgba(110,84,255,0.5), 0px 0px 0px 1px #6E54FF",
+            backgroundColor: "#6E54FF",
+          }}
+          initial={false}
+          animate={{
+            left: activeTab === "dms" ? "0%" : "50%",
+            width: "50%",
+          }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+        />
+      </div>
+
+      {/* Sub Navigation */}
       {activeTab === "dms" && (
-        <div className="relative flex justify-between gap-2 rounded-full w-full text-nowrap">
+        <div className="relative flex justify-between gap-2 items-center">
+          {[
+            { key: "threads", label: "My Chats" },
+            { key: "search", label: "Find Users" },
+          ].map((section) => (
+            <button
+              key={section.key}
+              onClick={() => setDmSection(section.key as "threads" | "search")}
+              className={`relative px-3 py-1 text-sm font-medium z-10 ${
+                dmSection === section.key ? "text-white" : "text-slate-400"
+              }`}
+            >
+              {section.label}
+            </button>
+          ))}
+
+          {/* highlight bg for dms */}
+          {/* <motion.div
+            className="absolute top-0.5 h-[28px] rounded-lg"
+            style={{
+              boxShadow:
+                "0px 1px 0.5px 0px rgba(255,255,255,0.5) inset, 0px 1px 2px 0px rgba(110,84,255,0.5), 0px 0px 0px 1px #6E54FF",
+              backgroundColor: "#6E54FF",
+            }}
+            initial={false}
+            animate={{
+              left: dmSection === "threads" ? "2%" : "50%",
+              width: "46%",
+            }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          /> */}
+
+       
+        </div>
+      )}
+
+      {activeTab === "communities" && (
+        <div className="relative flex items-center justify-between w-full gap-2">
+          {[
+            { key: "my", label: "My Communities" },
+            { key: "join", label: "Discover" },
+          ].map((section) => (
+            <button
+              key={section.key}
+              onClick={() => setCommunitySection(section.key as "my" | "join")}
+              className={`relative px-3 py-1 text-sm font-medium z-10 ${
+                communitySection === section.key ? "text-white" : "text-slate-400"
+              }`}
+            >
+              {section.label}
+            </button>
+          ))}
+
+          {/* highlight bg for communities */}
+          {/* <motion.div
+            className="absolute top-0.5 h-[28px] rounded-lg"
+            style={{
+              boxShadow:
+                "0px 1px 0.5px 0px rgba(255,255,255,0.5) inset, 0px 1px 2px 0px rgba(110,84,255,0.5), 0px 0px 0px 1px #6E54FF",
+              backgroundColor: "#6E54FF",
+            }}
+            initial={false}
+            animate={{
+              left: communitySection === "my" ? "2%" : "50%",
+              width: "46%",
+            }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          /> */}
+
+          {/* plus button */}
           <button
-            onClick={() => setDmSection("threads")}
-            className={`relative px-2 rounded-lg text-sm font-medium z-10 ${
-              dmSection === "threads" ? "text-white" : "text-slate-400"
-            }`}
+            onClick={() => setShowCreateCommunityModal(true)}
+            className="px-2 py-1 rounded-lg border border-gray-700 hover:bg-slate-700 text-slate-300 hover:text-white transition-all duration-200 relative z-10"
+            title="Create Community"
           >
-            My Chats
-            {dmSection === "threads" && (
-              <motion.div
-                layoutId="dmSection"
-                className="absolute inset-0 border border-secondary rounded-lg"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
-            )}
+            <Plus className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => setDmSection("search")}
-            className={`relative px-2 rounded-lg text-sm font-medium z-10 ${
-              dmSection === "search" ? "text-white" : "text-slate-400"
-            }`}
-          >
-            Find Users
-            {dmSection === "search" && (
-              <motion.div
-                layoutId="dmSection"
-                className="absolute inset-0 border border-secondary rounded-lg"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
-            )}
-             
-          </button>
-          <div className='w-full flex justify-end'>
-            <div className='px-2 flex items-center rounded-full border border-gray-800'>
-                 <Search className="w-4 h-4" />
-            </div>
-          </div>
         </div>
       )}
     </div>
-
-    {activeTab === 'communities' && (
-      <div className="flex items-center justify-between w-full gap-2">
-        <div className="flex gap-2 flex-1">
-          <button
-            onClick={() => setCommunitySection('my')}
-            className={`px-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-              communitySection === 'my'
-                ? 'border text-white'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-            }`}
-          >
-            My Communities
-          </button>
-          <button
-            onClick={() => setCommunitySection('join')}
-            className={`px-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-              communitySection === 'join'
-                ? 'border text-white'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-            }`}
-          >
-            Discover
-          </button>
-        </div>
-        <button
-          onClick={() => setShowCreateCommunityModal(true)}
-          className="px-2 rounded-lg border hover:bg-slate-700 text-slate-300 hover:text-white transition-all duration-200"
-          title="Create Community"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
-      </div>
-    )}
-  </div>
-);
+  );
+};

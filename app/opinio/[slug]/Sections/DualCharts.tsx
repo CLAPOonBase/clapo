@@ -276,7 +276,7 @@ const DualCharts: React.FC = () => {
         </div>
 
         <div className="flex absolute bottom-0 left-1/2 -translate-x-1/2 items-center space-x-4">
-          <div className="flex bg-[#2A2A2A] rounded-lg p-1 border border-[#2A2A2A] shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000]">
+          <div className="flex bg-[#2A2A2A] rounded-lg p-1 border border-[#2A2A2A] mb-2 shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000]">
             {(["line", "bar", "candle"] as ChartType[]).map((type) => (
               <button
                 key={type}
@@ -310,7 +310,7 @@ const DualCharts: React.FC = () => {
         </div>
       </div>
 
-      <div className="relative w-full h-80">
+      <div className="relative w-full h-80 mb-2">
         {renderChart()}
 
         <div className="absolute bottom-4 left-4 text-xs text-gray-400 font-mono">

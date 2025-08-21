@@ -10,6 +10,8 @@ interface DMSectionProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   onStartChat: (user: any) => void;
+  unreadCounts?: { [threadId: string]: number }; // New prop for unread counts
+  lastMessages?: { [threadId: string]: any }; // New prop for last message info
 }
 
 export const DMSection = ({
@@ -20,7 +22,9 @@ export const DMSection = ({
   onSelectThread,
   searchQuery,
   setSearchQuery,
-  onStartChat
+  onStartChat,
+  unreadCounts = {},
+  lastMessages = {}
 }: DMSectionProps) => {
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -57,38 +61,60 @@ export const DMSection = ({
     }
   };
 
-useEffect(() => {
-  const handler = setTimeout(() => {
-    searchUsers(searchQuery);
-  }, 500);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      searchUsers(searchQuery);
+    }, 500);
 
-  return () => clearTimeout(handler);
-}, [searchQuery]);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
-const searchUsers = async (query: string) => {
-  if (!query.trim()) {
-    setSearchResults(allUsers);
-    return;
-  }
-
-  try {
-    const response = await fetch(
-      `https://server.blazeswap.io/api/snaps/users/search?q=${encodeURIComponent(query)}`
-    );
-    const data = await response.json();
-    if (data.users) {
-      setSearchResults(
-        data.users.filter((user: any) => user.id !== session?.dbUser?.id)
-      );
+  const searchUsers = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults(allUsers);
+      return;
     }
-  } catch (error) {
-    console.error("Failed to search users:", error);
-  }
-};
+
+    try {
+      const response = await fetch(
+        `https://server.blazeswap.io/api/snaps/users/search?q=${encodeURIComponent(query)}`
+      );
+      const data = await response.json();
+      if (data.users) {
+        setSearchResults(
+          data.users.filter((user: any) => user.id !== session?.dbUser?.id)
+        );
+      }
+    } catch (error) {
+      console.error("Failed to search users:", error);
+    }
+  };
+
   const getOtherUser = (thread: any) => {
     if (!thread || !session?.dbUser?.id) return null;
     if (thread.isGroup) return null;
     return thread.participants?.find((p: any) => p.user_id !== session.dbUser.id) || null;
+  };
+
+  const formatLastMessageTime = (timestamp: string) => {
+    const now = new Date();
+    const messageTime = new Date(timestamp);
+    const diffInHours = (now.getTime() - messageTime.getTime()) / (1000 * 60 * 60);
+
+    if (diffInHours < 1) {
+      return 'now';
+    } else if (diffInHours < 24) {
+      return messageTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffInHours < 168) { // Less than 7 days
+      return messageTime.toLocaleDateString([], { weekday: 'short' });
+    } else {
+      return messageTime.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+  };
+
+  const truncateMessage = (content: string, maxLength: number = 40) => {
+    if (content.length <= maxLength) return content;
+    return content.substring(0, maxLength) + '...';
   };
 
   return dmSection === 'threads' ? (
@@ -107,19 +133,26 @@ const searchUsers = async (query: string) => {
         ) : (
           state.messageThreads?.map((thread: any) => {
             const otherUser = getOtherUser(thread);
+            const unreadCount = unreadCounts[thread.id] || 0;
+            const lastMessage = lastMessages[thread.id];
+            const hasUnread = unreadCount > 0;
+            const isSelected = selectedThread === thread.id;
+            
             return (
               <div
                 key={thread.id}
                 onClick={() => onSelectThread(thread.id)}
-                className={`group p-4 rounded-xl cursor-pointer transition-all duration-200 border ${
-                  selectedThread === thread.id 
+                className={`group p-4 rounded-xl cursor-pointer transition-all duration-200 border relative ${
+                  isSelected
                     ? 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-blue-500/50 text-white shadow-lg' 
+                    : hasUnread
+                    ? 'bg-gradient-to-r from-green-600/10 to-blue-600/10 border-green-500/30 text-white shadow-md'
                     : 'bg-slate-700/30 border-slate-600/30 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500/50 hover:text-white'
                 }`}
               >
                 <div className="flex items-center space-x-3">
                   <div className="relative">
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-600">
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-600 border-2 border-transparent transition-colors duration-200">
                       {otherUser?.avatar_url ? (
                         <img
                           src={otherUser.avatar_url}
@@ -132,13 +165,52 @@ const searchUsers = async (query: string) => {
                         </div>
                       )}
                     </div>
+                    
+                    {/* Online status indicator (you can add online status logic) */}
+                    <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 border-2 border-slate-800 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                   </div>
+
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold truncate">
-                      {thread.isGroup ? thread.name : otherUser?.username || 'User'}
+                    <div className="flex items-center justify-between mb-1">
+                      <div className={`font-semibold truncate ${hasUnread ? 'text-white' : ''}`}>
+                        {thread.isGroup ? thread.name : otherUser?.username || 'User'}
+                      </div>
+                      
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {/* Timestamp */}
+                        {lastMessage && (
+                          <span className={`text-xs ${
+                            hasUnread ? 'text-green-300' : 'text-slate-500'
+                          }`}>
+                            {formatLastMessageTime(lastMessage.created_at)}
+                          </span>
+                        )}
+                        
+                        {/* Unread count badge */}
+                        {hasUnread && (
+                          <div className="bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg animate-pulse">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                          </div>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Last message preview */}
+                    {lastMessage && (
+                      <div className={`text-sm truncate ${
+                        hasUnread ? 'text-slate-200 font-medium' : 'text-slate-400'
+                      }`}>
+                        {lastMessage.sender_id === session?.dbUser?.id ? 'You: ' : ''}
+                        {truncateMessage(lastMessage.content)}
+                      </div>
+                    )}
                   </div>
                 </div>
+
+                {/* New message pulse indicator */}
+                {hasUnread && (
+                  <div className="absolute inset-0 rounded-xl border-2 border-green-400/20 animate-pulse pointer-events-none"></div>
+                )}
               </div>
             );
           })
@@ -195,7 +267,7 @@ const searchUsers = async (query: string) => {
                     {user.username}
                   </div>
                   <div className="opacity-80 group-hover:opacity-100 transition-opacity">
-                    <button className="text-xs bg-green-900 px-2 rounded-md">
+                    <button className="text-xs bg-green-900 px-2 rounded-md hover:bg-green-800 transition-colors">
                       Add Friend
                     </button>
                   </div>

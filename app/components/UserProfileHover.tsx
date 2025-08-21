@@ -168,7 +168,7 @@ export function UserProfileHover({
         {children}
         
         {showProfile && (
-          <div className={`absolute z-50 ${getPositionClasses()}`}>
+          <div style={{ zIndex: 99 }} className={`absolute flex justify-center items-start top-50 z-50 ${getPositionClasses()}`}>
             <div className="bg-dark-800 border border-dark-700 rounded-lg shadow-xl p-4 w-80 max-w-sm">
               {/* Arrow */}
               <div className={`absolute w-3 h-3 bg-dark-800 border-l border-t border-dark-700 transform rotate-45 ${

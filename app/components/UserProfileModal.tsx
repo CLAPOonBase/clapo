@@ -161,7 +161,7 @@ export function UserProfileModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+    <div style={{zIndex: '999'}} className="fixed flex justify-center rounded-2xl border border-dark-700 bg-black/80">
       <div className="bg-dark-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-dark-800 border-b border-dark-700 p-4 flex items-center justify-between">

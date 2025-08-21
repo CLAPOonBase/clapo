@@ -121,7 +121,7 @@ export default function SocialFeedPage() {
         className='bg-dark-800 mt-4 rounded-2xl'>
 <div
   style={{ zIndex: "9999" }}
-  className="relative flex justify-around items-center pt-4 sticky rounded-2xl top-20"
+  className="relative bg-dark-800 flex justify-around items-center py-4 sticky rounded-2xl top-20"
 >
   {["FOR YOU", "FOLLOWING"].map((tab) => (
     <button
@@ -137,13 +137,14 @@ export default function SocialFeedPage() {
 
   <motion.div
     className="absolute top-2.5 h-[40px] bg-dark-700/70 rounded-full"
-    style={{
-       boxShadow:
-          "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(26, 19, 161, 0.50), 0px 0px 0px 1px #4F47EB",
-        backgroundColor: "#4F47EB",
-        color: "white",
-        padding: "8px 16px"
-    }}
+   style={{
+  boxShadow:
+    "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
+  backgroundColor: "#6E54FF",
+  color: "white",
+  padding: "8px 16px",
+}}
+
     initial={false}
     animate={{
       left: activeTab === "FOR YOU" ? "5%" : "55%", // centers under button
@@ -303,9 +304,13 @@ export default function SocialFeedPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
     >
-      <div className=" flex-col md:flex-row mx-auto text-white flex">
+      <div className="flex-col md:flex-row text-white flex mx-auto">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-        <div className="flex-1 m-4 md:m-0 rounded-md sticky top-20">
+        <div   style={{
+  boxShadow:
+    "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
+  // borderRadius: "8px",
+}} className="flex-1 m-4 md:mt-1 rounded-2xl sticky top-20 bg-dark-800">
           {renderContent()}
         </div>
         {currentPage !== 'messages' && session?.dbUser && (

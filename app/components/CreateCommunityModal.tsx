@@ -4,22 +4,54 @@ import { Plus } from 'lucide-react';
 interface CreateCommunityModalProps {
   show: boolean;
   onClose: () => void;
-  onCreate: (name: string, description: string) => void;
+  creatorId: string; // pass the logged-in user id
+  onCreated?: (community: any) => void; // optional callback after creation
 }
 
 export const CreateCommunityModal = ({
   show,
   onClose,
-  onCreate
+  creatorId,
+  onCreated
 }: CreateCommunityModalProps) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleCreate = () => {
-    if (name.trim() && description.trim()) {
-      onCreate(name.trim(), description.trim());
+  const handleCreate = async () => {
+    if (!name.trim() || !description.trim()) return;
+
+    try {
+      setLoading(true);
+
+      const res = await fetch('http://server.blazeswap.io/api/snaps/communities', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim(),
+          creatorId: creatorId,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to create community');
+      }
+
+      const data = await res.json();
+
+      if (onCreated) onCreated(data);
+
       setName('');
       setDescription('');
+      onClose();
+    } catch (err) {
+      console.error(err);
+      alert('Error creating community!');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -64,10 +96,10 @@ export const CreateCommunityModal = ({
           <div className="flex space-x-3 pt-2">
             <button
               onClick={handleCreate}
-              disabled={!name.trim() || !description.trim()}
+              disabled={!name.trim() || !description.trim() || loading}
               className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:from-slate-600 disabled:to-slate-600 text-white font-medium rounded-xl transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create Community
+              {loading ? 'Creating...' : 'Create Community'}
             </button>
             
             <button

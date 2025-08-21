@@ -200,7 +200,7 @@ style={{
   // borderRadius: "8px",
 }}
 
-      className="bg-dark-700/70 rounded-3xl mt-12 p-6 mb-6 shadow-sm hover:shadow-md transition-all duration-200" onClick={handleView}>
+      className="bg-dark-700/70 rounded-3xl mt-6 p-6 mb-6 shadow-sm hover:shadow-md transition-all duration-200" onClick={handleView}>
         <div className="flex flex-col space-y-4">
           {/* Header */}
           <div className='flex space-x-3'>
