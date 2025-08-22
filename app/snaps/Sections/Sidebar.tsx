@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Search, Bell, User, MessageCircle, Activity } from "lucide-react";
+import { Home, Search, Bell, User, MessageCircle, Activity, Share } from "lucide-react";
 import { PageKey } from "@/app/types";
 import { useState } from "react";
 import UserProfileCard from "./UserProfileCard";
@@ -23,6 +23,7 @@ const navItems: {
   { label: "Activity", value: "activity", icon: <Activity className="w-5 h-5 md:mr-4" />, showOnDesktop: false },
   { label: "Messages", value: "messages", icon: <MessageCircle className="w-5 h-5 md:mr-4" />, showOnMobile: true },
   { label: "Profile", value: "profile", icon: <User className="w-5 h-5 md:mr-4" />, showOnDesktop: true },
+  { label: "Share", value: "share", icon: <Share className="w-5 h-5 md:mr-4" />, showOnDesktop: true },
 ];
 
 export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {

@@ -33,7 +33,7 @@ export const TabNavigation = ({
 
   return (
     <div
-      className="bg-dark-800 mt-4 rounded-2xl space-y-4"
+      className=""
     >
       {/* Main Tabs */}
       <div className="relative flex justify-between items-center py-2 rounded-2xl">

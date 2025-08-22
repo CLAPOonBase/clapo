@@ -275,7 +275,8 @@ export default function MessagePage() {
   }, [selectedThread, selectedCommunity]);
 
   return (
-    <div className="h-[700px] flex overflow-hidden">
+      <div className="md:static fixed inset-x-0 z-[9999]">
+    <div className="md:h-[700px] h-screen flex">
       {/* Mobile Layout */}
       <div className="md:hidden w-full flex">
         {/* Sidebar View */}
@@ -442,6 +443,7 @@ export default function MessagePage() {
         onClose={() => setShowCreateCommunityModal(false)}
         onCreate={handleCreateCommunity}
       />
+    </div>
     </div>
   );
 }

@@ -17,11 +17,12 @@ import { useApi } from '../Context/ApiProvider'
 import { PostSkeleton, LoadingSpinner } from '../components/SkeletonLoader'
 import UserActivityFeed from './Sections/ActivityFeed'
 import { AnimatePresence, motion } from "framer-motion"
+import SharePage from './SidebarSection/SharePage'
 
 export default function SocialFeedPage() {
 
   const [activeTab, setActiveTab] = useState<'FOR YOU' | 'FOLLOWING'>('FOR YOU')
-  const [currentPage, setCurrentPage] = useState<'home' | 'explore' | 'notifications' | 'likes' | 'activity' | 'profile' | 'messages' | 'bookmarks' | 'search'>('home')
+  const [currentPage, setCurrentPage] = useState<'home' | 'explore' | 'notifications' | 'likes' | 'activity' | 'profile' | 'messages' | 'bookmarks' | 'share' | 'search'>('home')
   const [followingPosts, setFollowingPosts] = useState<any[]>([])
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(false)
 
@@ -104,6 +105,8 @@ export default function SocialFeedPage() {
         return <ProfilePage user={mockUsers[0]} posts={[]} />
       case 'search':
         return <SearchPage />
+      case 'share':
+        return <SharePage/>
       case 'messages':
         return <MessagePage />
       case 'home':
@@ -121,7 +124,7 @@ export default function SocialFeedPage() {
         className='bg-dark-800 mt-4 rounded-2xl'>
 <div
   style={{ zIndex: "9999" }}
-  className="relative bg-dark-800 flex justify-around items-center py-4 sticky rounded-2xl top-20"
+  className=" bg-dark-800 flex justify-around items-center py-4 sticky rounded-2xl top-20 md:top-20"
 >
   {["FOR YOU", "FOLLOWING"].map((tab) => (
     <button
@@ -310,7 +313,7 @@ export default function SocialFeedPage() {
   boxShadow:
     "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
   // borderRadius: "8px",
-}} className="flex-1 m-4 md:mt-1 rounded-2xl sticky top-20 bg-dark-800">
+}} className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky top-20 bg-dark-800">
           {renderContent()}
         </div>
         {currentPage !== 'messages' && session?.dbUser && (

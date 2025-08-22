@@ -24,6 +24,7 @@ type Props = {
 }
 
 export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, onRetweet, onBookmark }: Props) {
+  const [visibleCount, setVisibleCount] = useState(2)
   const [showImageModal, setShowImageModal] = useState(false)
   const [showCommentSection, setShowCommentSection] = useState(false)
   const [showEngagement, setShowEngagement] = useState(false)
@@ -328,63 +329,78 @@ style={{
               className={`flex items-center space-x-2 text-gray-500 hover:text-purple-500 transition-colors ${userEngagement.bookmarked ? 'text-purple-500' : ''}`}
             >
               <Bookmark className={`w-5 h-5 ${userEngagement.bookmarked ? 'fill-purple-500' : ''}`} />
-              <span className="text-sm font-medium">{localEngagement.bookmarks} Saved</span>
+              <span className="text-sm hidden md:block font-medium">{localEngagement.bookmarks} Saved</span>
             </button>
           </div>
 
           {/* Inline Comments Section */}
-          <AnimatePresence>
-            {showInlineComments && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-4 pt-4"
-              >
-                {/* Comments List */}
-                {comments.length > 0 && (
-                  <div className="space-y-3 max-h-60 overflow-y-auto">
-                    {comments.slice(0, 3).map((comment) => (
-                      <div key={comment.id} className="flex space-x-3">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden">
-                          {comment.avatar_url ? (
-                            <img src={comment.avatar_url} alt={comment.username} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full bg-gray-300 flex items-center justify-center text-xs font-semibold text-gray-600">
-                              {comment.username?.substring(0, 2)?.toUpperCase() || 'U'}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="bg-gray-50 rounded-2xl px-3 py-2">
-                            <div className="flex items-center space-x-2 mb-1">
-                              <span className="font-semibold text-sm text-gray-900">{comment.username}</span>
-                              <span className="text-xs text-gray-500">{formatCommentTime(comment.created_at)}</span>
-                            </div>
-                            <p className="text-sm text-gray-800">{comment.content}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {comments.length > 3 && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setShowCommentSection(true); }}
-                        className="text-sm text-blue-500 hover:underline pl-11"
-                      >
-                        View all {comments.length} comments
-                      </button>
-                    )}
+       {/* Inline Comments Section */}
+<AnimatePresence>
+  {showInlineComments && (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-4 pt-4"
+    >
+      {/* Comments List */}
+      {comments.length > 0 && (
+        <div className="space-y-3">
+          {comments.slice(0, visibleCount).map((comment) => (
+            <div key={comment.id} className="flex space-x-3">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden">
+                {comment.avatar_url ? (
+                  <img
+                    src={comment.avatar_url}
+                    alt={comment.username}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-300 flex items-center justify-center text-xs font-semibold text-gray-600">
+                    {comment.username?.substring(0, 2)?.toUpperCase() || "U"}
                   </div>
                 )}
-                
-                {comments.length === 0 && (
-                  <p className="text-gray-500 text-sm text-center py-4">No comments yet. Be the first to comment!</p>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="bg-gray-50 rounded-2xl px-3 py-2">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <span className="font-semibold text-sm text-gray-900">
+                      {comment.username}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {formatCommentTime(comment.created_at)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-800">{comment.content}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Show More Button */}
+          {visibleCount < comments.length && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setVisibleCount((prev) => prev + 8)
+              }}
+              className="text-sm text-blue-500 hover:underline pl-11"
+            >
+              Show more comments
+            </button>
+          )}
+        </div>
+      )}
+
+      {comments.length === 0 && (
+        <p className="text-gray-500 text-sm text-center py-4">
+          No comments yet. Be the first to comment!
+        </p>
+      )}
+    </motion.div>
+  )}
+</AnimatePresence>
 
           {/* Comment Input */}
           <form onSubmit={handleCommentSubmit} className="flex items-center space-x-3 pt-4 ">
@@ -411,13 +427,6 @@ style={{
             </div>
 
             <div className="flex items-center space-x-2">
-              <button 
-                type="button"
-                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Paperclip className="w-5 h-5" />
-              </button>
               
               <button 
                 type="button"
@@ -459,24 +468,23 @@ style={{
 
       {/* Full Comment Section Modal */}
       <AnimatePresence>
-        {showCommentSection && isApiPost && (
-          <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="fixed inset-0 z-50 flex justify-center items-end sm:items-center sm:p-4"
-          >
-            <div className="bg-white w-full sm:w-[600px] rounded-t-2xl sm:rounded-2xl shadow-lg max-h-[90%] overflow-y-auto">
-              <CommentSection
-                post={post}
-                onClose={() => setShowCommentSection(false)}
-                onCommentAdded={handleCommentAdded}
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+  {showCommentSection && isApiPost && (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.3 }}
+      className="mt-4"
+    >
+      <CommentSection
+        post={post}
+        onClose={() => setShowCommentSection(false)}
+        onCommentAdded={handleCommentAdded}
+      />
+    </motion.div>
+  )}
+</AnimatePresence>
+
 
       {/* Engagement Details */}
       {showEngagement && isApiPost && (
