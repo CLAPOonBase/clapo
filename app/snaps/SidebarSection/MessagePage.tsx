@@ -441,7 +441,8 @@ export default function MessagePage() {
       <CreateCommunityModal 
         show={showCreateCommunityModal}
         onClose={() => setShowCreateCommunityModal(false)}
-        onCreate={handleCreateCommunity}
+        creatorId={session?.dbUser?.id || ''}
+        onCreated={handleCreateCommunity}
       />
     </div>
     </div>
