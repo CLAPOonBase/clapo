@@ -356,7 +356,7 @@ export default function MessagePage() {
             currentUserId={session?.dbUser?.id} 
           />
 
-          <div className="p-4">
+          <div className="p-4 absolute bottom-52 bg-dark-800 w-full">
             <MessageInput 
               onSend={handleSendMessage}
               disabled={!selectedThread && !selectedCommunity}
