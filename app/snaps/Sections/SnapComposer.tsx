@@ -296,14 +296,7 @@ export function SnapComposer() {
         onClose={handleCloseToast}
       />
       
-      <div 
-       style={{
-        boxShadow:
-          "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
-        // borderRadius: "8px",
-      }} 
-      
-      className="w-full bg-dark-800 backdrop-blur-sm rounded-xl p-5 shadow-xl">
+      <div className="w-full shadow-custom bg-dark-800 backdrop-blur-sm rounded-xl p-5 shadow-xl">
         {/* Text Input */}
          <div className='flex'>
          <div className='rounded-full h-14 w-14'>

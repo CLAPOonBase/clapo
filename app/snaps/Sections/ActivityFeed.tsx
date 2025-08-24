@@ -3,102 +3,186 @@
 import React from 'react'
 
 interface ActivityItem {
-  activity_type: 'like' | 'comment' | 'retweet' | 'post_created'
+  activity_type: 'sale' | 'purchase' | 'upload' | 'bid'
   created_at: string
-  post_content: string
-  post_id: string
+  item_name: string
+  quantity: number
+  price: number
+  user: string
+  avatar: string
 }
 
 interface UserActivityFeedProps {
-  username: string
-  activity: ActivityItem[]
+  username?: string
+  activity?: ActivityItem[]
 }
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  })
-}
+// Fake sales activity data
+const fakeActivity: ActivityItem[] = [
+  {
+    activity_type: 'sale',
+    created_at: '2024-08-25T14:30:00Z',
+    item_name: 'TWILIGHT SKY',
+    quantity: 21,
+    price: 210.17,
+    user: 'IAMTITAN',
+    avatar: "https://robohash.org/iamtitan.png?size=500x500"
+  },
+  {
+    activity_type: 'sale',
+    created_at: '2024-08-25T13:45:00Z',
+    item_name: 'TWILIGHT SKY',
+    quantity: 21,
+    price: 210.17,
+    user: 'IAMTITAN',
+    avatar: "https://robohash.org/iamtitan.png?size=500x500"
+  },
+  {
+    activity_type: 'sale',
+    created_at: '2024-08-25T12:20:00Z',
+    item_name: 'TWILIGHT SKY',
+    quantity: 21,
+    price: 210.17,
+    user: 'IAMTITAN',
+    avatar: "https://robohash.org/iamtitan.png?size=500x500"
+  },
+  {
+    activity_type: 'sale',
+    created_at: '2024-08-25T11:15:00Z',
+    item_name: 'GOLDEN HOUR REFLECTION',
+    quantity: 15,
+    price: 145.50,
+    user: 'PHOTOPRO',
+    avatar: "https://robohash.org/photopro.png?size=500x500"
+  },
+  {
+    activity_type: 'sale',
+    created_at: '2024-08-25T10:30:00Z',
+    item_name: 'URBAN NIGHTSCAPE',
+    quantity: 8,
+    price: 89.99,
+    user: 'CITYSHOTS',
+    avatar: "https://robohash.org/cityshots.png?size=500x500"
+  },
+  {
+    activity_type: 'sale',
+    created_at: '2024-08-25T09:45:00Z',
+    item_name: 'MOUNTAIN SUNRISE',
+    quantity: 12,
+    price: 156.80,
+    user: 'NATURELENS',
+    avatar: "https://robohash.org/naturelens.png?size=500x500"
+  },
+  {
+    activity_type: 'sale',
+    created_at: '2024-08-25T08:20:00Z',
+    item_name: 'ABSTRACT PATTERNS',
+    quantity: 25,
+    price: 312.75,
+    user: 'ARTVISUAL',
+    avatar: "https://robohash.org/artvisual.png?size=500x500"
+  },
+  {
+    activity_type: 'sale',
+    created_at: '2024-08-25T07:10:00Z',
+    item_name: 'OCEAN WAVES',
+    quantity: 18,
+    price: 198.40,
+    user: 'SEASCAPES',
+    avatar: "https://robohash.org/seascapes.png?size=500x500"
+  }
+]
 
 const getActivityIcon = (type: string) => {
   switch (type) {
-    case 'like':
+    case 'sale':
       return (
-        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5..." />
-        </svg>
+        <div className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0 mt-1"></div>
       )
-    case 'comment':
+    case 'purchase':
       return (
-        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01..." />
-        </svg>
+        <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0 mt-1"></div>
       )
-    case 'retweet':
+    case 'upload':
       return (
-        <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M23 4v6h-6M1 20v-6h6..." />
-        </svg>
+        <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0 mt-1"></div>
       )
-    case 'post_created':
+    case 'bid':
       return (
-        <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2..." />
-        </svg>
+        <div className="w-3 h-3 bg-yellow-500 rounded-full flex-shrink-0 mt-1"></div>
       )
     default:
-      return null
+      return (
+        <div className="w-3 h-3 bg-gray-500 rounded-full flex-shrink-0 mt-1"></div>
+      )
   }
 }
 
-const getActivityText = (type: string) => {
-  switch (type) {
-    case 'like':
-      return 'liked a post'
-    case 'comment':
-      return 'commented on a post'
-    case 'retweet':
-      return 'retweeted a post'
-    case 'post_created':
-      return 'created a post'
+const getActivityText = (item: ActivityItem) => {
+  switch (item.activity_type) {
+    case 'sale':
+      return `SOLD ${item.quantity} SNAPS OF ${item.item_name}`
+    case 'purchase':
+      return `BOUGHT ${item.quantity} SNAPS OF ${item.item_name}`
+    case 'upload':
+      return `UPLOADED ${item.quantity} SNAPS OF ${item.item_name}`
+    case 'bid':
+      return `BID ON ${item.quantity} SNAPS OF ${item.item_name}`
     default:
-      return 'interacted with a post'
+      return `INTERACTED WITH ${item.item_name}`
   }
 }
 
 export default function UserActivityFeed({ username, activity }: UserActivityFeedProps) {
-  if (!activity || activity.length === 0) {
-    return (
-      <div 
-      style={{
-  boxShadow:
-    "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
-  // borderRadius: "8px",
-}}
-      className="text-center py-8 min-h-96 mx-4 rounded-2xl bg-dark-800 text-gray-500 sticky top-20">
-        <p>No recent activity</p>
-      </div>
-    )
-  }
+  const displayActivity = activity && activity.length > 0 ? activity : fakeActivity
 
   return (
-    <div className="space-y-4 sticky top-20">
-      {activity.map((activityItem, index) => (
-        <div key={index} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg">
-          <div className="flex-shrink-0 mt-1">{getActivityIcon(activityItem.activity_type)}</div>
-          <div className="flex-1">
-            <div className="flex items-center space-x-2 mb-1">
-              <span className="font-semibold text-gray-900">@{username}</span>
-              <span className="text-gray-500 text-sm">{getActivityText(activityItem.activity_type)}</span>
-              <span className="text-gray-400 text-sm">{formatDate(activityItem.created_at)}</span>
+    <div 
+      style={{
+        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.1) inset, 0px 1px 2px 0px rgba(0, 0, 0, 0.8), 0px 0px 0px 1px #1a1a1a",
+      }}
+      className="bg-dark-800 text-white rounded-2xl mx-4 sticky top-20 overflow-hidden"
+    >
+      {/* Header */}
+      <div className="p-4 ">
+        <h2 className="text-sm font-medium text-gray-300 uppercase tracking-wider">
+          ACTIVITY FEED
+        </h2>
+      </div>
+
+      {/* Activity List */}
+      <div className="max-h-96 overflow-y-auto">
+        {displayActivity.map((activityItem, index) => (
+          <div key={index} className="flex items-start p-4 hover:bg-gray-800 transition-colors">
+            <img 
+              src={activityItem.avatar} 
+              alt={activityItem.user}
+              className="w-8 h-8 rounded-full mr-3 flex-shrink-0"
+            />
+            <div className="flex-1">
+              <div className="text-sm font-medium text-white mb-1">
+                {activityItem.user}
+              </div>
+              <div className="text-xs text-gray-300 mb-1">
+                {getActivityText(activityItem)}
+              </div>
+              <div className="flex items-center">
+                {getActivityIcon(activityItem.activity_type)}
+                <div className="text-sm font-semibold text-green-400 ml-2">
+                  FOR ${activityItem.price.toFixed(2)}
+                </div>
+              </div>
             </div>
-            <p className="text-gray-600 text-sm">{activityItem.post_content}</p>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
+
+      {/* See More Footer */}
+      <div className="p-4 border-t border-gray-700 text-center">
+        <button className="text-xs text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
+          SEE MORE
+        </button>
+      </div>
     </div>
   )
 }
