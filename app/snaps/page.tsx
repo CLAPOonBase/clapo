@@ -121,10 +121,10 @@ export default function SocialFeedPage() {
     "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
   // borderRadius: "8px",
 }}
-        className='bg-dark-800 mt-4 rounded-2xl'>
+        className='bg-dark-800 mt-4 pt-4 rounded-2xl'>
 <div
   style={{ zIndex: "9999" }}
-  className=" bg-dark-800 flex justify-around items-center py-4 sticky rounded-2xl top-20 md:top-20"
+  className="bg-dark-800 flex justify-around items-center py-4 sticky rounded-2xl top-20 md:top-20"
 >
   {["FOR YOU", "FOLLOWING"].map((tab) => (
     <button
@@ -309,11 +309,7 @@ export default function SocialFeedPage() {
     >
       <div className="flex-col md:flex-row text-white flex mx-auto">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-        <div   style={{
-  boxShadow:
-    "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
-  // borderRadius: "8px",
-}} className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky top-20 bg-dark-800">
+        <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky top-20 bg-dark-800 p-4">
           {renderContent()}
         </div>
         {currentPage !== 'messages' && session?.dbUser && (

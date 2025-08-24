@@ -356,7 +356,7 @@ export default function MessagePage() {
             currentUserId={session?.dbUser?.id} 
           />
 
-          <div className="p-4">
+          <div className="p-4 absolute bottom-52 bg-dark-800 w-full">
             <MessageInput 
               onSend={handleSendMessage}
               disabled={!selectedThread && !selectedCommunity}
@@ -441,7 +441,8 @@ export default function MessagePage() {
       <CreateCommunityModal 
         show={showCreateCommunityModal}
         onClose={() => setShowCreateCommunityModal(false)}
-        onCreate={handleCreateCommunity}
+        creatorId={session?.dbUser?.id || ''}
+        onCreated={handleCreateCommunity}
       />
     </div>
     </div>
