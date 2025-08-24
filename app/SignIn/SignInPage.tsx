@@ -27,7 +27,7 @@ interface ExtendedSession {
   access_token?: string;
 }
 
-export default function SignInPage({ close }: { close: () => void }) {
+ function SignInPage({ close }: { close: () => void }) {
   const { connect, disconnect, address } = useWalletContext();
   const { data: session } = useSession() as { data: ExtendedSession | null };
 
@@ -222,3 +222,5 @@ Clapo is in the development phase, you may encounter troubles while logging into
     </motion.div>
   );
 }
+
+export default SignInPage;

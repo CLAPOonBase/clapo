@@ -15,8 +15,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { useWalletContext } from "@/context/WalletContext";
-import SignInDialogContent from "../SignIn/page";
-import SignInPage from "../SignIn/page";
+import SignInPage from "../SignIn/SignInPage";
 
 interface ExtendedSession {
   user?: {
