@@ -18,7 +18,7 @@ const navItems: {
   showOnDesktop?: boolean;
 }[] = [
   { label: "Home", value: "home", icon: <Home className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
-  { label: "Explore", value: "explore", icon: <Search className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
+  // { label: "Explore", value: "explore", icon: <Search className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
   { label: "Notifications", value: "notifications", icon: <Bell className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
   { label: "Activity", value: "activity", icon: <Activity className="w-5 h-5 md:mr-4" />, showOnDesktop: false },
   { label: "Messages", value: "messages", icon: <MessageCircle className="w-5 h-5 md:mr-4" />, showOnMobile: true },

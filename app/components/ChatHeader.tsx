@@ -45,6 +45,7 @@ export const ChatHeader = ({
               alt="user avatar"
               className="w-full h-full object-cover"
             />
+
           </div>
 
           {/* Name and type */}
@@ -58,20 +59,26 @@ export const ChatHeader = ({
               {currentThread.isGroup ? 'Group Chat' : ''}
             </p>
           </div>
+          
         </div>
       ) : activeTab === 'communities' && currentCommunity ? (
-        <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+        <div className="flex items-center space-x-4 justify-between">
+       <div className='flex gap-4 items-center'>
+           <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
             <Hash className="w-7 h-7 text-white" />
           </div>
           <div>
             <h3 className="text-xl font-bold text-white">
               {currentCommunity.name}
             </h3>
-            <p className="text-sm text-slate-400">
+            {/* <p className="text-sm text-slate-400">
               {currentCommunity.description}
-            </p>
+            </p> */}
+                      <span>Pool: <span>$40000</span></span>
+
           </div>
+       </div>
+            <span>Min. Share <span>10</span></span>
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-8 text-slate-400">

@@ -65,7 +65,7 @@ export default function UserProfileCard({ onManageClick }: Props) {
       {/* Cover */}
       <div className="relative h-28 w-full overflow-hidden">
         <Image
-          src={avatarUrl}
+          src="https://pbs.twimg.com/profile_banners/1296970423851077632/1693025431/600x200"
           alt="Cover"
           fill
           className="object-cover"
