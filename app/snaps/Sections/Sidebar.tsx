@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Search, Bell, User, MessageCircle, Activity, Share } from "lucide-react";
+import { Home, Search, Bell, User, MessageCircle, Activity, Share, Blocks } from "lucide-react";
 import { PageKey } from "@/app/types";
 import { useState } from "react";
 import UserProfileCard from "./UserProfileCard";
@@ -23,7 +23,7 @@ const navItems: {
   { label: "Activity", value: "activity", icon: <Activity className="w-5 h-5 md:mr-4" />, showOnDesktop: false },
   { label: "Messages", value: "messages", icon: <MessageCircle className="w-5 h-5 md:mr-4" />, showOnMobile: true },
   { label: "Profile", value: "profile", icon: <User className="w-5 h-5 md:mr-4" />, showOnDesktop: true },
-  { label: "Share", value: "share", icon: <Share className="w-5 h-5 md:mr-4" />, showOnDesktop: true },
+  { label: "Share", value: "share", icon: <Blocks className="w-5 h-5 md:mr-4" />, showOnDesktop: true },
 ];
 
 export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
@@ -46,12 +46,7 @@ export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
 
       {/* Desktop Sidebar (only visible on lg and up) */}
       <div
-       style={{
-  boxShadow:
-    "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
-  // borderRadius: "8px",
-}} 
-        className={`
+        className={`shadow-custom
           hidden lg:block
           sticky top-20
           h-full

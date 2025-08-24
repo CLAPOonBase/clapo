@@ -372,7 +372,7 @@ export default function MessagePage() {
           {/* Header */}
           <div className="p-6 border-b border-slate-700/50">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold bg-[#6e54ff] bg-clip-text text-transparent">
+              <h2 className="text-2xl font-bold bg-white bg-clip-text text-transparent">
                 Messages
               </h2>
               <ConnectionStatus isConnected={isConnected} />

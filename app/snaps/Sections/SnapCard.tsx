@@ -57,23 +57,44 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   const isUserInBookmarks = isApiPost && post.bookmarks?.some(u => u.user_id === currentUserId)
 
   useEffect(() => {
+    // Initialize local engagement counts
+    const initialLikes = isApiPost ? (post.like_count || 0) : (post.likes || 0)
+    const initialComments = isApiPost ? (post.comment_count || 0) : (post.comments || 0)
+    const initialRetweets = isApiPost ? (post.retweet_count || 0) : (post.retweets || 0)
+    const initialBookmarks = isApiPost ? (post.bookmarks?.length || 0) : 0
+
     setLocalEngagement({
-      likes: isApiPost ? (post.like_count || 0) : (post.likes || 0),
-      comments: isApiPost ? (post.comment_count || 0) : (post.comments || 0),
-      retweets: isApiPost ? (post.retweet_count || 0) : (post.retweets || 0),
-      bookmarks: isApiPost ? (post.bookmarks?.length || 0) : 0
+      likes: initialLikes,
+      comments: initialComments,
+      retweets: initialRetweets,
+      bookmarks: initialBookmarks
     })
 
+    // Initialize user engagement status
+    const userLiked = isUserInLikes || liked || state.engagement?.likedPosts?.has(postId) || false
+    const userRetweeted = isUserInRetweets || retweeted || state.engagement?.retweetedPosts?.has(postId) || false
+    const userBookmarked = isUserInBookmarks || bookmarked || state.engagement?.bookmarkedPosts?.has(postId) || false
+
     setUserEngagement({
-      liked: isUserInLikes || liked || state.engagement.likedPosts.has(postId),
-      retweeted: isUserInRetweets || retweeted || state.engagement.retweetedPosts.has(postId),
-      bookmarked: isUserInBookmarks || bookmarked || state.engagement.bookmarkedPosts.has(postId)
+      liked: userLiked,
+      retweeted: userRetweeted,
+      bookmarked: userBookmarked
     })
 
     // Load existing comments if it's an API post
     if (isApiPost && post.comments) {
       setComments(post.comments)
     }
+
+    // Debug logging
+    console.log('Post engagement initialized:', {
+      postId,
+      likes: initialLikes,
+      userLiked,
+      globalLikedPosts: state.engagement?.likedPosts,
+      isUserInLikes,
+      liked
+    })
   }, [isUserInLikes, isUserInRetweets, isUserInBookmarks, liked, retweeted, bookmarked, postId, state.engagement, post])
 
   const handleAction = async (
@@ -86,22 +107,63 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
     onAction?: (id: number | string) => void
   ) => {
     if (!currentUserId || isLoading[type]) return
+    
     setIsLoading(prev => ({ ...prev, [type]: true }))
+    
+    // Store current state for rollback
+    const currentEngagementState = userEngagement[engagementKey]
+    const currentCount = localEngagement[counterKey]
+    
     try {
-      if (userEngagement[engagementKey]) {
-        await undoCall()
+      let apiResult
+      
+      if (currentEngagementState) {
+        // User is un-doing the action
+        console.log(`Attempting to un${type} post ${postId}`)
+        
+        // Update UI immediately (optimistic update)
         setLocalEngagement(prev => ({ ...prev, [counterKey]: Math.max(0, prev[counterKey] - 1) }))
         setUserEngagement(prev => ({ ...prev, [engagementKey]: false }))
         setToast({ message: toastMsg.undo, type: `un${type}` })
+        
+        // Make API call
+        apiResult = await undoCall()
+        console.log(`Un${type} API result:`, apiResult)
+        
       } else {
-        await apiCall()
+        // User is performing the action
+        console.log(`Attempting to ${type} post ${postId}`)
+        
+        // Update UI immediately (optimistic update)
         setLocalEngagement(prev => ({ ...prev, [counterKey]: prev[counterKey] + 1 }))
         setUserEngagement(prev => ({ ...prev, [engagementKey]: true }))
         setToast({ message: toastMsg.do, type: type })
+        
+        // Make API call
+        apiResult = await apiCall()
+        console.log(`${type} API result:`, apiResult)
       }
+      
+      // Update global state if API was successful
+      if (apiResult && state.engagement) {
+        if (currentEngagementState) {
+          // Remove from global state
+          state.engagement[`${type}dPosts`]?.delete(postId)
+        } else {
+          // Add to global state
+          state.engagement[`${type}dPosts`]?.add(postId)
+        }
+      }
+      
+      // Call the parent handler if provided
       onAction?.(isApiPost ? postId : parseInt(postId))
-    } catch {
-      setToast({ message: `Failed to ${type} post`, type: 'error' })
+      
+    } catch (error) {
+      // Rollback UI changes on error
+      console.error(`Failed to ${type} post:`, error)
+      setLocalEngagement(prev => ({ ...prev, [counterKey]: currentCount }))
+      setUserEngagement(prev => ({ ...prev, [engagementKey]: currentEngagementState }))
+      setToast({ message: `Failed to ${type} post. Please try again.`, type: 'error' })
     } finally {
       setIsLoading(prev => ({ ...prev, [type]: false }))
     }
@@ -126,8 +188,12 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
     if (!commentText.trim() || !currentUserId || isLoading.comment) return
 
     setIsLoading(prev => ({ ...prev, comment: true }))
+    
+    // Store current comment count for rollback
+    const currentCommentCount = localEngagement.comments
+    
     try {
-      // Create new comment object
+      // Create new comment object for optimistic update
       const newComment = {
         id: Date.now().toString(), // Temporary ID
         content: commentText.trim(),
@@ -137,12 +203,7 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
         avatar_url: currentUserAvatar
       }
 
-      // Add comment via API if available
-      if (addComment) {
-        await addComment(postId, commentText.trim(), currentUserId)
-      }
-
-      // Update local state
+      // Update UI immediately (optimistic update)
       const updatedComments = [...comments, newComment]
       setComments(updatedComments)
       setLocalEngagement(prev => ({ ...prev, comments: prev.comments + 1 }))
@@ -154,8 +215,18 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
         setShowInlineComments(true)
       }
 
+      // Add comment via API if available
+      if (addComment) {
+        await addComment(postId, commentText.trim(), currentUserId)
+      }
+
     } catch (error) {
+      // Rollback on error
+      setComments(comments) // Reset to original comments
+      setLocalEngagement(prev => ({ ...prev, comments: currentCommentCount }))
+      setCommentText(commentText) // Restore comment text
       setToast({ message: 'Failed to add comment', type: 'error' })
+      console.error('Failed to add comment:', error)
     } finally {
       setIsLoading(prev => ({ ...prev, comment: false }))
     }
@@ -195,13 +266,13 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   return (
     <>
       <div 
-style={{
-  boxShadow:
-    "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
-  // borderRadius: "8px",
-}}
-
-      className="bg-dark-700/70 rounded-3xl mt-6 p-6 mb-6 shadow-sm hover:shadow-md transition-all duration-200" onClick={handleView}>
+        style={{
+          boxShadow:
+            "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
+        }}
+        className="bg-dark-700/70 rounded-3xl mt-6 p-6 mb-6 shadow-sm hover:shadow-md transition-all duration-200" 
+        onClick={handleView}
+      >
         <div className="flex flex-col space-y-4">
           {/* Header */}
           <div className='flex space-x-3'>
@@ -228,7 +299,7 @@ style={{
                     {postAuthor}
                   </span>
                 </UserProfileHover>
-                <span className="text-secondary text-sm">                    {postAuthor}</span>
+                <span className="text-secondary text-sm">{postAuthor}</span>
               </div>
 
               <div className="flex items-center space-x-3">
@@ -264,7 +335,16 @@ style={{
                   <img src={postImage} alt="Post content" className="w-full max-h-80 object-cover cursor-pointer hover:opacity-95"
                     onClick={e => { e.stopPropagation(); setShowImageModal(true) }} />
                 ) : /\.(mp4|webm|ogg|mov)$/i.test(postImage) ? (
-                  <video src={postImage} controls className="w-full max-h-80 bg-black" />
+                  <video 
+                    src={postImage} 
+                    autoPlay 
+                    muted 
+                    loop 
+                    playsInline
+                    controls
+                    className="w-full max-h-80 bg-black"
+                    onClick={(e) => e.stopPropagation()}
+                  />
                 ) : /\.(mp3|wav|ogg|m4a)$/i.test(postImage) ? (
                   <div className="bg-gray-50 p-4 flex items-center space-x-3">
                     <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -289,13 +369,34 @@ style={{
             <div className="flex items-center space-x-6">
               <button 
                 onClick={e => { 
-                  e.stopPropagation(); 
-                  handleAction('like', () => likePost(postId, currentUserId!), () => unlikePost(postId, currentUserId!), 'likes', 'liked', { do: 'Post liked', undo: 'Post unliked' }, onLike) 
+                  e.stopPropagation()
+                  console.log('Like button clicked:', { 
+                    postId, 
+                    currentUserId, 
+                    userEngagement,
+                    localEngagement,
+                    isLoading: isLoading.like 
+                  })
+                  handleAction(
+                    'like', 
+                    () => {
+                      console.log('Calling likePost API')
+                      return likePost(postId, currentUserId!)
+                    }, 
+                    () => {
+                      console.log('Calling unlikePost API')
+                      return unlikePost(postId, currentUserId!)
+                    }, 
+                    'likes', 
+                    'liked', 
+                    { do: 'Post liked', undo: 'Post unliked' }, 
+                    onLike
+                  ) 
                 }}
-                disabled={isLoading.like}
-                className={`flex items-center space-x-2 text-gray-500 hover:text-red-500 transition-colors ${userEngagement.liked ? 'text-red-500' : ''}`}
+                disabled={isLoading.like || !currentUserId}
+                className={`flex items-center space-x-2 text-gray-500 hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.liked ? 'text-red-500' : ''}`}
               >
-                <Heart className={`w-5 h-5 ${userEngagement.liked ? 'fill-red-500' : ''}`} />
+                <Heart className={`w-5 h-5 transition-all duration-200 ${userEngagement.liked ? 'fill-red-500 scale-110' : ''}`} />
                 <span className="text-sm font-medium">{localEngagement.likes} Likes</span>
               </button>
 
@@ -312,10 +413,10 @@ style={{
                   e.stopPropagation(); 
                   handleAction('retweet', () => retweetPost(postId, currentUserId!), async () => {}, 'retweets', 'retweeted', { do: 'Post retweeted', undo: '' }, onRetweet) 
                 }}
-                disabled={isLoading.retweet || userEngagement.retweeted}
-                className={`flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors ${userEngagement.retweeted ? 'text-green-500' : ''}`}
+                disabled={isLoading.retweet || userEngagement.retweeted || !currentUserId}
+                className={`flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.retweeted ? 'text-green-500' : ''}`}
               >
-                <Repeat2 className={`w-5 h-5 ${userEngagement.retweeted ? 'fill-green-500' : ''}`} />
+                <Repeat2 className={`w-5 h-5 transition-all duration-200 ${userEngagement.retweeted ? 'fill-green-500 scale-110' : ''}`} />
                 <span className="text-sm font-medium">{localEngagement.retweets} Share</span>
               </button>
             </div>
@@ -325,82 +426,81 @@ style={{
                 e.stopPropagation(); 
                 handleAction('bookmark', () => bookmarkPost(postId, currentUserId!), () => unbookmarkPost(postId, currentUserId!), 'bookmarks', 'bookmarked', { do: 'Post bookmarked', undo: 'Bookmark removed' }, onBookmark) 
               }}
-              disabled={isLoading.bookmark}
-              className={`flex items-center space-x-2 text-gray-500 hover:text-purple-500 transition-colors ${userEngagement.bookmarked ? 'text-purple-500' : ''}`}
+              disabled={isLoading.bookmark || !currentUserId}
+              className={`flex items-center space-x-2 text-gray-500 hover:text-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.bookmarked ? 'text-purple-500' : ''}`}
             >
-              <Bookmark className={`w-5 h-5 ${userEngagement.bookmarked ? 'fill-purple-500' : ''}`} />
+              <Bookmark className={`w-5 h-5 transition-all duration-200 ${userEngagement.bookmarked ? 'fill-purple-500 scale-110' : ''}`} />
               <span className="text-sm hidden md:block font-medium">{localEngagement.bookmarks} Saved</span>
             </button>
           </div>
 
           {/* Inline Comments Section */}
-       {/* Inline Comments Section */}
-<AnimatePresence>
-  {showInlineComments && (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: "auto" }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-4 pt-4"
-    >
-      {/* Comments List */}
-      {comments.length > 0 && (
-        <div className="space-y-3">
-          {comments.slice(0, visibleCount).map((comment) => (
-            <div key={comment.id} className="flex space-x-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden">
-                {comment.avatar_url ? (
-                  <img
-                    src={comment.avatar_url}
-                    alt={comment.username}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-300 flex items-center justify-center text-xs font-semibold text-gray-600">
-                    {comment.username?.substring(0, 2)?.toUpperCase() || "U"}
+          <AnimatePresence>
+            {showInlineComments && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-4 pt-4"
+              >
+                {/* Comments List */}
+                {comments.length > 0 && (
+                  <div className="space-y-3">
+                    {comments.slice(0, visibleCount).map((comment) => (
+                      <div key={comment.id} className="flex space-x-3">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden">
+                          {comment.avatar_url ? (
+                            <img
+                              src={comment.avatar_url}
+                              alt={comment.username}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-300 flex items-center justify-center text-xs font-semibold text-gray-600">
+                              {comment.username?.substring(0, 2)?.toUpperCase() || "U"}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="bg-gray-50 rounded-2xl px-3 py-2">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className="font-semibold text-sm text-gray-900">
+                                {comment.username}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {formatCommentTime(comment.created_at)}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-800">{comment.content}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Show More Button */}
+                    {visibleCount < comments.length && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setVisibleCount((prev) => prev + 8)
+                        }}
+                        className="text-sm text-blue-500 hover:underline pl-11"
+                      >
+                        Show more comments
+                      </button>
+                    )}
                   </div>
                 )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="bg-gray-50 rounded-2xl px-3 py-2">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <span className="font-semibold text-sm text-gray-900">
-                      {comment.username}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {formatCommentTime(comment.created_at)}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-800">{comment.content}</p>
-                </div>
-              </div>
-            </div>
-          ))}
 
-          {/* Show More Button */}
-          {visibleCount < comments.length && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setVisibleCount((prev) => prev + 8)
-              }}
-              className="text-sm text-blue-500 hover:underline pl-11"
-            >
-              Show more comments
-            </button>
-          )}
-        </div>
-      )}
-
-      {comments.length === 0 && (
-        <p className="text-gray-500 text-sm text-center py-4">
-          No comments yet. Be the first to comment!
-        </p>
-      )}
-    </motion.div>
-  )}
-</AnimatePresence>
+                {comments.length === 0 && (
+                  <p className="text-gray-500 text-sm text-center py-4">
+                    No comments yet. Be the first to comment!
+                  </p>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Comment Input */}
           <form onSubmit={handleCommentSubmit} className="flex items-center space-x-3 pt-4 ">
@@ -420,30 +520,30 @@ style={{
                 placeholder="Write your comment.."
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                disabled={isLoading.comment}
+                disabled={isLoading.comment || !currentUserId}
                 className="w-full py-3 px-4 bg-dark-800 rounded-full text-secondary placeholder:text-secondary placeholder-dark-800 focus:outline-none focus:ring-2 focus:bg-dark-800 transition-all disabled:opacity-50"
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
 
             <div className="flex items-center space-x-2">
-              
               <button 
                 type="button"
                 className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
                 onClick={(e) => e.stopPropagation()}
+                disabled={!currentUserId}
               >
                 <Smile className="w-5 h-5" />
               </button>
 
               <button 
                 type="submit"
-                disabled={!commentText.trim() || isLoading.comment}
+                disabled={!commentText.trim() || isLoading.comment || !currentUserId}
                 className="p-2 bg-primary text-white rounded-full hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={(e) => e.stopPropagation()}
               >
                 {isLoading.comment ? (
-                  <div className="w-5 h-5  rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <Send className="w-5 h-5" />
                 )}
@@ -468,23 +568,22 @@ style={{
 
       {/* Full Comment Section Modal */}
       <AnimatePresence>
-  {showCommentSection && isApiPost && (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: "auto" }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.3 }}
-      className="mt-4"
-    >
-      <CommentSection
-        post={post}
-        onClose={() => setShowCommentSection(false)}
-        onCommentAdded={handleCommentAdded}
-      />
-    </motion.div>
-  )}
-</AnimatePresence>
-
+        {showCommentSection && isApiPost && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mt-4"
+          >
+            <CommentSection
+              post={post}
+              onClose={() => setShowCommentSection(false)}
+              onCommentAdded={handleCommentAdded}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Engagement Details */}
       {showEngagement && isApiPost && (

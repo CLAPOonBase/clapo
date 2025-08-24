@@ -170,9 +170,10 @@ export default function TradingPlatform() {
     boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
   };
 
-  const handleBack = () => {
-    console.log('Back clicked');
-  };
+const handleBack = () => {
+  setSelectedPool(null);
+};
+
 
   // Pool Details View
   if (selectedPool) {
@@ -199,86 +200,91 @@ export default function TradingPlatform() {
             <div 
           
             >
-<div style= {customBoxStyle} className=' bg-dark-800 rounded-xl p-6 mb-6'>
-                <div className="flex items-center space-x-4">
-<div className="w-20 h-20 rounded-full relative">
-  <img
-    src="/bg.svg"
-    alt="Background SVG"
-    className="absolute inset-0 w-full h-full"
-  />
-  <Image
-    src="https://robohash.org/ben.png?size=500x500"
-    alt="Profilepage"
-    width={80}
-    height={80}
-    className="absolute inset-1 w-[calc(100%-0.5rem)] h-[calc(100%-0.5rem)] rounded-full object-cover"
-    unoptimized
-  />
+<div style={customBoxStyle} className="bg-dark-800 rounded-xl p-6 mb-6">
+  <div className="flex items-center space-x-4">
+    {activeTab === "users" ? (
+      // Circle avatar for users
+      <div className="w-20 h-20 rounded-full relative overflow-hidden">
+        <img src="/bg.svg" alt="Background" className="absolute inset-0 w-full h-full" />
+        <Image
+          src={selectedPool.avatar}
+          alt={selectedPool.username}
+          width={80}
+          height={80}
+          className="absolute inset-1 w-[calc(100%-0.5rem)] h-[calc(100%-0.5rem)] rounded-full object-cover"
+          unoptimized
+        />
+      </div>
+    ) : (
+      // Square avatar for communities
+      <div className="w-20 h-20 rounded-lg relative overflow-hidden">
+        <img src="/bg.svg" alt="Background" className="absolute inset-0 w-full h-full" />
+        <Image
+          src={selectedPool.avatar}
+          alt={selectedPool.username}
+          width={80}
+          height={80}
+          className="absolute inset-1 w-[calc(100%-0.5rem)] h-[calc(100%-0.5rem)] rounded-lg object-cover"
+          unoptimized
+        />
+      </div>
+    )}
+
+    <div>
+      <h1 className="text-white text-2xl font-bold">@{selectedPool.username}</h1>
+    </div>
+  </div>
+
+  {/* Chart Section */}
+  <div className="mt-6">
+    <div className="h-64 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={chartData}>
+          <XAxis 
+            dataKey="name" 
+            axisLine={false}
+            tickLine={false}
+            tick={{ fill: '#9CA3AF', fontSize: 12 }}
+          />
+          <YAxis 
+            axisLine={false}
+            tickLine={false}
+            tick={{ fill: '#9CA3AF', fontSize: 12 }}
+          />
+          <Line 
+            type="monotone" 
+            dataKey="value" 
+            stroke="#00D4FF" 
+            strokeWidth={3}
+            dot={{ fill: '#00D4FF', strokeWidth: 2, r: 4 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  </div>
 </div>
 
-                <div>
-                  <h1 className="text-white text-2xl font-bold">@johndoe</h1>
-                </div>
-              </div>
 
-              {/* Chart Section */}
-              <div className="">
-                <div className="flex justify-between items-center my-2">
-                  {/* <h3 className="text-gray-300 text-sm">Pool Details : Clapo investment</h3> */}
-                  {/* <span className="text-gray-300 text-sm">Pool Size : $252352</span> */}
-                </div>
-                <div className="h-64 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <XAxis 
-                        dataKey="name" 
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                      />
-                      <YAxis 
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="value" 
-                        stroke="#00D4FF" 
-                        strokeWidth={3}
-                        dot={{ fill: '#00D4FF', strokeWidth: 2, r: 4 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-</div>
 
-              {/* Bottom Stats */}
               <div className="grid grid-cols-3 gap-4">
-                <div 
-                  className="bg-gray-700/50 rounded-lg p-4"
-                  style={customBoxStyle}
-                >
-                  <div className="text-gray-400 text-sm mb-1">Members</div>
-                  <div className="text-white text-xl font-semibold">2733</div>
-                </div>
-                <div 
-                  className="bg-gray-700/50 rounded-lg p-4"
-                  style={customBoxStyle}
-                >
-                  <div className="text-gray-400 text-sm mb-1">Circ. Ticket</div>
-                  <div className="text-white text-xl font-semibold">27,300</div>
-                </div>
-                <div 
-                  className="bg-gray-700/50 rounded-lg p-4"
-                  style={customBoxStyle}
-                >
-                  <div className="text-gray-400 text-sm mb-1">Last Traded</div>
-                  <div className="text-white text-xl font-semibold">2 hrs Ago</div>
-                </div>
-              </div>
+  <div className="bg-gray-700/50 rounded-lg p-4" style={customBoxStyle}>
+    <div className="text-gray-400 text-sm mb-1">
+      {activeTab === "users" ? "Members" : "Circ."}
+    </div>
+    <div className="text-white text-xl font-semibold">{selectedPool.holders.toLocaleString()}</div>
+  </div>
+  
+  <div className="bg-gray-700/50 rounded-lg p-4" style={customBoxStyle}>
+    <div className="text-gray-400 text-sm mb-1">Circ. Ticket</div>
+    <div className="text-white text-xl font-semibold">{selectedPool.totalTickets.toLocaleString()}</div>
+  </div>
+
+  <div className="bg-gray-700/50 rounded-lg p-4" style={customBoxStyle}>
+    <div className="text-gray-400 text-sm mb-1">Last Traded</div>
+    <div className="text-white text-xl font-semibold">2 hrs Ago</div>
+  </div>
+</div>
+
             </div>
           </div>
 
@@ -476,30 +482,31 @@ export default function TradingPlatform() {
           </div>
         </div>
       ))
-    : communities.map((community, i) => (
-        <div
-          key={community.id}
-          className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all duration-200 border border-[#23272B] hover:bg-[#1A1F25] ${
-            i % 2 === 0 ? "bg-[#10151A]/80" : "bg-[#1A1F25]/60"
-          }`}
-          onClick={() => handleCommunityClick(community)}
-        >
-          <div className="flex items-center space-x-3">
-            <img
-              src={community.avatar}
-              alt={community.name}
-              className="w-10 h-10 rounded-full object-cover"
-            />
-            <div>
-              <div className="text-white font-medium">{community.name}</div>
-              <div className="text-[#A0A0A0] text-sm">
-                {community.memberCount.toLocaleString()} members
-              </div>
-            </div>
-          </div>
-          <div className="text-blue-400">→</div>
+: communities.map((community, i) => (
+  <div
+    key={community.id}
+    className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all duration-200 border border-[#23272B] hover:bg-[#1A1F25] ${
+      i % 2 === 0 ? "bg-[#10151A]/80" : "bg-[#1A1F25]/60"
+    }`}
+    onClick={() => handleCommunityClick(community)}
+  >
+    <div className="flex items-center space-x-3">
+      <img
+        src={community.avatar}
+        alt={community.name}
+        className="w-10 h-10 rounded-lg object-cover" // 🔥 changed from rounded-full → rounded-lg
+      />
+      <div>
+        <div className="text-white font-medium">{community.name}</div>
+        <div className="text-[#A0A0A0] text-sm">
+          {community.memberCount.toLocaleString()} members
         </div>
-      ))}
+      </div>
+    </div>
+    <div className="text-blue-400">→</div>
+  </div>
+))
+}
 </div>
 
 

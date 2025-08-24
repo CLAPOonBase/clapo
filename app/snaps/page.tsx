@@ -4,6 +4,7 @@ import { useSession, signIn } from 'next-auth/react'
 import Sidebar from './Sections/Sidebar'
 import {SnapComposer} from './Sections/SnapComposer'
 import SnapCard from './Sections/SnapCard'
+import Image from 'next/image'
 // import ActivityFeed from './Sections/ActivityFeed'
 import {ExplorePage} from './SidebarSection/ExplorePage'
 import NotificationPage from './SidebarSection/NotificationPage'
@@ -18,6 +19,7 @@ import { PostSkeleton, LoadingSpinner } from '../components/SkeletonLoader'
 import UserActivityFeed from './Sections/ActivityFeed'
 import { AnimatePresence, motion } from "framer-motion"
 import SharePage from './SidebarSection/SharePage'
+import { X } from 'lucide-react'
 
 export default function SocialFeedPage() {
 
@@ -198,7 +200,9 @@ export default function SocialFeedPage() {
           ) : (
             <div className="text-center py-8 text-gray-500">
               {status === "authenticated"
-                ? "No posts yet. Be the first to share something!"
+                ? <div>{[...Array(3)].map((_, i) => (
+              <PostSkeleton key={i} />
+            ))}</div>
                 : "Sign in to see posts"}
             </div>
           )
@@ -253,52 +257,65 @@ export default function SocialFeedPage() {
   }
 
   // Don't render main content if session is not authenticated or dbUser is not loaded
-  if (status === 'unauthenticated' || !session?.dbUser) {
-    console.log('🔍 Session state:', { status, hasSession: !!session, hasDbUser: !!session?.dbUser });
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 0 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-      >
-        <div className="flex-col md:flex-row mx-auto text-white flex">
-          <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-          <div className="flex-1 m-4 md:m-4 rounded-md">
-            <div className="bg-dark-800 rounded-md p-6 my-4 text-center">
-              <h3 className="text-lg font-semibold text-white mb-2">Welcome to Snaps!</h3>
-              <p className="text-gray-400 mb-4">Sign in to start posting and engaging with others.</p>
-              <div className="flex gap-4 justify-center">
-                <button
-                  onClick={() => signIn('twitter')}
-                        style={{
-        boxShadow:
-          "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(26, 19, 161, 0.50), 0px 0px 0px 1px #4F47EB",
-        backgroundColor: "#4F47EB",
-        color: "white",
-        padding: "8px 16px",
-        borderRadius: "8px",
-      }}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                  </svg>
-                  Sign in with Twitter
-                </button>
-                <button
-                  onClick={() => signIn()}
+if (status === 'unauthenticated' || !session?.dbUser) {
+  console.log('🔍 Session state:', { status, hasSession: !!session, hasDbUser: !!session?.dbUser });
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 0 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
+    >
+      <div className="flex-col md:flex-row mx-auto text-white flex">
+        <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+        <div className="flex-1 ml-4 mr-6 rounded-md">
+          <div className="bg-[#1A1A1A] rounded-2xl border border-gray-800 overflow-hidden">
+            <div className="flex flex-col lg:flex-row min-h-[550px]">
+              
+              {/* Left Side - Hero Image */}
+              <div className="lg:w-full relative px-4 py-2 text-white 
+                shadow-[inset_0px_1px_0.5px_rgba(255,255,255,0.5),0px_1px_2px_rgba(26,19,161,0.5),0px_0px_0px_1px_#4F47EB] 
+                bg-gradient-to-r from-[#4F47EB] to-[#3B32C7] rounded-lg m-2">
+                
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent z-10 rounded-lg" />
+                
+                {/* Background Pattern */}
+                <div className="absolute inset-0 opacity-20 rounded-lg">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,rgba(255,255,255,0.2)_0%,transparent_50%)]" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_75%,rgba(255,255,255,0.1)_0%,transparent_50%)]" />
+                </div>
 
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                >
-                  Sign in with Email
-                </button>
+                {/* Content on Image */}
+                <div className="relative z-20 flex flex-col justify-center items-center p-8 lg:p-12 text-center h-full">
+                  <div className="mb-6">
+                    <Image 
+                      src="/connect_log.png" 
+                      alt="Clapo Illustration" 
+                      width={300} 
+                      height={300}
+                      className="w-auto h-48 lg:h-64 object-contain"
+                    />
+                  </div>
+                         <div className="text-center lg:text-left mb-8">
+              
+                  <h1 className="text-2xl lg:text-3xl font-bold text-white mb-4">
+                    Get Started
+                  </h1>
+                  <p className="text-gray-400 text-base leading-relaxed">
+                    Sign in to start posting, engaging with others, and exploring the Web3 social experience.
+                  </p>
+                </div>
+                </div>
               </div>
+
+       
             </div>
           </div>
         </div>
-      </motion.div>
-    )
-  }
+      </div>
+    </motion.div>
+  )
+}
 
   
   return (
@@ -309,7 +326,9 @@ export default function SocialFeedPage() {
     >
       <div className="flex-col md:flex-row text-white flex mx-auto">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-        <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky top-20 bg-dark-800 p-4">
+        <div       style={{
+        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.1) inset, 0px 1px 2px 0px rgba(0, 0, 0, 0.8), 0px 0px 0px 1px #1a1a1a",
+      }} className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky top-20 bg-dark-800 p-4">
           {renderContent()}
         </div>
         {currentPage !== 'messages' && session?.dbUser && (
