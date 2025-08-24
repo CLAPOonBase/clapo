@@ -91,7 +91,7 @@ export function ProfilePage({ user, posts }: Props) {
     <div className="text-white bg-dark-800 rounded-md">
       <div className="relative h-48 w-full">
         <img
-          src="/default-cover.jpg"
+          src="https://pbs.twimg.com/profile_banners/1296970423851077632/1693025431/600x200"
           alt="Cover"
           className="w-full h-full object-cover bg-black rounded-md"
         />

@@ -127,7 +127,7 @@ const NotificationPage = () => {
   }
 
   return (
-    <div className="sticky top-20 flex flex-col rounded-2xl bg-[#1A1A1A] border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+    <div className="sticky top-20 flex flex-col rounded-2xl bg-dark-700/70 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
       {/* Header */}
       <div className="p-6 border-b border-[#2A2A2A]">
         <div className="flex items-center justify-between mb-4">
