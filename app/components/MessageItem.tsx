@@ -73,11 +73,11 @@ export const MessageItem = ({
         } ${
           // Adjust corner rounding based on position in group
           isFirstInGroup && !isLastInGroup
-            ? isOwnMessage ? 'rounded-tr-md rounded-br-md' : 'rounded-tr-md'
+            ? isOwnMessage ? 'rounded-tr-md rounded-br-md' : 'rounded-tl-md rounded-bl-md'
             : !isFirstInGroup && !isLastInGroup
             ? isOwnMessage ? 'rounded-tr-md rounded-br-md' : 'rounded-tl-md rounded-bl-md'
             : !isFirstInGroup && isLastInGroup
-            ? isOwnMessage ? 'rounded-br-md' : 'rounded-br-md'
+            ? isOwnMessage ? 'rounded-br-md' : 'rounded-bl-md'
             : ''
         }`}>
           <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">
