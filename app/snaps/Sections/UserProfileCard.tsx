@@ -36,7 +36,7 @@ export default function UserProfileCard({ onManageClick }: Props) {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-secondary/20 bg-dark-800 p-6 text-white animate-pulse">
+    <div className="group my-4 relative rounded-2xl border border-secondary/20 overflow-hidden bg-dark-800 transition-all duration-300 hover:shadow-xl hover:border-slate-600 p-4">
         <div className="h-28 bg-gray-700 rounded mb-4"></div>
         <div className="flex items-center space-x-4">
           <div className="w-16 h-16 bg-gray-700 rounded-full"></div>

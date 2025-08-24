@@ -15,6 +15,26 @@ interface MessageListProps {
   currentUserId: string | null;
 }
 
+// Helper function to determine message grouping
+const getMessageGrouping = (
+  messages: MessageListProps['messages'],
+  currentIndex: number
+) => {
+  const currentMessage = messages[currentIndex];
+  const prevMessage = messages[currentIndex - 1];
+  const nextMessage = messages[currentIndex + 1];
+  
+  const isFirstInGroup = !prevMessage || prevMessage.sender_id !== currentMessage.sender_id;
+  const isLastInGroup = !nextMessage || nextMessage.sender_id !== currentMessage.sender_id;
+  
+  return {
+    isFirstInGroup,
+    isLastInGroup,
+    showAvatar: isLastInGroup // ✅ show avatar only on last message
+  };
+};
+
+
 export const MessageList = ({ messages, currentUserId }: MessageListProps) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -61,21 +81,33 @@ export const MessageList = ({ messages, currentUserId }: MessageListProps) => {
     }
   };
 
+  // Sort messages by created_at
+  const sortedMessages = [...messages].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+
   return (
     <div
       ref={messagesContainerRef}
       onScroll={handleScroll}
-      className="flex-1 overflow-y-auto p-4 space-y-3 relative scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent"
+      className="flex-1 overflow-y-auto p-4 relative scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent"
     >
-      {[...messages]
-        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-        .map((message) => (
-          <MessageItem
-            key={message.id}
-            message={message}
-            isOwnMessage={message.sender_id === currentUserId}
-          />
-        ))}
+      <div className="space-y-0">
+        {sortedMessages.map((message, index) => {
+          const { isFirstInGroup, isLastInGroup, showAvatar } = getMessageGrouping(sortedMessages, index);
+          
+          return (
+            <MessageItem
+              key={message.id}
+              message={message}
+              isOwnMessage={message.sender_id === currentUserId}
+              showAvatar={showAvatar}
+              isFirstInGroup={isFirstInGroup}
+              isLastInGroup={isLastInGroup}
+            />
+          );
+        })}
+      </div>
 
       {showScrollButton && (
         <button

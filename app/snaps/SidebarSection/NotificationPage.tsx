@@ -119,7 +119,7 @@ const NotificationPage = () => {
 
   if (loading && notifications.length === 0) {
     return (
-      <div className="sticky top-20 bg-[#1A1A1A] rounded-2xl flex flex-col items-center justify-center text-white border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+      <div className="sticky top-20 bg-dark-700/70 p-4 rounded-2xl flex flex-col items-center justify-center text-white border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6E54FF] mb-4"></div>
         <div className="text-gray-400">Loading notifications...</div>
       </div>
@@ -253,10 +253,10 @@ const NotificationPage = () => {
                             {notification.content.content}
                           </p>
                           <div className="mt-2 flex items-center space-x-4 text-xs text-gray-400">
-                            <span>👁️ {notification.content.view_count}</span>
-                            <span>❤️ {notification.content.like_count}</span>
-                            <span>💬 {notification.content.comment_count}</span>
-                            <span>🔄 {notification.content.retweet_count}</span>
+                            <span>View {notification.content.view_count}</span>
+                            <span>Like {notification.content.like_count}</span>
+                            <span>Comment {notification.content.comment_count}</span>
+                            <span>Retweet {notification.content.retweet_count}</span>
                           </div>
                           {notification.ref_id && (
                             <button className="mt-2 flex items-center space-x-1 text-xs text-[#6E54FF] hover:text-[#836EF9] transition-colors">

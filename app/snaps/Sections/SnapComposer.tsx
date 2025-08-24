@@ -10,15 +10,57 @@ import {
   Mic,
   SendHorizonal,
   X,
+  CheckCircle,
 } from 'lucide-react'
 import MediaUpload, { MediaUploadHandle } from '@/app/components/MediaUpload'
 import { useSession } from 'next-auth/react'
 import { useApi } from '@/app/Context/ApiProvider'
 
+// Toast Component
+const Toast = ({ 
+  message, 
+  isVisible, 
+  onClose 
+}: { 
+  message: string
+  isVisible: boolean
+  onClose: () => void 
+}) => {
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => {
+        onClose()
+      }, 3000) // Auto-dismiss after 3 seconds
+      
+      return () => clearTimeout(timer)
+    }
+  }, [isVisible, onClose])
+
+  if (!isVisible) return null
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-top-2 duration-300">
+      <div className="bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 min-w-[300px]">
+        <CheckCircle className="w-5 h-5 flex-shrink-0" />
+        <span className="text-sm font-medium">{message}</span>
+        <button
+          onClick={onClose}
+          className="ml-2 hover:bg-green-700 rounded p-1 transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export function SnapComposer() {
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [mediaUrl, setMediaUrl] = useState<string | undefined>()
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  
   const { createPost, fetchPosts } = useApi();
   const { data: session, status } = useSession();
   const { getUserProfile, updateUserProfile } = useApi()
@@ -74,11 +116,21 @@ export function SnapComposer() {
   }, [session, status, userId])
 
   const actions = [
-    { icon: ImageIcon, label: 'Photo', color: 'text-blue-400', type: 'image' },
-    { icon: Video, label: 'Video', color: 'text-purple-400', type: 'video' },
-    { icon: File, label: 'File', color: 'text-emerald-400', type: 'any' },
-    { icon: Mic, label: 'Audio', color: 'text-amber-400', type: 'audio' },
+    { icon: ImageIcon, label: 'Photo', color: 'text-blue-400', type: 'image' as const },
+    { icon: Video, label: 'Video', color: 'text-purple-400', type: 'video' as const },
+    { icon: File, label: 'File', color: 'text-emerald-400', type: 'any' as const },
+    { icon: Mic, label: 'Audio', color: 'text-amber-400', type: 'audio' as const },
   ]
+
+  const showSuccessToast = (message: string) => {
+    setToastMessage(message)
+    setShowToast(true)
+  }
+
+  const handleCloseToast = () => {
+    setShowToast(false)
+  }
+
   const handleMediaUpload = (url: string) => {
     setMediaUrl(url)
     
@@ -153,9 +205,8 @@ export function SnapComposer() {
       // Reset loading state immediately
       setIsSubmitting(false)
       
-      if (typeof window !== 'undefined' && window.alert) {
-        window.alert('Post created successfully!')
-      }
+      // Show success toast instead of alert
+      showSuccessToast('Snap posted successfully!')
       
       // Fetch posts in background (don't wait for it)
       fetchPosts(userId).catch(error => {
@@ -183,10 +234,8 @@ export function SnapComposer() {
     if (!uploadedMedia || !uploadedMedia.url) return null
 
     return (
-      <div        className="relative group mt-3">
-        <div
-
-        className="relative overflow-hidden rounded-lg flex justify-center bg-dark-800/50 border border-dark-700/50">
+      <div className="relative group mt-3">
+        <div className="relative overflow-hidden rounded-lg flex justify-center bg-dark-800/50 border border-dark-700/50">
           {uploadedMedia.type === 'image' && (
             <Image
               src={uploadedMedia.url}
@@ -239,109 +288,117 @@ export function SnapComposer() {
   const canSubmit = (hasContent || mediaUrl) && !isSubmitting && !isOverLimit
 
   return (
-    <div 
-     style={{
-  boxShadow:
-    "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
-  // borderRadius: "8px",
-}} 
-    
-    className="w-full bg-dark-800 backdrop-blur-sm rounded-xl p-5 shadow-xl">
-      {/* Text Input */}
-       <div className='flex'>
-       <div className='rounded-full h-14 w-14'>
-     <Image
-  src={profile?.avatar_url && profile.avatar_url.trim() !== "" ? profile.avatar_url : "/4.png"}
-  alt="profile avatar"
-  width={1000}
-  height={1000}
-  className="w-12 h-12 rounded-full"
-/>
-
-       </div>
-      <div className="relative w-full ">
-        <TextareaAutosize
-          minRows={3}
-          maxRows={8}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="What's happening?"
-          className="w-full resize-none bg-transparent p-2 rounded-md text-white placeholder-dark-400 text-base leading-relaxed focus:outline-none"
-        />
-        <div className={`absolute bottom-2 right-2 text-xs font-medium px-2 py-1 rounded ${
-          isOverLimit 
-            ? 'text-red-400 bg-red-900/20' 
-            : charCount > 180 
-              ? 'text-amber-400 bg-amber-900/20'
-              : 'text-dark-400 bg-dark-800/50'
-        }`}>
-          {charCount}/200
-        </div>
-      </div>
-     </div>
-
-      {/* Hidden Media Upload Component */}
-      <MediaUpload
-        ref={mediaUploadRef}
-        onMediaUploaded={handleMediaUpload}
-        onMediaRemoved={handleRemoveMedia}
-        userId={userId || ''}
-        className="hidden"
+    <>
+      {/* Toast Component */}
+      <Toast 
+        message={toastMessage}
+        isVisible={showToast}
+        onClose={handleCloseToast}
+      />
+      
+      <div 
+       style={{
+        boxShadow:
+          "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
+        // borderRadius: "8px",
+      }} 
+      
+      className="w-full bg-dark-800 backdrop-blur-sm rounded-xl p-5 shadow-xl">
+        {/* Text Input */}
+         <div className='flex'>
+         <div className='rounded-full h-14 w-14'>
+       <Image
+        src={profile?.avatar_url && profile.avatar_url.trim() !== "" ? profile.avatar_url : "/4.png"}
+        alt="profile avatar"
+        width={1000}
+        height={1000}
+        className="w-12 h-12 rounded-full"
       />
 
-      {/* Media Preview */}
-      {renderMediaPreview()}
-
-      {/* Divider */}
-      <div className="border-t border-dark-700/50 mt-4 pt-4">
-        <div className="flex items-center justify-between">
-          {/* Media Actions */}
-          <div className="flex items-center gap-4">
-            {actions.map(({ icon: Icon, label, color, type }) => (
-              <button
-                key={label}
-                onClick={() => mediaUploadRef.current?.openFileDialog()}
-                disabled={isSubmitting}
-                // className={`flex items-center gap-2 px-3 py-2 rounded-lg ${color} ${
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-dark-800/50 transition-all duration-200 ${color} ${
-                  isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                }`}
-                title={label}
-              >
-                <Icon className="w-5 h-5" />
-                <span className="text-sm font-medium hidden md:inline">
-                  {label}
-                </span>
-              </button>
-            ))}
+         </div>
+        <div className="relative w-full ">
+          <TextareaAutosize
+            minRows={3}
+            maxRows={8}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="What's happening?"
+            className="w-full resize-none bg-transparent p-2 rounded-md text-white placeholder-dark-400 text-base leading-relaxed focus:outline-none"
+          />
+          <div className={`absolute bottom-2 right-2 text-xs font-medium px-2 py-1 rounded ${
+            isOverLimit 
+              ? 'text-red-400 bg-red-900/20' 
+              : charCount > 180 
+                ? 'text-amber-400 bg-amber-900/20'
+                : 'text-dark-400 bg-dark-800/50'
+          }`}>
+            {charCount}/200
           </div>
+        </div>
+       </div>
 
-          {/* Submit Button */}
-          <button
-            onClick={() => {
-              console.log('🔍 Submit button clicked!')
-              console.log('🔍 Button state:', { canSubmit, content, mediaUrl, isSubmitting, isOverLimit })
-              handleSubmit()
-            }}
-            disabled={!canSubmit}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
-              canSubmit
-                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-500/25'
-                : isOverLimit
-                  ? 'bg-red-600/50 text-red-300 cursor-not-allowed'
-                  : 'bg-dark-700 text-dark-400 cursor-not-allowed'
-            }`}
-            title={isOverLimit ? 'Message exceeds 200 character limit' : ''}
-          >
-            {isSubmitting ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <SendHorizonal className="w-4 h-4" />
-            )}
-            <span>{isSubmitting ? 'Posting...' : 'Snap'}</span>
-          </button>
+        {/* Hidden Media Upload Component */}
+        <MediaUpload
+          ref={mediaUploadRef}
+          onMediaUploaded={handleMediaUpload}
+          onMediaRemoved={handleRemoveMedia}
+          userId={userId || ''}
+          className="hidden"
+        />
+
+        {/* Media Preview */}
+        {renderMediaPreview()}
+
+        {/* Divider */}
+        <div className="border-t border-dark-700/50 mt-4 pt-4">
+          <div className="flex items-center justify-between">
+            {/* Media Actions */}
+            <div className="flex items-center gap-4">
+              {actions.map(({ icon: Icon, label, color, type }) => (
+                <button
+                  key={label}
+                  onClick={() => mediaUploadRef.current?.openFileDialog(type)}
+                  disabled={isSubmitting}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-dark-800/50 transition-all duration-200 ${color} ${
+                    isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                  }`}
+                  title={label}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="text-sm font-medium hidden md:inline">
+                    {label}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Submit Button */}
+            <button
+              onClick={() => {
+                console.log('🔍 Submit button clicked!')
+                console.log('🔍 Button state:', { canSubmit, content, mediaUrl, isSubmitting, isOverLimit })
+                handleSubmit()
+              }}
+              disabled={!canSubmit}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                canSubmit
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-500/25'
+                  : isOverLimit
+                    ? 'bg-red-600/50 text-red-300 cursor-not-allowed'
+                    : 'bg-dark-700 text-dark-400 cursor-not-allowed'
+              }`}
+              title={isOverLimit ? 'Message exceeds 200 character limit' : ''}
+            >
+              {isSubmitting ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <SendHorizonal className="w-4 h-4" />
+              )}
+              <span>{isSubmitting ? 'Posting...' : 'Snap'}</span>
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

@@ -198,7 +198,9 @@ export default function SocialFeedPage() {
           ) : (
             <div className="text-center py-8 text-gray-500">
               {status === "authenticated"
-                ? "No posts yet. Be the first to share something!"
+                ? <div>{[...Array(3)].map((_, i) => (
+              <PostSkeleton key={i} />
+            ))}</div>
                 : "Sign in to see posts"}
             </div>
           )

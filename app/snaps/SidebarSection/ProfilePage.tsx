@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { User, Post } from "@/app/types"
-import { Ellipsis } from "lucide-react"
+import { Ellipsis, Eye, Heart, MessageCircle, Repeat2, Bookmark, ThumbsUp, FileText } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useApi } from "../../Context/ApiProvider"
 import { UpdateProfileModal } from "@/app/components/UpdateProfileModal"
@@ -63,14 +63,14 @@ export function ProfilePage({ user, posts }: Props) {
 
   if (loading) {
     return (
-      <div className="text-white bg-dark-800 rounded-md p-6">
+      <div className="text-white bg-dark-800 rounded-lg shadow-xl p-4">
         <div className="animate-pulse">
-          <div className="h-48 bg-gray-700 rounded-md mb-4"></div>
+          <div className="h-48 bg-gray-700/50 rounded-lg mb-4"></div>
           <div className="flex items-center space-x-4">
-            <div className="w-24 h-24 bg-gray-700 rounded-full"></div>
+            <div className="w-24 h-24 bg-gray-700/50 rounded-full"></div>
             <div className="flex-1">
-              <div className="h-6 bg-gray-700 rounded mb-2"></div>
-              <div className="h-4 bg-gray-700 rounded"></div>
+              <div className="h-6 bg-gray-700/50 rounded mb-2"></div>
+              <div className="h-4 bg-gray-700/50 rounded w-2/3"></div>
             </div>
           </div>
         </div>
@@ -80,238 +80,299 @@ export function ProfilePage({ user, posts }: Props) {
 
   if (!profile) {
     return (
-      <div className="text-white bg-dark-800 rounded-md p-6">
-        <p>Failed to load profile</p>
+      <div className="text-white bg-dark-800 rounded-lg shadow-xl p-4">
+        <div className="text-center">
+          <p className="text-gray-400">Failed to load profile</p>
+        </div>
       </div>
     )
   }
   console.log('🔍 Profile data:', profile)
 
+  const getActivityIcon = (activityType: string) => {
+    switch (activityType) {
+      case 'like': return <Heart className="w-4 h-4 text-red-500" />
+      case 'comment': return <MessageCircle className="w-4 h-4 text-blue-500" />
+      case 'retweet': return <Repeat2 className="w-4 h-4 text-green-500" />
+      case 'post_created': return <FileText className="w-4 h-4 text-purple-500" />
+      default: return <Eye className="w-4 h-4 text-gray-500" />
+    }
+  }
+
+  const getActivityText = (activityType: string) => {
+    switch (activityType) {
+      case 'like': return 'Liked a post'
+      case 'comment': return 'Commented on a post'
+      case 'retweet': return 'Retweeted a post'
+      case 'post_created': return 'Created a post'
+      default: return 'Activity'
+    }
+  }
+
   return (
-    <div className="text-white bg-dark-800 rounded-md">
-      <div className="relative h-48 w-full">
+    <div className="text-white bg-dark-800 rounded-lg shadow-xl overflow-hidden">
+      {/* Cover Image */}
+      <div className="relative h-48 w-full bg-gradient-to-r from-blue-600 to-purple-600">
         <img
           src="https://pbs.twimg.com/profile_banners/1296970423851077632/1693025431/600x200"
           alt="Cover"
-          className="w-full h-full object-cover bg-black rounded-md"
+          className="w-full h-full object-cover"
         />
+        <div className="absolute inset-0 bg-black/20"></div>
       </div>
-      <div className="relative px-4 -mt-14 flex items-end space-x-4">
+
+      {/* Profile Section */}
+      <div className="relative px-6 -mt-16 flex items-end space-x-4">
         <div className="relative">
           <img
             src={profile.avatar_url || "https://robohash.org/default.png"}
             alt={profile.username}
-            className="w-24 h-24 rounded-full border-4 border-dark-900 object-cover"
+            className="w-32 h-32 rounded-full -4 -dark-800 object-cover shadow-lg"
             onError={(e) => {
-              // Only fallback to default image
               const target = e.target as HTMLImageElement;
               target.src = "https://robohash.org/default.png";
             }}
           />
         </div>
 
-        <div className="flex-1 flex justify-between items-end">
-          <div className="flex gap-2">
-            <button className="text-[#E4761B] bg-white rounded px-3 py-1 text-xs font-bold hover:text-white hover:bg-[#E4761B] transition">
+        <div className="flex-1 flex justify-between items-end pb-4">
+          <div className="flex gap-3">
+            <button className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg px-6 py-2 text-sm font-semibold hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg">
               Buy Ticket
             </button>
             <button 
               onClick={() => setShowUpdateModal(true)}
-              className="bg-[#23272B] text-primary rounded px-3 py-1 text-xs font-bold hover:bg-[#2A2F35] transition"
+              className="bg-dark-700 hover:bg-dark-600 text-white  -gray-600 rounded-lg px-6 py-2 text-sm font-semibold transition-all duration-200"
             >
               Edit Profile
             </button>
-            <Ellipsis className="text-gray-400 hover:text-white cursor-pointer" />
+            <button className="p-2 text-gray-400 hover:text-white hover:bg-dark-700 rounded-lg transition-all duration-200">
+              <Ellipsis className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="p-4">
-        <h2 className="text-xl font-bold text-white">{profile.username}</h2>
-        <p className="text-gray-400 text-sm">@{profile.username}</p>
-        <p className="text-gray-400 text-xs mt-1">{profile.bio || 'No bio available'}</p>
+      {/* User Info */}
+      <div className="px-6 pb-6">
+        <h1 className="text-2xl font-bold text-white mb-1">{profile.username}</h1>
+        <p className="text-gray-400 text-base mb-3">@{profile.username}</p>
+        <p className="text-gray-300 text-sm leading-relaxed max-w-2xl">
+          {profile.bio || 'Welcome to my profile! Connect with me and explore my content.'}
+        </p>
       </div>
       
-      <div className="mt-6">
-        <div className="flex justify-around space-x-4 bg-dark-800 p-2 border-b border-secondary">
+      {/* Stats Grid */}
+      <div className="px-6 pb-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="bg-dark-700 rounded-lg p-4 text-center hover:bg-dark-600 transition-colors">
+            <div className="text-2xl font-bold text-white mb-1">{profile.total_posts || 0}</div>
+            <div className="text-sm text-gray-400 font-medium">Posts</div>
+          </div>
+          <div className="bg-dark-700 rounded-lg p-4 text-center hover:bg-dark-600 transition-colors">
+            <div className="text-2xl font-bold text-red-400 mb-1">{profile.total_likes_given || 0}</div>
+            <div className="text-sm text-gray-400 font-medium">Likes</div>
+          </div>
+          <div className="bg-dark-700 rounded-lg p-4 text-center hover:bg-dark-600 transition-colors">
+            <div className="text-2xl font-bold text-blue-400 mb-1">{profile.total_comments_made || 0}</div>
+            <div className="text-sm text-gray-400 font-medium">Comments</div>
+          </div>
+          <div className="bg-dark-700 rounded-lg p-4 text-center hover:bg-dark-600 transition-colors">
+            <div className="text-2xl font-bold text-green-400 mb-1">{profile.total_retweets_made || 0}</div>
+            <div className="text-sm text-gray-400 font-medium">Retweets</div>
+          </div>
+          <div className="bg-dark-700 rounded-lg p-4 text-center hover:bg-dark-600 transition-colors">
+            <div className="text-2xl font-bold text-purple-400 mb-1">{profile.total_bookmarks_made || 0}</div>
+            <div className="text-sm text-gray-400 font-medium">Bookmarks</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="-t -gray-700">
+        <div className="flex px-6">
           {(["Posts", "Activity"] as Tab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-2 font-semibold transition-colors ${
+              className={`py-4 px-8 font-semibold text-sm transition-all duration-200 -b-2 ${
                 activeTab === tab
-                  ? 'text-white border-b-2 border-blue-500' 
-                  : 'text-gray-400 hover:text-white'
+                  ? 'text-white -blue-500' 
+                  : 'text-gray-400 hover:text-white -transparent hover:-gray-600'
               }`}
             >
               {tab}
             </button>
           ))}
         </div>
+      </div>
 
-        <div className="mt-6 p-4">
-          {activeTab === "Posts" && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white mb-4">User Posts</h3>
-              {profile.posts && profile.posts.length > 0 ? (
-                <div className="space-y-4">
-                                     {profile.posts.map((post: any) => (
-                     <div key={post.id} className="bg-dark-700 rounded-lg p-4">
-                      <div className="flex items-start space-x-3">
-                        <img
-                          src={profile.avatar_url || "https://robohash.org/default.png"}
-                          alt={profile.username}
-                          className="w-10 h-10 rounded-full object-cover"
-                          onError={(e) => {
-                            // Only fallback to default image
-                            const target = e.target as HTMLImageElement;
-                            target.src = "https://robohash.org/default.png";
-                          }}
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="font-semibold text-white">{profile.username}</span>
-                            <span className="text-gray-400 text-sm">
-                              {new Date(post.created_at).toLocaleDateString()}
-                            </span>
-                            {post.is_retweet && (
-                              <span className="text-green-500 text-sm">🔁 Retweeted</span>
-                            )}
-                          </div>
-                          <p className="text-white mb-3">{post.content}</p>
-                          
-                          {/* Media content */}
-                          {post.media_url && (
-                            <div className="mb-3 rounded-lg overflow-hidden">
-                              {post.media_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                                <img
-                                  src={post.media_url}
-                                  alt="Post media"
-                                  className="w-full max-h-96 object-cover rounded-lg"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement
-                                    target.style.display = 'none'
-                                  }}
-                                />
-                              ) : post.media_url.match(/\.(mp4|webm|ogg|mov)$/i) ? (
-                                <video
+      {/* Tab Content */}
+      <div className="p-4">
+        {activeTab === "Posts" && (
+          <div className="space-y-6">
+            {profile.posts && profile.posts.length > 0 ? (
+              <div className="space-y-4">
+                {profile.posts.map((post: any) => (
+                  <div key={post.id} className="bg-dark-700/50 rounded-lg p-4  -gray-700/50 hover:bg-dark-700 transition-all duration-200">
+                    <div className="flex items-start space-x-4">
+                      <img
+                        src={profile.avatar_url || "https://robohash.org/default.png"}
+                        alt={profile.username}
+                        className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "https://robohash.org/default.png";
+                        }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-3 mb-3">
+                          <span className="font-semibold text-white">{profile.username}</span>
+                          <span className="text-gray-500 text-sm">
+                            {new Date(post.created_at).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </span>
+                          {post.is_retweet && (
+                            <div className="flex items-center space-x-1 text-green-400">
+                              <Repeat2 className="w-4 h-4" />
+                              <span className="text-sm font-medium">Retweeted</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <p className="text-white mb-4 leading-relaxed">{post.content}</p>
+                        
+                        {/* Media content */}
+                        {post.media_url && (
+                          <div className="mb-4 rounded-lg overflow-hidden  -gray-600">
+                            {post.media_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                              <img
+                                src={post.media_url}
+                                alt="Post media"
+                                className="w-full max-h-96 object-cover"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement
+                                  target.style.display = 'none'
+                                }}
+                              />
+                            ) : post.media_url.match(/\.(mp4|webm|ogg|mov)$/i) ? (
+                              <video
+                                src={post.media_url}
+                                controls
+                                className="w-full max-h-96"
+                              />
+                            ) : post.media_url.match(/\.(mp3|wav|ogg|m4a)$/i) ? (
+                              <div className="bg-dark-600 p-4">
+                                <audio
                                   src={post.media_url}
                                   controls
-                                  className="w-full max-h-96 rounded-lg"
+                                  className="w-full"
                                 />
-                              ) : post.media_url.match(/\.(mp3|wav|ogg|m4a)$/i) ? (
-                                <div className="bg-gray-800 rounded-lg p-4">
-                                  <audio
-                                    src={post.media_url}
-                                    controls
-                                    className="w-full"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="bg-gray-800 rounded-lg p-4 text-center">
-                                  <p className="text-gray-400 text-sm">Media file</p>
-                                  <a
-                                    href={post.media_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-400 hover:text-blue-300 text-sm"
-                                  >
-                                    View media
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          
-                          {post.original_post_content && (
-                            <div className="bg-dark-800 rounded p-3 mb-3">
-                              <p className="text-gray-300 text-sm">
-                                <span className="text-gray-400">Original by @{post.original_post_username}:</span> {post.original_post_content}
-                              </p>
-                            </div>
-                          )}
-                          <div className="flex items-center space-x-6 text-sm text-gray-400">
-                            <span>👁️ {post.view_count}</span>
-                            <span>❤️ {post.like_count}</span>
-                            <span>💬 {post.comment_count}</span>
-                            <span>🔄 {post.retweet_count}</span>
+                              </div>
+                            ) : (
+                              <div className="bg-dark-600 p-4 text-center">
+                                <p className="text-gray-400 text-sm mb-2">Media file</p>
+                                <a
+                                  href={post.media_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-400 hover:text-blue-300 text-sm font-medium"
+                                >
+                                  View media
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {post.original_post_content && (
+                          <div className="bg-dark-800  -gray-600 rounded-lg p-4 mb-4">
+                            <p className="text-gray-300 text-sm">
+                              <span className="text-gray-400 font-medium">Original by @{post.original_post_username}:</span>
+                              <br />
+                              <span className="mt-1 block">{post.original_post_content}</span>
+                            </p>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center space-x-6 text-sm text-gray-400">
+                          <div className="flex items-center space-x-1">
+                            <Eye className="w-4 h-4" />
+                            <span>{post.view_count}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Heart className="w-4 h-4" />
+                            <span>{post.like_count}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <MessageCircle className="w-4 h-4" />
+                            <span>{post.comment_count}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Repeat2 className="w-4 h-4" />
+                            <span>{post.retweet_count}</span>
                           </div>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 mx-auto mb-4 bg-dark-700 rounded-full flex items-center justify-center">
+                  <FileText className="w-8 h-8 text-gray-400" />
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-400">No posts yet</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === "Activity" && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white mb-4">Recent Activity</h3>
-              {profile.recent_activity && profile.recent_activity.length > 0 ? (
-                <div className="space-y-4">
-                  {profile.recent_activity.map((activity: any, index: number) => (
-                    <div key={index} className="bg-dark-700 rounded-lg p-4">
-                      <div className="flex items-start space-x-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
-                          {activity.activity_type === 'like' && <span className="text-white">❤️</span>}
-                          {activity.activity_type === 'comment' && <span className="text-white">💬</span>}
-                          {activity.activity_type === 'retweet' && <span className="text-white">🔄</span>}
-                          {activity.activity_type === 'post_created' && <span className="text-white">📝</span>}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="font-semibold text-white">
-                              {activity.activity_type === 'like' && 'Liked a post'}
-                              {activity.activity_type === 'comment' && 'Commented on a post'}
-                              {activity.activity_type === 'retweet' && 'Retweeted a post'}
-                              {activity.activity_type === 'post_created' && 'Created a post'}
-                            </span>
-                            <span className="text-gray-400 text-sm">
-                              {new Date(activity.created_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <p className="text-gray-300 text-sm">{activity.post_content}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-400">No recent activity</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center mt-6">
-            <div className="bg-dark-700 rounded-lg p-3">
-              <div className="text-2xl font-bold text-white">{profile.total_posts || 0}</div>
-              <div className="text-sm text-gray-400">Posts</div>
-            </div>
-            <div className="bg-dark-700 rounded-lg p-3">
-              <div className="text-2xl font-bold text-red-500">{profile.total_likes_given || 0}</div>
-              <div className="text-sm text-gray-400">Likes</div>
-            </div>
-            <div className="bg-dark-700 rounded-lg p-3">
-              <div className="text-2xl font-bold text-blue-500">{profile.total_comments_made || 0}</div>
-              <div className="text-sm text-gray-400">Comments</div>
-            </div>
-            <div className="bg-dark-700 rounded-lg p-3">
-              <div className="text-2xl font-bold text-green-500">{profile.total_retweets_made || 0}</div>
-              <div className="text-sm text-gray-400">Retweets</div>
-            </div>
-            <div className="bg-dark-700 rounded-lg p-3">
-              <div className="text-2xl font-bold text-purple-500">{profile.total_bookmarks_made || 0}</div>
-              <div className="text-sm text-gray-400">Bookmarks</div>
-            </div>
+                <p className="text-gray-400 text-lg">No posts yet</p>
+                <p className="text-gray-500 text-sm mt-1">Start sharing your thoughts with the world!</p>
+              </div>
+            )}
           </div>
-        </div>
+        )}
+
+        {activeTab === "Activity" && (
+          <div className="space-y-6">
+            {profile.recent_activity && profile.recent_activity.length > 0 ? (
+              <div className="space-y-4">
+                {profile.recent_activity.map((activity: any, index: number) => (
+                  <div key={index} className="bg-dark-700/50 rounded-lg p-4  -gray-700/50 hover:bg-dark-700 transition-all duration-200">
+                    <div className="flex items-start space-x-4">
+                      <div className="w-12 h-12 rounded-full bg-dark-600  -gray-600 flex items-center justify-center flex-shrink-0">
+                        {getActivityIcon(activity.activity_type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <span className="font-semibold text-white">
+                            {getActivityText(activity.activity_type)}
+                          </span>
+                          <span className="text-gray-500 text-sm">
+                            {new Date(activity.created_at).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                        <p className="text-gray-300 text-sm leading-relaxed">{activity.post_content}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 mx-auto mb-4 bg-dark-700 rounded-full flex items-center justify-center">
+                  <ThumbsUp className="w-8 h-8 text-gray-400" />
+                </div>
+                <p className="text-gray-400 text-lg">No recent activity</p>
+                <p className="text-gray-500 text-sm mt-1">Your interactions will appear here</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Update Profile Modal */}
