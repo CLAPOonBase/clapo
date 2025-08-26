@@ -121,12 +121,7 @@ export default function SocialFeedPage() {
             <SnapComposer />
 
         <div
-        style={{
-  boxShadow:
-    "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
-  // borderRadius: "8px",
-}}
-        className='bg-dark-800 mt-4 pt-4 rounded-2xl'>
+        className='shadow-custom bg-dark-800 mt-4 pt-4 rounded-2xl'>
 <div
   style={{ zIndex: "9999" }}
   className="bg-dark-800 flex justify-around items-center py-4 sticky rounded-2xl top-20 md:top-20"

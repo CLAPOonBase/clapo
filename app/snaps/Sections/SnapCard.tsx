@@ -266,11 +266,7 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   return (
     <>
       <div 
-        style={{
-          boxShadow:
-            "0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, 0px 1px 2px 0px rgba(26, 26, 26, 0.7), 0px 0px 0px 1px #1a1a1a",
-        }}
-        className="bg-dark-700/70 rounded-3xl mt-6 p-6 mb-6 shadow-sm hover:shadow-md transition-all duration-200" 
+        className="shadow-custom bg-dark-700/70 rounded-3xl mt-6 p-6 mb-6 shadow-sm hover:shadow-md transition-all duration-200" 
         onClick={handleView}
       >
         <div className="flex flex-col space-y-4">
@@ -310,9 +306,9 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
                   </span>
                 )}
                 <span className="text-secondary text-sm">{postTime}</span>
-                <button className="text-secondary hover:text-gray-600 p-1" onClick={(e) => e.stopPropagation()}>
+                {/* <button className="text-secondary hover:text-gray-600 p-1" onClick={(e) => e.stopPropagation()}>
                   <MoreHorizontal className="w-5 h-5" />
-                </button>
+                </button> */}
               </div>
             </div>
           </div>
