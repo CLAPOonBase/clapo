@@ -440,6 +440,7 @@ interface ApiContextType {
   getUnreadNotificationCount: (userId?: string) => Promise<number>
   markNotificationAsRead: (notificationId: string) => Promise<ApiNotification>
   markAllNotificationsAsRead: (userId?: string) => Promise<number>
+  refreshPosts: (userId?: string) => Promise<void>
 }
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined)
@@ -572,10 +573,59 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     try {
       dispatch({ type: 'SET_LOADING', payload: true })
       const response = await apiService.getPosts(targetUserId)
-      dispatch({ type: 'SET_POSTS', payload: response.posts })
+      
+      // Get current posts to preserve only the most recent newly created post at the top
+      const currentPosts = state.posts.posts
+      const newPostsFromAPI = response.posts
+      
+      // Find only the most recent newly created post (not all of them)
+      const mostRecentNewPost = currentPosts
+        .filter(post => post._isNewlyCreated)
+        .sort((a, b) => {
+          const timeA = new Date(a._createdAt || 0).getTime()
+          const timeB = new Date(b._createdAt || 0).getTime()
+          return timeB - timeA // Most recent first
+        })[0] // Only take the most recent one
+      
+      // Combine the most recent new post with API posts, ensuring only one new post stays at top
+      const combinedPosts = mostRecentNewPost 
+        ? [
+            mostRecentNewPost,
+            ...newPostsFromAPI.filter(apiPost => apiPost.id !== mostRecentNewPost.id)
+          ]
+        : newPostsFromAPI
+      
+      // Don't clean up temporary flags during regular fetch - only during refresh
+      // This ensures the NEW post stays visible until user manually refreshes
+      dispatch({ type: 'SET_POSTS', payload: combinedPosts })
     } catch (error) {
       console.error('Failed to fetch posts:', error)
       dispatch({ type: 'SET_ERROR', payload: 'Failed to fetch posts' })
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false })
+    }
+  }, [getCurrentUserId, dispatch, state.posts.posts])
+
+  const refreshPosts = useCallback(async (userId?: string) => {
+    const targetUserId = userId || getCurrentUserId()
+    if (!targetUserId) return
+
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true })
+      const response = await apiService.getPosts(targetUserId)
+      
+      // Complete refresh - replace all posts with fresh data from API
+      // This will remove all temporary flags and show posts in proper order
+      const freshPosts = response.posts.map(post => {
+        // Remove any temporary flags that might exist
+        const { _isNewlyCreated, _createdAt, ...cleanPost } = post
+        return cleanPost
+      })
+      
+      dispatch({ type: 'SET_POSTS', payload: freshPosts })
+    } catch (error) {
+      console.error('Failed to refresh posts:', error)
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to refresh posts' })
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false })
     }
@@ -597,10 +647,18 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       console.log('🚀 Calling apiService.createPost...')
       const response = await apiService.createPost(postData)
       console.log('✅ apiService.createPost response:', response)
-      dispatch({ type: 'ADD_POST', payload: response.post })
+      
+      // Add a temporary flag to the new post to mark it as the most recently created
+      const postWithFlag = {
+        ...response.post,
+        _isNewlyCreated: true,
+        _createdAt: new Date().toISOString()
+      }
+      
+      // Add new post at the beginning of the array so it appears first
+      dispatch({ type: 'ADD_POST', payload: postWithFlag })
       return response
     } catch (error) {
-      console.error('❌ Failed to create post:', error)
       console.error('❌ Failed to create post:', error)
       throw error
     }
@@ -1037,6 +1095,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     getUnreadNotificationCount,
     markNotificationAsRead,
     markAllNotificationsAsRead,
+    refreshPosts,
   }
 
   return (

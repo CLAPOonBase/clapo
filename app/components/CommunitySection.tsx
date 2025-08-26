@@ -83,8 +83,20 @@ export const CommunitySection = ({
           
           <div className="bg-slate-700/30 border border-slate-600/30 rounded-xl p-4 mb-4">
             <div className="flex items-center space-x-3 mb-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                <Hash className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center overflow-hidden">
+                {selectedCommunityData.image_url ? (
+                  <img 
+                    src={selectedCommunityData.image_url} 
+                    alt={selectedCommunityData.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                ) : null}
+                <Hash className={`w-6 h-6 text-white ${selectedCommunityData.image_url ? 'hidden' : ''}`} />
               </div>
               <div className="flex-1">
                 <div className="font-semibold text-white">{selectedCommunityData.name}</div>
@@ -170,10 +182,22 @@ export const CommunitySection = ({
                   }`}
                 >
                   <div className="flex items-center space-x-3 mb-2">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm overflow-hidden ${
                       selectedCommunity === community.id ? 'bg-purple-500' : 'bg-slate-600 group-hover:bg-slate-500'
                     }`}>
-                      <Hash className="w-5 h-5" />
+                      {community.image_url ? (
+                        <img 
+                          src={community.image_url} 
+                          alt={community.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            target.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <Hash className={`w-5 h-5 ${community.image_url ? 'hidden' : ''}`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold truncate">{community.name}</div>

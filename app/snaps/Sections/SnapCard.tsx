@@ -303,6 +303,12 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
               </div>
 
               <div className="flex items-center space-x-3">
+                {/* NEW badge for the most recent post only */}
+                {post._isNewlyCreated && (
+                  <span className="px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-full animate-pulse">
+                    NEW
+                  </span>
+                )}
                 <span className="text-secondary text-sm">{postTime}</span>
                 <button className="text-secondary hover:text-gray-600 p-1" onClick={(e) => e.stopPropagation()}>
                   <MoreHorizontal className="w-5 h-5" />
@@ -313,7 +319,7 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
 
           {/* Content */}
           <div className="space-y-4">
-            <p className="text-secondary text-base leading-relaxed whitespace-pre-wrap">
+            <p className="text-secondary text-base leading-relaxed whitespace-pre-wrap break-words">
               {displayedText}
             </p>
             
@@ -323,16 +329,16 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
                   e.stopPropagation()
                   setExpanded(prev => !prev)
                 }}
-                className="text-blue-500 hover:underline text-sm"
+                className="text-blue-500 hover:text-blue-400 hover:underline text-sm font-medium transition-colors"
               >
-                {expanded ? "View Less" : "View More"}
+                {expanded ? "Show less" : "Show more"}
               </button>
             )}
 
             {postImage && (
               <div className="rounded-2xl overflow-hidden">
                 {/\.(jpg|jpeg|png|gif|webp)$/i.test(postImage) ? (
-                  <img src={postImage} alt="Post content" className="w-full max-h-80 object-cover cursor-pointer hover:opacity-95"
+                  <img src={postImage} alt="Post content" className="w-full max-h-96 object-cover cursor-pointer hover:opacity-95 transition-opacity duration-200"
                     onClick={e => { e.stopPropagation(); setShowImageModal(true) }} />
                 ) : /\.(mp4|webm|ogg|mov)$/i.test(postImage) ? (
                   <video 
@@ -342,20 +348,20 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
                     loop 
                     playsInline
                     controls
-                    className="w-full max-h-80 bg-black"
+                    className="w-full max-h-96 bg-black rounded-lg"
                     onClick={(e) => e.stopPropagation()}
                   />
                 ) : /\.(mp3|wav|ogg|m4a)$/i.test(postImage) ? (
-                  <div className="bg-gray-50 p-4 flex items-center space-x-3">
+                  <div className="bg-dark-800 p-4 flex items-center space-x-3 rounded-lg">
                     <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
                       <Volume2 className="w-5 h-5 text-indigo-600" />
                     </div>
                     <audio src={postImage} controls className="flex-1" />
                   </div>
                 ) : (
-                  <div className="bg-gray-50 p-4 text-center rounded-2xl">
-                    <p className="text-gray-600 text-sm mb-2">Media file</p>
-                    <a href={postImage} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
+                  <div className="bg-dark-800 p-4 text-center rounded-lg">
+                    <p className="text-gray-400 text-sm mb-2">Media file</p>
+                    <a href={postImage} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 text-sm font-medium">
                       View media
                     </a>
                   </div>

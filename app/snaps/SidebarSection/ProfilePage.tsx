@@ -157,9 +157,21 @@ export function ProfilePage({ user, posts }: Props) {
       <div className="px-6 pb-6">
         <h1 className="text-2xl font-bold text-white mb-1">{profile.username}</h1>
         <p className="text-gray-400 text-base mb-3">@{profile.username}</p>
-        <p className="text-gray-300 text-sm leading-relaxed max-w-2xl">
+        <p className="text-gray-300 text-sm leading-relaxed max-w-2xl mb-4">
           {profile.bio || 'Welcome to my profile! Connect with me and explore my content.'}
         </p>
+        
+        {/* Followers/Following Section */}
+        <div className="flex items-center space-x-6 text-sm">
+          <button className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors">
+            <span className="font-semibold text-white">{profile.following_count || 0}</span>
+            <span className="text-gray-400">Following</span>
+          </button>
+          <button className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors">
+            <span className="font-semibold text-white">{profile.followers_count || 0}</span>
+            <span className="text-gray-400">Followers</span>
+          </button>
+        </div>
       </div>
       
       {/* Stats Grid */}

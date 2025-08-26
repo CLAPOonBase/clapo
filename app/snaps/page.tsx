@@ -34,7 +34,7 @@ export default function SocialFeedPage() {
   const [hasInitializedData, setHasInitializedData] = useState(false)
 
   const { data: session, status } = useSession()
-  const { state, fetchPosts, fetchNotifications, fetchActivities, getFollowingFeed } = useApi()
+  const { state, fetchPosts, fetchNotifications, fetchActivities, getFollowingFeed, refreshPosts } = useApi()
 
   useEffect(() => {
     if (status === 'authenticated' && session?.dbUser?.id && !hasInitializedData) {
@@ -48,6 +48,9 @@ export default function SocialFeedPage() {
       setHasInitializedData(false)
     }
   }, [session, status, hasInitializedData])
+
+  // Removed auto-refresh to prevent NEW posts from disappearing
+  // Users can manually refresh when they want to see the latest posts
 
   const loadFollowingFeed = async () => {
     if (!session?.dbUser?.id || isLoadingFollowing) return
@@ -159,10 +162,7 @@ export default function SocialFeedPage() {
   />
 </div>
 
-
-
-
-  <div className="p-4">
+   <div className="p-4">
     <AnimatePresence mode="wait">
       <motion.div
         key={activeTab}

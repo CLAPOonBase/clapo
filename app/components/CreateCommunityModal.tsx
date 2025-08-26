@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Image as ImageIcon, X } from 'lucide-react';
+import Image from 'next/image';
 
 interface CreateCommunityModalProps {
   show: boolean;
@@ -16,7 +17,26 @@ export const CreateCommunityModal = ({
 }: CreateCommunityModalProps) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [communityImage, setCommunityImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
   const [loading, setLoading] = useState(false);
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setCommunityImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setCommunityImage(null);
+    setImagePreview('');
+  };
 
   const handleCreate = async () => {
     if (!name.trim() || !description.trim()) return;
@@ -24,16 +44,18 @@ export const CreateCommunityModal = ({
     try {
       setLoading(true);
 
+      // Create FormData for image upload
+      const formData = new FormData();
+      formData.append('name', name.trim());
+      formData.append('description', description.trim());
+      formData.append('creatorId', creatorId);
+      if (communityImage) {
+        formData.append('image', communityImage);
+      }
+
       const res = await fetch('http://server.blazeswap.io/api/snaps/communities', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim(),
-          creatorId: creatorId,
-        }),
+        body: formData, // Send as FormData instead of JSON
       });
 
       if (!res.ok) {
@@ -44,8 +66,11 @@ export const CreateCommunityModal = ({
 
       if (onCreated) onCreated(data);
 
+      // Reset form
       setName('');
       setDescription('');
+      setCommunityImage(null);
+      setImagePreview('');
       onClose();
     } catch (err) {
       console.error(err);
@@ -88,25 +113,63 @@ export const CreateCommunityModal = ({
               placeholder="Describe your community..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-700/50 text-white rounded-xl border border-slate-600/50 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 resize-none"
+              className="w-full px-4 py-3 bg-slate-700/50 text-white rounded-xl border border-slate-600/50 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-none"
               rows={3}
             />
           </div>
+
+          {/* Image Upload Section */}
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Community Image (Optional)</label>
+            <div className="space-y-3">
+              {!imagePreview ? (
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-600/50 border-dashed rounded-xl cursor-pointer bg-slate-700/30 hover:bg-slate-700/50 transition-colors">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <ImageIcon className="w-8 h-8 mb-2 text-slate-400" />
+                    <p className="text-sm text-slate-400">Click to upload image</p>
+                    <p className="text-xs text-slate-500">PNG, JPG, GIF up to 10MB</p>
+                  </div>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                  />
+                </label>
+              ) : (
+                <div className="relative">
+                  <Image
+                    src={imagePreview}
+                    alt="Community preview"
+                    width={400}
+                    height={200}
+                    className="w-full h-32 object-cover rounded-xl"
+                  />
+                  <button
+                    onClick={removeImage}
+                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
           
           <div className="flex space-x-3 pt-2">
+            <button
+              onClick={onClose}
+              disabled={loading}
+              className="flex-1 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-xl transition-all duration-200 hover:shadow-lg disabled:opacity-50"
+            >
+              Cancel
+            </button>
             <button
               onClick={handleCreate}
               disabled={!name.trim() || !description.trim() || loading}
               className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:from-slate-600 disabled:to-slate-600 text-white font-medium rounded-xl transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating...' : 'Create Community'}
-            </button>
-            
-            <button
-              onClick={onClose}
-              className="flex-1 px-6 py-3 bg-slate-600 hover:bg-slate-500 text-white font-medium rounded-xl transition-all duration-200 hover:shadow-lg"
-            >
-              Cancel
             </button>
           </div>
         </div>
