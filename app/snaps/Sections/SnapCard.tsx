@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume2, Paperclip, Smile, Send } from 'lucide-react'
 import { Post, ApiPost } from '@/app/types'
 import { useApi } from '../../Context/ApiProvider'
@@ -35,6 +35,7 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   const [commentText, setCommentText] = useState('')
   const [showInlineComments, setShowInlineComments] = useState(false)
   const [comments, setComments] = useState<any[]>([])
+  const hasInitialized = useRef(false)
 
   const { likePost, unlikePost, retweetPost, bookmarkPost, unbookmarkPost, viewPost, addComment, getPostComments, state } = useApi()
   const { data: session } = useSession()
@@ -57,123 +58,185 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   const isUserInBookmarks = isApiPost && post.bookmarks?.some(u => u.user_id === currentUserId)
 
   useEffect(() => {
-    // Initialize local engagement counts
-    const initialLikes = isApiPost ? (post.like_count || 0) : (post.likes || 0)
-    const initialComments = isApiPost ? (post.comment_count || 0) : (post.comments || 0)
-    const initialRetweets = isApiPost ? (post.retweet_count || 0) : (post.retweets || 0)
-    const initialBookmarks = isApiPost ? (post.bookmarks?.length || 0) : 0
+    if (!hasInitialized.current && post && post.id) {
+      hasInitialized.current = true
+      
+      const initialLikes = isApiPost ? (post.like_count || 0) : (post.likes || 0)
+      const initialComments = isApiPost ? (post.comment_count || 0) : (post.comments || 0)
+      const initialRetweets = isApiPost ? (post.retweet_count || 0) : (post.retweets || 0)
+      const initialBookmarks = isApiPost ? (post.bookmarks?.length || 0) : 0
 
-    setLocalEngagement({
-      likes: initialLikes,
-      comments: initialComments,
-      retweets: initialRetweets,
-      bookmarks: initialBookmarks
-    })
+      setLocalEngagement({
+        likes: initialLikes,
+        comments: initialComments,
+        retweets: initialRetweets,
+        bookmarks: initialBookmarks
+      })
 
-    // Initialize user engagement status
-    const userLiked = isUserInLikes || liked || state.engagement?.likedPosts?.has(postId) || false
-    const userRetweeted = isUserInRetweets || retweeted || state.engagement?.retweetedPosts?.has(postId) || false
-    const userBookmarked = isUserInBookmarks || bookmarked || state.engagement?.bookmarkedPosts?.has(postId) || false
+      const userLiked = isUserInLikes || liked || state.engagement?.likedPosts?.has(postId) || false
+      const userRetweeted = isUserInRetweets || retweeted || state.engagement?.retweetedPosts?.has(postId) || false
+      const userBookmarked = isUserInBookmarks || bookmarked || state.engagement?.bookmarkedPosts?.has(postId) || false
 
-    setUserEngagement({
-      liked: userLiked,
-      retweeted: userRetweeted,
-      bookmarked: userBookmarked
-    })
+      setUserEngagement({
+        liked: userLiked,
+        retweeted: userRetweeted,
+        bookmarked: userBookmarked
+      })
 
-    // Load existing comments if it's an API post
-    if (isApiPost && post.comments) {
-      setComments(post.comments)
+      if (isApiPost && post.comments) {
+        setComments(post.comments)
+      }
     }
+  }, [postId, post, isApiPost, liked, retweeted, bookmarked, state.engagement])
 
-    // Debug logging
-    console.log('Post engagement initialized:', {
-      postId,
-      likes: initialLikes,
-      userLiked,
-      globalLikedPosts: state.engagement?.likedPosts,
-      isUserInLikes,
-      liked
-    })
-  }, [isUserInLikes, isUserInRetweets, isUserInBookmarks, liked, retweeted, bookmarked, postId, state.engagement, post])
-
-  const handleAction = async (
-    type: 'like' | 'retweet' | 'bookmark',
-    apiCall: () => Promise<any>,
-    undoCall: () => Promise<any>,
-    counterKey: keyof typeof localEngagement,
-    engagementKey: keyof typeof userEngagement,
-    toastMsg: { do: string, undo: string },
-    onAction?: (id: number | string) => void
-  ) => {
-    if (!currentUserId || isLoading[type]) return
+  const handleLike = async () => {
+    if (!currentUserId || isLoading.like) return
     
-    setIsLoading(prev => ({ ...prev, [type]: true }))
-    
-    // Store current state for rollback
-    const currentEngagementState = userEngagement[engagementKey]
-    const currentCount = localEngagement[counterKey]
+    setIsLoading(prev => ({ ...prev, like: true }))
     
     try {
-      let apiResult
+      const currentLiked = userEngagement.liked
+      const currentCount = localEngagement.likes
       
-      if (currentEngagementState) {
-        // User is un-doing the action
-        console.log(`Attempting to un${type} post ${postId}`)
+      if (currentLiked) {
+        const newCount = Math.max(0, currentCount - 1)
+        setLocalEngagement(prev => ({ ...prev, likes: newCount }))
+        setUserEngagement(prev => ({ ...prev, liked: false }))
+        setToast({ message: 'Post unliked', type: 'unlike' })
         
-        // Update UI immediately (optimistic update)
-        setLocalEngagement(prev => ({ ...prev, [counterKey]: Math.max(0, prev[counterKey] - 1) }))
-        setUserEngagement(prev => ({ ...prev, [engagementKey]: false }))
-        setToast({ message: toastMsg.undo, type: `un${type}` })
+        await unlikePost(postId, currentUserId)
         
-        // Make API call
-        apiResult = await undoCall()
-        console.log(`Un${type} API result:`, apiResult)
-        
-      } else {
-        // User is performing the action
-        console.log(`Attempting to ${type} post ${postId}`)
-        
-        // Update UI immediately (optimistic update)
-        setLocalEngagement(prev => ({ ...prev, [counterKey]: prev[counterKey] + 1 }))
-        setUserEngagement(prev => ({ ...prev, [engagementKey]: true }))
-        setToast({ message: toastMsg.do, type: type })
-        
-        // Make API call
-        apiResult = await apiCall()
-        console.log(`${type} API result:`, apiResult)
-      }
-      
-      // Update global state if API was successful
-      if (apiResult && state.engagement) {
-        if (currentEngagementState) {
-          // Remove from global state
-          state.engagement[`${type}dPosts`]?.delete(postId)
-        } else {
-          // Add to global state
-          state.engagement[`${type}dPosts`]?.add(postId)
+        if (state.engagement?.likedPosts) {
+          state.engagement.likedPosts.delete(postId)
         }
+        
+        onLike?.(isApiPost ? postId : parseInt(postId))
+      } else {
+        const newCount = currentCount + 1
+        setLocalEngagement(prev => ({ ...prev, likes: newCount }))
+        setUserEngagement(prev => ({ ...prev, liked: true }))
+        setToast({ message: 'Post liked', type: 'like' })
+        
+        await likePost(postId, currentUserId)
+        
+        if (state.engagement?.likedPosts) {
+          state.engagement.likedPosts.add(postId)
+        }
+        
+        onLike?.(isApiPost ? postId : parseInt(postId))
+      }
+    } catch (error) {
+      console.error('Failed to handle like:', error)
+      setToast({ message: 'Failed to update like. Please try again.', type: 'error' })
+      
+      const currentLiked = userEngagement.liked
+      const currentCount = localEngagement.likes
+      
+      if (currentLiked) {
+        setLocalEngagement(prev => ({ ...prev, likes: currentCount + 1 }))
+        setUserEngagement(prev => ({ ...prev, liked: true }))
+      } else {
+        setLocalEngagement(prev => ({ ...prev, likes: Math.max(0, currentCount - 1) }))
+        setUserEngagement(prev => ({ ...prev, liked: false }))
+      }
+    } finally {
+      setIsLoading(prev => ({ ...prev, like: false }))
+    }
+  }
+
+  const handleRetweet = async () => {
+    if (!currentUserId || isLoading.retweet || userEngagement.retweeted) return
+    
+    setIsLoading(prev => ({ ...prev, retweet: true }))
+    
+    try {
+      const currentCount = localEngagement.retweets
+      
+      const newCount = currentCount + 1
+      setLocalEngagement(prev => ({ ...prev, retweets: newCount }))
+      setUserEngagement(prev => ({ ...prev, retweeted: true }))
+      setToast({ message: 'Post retweeted', type: 'retweet' })
+      
+      await retweetPost(postId, currentUserId)
+      
+      if (state.engagement?.retweetedPosts) {
+        state.engagement.retweetedPosts.add(postId)
       }
       
-      // Call the parent handler if provided
-      onAction?.(isApiPost ? postId : parseInt(postId))
-      
+      onRetweet?.(isApiPost ? postId : parseInt(postId))
     } catch (error) {
-      // Rollback UI changes on error
-      console.error(`Failed to ${type} post:`, error)
-      setLocalEngagement(prev => ({ ...prev, [counterKey]: currentCount }))
-      setUserEngagement(prev => ({ ...prev, [engagementKey]: currentEngagementState }))
-      setToast({ message: `Failed to ${type} post. Please try again.`, type: 'error' })
+      console.error('Failed to retweet:', error)
+      setToast({ message: 'Failed to retweet. Please try again.', type: 'error' })
+      
+      const currentCount = localEngagement.retweets
+      setLocalEngagement(prev => ({ ...prev, retweets: Math.max(0, currentCount - 1) }))
+      setUserEngagement(prev => ({ ...prev, retweeted: false }))
     } finally {
-      setIsLoading(prev => ({ ...prev, [type]: false }))
+      setIsLoading(prev => ({ ...prev, retweet: false }))
+    }
+  }
+
+  const handleBookmark = async () => {
+    if (!currentUserId || isLoading.bookmark) return
+    
+    setIsLoading(prev => ({ ...prev, bookmark: true }))
+    
+    try {
+      const currentBookmarked = userEngagement.bookmarked
+      const currentCount = localEngagement.bookmarks
+      
+      if (currentBookmarked) {
+        const newCount = Math.max(0, currentCount - 1)
+        setLocalEngagement(prev => ({ ...prev, bookmarks: newCount }))
+        setUserEngagement(prev => ({ ...prev, bookmarked: false }))
+        setToast({ message: 'Bookmark removed', type: 'unbookmark' })
+        
+        await unbookmarkPost(postId, currentUserId)
+        
+        if (state.engagement?.bookmarkedPosts) {
+          state.engagement.bookmarkedPosts.delete(postId)
+        }
+        
+        onBookmark?.(isApiPost ? postId : parseInt(postId))
+      } else {
+        const newCount = currentCount + 1
+        setLocalEngagement(prev => ({ ...prev, bookmarks: newCount }))
+        setUserEngagement(prev => ({ ...prev, bookmarked: true }))
+        setToast({ message: 'Post bookmarked', type: 'bookmark' })
+        
+        await bookmarkPost(postId, currentUserId)
+        
+        if (state.engagement?.bookmarkedPosts) {
+          state.engagement.bookmarkedPosts.add(postId)
+        }
+        
+        onBookmark?.(isApiPost ? postId : parseInt(postId))
+      }
+    } catch (error) {
+      console.error('Failed to handle bookmark:', error)
+      setToast({ message: 'Failed to update bookmark. Please try again.', type: 'error' })
+      
+      const currentBookmarked = userEngagement.bookmarked
+      const currentCount = localEngagement.bookmarks
+      
+      if (currentBookmarked) {
+        setLocalEngagement(prev => ({ ...prev, bookmarks: currentCount + 1 }))
+        setUserEngagement(prev => ({ ...prev, bookmarked: true }))
+      } else {
+        setLocalEngagement(prev => ({ ...prev, bookmarks: Math.max(0, currentCount - 1) }))
+        setUserEngagement(prev => ({ ...prev, bookmarked: false }))
+      }
+    } finally {
+      setIsLoading(prev => ({ ...prev, bookmark: false }))
     }
   }
 
   const handleView = () => currentUserId && viewPost(postId, currentUserId).catch(() => {})
 
   const handleCommentAdded = (newComments: any[]) => {
+    const newCommentCount = newComments.length
     setComments(newComments)
-    setLocalEngagement(prev => ({ ...prev, comments: newComments.length }))
+    setLocalEngagement(prev => ({ ...prev, comments: newCommentCount }))
   }
 
   const [expanded, setExpanded] = useState(false)
@@ -182,20 +245,17 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   const isLong = words.length > 50
   const displayedText = expanded ? postContent : words.slice(0, 50).join(" ") + (isLong ? "..." : "")
 
-  // Handle inline comment submission
   const handleCommentSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
     if (!commentText.trim() || !currentUserId || isLoading.comment) return
 
     setIsLoading(prev => ({ ...prev, comment: true }))
     
-    // Store current comment count for rollback
     const currentCommentCount = localEngagement.comments
     
     try {
-      // Create new comment object for optimistic update
       const newComment = {
-        id: Date.now().toString(), // Temporary ID
+        id: Date.now().toString(),
         content: commentText.trim(),
         created_at: new Date().toISOString(),
         user_id: currentUserId,
@@ -203,28 +263,25 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
         avatar_url: currentUserAvatar
       }
 
-      // Update UI immediately (optimistic update)
       const updatedComments = [...comments, newComment]
+      const newCommentCount = updatedComments.length
       setComments(updatedComments)
-      setLocalEngagement(prev => ({ ...prev, comments: prev.comments + 1 }))
+      setLocalEngagement(prev => ({ ...prev, comments: newCommentCount }))
       setCommentText('')
       setToast({ message: 'Comment added', type: 'success' })
 
-      // Show inline comments if they weren't visible
       if (!showInlineComments) {
         setShowInlineComments(true)
       }
 
-      // Add comment via API if available
       if (addComment) {
         await addComment(postId, commentText.trim(), currentUserId)
       }
 
     } catch (error) {
-      // Rollback on error
-      setComments(comments) // Reset to original comments
+      setComments(comments)
       setLocalEngagement(prev => ({ ...prev, comments: currentCommentCount }))
-      setCommentText(commentText) // Restore comment text
+      setCommentText(commentText)
       setToast({ message: 'Failed to add comment', type: 'error' })
       console.error('Failed to add comment:', error)
     } finally {
@@ -232,12 +289,10 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
     }
   }
 
-  // Handle showing/hiding inline comments
   const toggleInlineComments = async (e: React.MouseEvent) => {
     e.stopPropagation()
     
     if (!showInlineComments && comments.length === 0 && isApiPost) {
-      // Load comments from API if not loaded yet
       try {
         if (getPostComments) {
           const fetchedComments = await getPostComments(postId)
@@ -251,7 +306,6 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
     setShowInlineComments(prev => !prev)
   }
 
-  // Format comment time
   const formatCommentTime = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -270,7 +324,6 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
         onClick={handleView}
       >
         <div className="flex flex-col space-y-4">
-          {/* Header */}
           <div className='flex space-x-3'>
             <div className="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden">
               {postAvatar ? (
@@ -299,21 +352,16 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
               </div>
 
               <div className="flex items-center space-x-3">
-                {/* NEW badge for the most recent post only */}
                 {post._isNewlyCreated && (
                   <span className="px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-full animate-pulse">
                     NEW
                   </span>
                 )}
                 <span className="text-secondary text-sm">{postTime}</span>
-                {/* <button className="text-secondary hover:text-gray-600 p-1" onClick={(e) => e.stopPropagation()}>
-                  <MoreHorizontal className="w-5 h-5" />
-                </button> */}
               </div>
             </div>
           </div>
 
-          {/* Content */}
           <div className="space-y-4">
             <p className="text-secondary text-base leading-relaxed whitespace-pre-wrap break-words">
               {displayedText}
@@ -366,34 +414,12 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
             )}
           </div>
 
-          {/* Engagement Stats */}
           <div className="flex items-center justify-between py-4 ">
             <div className="flex items-center space-x-6">
               <button 
                 onClick={e => { 
                   e.stopPropagation()
-                  console.log('Like button clicked:', { 
-                    postId, 
-                    currentUserId, 
-                    userEngagement,
-                    localEngagement,
-                    isLoading: isLoading.like 
-                  })
-                  handleAction(
-                    'like', 
-                    () => {
-                      console.log('Calling likePost API')
-                      return likePost(postId, currentUserId!)
-                    }, 
-                    () => {
-                      console.log('Calling unlikePost API')
-                      return unlikePost(postId, currentUserId!)
-                    }, 
-                    'likes', 
-                    'liked', 
-                    { do: 'Post liked', undo: 'Post unliked' }, 
-                    onLike
-                  ) 
+                  handleLike()
                 }}
                 disabled={isLoading.like || !currentUserId}
                 className={`flex items-center space-x-2 text-gray-500 hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.liked ? 'text-red-500' : ''}`}
@@ -412,10 +438,10 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
 
               <button 
                 onClick={e => { 
-                  e.stopPropagation(); 
-                  handleAction('retweet', () => retweetPost(postId, currentUserId!), async () => {}, 'retweets', 'retweeted', { do: 'Post retweeted', undo: '' }, onRetweet) 
+                  e.stopPropagation()
+                  handleRetweet()
                 }}
-                disabled={isLoading.retweet || userEngagement.retweeted || !currentUserId}
+                disabled={isLoading.retweet || !currentUserId || userEngagement.retweeted}
                 className={`flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.retweeted ? 'text-green-500' : ''}`}
               >
                 <Repeat2 className={`w-5 h-5 transition-all duration-200 ${userEngagement.retweeted ? 'fill-green-500 scale-110' : ''}`} />
@@ -425,8 +451,8 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
 
             <button 
               onClick={e => { 
-                e.stopPropagation(); 
-                handleAction('bookmark', () => bookmarkPost(postId, currentUserId!), () => unbookmarkPost(postId, currentUserId!), 'bookmarks', 'bookmarked', { do: 'Post bookmarked', undo: 'Bookmark removed' }, onBookmark) 
+                e.stopPropagation()
+                handleBookmark()
               }}
               disabled={isLoading.bookmark || !currentUserId}
               className={`flex items-center space-x-2 text-gray-500 hover:text-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.bookmarked ? 'text-purple-500' : ''}`}
@@ -436,7 +462,6 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
             </button>
           </div>
 
-          {/* Inline Comments Section */}
           <AnimatePresence>
             {showInlineComments && (
               <motion.div
@@ -446,7 +471,6 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
                 transition={{ duration: 0.3 }}
                 className="space-y-4 pt-4"
               >
-                {/* Comments List */}
                 {comments.length > 0 && (
                   <div className="space-y-3">
                     {comments.slice(0, visibleCount).map((comment) => (
@@ -480,7 +504,6 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
                       </div>
                     ))}
 
-                    {/* Show More Button */}
                     {visibleCount < comments.length && (
                       <button
                         onClick={(e) => {
@@ -504,7 +527,6 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
             )}
           </AnimatePresence>
 
-          {/* Comment Input */}
           <form onSubmit={handleCommentSubmit} className="flex items-center space-x-3 pt-4 ">
             <div className="relative w-10 h-10 flex-shrink-0">
               {currentUserAvatar ? (
@@ -555,7 +577,6 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
         </div>
       </div>
 
-      {/* Image Modal */}
       {showImageModal && postImage && (
         <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4" onClick={() => setShowImageModal(false)}>
           <div className="relative max-w-5xl max-h-full">
@@ -568,7 +589,6 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
         </div>
       )}
 
-      {/* Full Comment Section Modal */}
       <AnimatePresence>
         {showCommentSection && isApiPost && (
           <motion.div
@@ -587,12 +607,10 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
         )}
       </AnimatePresence>
 
-      {/* Engagement Details */}
       {showEngagement && isApiPost && (
         <EngagementDetails likes={post.likes} retweets={post.retweets} bookmarks={post.bookmarks} onClose={() => setShowEngagement(false)} />
       )}
 
-      {/* Toast */}
       {toast && <Toast id="snap-toast" title="Notification" message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </>
   )

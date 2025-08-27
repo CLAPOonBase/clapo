@@ -453,7 +453,6 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   const testUserProfile = useCallback(async (userId: string) => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'}/users/${userId}/profile`);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const data = await response.json();
     } catch (error) {
       console.error('API test failed:', error);
@@ -483,14 +482,6 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     } else if (status === 'authenticated' && session?.dbUser) {
       const userData = { ...session.dbUser };
       
-      console.log('🔍 ApiProvider Debug:', {
-        status,
-        sessionDbUser: session.dbUser,
-        userData,
-        avatarUrl: userData.avatar_url,
-        hasAvatar: !!userData.avatar_url
-      });
-      
       const apiUser: ApiUser = {
         id: userData.id,
         username: userData.username,
@@ -504,18 +495,12 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_USER', payload: apiUser })
       
       if (session.dbUser?.id) {
-        // These functions will be defined later, so we'll call them in a separate effect
-        // fetchPosts(session.dbUser.id)
-        // fetchNotifications(session.dbUser.id)
-        // fetchEnhancedNotifications(session.dbUser.id)
-        // fetchActivities(session.dbUser.id)
       }
     } else if (status === 'unauthenticated') {
       dispatch({ type: 'CLEAR_USER' })
     }
   }, [session, status, dispatch])
 
-  // Login function (for manual login, not used with Twitter auth)
   const login = async (username: string, password: string) => {
     dispatch({ type: 'SET_LOADING', payload: true })
     try {
@@ -528,7 +513,6 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Signup function (for manual signup, not used with Twitter auth)
   const signup = async (userData: never) => {
     dispatch({ type: 'SET_LOADING', payload: true })
     try {
@@ -541,24 +525,19 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Logout function
   const logout = () => {
     dispatch({ type: 'CLEAR_USER' })
   }
 
-  // Get current user ID from session
   const getCurrentUserId = useCallback(() => {
     if (session?.dbUser?.id) {
-      console.log('✅ Found user ID:', session.dbUser.id)
       return session.dbUser.id
     }
     
-    // Check for dbUserId field
     if (session?.dbUserId) {
       return session.dbUserId
     }
     
-    // Check for user field
     if (session?.user?.id) {
       return session.user.id
     }
@@ -574,29 +553,36 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_LOADING', payload: true })
       const response = await apiService.getPosts(targetUserId)
       
-      // Get current posts to preserve only the most recent newly created post at the top
       const currentPosts = state.posts.posts
       const newPostsFromAPI = response.posts
       
-      // Find only the most recent newly created post (not all of them)
       const mostRecentNewPost = currentPosts
         .filter(post => post._isNewlyCreated)
         .sort((a, b) => {
           const timeA = new Date(a._createdAt || 0).getTime()
           const timeB = new Date(b._createdAt || 0).getTime()
-          return timeB - timeA // Most recent first
-        })[0] // Only take the most recent one
+          return timeB - timeA
+        })[0]
       
-      // Combine the most recent new post with API posts, ensuring only one new post stays at top
+      const mergedPosts = newPostsFromAPI.map(apiPost => {
+        const currentPost = currentPosts.find(cp => cp.id === apiPost.id)
+        if (currentPost) {
+          return {
+            ...apiPost,
+            _isNewlyCreated: currentPost._isNewlyCreated,
+            _createdAt: currentPost._createdAt
+          }
+        }
+        return apiPost
+      })
+      
       const combinedPosts = mostRecentNewPost 
         ? [
             mostRecentNewPost,
-            ...newPostsFromAPI.filter(apiPost => apiPost.id !== mostRecentNewPost.id)
+            ...mergedPosts.filter(mergedPost => mergedPost.id !== mostRecentNewPost.id)
           ]
-        : newPostsFromAPI
+        : mergedPosts
       
-      // Don't clean up temporary flags during regular fetch - only during refresh
-      // This ensures the NEW post stays visible until user manually refreshes
       dispatch({ type: 'SET_POSTS', payload: combinedPosts })
     } catch (error) {
       console.error('Failed to fetch posts:', error)
@@ -614,11 +600,12 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_LOADING', payload: true })
       const response = await apiService.getPosts(targetUserId)
       
-      // Complete refresh - replace all posts with fresh data from API
-      // This will remove all temporary flags and show posts in proper order
       const freshPosts = response.posts.map(post => {
-        // Remove any temporary flags that might exist
-        const { _isNewlyCreated, _createdAt, ...cleanPost } = post
+        const { 
+          _isNewlyCreated, 
+          _createdAt, 
+          ...cleanPost 
+        } = post
         return cleanPost
       })
       
@@ -632,40 +619,29 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   }, [getCurrentUserId, dispatch])
 
   const createPost = useCallback(async (postData: any) => {
-    console.log('🔍 createPost called with data:', postData)
-    
-    // Use the userId from postData since it's already validated in SnapComposer
     const userId = postData.userId
-    console.log('🔍 Using userId from postData:', userId)
     
     if (!userId) {
-      console.error('❌ No user ID found in postData, returning early')
       throw new Error('User ID is required to create a post')
     }
 
     try {
-      console.log('🚀 Calling apiService.createPost...')
       const response = await apiService.createPost(postData)
-      console.log('✅ apiService.createPost response:', response)
       
-      // Add a temporary flag to the new post to mark it as the most recently created
       const postWithFlag = {
         ...response.post,
         _isNewlyCreated: true,
         _createdAt: new Date().toISOString()
       }
       
-      // Add new post at the beginning of the array so it appears first
       dispatch({ type: 'ADD_POST', payload: postWithFlag })
       return response
     } catch (error) {
-      console.error('❌ Failed to create post:', error)
       throw error
     }
   }, [])
 
   const likePost = useCallback(async (postId: string, targetUserId: string) => {
-    console.log('🔍 Like Post Call:', { postId, targetUserId, type: typeof targetUserId })
     try {
       await apiService.likePost(postId, { userId: targetUserId })
       dispatch({ type: 'LIKE_POST', payload: postId })
@@ -693,7 +669,6 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const bookmarkPost = useCallback(async (postId: string, targetUserId: string) => {
-    console.log('🔍 Bookmark Post Call:', { postId, targetUserId, type: typeof targetUserId })
     try {
       await apiService.bookmarkPost(postId, { userId: targetUserId })
       dispatch({ type: 'BOOKMARK_POST', payload: postId })
@@ -703,7 +678,6 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const unbookmarkPost = useCallback(async (postId: string, targetUserId: string) => {
-    console.log('🔍 Unbookmark Post Call:', { postId, targetUserId, type: typeof targetUserId })
     try {
       await apiService.unbookmarkPost(postId, { userId: targetUserId })
       dispatch({ type: 'UNBOOKMARK_POST', payload: postId })
@@ -711,8 +685,6 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       console.error('Error unbookmarking post:', error)
     }
   }, [])
-
-
 
   const viewPost = useCallback(async (postId: string, targetUserId: string) => {
     try {
@@ -756,14 +728,11 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     const targetUserId = userId || getCurrentUserId()
     if (!targetUserId) return
 
-    console.log('🔍 Fetching notifications for user:', targetUserId);
     try {
       const response = await apiService.getNotifications(targetUserId)
-      console.log('🔍 Notifications API response:', response);
       dispatch({ type: 'SET_NOTIFICATIONS', payload: response.notifications })
-      console.log('✅ Notifications set in state:', response.notifications?.length || 0);
     } catch (error) {
-      console.error('❌ Failed to fetch notifications:', error)
+      console.error('Failed to fetch notifications:', error)
     }
   }, [getCurrentUserId, dispatch])
 
@@ -771,14 +740,11 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     const targetUserId = userId || getCurrentUserId()
     if (!targetUserId) return
 
-    console.log('🔍 Fetching enhanced notifications for user:', targetUserId);
     try {
       const response = await apiService.getEnhancedNotifications(targetUserId)
-      console.log('🔍 Enhanced notifications API response:', response);
       dispatch({ type: 'SET_ENHANCED_NOTIFICATIONS', payload: response.notifications })
-      console.log('✅ Enhanced notifications set in state:', response.notifications?.length || 0);
     } catch (error) {
-      console.error('❌ Failed to fetch enhanced notifications:', error)
+      console.error('Failed to fetch enhanced notifications:', error)
     }
   }, [getCurrentUserId, dispatch])
 
@@ -798,7 +764,6 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   const markNotificationAsRead = useCallback(async (notificationId: string) => {
     try {
       const response = await apiService.markNotificationAsRead(notificationId)
-      // Update the notification in state
       dispatch({ 
         type: 'UPDATE_NOTIFICATION', 
         payload: { id: notificationId, updates: { is_read: true } } 
@@ -816,7 +781,6 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await apiService.markAllNotificationsAsRead(targetUserId)
-      // Mark all notifications as read in state
       dispatch({ type: 'MARK_ALL_NOTIFICATIONS_READ' })
       return response.updatedCount
     } catch (error) {
@@ -896,13 +860,11 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       const response = await apiService.getCommunities(searchQuery)
       const allCommunities = response.communities
       
-      // If we have a current user, also fetch their communities to merge membership info
       if (session?.dbUser?.id) {
         try {
           const userCommunitiesResponse = await apiService.getUserCommunities(session.dbUser.id)
           const userCommunities = userCommunitiesResponse.communities
           
-          // Merge the data: add user membership info to all communities
           const mergedCommunities = allCommunities.map(community => {
             const userCommunity = userCommunities.find(uc => uc.id === community.id)
             return {
@@ -915,11 +877,9 @@ export function ApiProvider({ children }: { children: ReactNode }) {
           dispatch({ type: 'SET_COMMUNITIES', payload: mergedCommunities })
         } catch (userCommunitiesError) {
           console.error('Failed to fetch user communities for merging:', userCommunitiesError)
-          // Fallback to just all communities without user membership info
           dispatch({ type: 'SET_COMMUNITIES', payload: allCommunities })
         }
       } else {
-        // No user session, just set all communities
         dispatch({ type: 'SET_COMMUNITIES', payload: allCommunities })
       }
     } catch (error) {
@@ -955,14 +915,11 @@ export function ApiProvider({ children }: { children: ReactNode }) {
   }, [dispatch])
 
   const getCommunityMessages = useCallback(async (communityId: string) => {
-    console.log('🔍 getCommunityMessages called for community:', communityId);
     try {
       const response = await apiService.getCommunityMessages(communityId)
-      console.log('🔍 Community messages API response:', response);
       dispatch({ type: 'SET_COMMUNITY_MESSAGES', payload: { communityId, messages: response.messages } })
-      console.log('✅ Community messages set in state for community:', communityId, 'Count:', response.messages?.length || 0);
     } catch (error) {
-      console.error('❌ Failed to fetch community messages:', error)
+      console.error('Failed to fetch community messages:', error)
     }
   }, [dispatch])
 
@@ -997,12 +954,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
   const followUser = useCallback(async (targetUserId: string, data: FollowRequest) => {
     try {
-      console.log('🔍 Session Debug for followUser:', {
-        sessionKeys: session ? Object.keys(session) : [],
-        sessionData: session
-      })
       const authToken = session?.accessToken || session?.token
-      console.log('🔍 Using auth token:', authToken)
       const response = await apiService.followUser(targetUserId, data, authToken)
       return response
     } catch (error) {
