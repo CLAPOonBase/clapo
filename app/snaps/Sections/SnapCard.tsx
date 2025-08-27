@@ -2,7 +2,7 @@
 // @ts-nocheck
 'use client'
 import React, { useState, useEffect, useRef } from 'react'
-import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume2, Paperclip, Smile, Send } from 'lucide-react'
+import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume2, Paperclip, Smile, Send, ExternalLink } from 'lucide-react'
 import { Post, ApiPost } from '@/app/types'
 import { useApi } from '../../Context/ApiProvider'
 import { useSession } from 'next-auth/react'
@@ -88,6 +88,57 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
       }
     }
   }, [postId, post, isApiPost, liked, retweeted, bookmarked, state.engagement])
+
+  // Close modal when clicking outside or pressing Escape
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowImageModal(false)
+      }
+    }
+
+    if (showImageModal) {
+      document.addEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'hidden' // Prevent background scrolling
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'unset'
+    }
+  }, [showImageModal])
+
+const [clickPosition, setClickPosition] = useState<{ x: number; y: number } | null>(null)
+
+const handleImageClick = (e: React.MouseEvent) => {
+  e.preventDefault()
+  e.stopPropagation()
+  const rect = (e.target as HTMLElement).getBoundingClientRect()
+  setClickPosition({
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2
+  })
+  setShowImageModal(true)
+}
+
+
+  const handleModalClose = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    console.log('Closing modal') // Debug log
+    setShowImageModal(false)
+  }
+
+  const handleModalBackdropClick = (e: React.MouseEvent) => {
+    // Only close if clicking the backdrop, not the image itself
+    if (e.target === e.currentTarget) {
+      handleModalClose(e)
+    }
+  }
 
   const handleLike = async () => {
     if (!currentUserId || isLoading.like) return
@@ -325,7 +376,7 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
       >
         <div className="flex flex-col space-y-4">
           <div className='flex space-x-3'>
-            <div className="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden">
+            {/* <div className="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden">
               {postAvatar ? (
                 <img src={postAvatar} alt={postAuthor} className="w-full h-full object-cover bg-gray-200"
                   onError={e => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${postAuthor}` }} />
@@ -334,22 +385,55 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
                   {postAuthor?.substring(0, 2)?.toUpperCase() || 'U'}
                 </div>
               )}
-            </div>
+            </div> */}
 
             <div className="flex flex-1 min-w-0 items-center justify-between">
-              <div className="flex flex-col min-w-0">
-                <UserProfileHover 
-                  userId={isApiPost ? post.user_id.toString() : post.id.toString()} 
-                  username={postAuthor}
-                  avatarUrl={postAvatar}
-                  position="bottom"
-                >
-                  <span className="font-semibold text-white text-lg truncate cursor-pointer hover:text-blue-500 transition-colors">
-                    {postAuthor}
-                  </span>
-                </UserProfileHover>
-                <span className="text-secondary text-sm">{postAuthor}</span>
-              </div>
+<div className="flex flex-1 min-w-0 items-center justify-between">
+  <div className="flex flex-col min-w-0">
+    <UserProfileHover
+      userId={isApiPost ? post.user_id.toString() : post.id.toString()}
+      username={postAuthor}
+      avatarUrl={postAvatar}
+      position="bottom"
+    >
+      <div className="flex items-center space-x-2 group cursor-pointer">
+        {/* Avatar */}
+        <div className="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden">
+          {postAvatar ? (
+            <img
+              src={postAvatar}
+              alt={postAuthor}
+              className="w-full h-full object-cover bg-gray-200"
+              onError={e => {
+                e.currentTarget.src = `https://ui-avatars.com/api/?name=${postAuthor}`
+              }}
+            />
+          ) : (
+            <div className="w-full h-full bg-indigo-500 flex items-center justify-center text-sm font-semibold text-white">
+              {postAuthor?.substring(0, 2)?.toUpperCase() || 'U'}
+            </div>
+          )}
+        </div>
+
+        {/* Username */}
+        <div className="flex items-center space-x-2">
+     <div className="flex flex-col min-w-0">
+           <span className="font-semibold text-white text-lg truncate hover:text-blue-500 transition-colors group-hover:underline">
+            {postAuthor}
+          </span>
+              {/* Handle */}
+    <span className="text-secondary text-sm">{postHandle}</span>
+     </div>
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <ExternalLink className="w-4 h-4 text-blue-500" />
+          </div>
+        </div>
+      </div>
+    </UserProfileHover>
+
+
+  </div>
+</div>
 
               <div className="flex items-center space-x-3">
                 {post._isNewlyCreated && (
@@ -380,37 +464,49 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
             )}
 
             {postImage && (
-              <div className="rounded-2xl overflow-hidden">
-                {/\.(jpg|jpeg|png|gif|webp)$/i.test(postImage) ? (
-                  <img src={postImage} alt="Post content" className="w-full max-h-96 object-cover cursor-pointer hover:opacity-95 transition-opacity duration-200"
-                    onClick={e => { e.stopPropagation(); setShowImageModal(true) }} />
-                ) : /\.(mp4|webm|ogg|mov)$/i.test(postImage) ? (
-                  <video 
-                    src={postImage} 
-                    autoPlay 
-                    muted 
-                    loop 
-                    playsInline
-                    controls
-                    className="w-full max-h-96 bg-black rounded-lg"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                ) : /\.(mp3|wav|ogg|m4a)$/i.test(postImage) ? (
-                  <div className="bg-dark-800 p-4 flex items-center space-x-3 rounded-lg">
-                    <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                      <Volume2 className="w-5 h-5 text-indigo-600" />
-                    </div>
-                    <audio src={postImage} controls className="flex-1" />
-                  </div>
-                ) : (
-                  <div className="bg-dark-800 p-4 text-center rounded-lg">
-                    <p className="text-gray-400 text-sm mb-2">Media file</p>
-                    <a href={postImage} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 text-sm font-medium">
-                      View media
-                    </a>
-                  </div>
-                )}
-              </div>
+<div className="overflow-hidden">
+  {/\.(jpg|jpeg|png|gif|webp)$/i.test(postImage) ? (
+    <div className="relative group inline-block">
+      <img 
+        src={postImage} 
+        alt="Post content" 
+        className="rounded-2xl max-h-96 w-auto object-cover cursor-pointer hover:opacity-95 transition-opacity duration-200"
+        // onClick={handleImageClick}
+      />
+      {/* <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 rounded-2xl flex items-center justify-center pointer-events-none">
+        <div className="bg-black bg-opacity-70 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <Eye className="w-6 h-6 text-white" />
+        </div>
+      </div> */}
+    </div>
+  ) : /\.(mp4|webm|ogg|mov)$/i.test(postImage) ? (
+    <video 
+      src={postImage} 
+      autoPlay 
+      muted 
+      loop 
+      playsInline
+      controls
+      className="w-full max-h-96 bg-black rounded-lg"
+      onClick={(e) => e.stopPropagation()}
+    />
+  ) : /\.(mp3|wav|ogg|m4a)$/i.test(postImage) ? (
+    <div className="bg-dark-800 p-4 flex items-center space-x-3 rounded-lg">
+      <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+        <Volume2 className="w-5 h-5 text-indigo-600" />
+      </div>
+      <audio src={postImage} controls className="flex-1" />
+    </div>
+  ) : (
+    <div className="bg-dark-800 p-4 text-center rounded-lg">
+      <p className="text-gray-400 text-sm mb-2">Media file</p>
+      <a href={postImage} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 text-sm font-medium">
+        View media
+      </a>
+    </div>
+  )}
+</div>
+
             )}
           </div>
 
@@ -577,17 +673,38 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
         </div>
       </div>
 
-      {showImageModal && postImage && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4" onClick={() => setShowImageModal(false)}>
-          <div className="relative max-w-5xl max-h-full">
-            <button onClick={() => setShowImageModal(false)}
-              className="absolute -top-12 right-0 text-white bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full p-2">
-              <X className="w-6 h-6" />
-            </button>
-            <img src={postImage} alt="Post content" className="max-w-full max-h-full object-contain rounded-lg" />
-          </div>
-        </div>
-      )}
+      {/* Fixed Image Modal */}
+      <AnimatePresence>
+        {showImageModal && postImage && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[9999] p-4" 
+            onClick={handleModalBackdropClick}
+          >
+            <div className="relative max-w-5xl max-h-full flex items-center justify-center">
+              <button 
+                onClick={handleModalClose}
+                className="absolute -top-12 right-0 text-white bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full p-2 z-10 transition-all duration-200"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              <motion.img 
+                src={postImage} 
+                alt="Post content" 
+                className="max-w-full max-h-full object-contain rounded-lg cursor-pointer"
+                onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showCommentSection && isApiPost && (
