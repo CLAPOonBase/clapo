@@ -465,16 +465,16 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="bg-gray-50 rounded-2xl px-3 py-2">
+                          <div className="bg-dark-700/70 rounded-2xl px-3 py-2">
                             <div className="flex items-center space-x-2 mb-1">
-                              <span className="font-semibold text-sm text-gray-900">
+                              <span className="font-semibold text-sm text-white">
                                 {comment.username}
                               </span>
                               <span className="text-xs text-gray-500">
                                 {formatCommentTime(comment.created_at)}
                               </span>
                             </div>
-                            <p className="text-sm text-gray-800">{comment.content}</p>
+                            <p className="text-sm text-secondary">{comment.content}</p>
                           </div>
                         </div>
                       </div>

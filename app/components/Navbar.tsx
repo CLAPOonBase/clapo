@@ -106,7 +106,7 @@ export default function Navbar() {
               href={item.href}
               className={`tracking-widest text-sm font-bold transition-colors ${
                 pathname === item.href
-                  ? "text-blue-600"
+                  ? "text-[#4F47EB]"
                   : "text-[#A0A0A0] hover:text-white"
               }`}
             >
