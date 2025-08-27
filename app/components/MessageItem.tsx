@@ -1,3 +1,5 @@
+import { useRouter } from 'next/navigation';
+
 interface MessageItemProps {
   message: {
     id: string;
@@ -20,6 +22,23 @@ export const MessageItem = ({
   isLastInGroup = false,
   isFirstInGroup = false 
 }: MessageItemProps) => {
+  const router = useRouter();
+
+  const handleUserClick = (userId: string) => {
+    // Store current page state and scroll position
+    const currentState = {
+      pathname: '/snaps',
+      searchParams: 'page=messages',
+      scrollY: window.scrollY,
+      timestamp: Date.now()
+    }
+    
+    // Store in sessionStorage for persistence across navigation
+    sessionStorage.setItem('profileNavigationState', JSON.stringify(currentState))
+    
+    router.push(`/snaps/profile/${userId}`)
+  };
+
   return (
     <div className={`group flex items-start transition-all duration-200 hover:bg-slate-800/20 ${
       isOwnMessage ? 'flex-row-reverse' : 'flex-row'
@@ -34,15 +53,20 @@ export const MessageItem = ({
       {/* Avatar - only show when showAvatar is true (last message of group) */}
       {showAvatar ? (
         <div className="flex-shrink-0">
-          <img 
-            src={message.sender_avatar || 'https://robohash.org/default.png'} 
-            alt="Avatar" 
-            className={`w-10 h-10 rounded-full border-2 transition-all duration-200 shadow-sm ${
-              isOwnMessage 
-                ? 'border-blue-400/60 group-hover:border-blue-400/80' 
-                : 'border-slate-500/50 group-hover:border-slate-400/70'
-            }`}
-          />
+          <button
+            onClick={() => handleUserClick(message.sender_id)}
+            className="hover:opacity-80 transition-opacity cursor-pointer"
+          >
+            <img 
+              src={message.sender_avatar || 'https://robohash.org/default.png'} 
+              alt="Avatar" 
+              className={`w-10 h-10 rounded-full border-2 transition-all duration-200 shadow-sm ${
+                isOwnMessage 
+                  ? 'border-blue-400/60 group-hover:border-blue-400/80' 
+                  : 'border-slate-500/50 group-hover:border-slate-400/70'
+              }`}
+            />
+          </button>
         </div>
       ) : (
         // Placeholder space to maintain alignment for grouped messages
@@ -56,13 +80,15 @@ export const MessageItem = ({
         
         {/* Username - only show on first message of group */}
         {isFirstInGroup && message.sender_username && (
-          <span className={`text-sm font-medium transition-colors duration-200 ${
-            isOwnMessage 
-              ? 'text-blue-300 group-hover:text-blue-200' 
-              : 'text-slate-300 group-hover:text-slate-200'
-          }`}>
+          <button
+            onClick={() => handleUserClick(message.sender_id)}
+            className={`text-sm font-medium transition-colors duration-200 hover:underline cursor-pointer ${
+              isOwnMessage 
+                ? 'text-blue-300 group-hover:text-blue-200' 
+                : 'text-slate-300 group-hover:text-slate-200'
+            }`}>
             {message.sender_username}
-          </span>
+          </button>
         )}
 
         {/* Message Bubble */}

@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect } from 'react'
 import { useSession, signIn } from 'next-auth/react'
+import { useSearchParams } from 'next/navigation'
 import Sidebar from './Sections/Sidebar'
 import {SnapComposer} from './Sections/SnapComposer'
 import SnapCard from './Sections/SnapCard'
@@ -35,6 +36,48 @@ export default function SocialFeedPage() {
 
   const { data: session, status } = useSession()
   const { state, fetchPosts, fetchNotifications, fetchActivities, getFollowingFeed, refreshPosts } = useApi()
+  const searchParams = useSearchParams()
+
+  // Handle URL parameters for page state restoration
+  useEffect(() => {
+    const pageParam = searchParams.get('page')
+    if (pageParam) {
+      const validPages = ['home', 'explore', 'notifications', 'likes', 'activity', 'profile', 'messages', 'bookmarks', 'share', 'search']
+      if (validPages.includes(pageParam as any)) {
+        setCurrentPage(pageParam as any)
+        // Clear the page parameter from URL after setting the page
+        const url = new URL(window.location.href)
+        url.searchParams.delete('page')
+        window.history.replaceState({}, '', url.toString())
+        
+        // Check if we have stored scroll position for this page
+        const storedState = sessionStorage.getItem('profileNavigationState')
+        if (storedState) {
+          try {
+            const navigationState = JSON.parse(storedState)
+            // Only restore scroll if it's for the same page type
+            if (navigationState.searchParams === `page=${pageParam}`) {
+              setTimeout(() => {
+                if (navigationState.scrollY > 0) {
+                  window.scrollTo(0, navigationState.scrollY)
+                }
+              }, 100)
+            }
+          } catch (error) {
+            console.error('Failed to parse navigation state for scroll restoration:', error)
+          }
+        }
+      }
+    }
+  }, [searchParams])
+
+  // Cleanup navigation state when component unmounts
+  useEffect(() => {
+    return () => {
+      // Clear any stored navigation state when leaving the page
+      sessionStorage.removeItem('profileNavigationState')
+    }
+  }, [])
 
   useEffect(() => {
     if (status === 'authenticated' && session?.dbUser?.id && !hasInitializedData) {

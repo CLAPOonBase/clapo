@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { User, Users, MapPin, Calendar, Link, Image as ImageIcon } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useApi } from '@/app/Context/ApiProvider'
-import { UserProfileModal } from './UserProfileModal'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 
 interface UserProfileHoverProps {
   userId: string
@@ -33,10 +33,12 @@ export function UserProfileHover({
   const [userStats, setUserStats] = useState<UserStats | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false)
-  const [showModal, setShowModal] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const { data: session } = useSession()
   const { getUserProfile, getUserFollowers, getUserFollowing, followUser, unfollowUser } = useApi()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   
   const currentUserId = session?.dbUser?.id
   const isOwnProfile = currentUserId === userId
@@ -81,34 +83,29 @@ export function UserProfileHover({
     
     setIsLoading(true)
     try {
-      const [profileResponse, followersResponse, followingResponse] = await Promise.all([
-        getUserProfile(userId),
-        getUserFollowers(userId, 100, 0),
-        getUserFollowing(userId, 100, 0)
-      ])
+      const profileResponse = await getUserProfile(userId)
       
-      // Extract profile data from the nested structure
-      const profile = profileResponse?.profile
-      const followers = followersResponse?.followers?.length || 0
-      const following = followingResponse?.following?.length || 0
-      const posts = profile?.posts?.length || 0
-      
-      // Check if current user is in the followers list of the target user
-      const isCurrentlyFollowing = followersResponse?.followers?.some(
-        (follower: any) => {
-          // The API returns follower_id, not id
-          return follower.follower_id === currentUserId
+      if (profileResponse && profileResponse.profile) {
+        const profile = profileResponse.profile
+        setUserStats({
+          posts: profile.total_posts || 0,
+          followers: profile.followers_count || 0,
+          following: profile.following_count || 0,
+          isFollowing: false
+        })
+        
+        // Check follow status
+        if (!isOwnProfile) {
+          const followersResponse = await getUserFollowers(userId, 100, 0)
+          const isCurrentlyFollowing = followersResponse?.followers?.some(
+            (follower: any) => follower.follower_id === currentUserId
+          )
+          setIsFollowing(isCurrentlyFollowing || false)
+          if (userStats) {
+            setUserStats(prev => prev ? { ...prev, isFollowing: isCurrentlyFollowing || false } : null)
+          }
         }
-      )
-      
-      setUserStats({
-        followers,
-        following,
-        posts,
-        isFollowing: isCurrentlyFollowing || false
-      })
-      
-      setIsFollowing(isCurrentlyFollowing || false)
+      }
     } catch (error) {
       console.error('Failed to load user stats:', error)
     } finally {
@@ -139,7 +136,19 @@ export function UserProfileHover({
   }
 
   const handleViewProfile = () => {
-    setShowModal(true)
+    // Store current page state and scroll position
+    const currentState = {
+      pathname,
+      searchParams: searchParams.toString(),
+      scrollY: window.scrollY,
+      timestamp: Date.now()
+    }
+    
+    // Store in sessionStorage for persistence across navigation
+    sessionStorage.setItem('profileNavigationState', JSON.stringify(currentState))
+    
+    // Navigate to profile
+    router.push(`/snaps/profile/${userId}`)
     setShowProfile(false)
   }
 
@@ -250,13 +259,7 @@ export function UserProfileHover({
         )}
       </div>
 
-      <UserProfileModal
-        userId={userId}
-        username={username}
-        avatarUrl={avatarUrl}
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-      />
+
     </>
   )
 } 

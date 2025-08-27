@@ -1,5 +1,6 @@
 import { MessageCircle, Search } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface DMSectionProps {
   dmSection: 'threads' | 'search';
@@ -30,6 +31,22 @@ export const DMSection = ({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [hasInitializedUsers, setHasInitializedUsers] = useState(false);
+  const router = useRouter();
+
+  const handleUserClick = (userId: string) => {
+    // Store current page state and scroll position
+    const currentState = {
+      pathname: '/snaps',
+      searchParams: 'page=messages',
+      scrollY: window.scrollY,
+      timestamp: Date.now()
+    }
+    
+    // Store in sessionStorage for persistence across navigation
+    sessionStorage.setItem('profileNavigationState', JSON.stringify(currentState))
+    
+    router.push(`/snaps/profile/${userId}`)
+  };
 
   useEffect(() => {
     if (dmSection === 'search' && !hasInitializedUsers) {
@@ -151,7 +168,15 @@ export const DMSection = ({
                 }`}
               >
                 <div className="flex items-center space-x-3">
-                  <div className="relative">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!thread.isGroup && otherUser?.id) {
+                        handleUserClick(otherUser.id);
+                      }
+                    }}
+                    className="relative hover:opacity-80 transition-opacity cursor-pointer"
+                  >
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-600 border-2 border-transparent transition-colors duration-200">
                       {otherUser?.avatar_url ? (
                         <img
@@ -168,13 +193,23 @@ export const DMSection = ({
                     
                     {/* Online status indicator (you can add online status logic) */}
                     <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 border-2 border-slate-800 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-                  </div>
+                  </button>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <div className={`font-semibold truncate ${hasUnread ? 'text-white' : ''}`}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!thread.isGroup && otherUser?.id) {
+                            handleUserClick(otherUser.id);
+                          }
+                        }}
+                        className={`font-semibold truncate ${hasUnread ? 'text-white' : ''} hover:underline cursor-pointer ${
+                          !thread.isGroup && otherUser?.id ? 'hover:text-blue-300' : ''
+                        }`}
+                      >
                         {thread.isGroup ? thread.name : otherUser?.username || 'User'}
-                      </div>
+                      </button>
                       
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {/* Timestamp */}
@@ -249,7 +284,13 @@ export const DMSection = ({
               className="group p-4 rounded-xl cursor-pointer transition-all duration-200 bg-slate-700/30 border border-slate-600/30 hover:bg-slate-700/50 hover:border-slate-500/50 hover:shadow-lg"
             >
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-600">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUserClick(user.id);
+                  }}
+                  className="w-12 h-12 rounded-full overflow-hidden bg-slate-600 hover:opacity-80 transition-opacity cursor-pointer"
+                >
                   {user.avatar_url ? (
                     <img
                       src={user.avatar_url}
@@ -261,11 +302,17 @@ export const DMSection = ({
                       {user.username?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                   )}
-                </div>
+                </button>
                 <div className="flex flex-row justify-between w-full min-w-0">
-                  <div className="font-semibold text-white group-hover:text-blue-300 transition-colors">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUserClick(user.id);
+                    }}
+                    className="font-semibold text-white group-hover:text-blue-300 transition-colors hover:underline cursor-pointer text-left"
+                  >
                     {user.username}
-                  </div>
+                  </button>
                   <div className="opacity-80 group-hover:opacity-100 transition-opacity">
                     <button className="text-xs bg-green-900 px-2 rounded-md hover:bg-green-800 transition-colors">
                       Add Friend

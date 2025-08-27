@@ -2,6 +2,7 @@ import { Users, Hash, ArrowLeft } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useApi } from '../Context/ApiProvider';
 import { CommunityMember } from '../types/api';
+import { useRouter } from 'next/navigation';
 
 interface CommunitySectionProps {
   communitySection: 'my' | 'join' | 'create';
@@ -21,6 +22,7 @@ export const CommunitySection = ({
   onJoinCommunity
 }: CommunitySectionProps) => {
   const { getCommunityMembers } = useApi();
+  const router = useRouter();
   const [members, setMembers] = useState<CommunityMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
@@ -28,6 +30,21 @@ export const CommunitySection = ({
   const [justJoined, setJustJoined] = useState<string | null>(null);
 
   const selectedCommunityData = state.communities?.find((community: any) => community.id === selectedCommunity);
+
+  const handleUserClick = (userId: string) => {
+    // Store current page state and scroll position
+    const currentState = {
+      pathname: '/snaps',
+      searchParams: 'page=communities',
+      scrollY: window.scrollY,
+      timestamp: Date.now()
+    }
+    
+    // Store in sessionStorage for persistence across navigation
+    sessionStorage.setItem('profileNavigationState', JSON.stringify(currentState))
+    
+    router.push(`/snaps/profile/${userId}`)
+  };
 
   useEffect(() => {
     if (selectedCommunity && showMembers) {
@@ -108,7 +125,14 @@ export const CommunitySection = ({
                 <Users className="w-3 h-3 mr-1" />
                 {members.length} members
               </span>
-              <span>Created by {selectedCommunityData.creator_username || 'Unknown'}</span>
+              <span>Created by 
+                <button
+                  onClick={() => selectedCommunityData.creator_id && handleUserClick(selectedCommunityData.creator_id)}
+                  className="ml-1 text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                >
+                  {selectedCommunityData.creator_username || 'Unknown'}
+                </button>
+              </span>
             </div>
             
             {selectedCommunityData.user_is_admin && (
@@ -137,14 +161,29 @@ export const CommunitySection = ({
                   className="flex items-center justify-between p-3 bg-slate-700/30 border border-slate-600/30 rounded-lg"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium text-white">
-                        <img src={member.avatar_url} className='rounded-full w-8 h-8' alt="" />
-                        {/* {member.username?.charAt(0)?.toUpperCase() || 'U'} */}
-                      </span>
-                    </div>
+                    <button
+                      onClick={() => handleUserClick(member.user_id)}
+                      className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
+                    >
+                      {member.avatar_url ? (
+                        <img 
+                          src={member.avatar_url} 
+                          className='rounded-full w-8 h-8 object-cover' 
+                          alt={member.username || 'Member'} 
+                        />
+                      ) : (
+                        <span className="text-sm font-medium text-white">
+                          {member.username?.charAt(0)?.toUpperCase() || 'U'}
+                        </span>
+                      )}
+                    </button>
                     <div>
-                      <div className="font-medium text-white">{member.username}</div>
+                      <button
+                        onClick={() => handleUserClick(member.user_id)}
+                        className="font-medium text-white hover:text-blue-300 hover:underline cursor-pointer text-left"
+                      >
+                        {member.username}
+                      </button>
                       <div className="text-xs text-slate-400">{member.bio || 'No bio'}</div>
                     </div>
                   </div>
@@ -205,7 +244,14 @@ export const CommunitySection = ({
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-xs opacity-60">
-                    <span>Created by {community.creator_username || 'Unknown'}</span>
+                    <span>Created by 
+                      <button
+                        onClick={() => community.creator_id && handleUserClick(community.creator_id)}
+                        className="ml-1 text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                      >
+                        {community.creator_username || 'Unknown'}
+                      </button>
+                    </span>
                     <span className="flex items-center">
                       <Users className="w-3 h-3 mr-1" />
                       {community.member_count || 0}
@@ -266,6 +312,16 @@ export const CommunitySection = ({
                         Join
                       </button>
                     )}
+                  </div>
+                  
+                  <div className="mt-2 text-xs text-slate-400">
+                    Created by 
+                    <button
+                      onClick={() => community.creator_id && handleUserClick(community.creator_id)}
+                      className="ml-1 text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                    >
+                      {community.creator_username || 'Unknown'}
+                    </button>
                   </div>
                 </div>
               ))

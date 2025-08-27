@@ -7,9 +7,11 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { EnhancedNotification } from '../../types/api';
 import { Bell, Heart, MessageCircle, UserPlus, AtSign, Eye, EyeOff, Check, ExternalLink, Wifi, WifiOff, Bookmark, Users, AlertCircle, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 const NotificationPage = () => {
   const { data: session } = useSession();
+  const router = useRouter();
   const { 
     notifications,
     unreadCount,
@@ -21,6 +23,21 @@ const NotificationPage = () => {
 
   const [showRead, setShowRead] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const handleUserClick = (userId: string) => {
+    // Store current page state and scroll position
+    const currentState = {
+      pathname: '/snaps',
+      searchParams: 'page=notifications',
+      scrollY: window.scrollY,
+      timestamp: Date.now()
+    }
+    
+    // Store in sessionStorage for persistence across navigation
+    sessionStorage.setItem('profileNavigationState', JSON.stringify(currentState))
+    
+    router.push(`/snaps/profile/${userId}`)
+  };
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -199,20 +216,28 @@ const NotificationPage = () => {
                 {/* Actor Avatar */}
                 <div className="flex-shrink-0">
                   {notification.from_user?.avatar_url ? (
-                    <Image
-                      src={notification.from_user.avatar_url}
-                      alt={notification.from_user.username || 'User'}
-                      width={40}
-                      height={40}
-                      className="w-10 h-10 rounded-full object-cover"
-                      unoptimized
-                    />
+                    <button
+                      onClick={() => notification.from_user?.id && handleUserClick(notification.from_user.id)}
+                      className="hover:opacity-80 transition-opacity cursor-pointer"
+                    >
+                      <Image
+                        src={notification.from_user.avatar_url}
+                        alt={notification.from_user.username || 'User'}
+                        width={40}
+                        height={40}
+                        className="w-10 h-10 rounded-full object-cover"
+                        unoptimized
+                      />
+                    </button>
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-[#2A2A2A] flex items-center justify-center">
+                    <button
+                      onClick={() => notification.from_user?.id && handleUserClick(notification.from_user.id)}
+                      className="w-10 h-10 rounded-full bg-[#2A2A2A] flex items-center justify-center hover:bg-[#3A3A3A] transition-colors cursor-pointer"
+                    >
                       <span className="text-white text-sm font-medium">
                         {notification.from_user?.username?.charAt(0)?.toUpperCase() || 'U'}
                       </span>
-                    </div>
+                    </button>
                   )}
                 </div>
 
