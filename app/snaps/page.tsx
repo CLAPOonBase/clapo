@@ -41,9 +41,11 @@ export default function SocialFeedPage() {
   // Handle URL parameters for page state restoration
   useEffect(() => {
     const pageParam = searchParams.get('page')
+    console.log('🔍 Received page parameter:', pageParam)
     if (pageParam) {
       const validPages = ['home', 'explore', 'notifications', 'likes', 'activity', 'profile', 'messages', 'bookmarks', 'share', 'search']
       if (validPages.includes(pageParam as any)) {
+        console.log('🔍 Setting current page to:', pageParam)
         setCurrentPage(pageParam as any)
         // Clear the page parameter from URL after setting the page
         const url = new URL(window.location.href)
@@ -57,6 +59,7 @@ export default function SocialFeedPage() {
             const navigationState = JSON.parse(storedState)
             // Only restore scroll if it's for the same page type
             if (navigationState.searchParams === `page=${pageParam}`) {
+              console.log('🔍 Restoring scroll position:', navigationState.scrollY)
               setTimeout(() => {
                 if (navigationState.scrollY > 0) {
                   window.scrollTo(0, navigationState.scrollY)
@@ -67,9 +70,41 @@ export default function SocialFeedPage() {
             console.error('Failed to parse navigation state for scroll restoration:', error)
           }
         }
+      } else {
+        console.log('🔍 Invalid page parameter:', pageParam)
       }
     }
   }, [searchParams])
+
+  // Handle stored target page from profile navigation
+  useEffect(() => {
+    const targetPage = sessionStorage.getItem('targetPage')
+    const targetScrollY = sessionStorage.getItem('targetScrollY')
+    
+    if (targetPage) {
+      console.log('🔍 Found target page:', targetPage)
+      const validPages = ['home', 'explore', 'notifications', 'likes', 'activity', 'profile', 'messages', 'bookmarks', 'share', 'search']
+      if (validPages.includes(targetPage as any)) {
+        console.log('🔍 Setting current page to target page:', targetPage)
+        setCurrentPage(targetPage as any)
+        
+        // Clear the stored target page
+        sessionStorage.removeItem('targetPage')
+        
+        // Restore scroll position if available
+        if (targetScrollY) {
+          const scrollY = parseInt(targetScrollY)
+          console.log('🔍 Restoring scroll position:', scrollY)
+          sessionStorage.removeItem('targetScrollY')
+          setTimeout(() => {
+            if (scrollY > 0) {
+              window.scrollTo(0, scrollY)
+            }
+          }, 100)
+        }
+      }
+    }
+  }, [])
 
   // Cleanup navigation state when component unmounts
   useEffect(() => {

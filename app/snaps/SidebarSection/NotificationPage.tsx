@@ -8,6 +8,7 @@ import { EnhancedNotification } from '../../types/api';
 import { Bell, Heart, MessageCircle, UserPlus, AtSign, Eye, EyeOff, Check, ExternalLink, Wifi, WifiOff, Bookmark, Users, AlertCircle, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { PostPopupModal } from '../../components/PostPopupModal';
 
 const NotificationPage = () => {
   const { data: session } = useSession();
@@ -23,6 +24,8 @@ const NotificationPage = () => {
 
   const [showRead, setShowRead] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPost, setSelectedPost] = useState<any>(null);
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
 
   const handleUserClick = (userId: string) => {
     // Store current page state and scroll position
@@ -33,10 +36,35 @@ const NotificationPage = () => {
       timestamp: Date.now()
     }
     
+
+    
     // Store in sessionStorage for persistence across navigation
     sessionStorage.setItem('profileNavigationState', JSON.stringify(currentState))
     
     router.push(`/snaps/profile/${userId}`)
+  };
+
+  const handleViewContent = (notification: EnhancedNotification) => {
+    if (notification.content) {
+      // Create a post object from the notification content
+      const postData = {
+        id: notification.ref_id || notification.id,
+        content: notification.content.content,
+        media_url: notification.content.media_url,
+        created_at: notification.created_at,
+        view_count: notification.content.view_count || 0,
+        like_count: notification.content.like_count || 0,
+        comment_count: notification.content.comment_count || 0,
+        retweet_count: notification.content.retweet_count || 0,
+        user: notification.from_user,
+        is_liked: false, // These would come from API calls
+        is_retweeted: false,
+        is_bookmarked: false
+      }
+      
+      setSelectedPost(postData)
+      setIsPostModalOpen(true)
+    }
   };
 
   const getNotificationIcon = (type: string) => {
@@ -283,12 +311,15 @@ const NotificationPage = () => {
                             <span>Comment {notification.content.comment_count}</span>
                             <span>Retweet {notification.content.retweet_count}</span>
                           </div>
-                          {notification.ref_id && (
-                            <button className="mt-2 flex items-center space-x-1 text-xs text-[#6E54FF] hover:text-[#836EF9] transition-colors">
-                              <ExternalLink className="w-3 h-3" />
-                              <span>View content</span>
-                            </button>
-                          )}
+                                                     {notification.ref_id && (
+                             <button 
+                               onClick={() => handleViewContent(notification)}
+                               className="mt-2 flex items-center space-x-1 text-xs text-[#6E54FF] hover:text-[#836EF9] transition-colors"
+                             >
+                               <ExternalLink className="w-3 h-3" />
+                               <span>View content</span>
+                             </button>
+                           )}
                         </div>
                       </div>
                     </div>
@@ -332,6 +363,16 @@ const NotificationPage = () => {
           ))
         )}
       </div>
+
+      {/* Post Popup Modal */}
+      <PostPopupModal
+        post={selectedPost}
+        isOpen={isPostModalOpen}
+        onClose={() => {
+          setIsPostModalOpen(false)
+          setSelectedPost(null)
+        }}
+      />
     </div>
   );
 };

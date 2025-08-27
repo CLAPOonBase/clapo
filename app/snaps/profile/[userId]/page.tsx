@@ -242,24 +242,28 @@ export default function UserProfilePage({ params }: { params: { userId: string }
           
           // Navigate back to the stored location
           if (navigationState.pathname === '/snaps') {
-            // Navigate to snaps with the specific page
-            router.push(`/snaps?page=${navigationState.searchParams.split('=')[1]}`)
-            
-            // Use setTimeout to ensure navigation happens before scroll restoration
-            setTimeout(() => {
-              if (navigationState.scrollY > 0) {
-                window.scrollTo(0, navigationState.scrollY)
-              }
-            }, 100)
-          } else {
-            // Fallback to stored pathname
-            router.push(navigationState.pathname)
-            setTimeout(() => {
-              if (navigationState.scrollY > 0) {
-                window.scrollTo(0, navigationState.scrollY)
-              }
-            }, 100)
+            // Extract the page from searchParams (e.g., "page=notifications" -> "notifications")
+            const pageMatch = navigationState.searchParams.match(/page=([^&]+)/)
+            if (pageMatch) {
+              const page = pageMatch[1]
+              
+              // Store the target page in sessionStorage for the snaps page to pick up
+              sessionStorage.setItem('targetPage', page)
+              sessionStorage.setItem('targetScrollY', navigationState.scrollY.toString())
+              
+              // Navigate to snaps
+              router.push('/snaps')
+              return
+            }
           }
+          
+          // Fallback to stored pathname
+          router.push(navigationState.pathname)
+          setTimeout(() => {
+            if (navigationState.scrollY > 0) {
+              window.scrollTo(0, navigationState.scrollY)
+            }
+          }, 100)
           return
         }
       } catch (error) {
