@@ -55,7 +55,7 @@ interface UserProfileClientProps {
 export default function UserProfileClient({ userId }: UserProfileClientProps) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'posts' | 'messages' | 'communities' | 'activity'>('posts')
+  const [activeTab, setActiveTab] = useState<'posts' | 'messages' | 'communities' | 'activity' | 'followers'>('posts')
   const [isFollowing, setIsFollowing] = useState(false)
   const [isCheckingFollowStatus, setIsCheckingFollowStatus] = useState(false)
   const [currentPage, setCurrentPage] = useState<'home' | 'explore' | 'notifications' | 'likes' | 'activity' | 'profile' | 'messages' | 'bookmarks' | 'share' | 'search'>('home')
@@ -69,25 +69,50 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
   const [selectedCommunity, setSelectedCommunity] = useState<string | null>(null)
   const [communitySection, setCommunitySection] = useState<'my' | 'join' | 'create'>('my')
   
+  // Follower/Following lists state
+  const [showFollowersList, setShowFollowersList] = useState(false)
+  const [showFollowingList, setShowFollowingList] = useState(false)
+  const [followersList, setFollowersList] = useState<any[]>([])
+  const [followingList, setFollowingList] = useState<any[]>([])
+  const [isLoadingFollowers, setIsLoadingFollowers] = useState(false)
+  const [isLoadingFollowing, setIsLoadingFollowing] = useState(false)
+  
   // Mock data for messages and communities (replace with real API calls)
   const [messageThreads, setMessageThreads] = useState<any[]>([])
   const [communities, setCommunities] = useState<any[]>([])
   
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const { getUserProfile, getUserFollowers, getUserFollowing, followUser, unfollowUser } = useApi()
   const router = useRouter()
   
   const currentUserId = session?.dbUser?.id
   const isOwnProfile = currentUserId === userId
+  const isSessionLoading = status === 'loading'
+
+  console.log('🔍 Session status:', status)
+  console.log('🔍 Session data:', session)
+  console.log('🔍 Current user ID:', currentUserId)
+  console.log('🔍 Target user ID:', userId)
+  console.log('🔍 Is own profile:', isOwnProfile)
+  console.log('🔍 Is session loading:', isSessionLoading)
 
   useEffect(() => {
     if (userId) {
       loadUserProfile()
-      if (!isOwnProfile && currentUserId) {
-        checkFollowStatus()
-      }
     }
-  }, [userId, currentUserId, isOwnProfile])
+  }, [userId])
+
+  useEffect(() => {
+    if (!isOwnProfile && currentUserId && userProfile && session?.dbUser && !isSessionLoading) {
+      console.log('🔍 useEffect triggered - calling checkFollowStatus')
+      console.log('🔍 isOwnProfile:', isOwnProfile)
+      console.log('🔍 currentUserId:', currentUserId)
+      console.log('🔍 userProfile:', userProfile)
+      console.log('🔍 session loaded:', !!session?.dbUser)
+      console.log('🔍 session loading:', isSessionLoading)
+      checkFollowStatus()
+    }
+  }, [currentUserId, isOwnProfile, userProfile, session?.dbUser, isSessionLoading])
 
   // Load mock data for messages and communities
   useEffect(() => {
@@ -95,6 +120,14 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
       loadMessageThreads()
     } else if (activeTab === 'communities') {
       loadCommunities()
+    } else if (activeTab === 'followers') {
+      // Load followers and following data when the followers tab is selected
+      if (followersList.length === 0) {
+        loadFollowersList()
+      }
+      if (followingList.length === 0) {
+        loadFollowingList()
+      }
     }
   }, [activeTab])
 
@@ -105,8 +138,11 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
     try {
       const profileResponse = await getUserProfile(userId)
       
+      console.log('🔍 Profile response:', profileResponse)
+      
       // The API returns { message: string, profile: UserProfile }
       if (profileResponse && profileResponse.profile) {
+        console.log('🔍 Setting user profile:', profileResponse.profile)
         setUserProfile(profileResponse.profile)
       } else {
         console.error('Invalid profile response structure:', profileResponse)
@@ -161,25 +197,76 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
   }
 
   const checkFollowStatus = async () => {
-    if (!currentUserId || isOwnProfile || isCheckingFollowStatus || !userProfile) return
+    if (!currentUserId || isOwnProfile || isCheckingFollowStatus || !userProfile) {
+      console.log('🔍 checkFollowStatus early return:', {
+        currentUserId: !!currentUserId,
+        isOwnProfile,
+        isCheckingFollowStatus,
+        userProfile: !!userProfile
+      })
+      return
+    }
     
     setIsCheckingFollowStatus(true)
     try {
       // Check if current user is in the followers list of the target user
       const followersResponse = await getUserFollowers(userId, 100, 0)
       
-      const isCurrentlyFollowing = followersResponse?.followers?.some(
+      console.log('🔍 Checking follow status for user:', userId)
+      console.log('🔍 Current user ID:', currentUserId)
+      console.log('🔍 Followers response:', followersResponse)
+      
+      if (!followersResponse || !followersResponse.followers) {
+        console.error('🔍 Invalid followers response:', followersResponse)
+        setIsFollowing(false)
+        return
+      }
+      
+      const isCurrentlyFollowing = followersResponse.followers.some(
         (follower: any) => {
           // The API returns follower_id, not id
+          console.log('🔍 Checking follower:', follower, 'follower_id:', follower.follower_id, 'currentUserId:', currentUserId)
           return follower.follower_id === currentUserId
         }
       )
       
+      console.log('🔍 Is currently following:', isCurrentlyFollowing)
       setIsFollowing(isCurrentlyFollowing || false)
     } catch (error) {
       console.error('Failed to check follow status:', error)
+      setIsFollowing(false)
     } finally {
       setIsCheckingFollowStatus(false)
+    }
+  }
+
+  const loadFollowersList = async () => {
+    if (isLoadingFollowers) return
+    
+    setIsLoadingFollowers(true)
+    try {
+      const response = await getUserFollowers(userId, 100, 0)
+      setFollowersList(response?.followers || [])
+      setShowFollowersList(true)
+    } catch (error) {
+      console.error('Failed to load followers:', error)
+    } finally {
+      setIsLoadingFollowers(false)
+    }
+  }
+
+  const loadFollowingList = async () => {
+    if (isLoadingFollowing) return
+    
+    setIsLoadingFollowing(true)
+    try {
+      const response = await getUserFollowing(userId, 100, 0)
+      setFollowingList(response?.following || [])
+      setShowFollowingList(true)
+    } catch (error) {
+      console.error('Failed to load following:', error)
+    } finally {
+      setIsLoadingFollowing(false)
     }
   }
 
@@ -228,6 +315,11 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
   const handleJoinCommunity = (communityId: string) => {
     // Handle joining a community
     console.log('Joining community:', communityId)
+  }
+
+  const handleViewUserProfile = (userId: string) => {
+    // Navigate to the user's profile
+    router.push(`/snaps/profile/${userId}`)
   }
 
   const handleBackNavigation = () => {
@@ -348,13 +440,16 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
                 {!isOwnProfile && (
                   <button
                     onClick={handleFollowToggle}
+                    disabled={isCheckingFollowStatus}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                      isFollowing
+                      isCheckingFollowStatus
+                        ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                        : isFollowing
                         ? 'bg-red-600 text-white hover:bg-red-700'
                         : 'bg-blue-600 text-white hover:bg-blue-700'
                     }`}
                   >
-                    {isFollowing ? 'Unfollow' : 'Follow'}
+                    {isCheckingFollowStatus ? 'Checking...' : isFollowing ? 'Unfollow' : 'Follow'}
                   </button>
                 )}
               </div>
@@ -378,12 +473,16 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
                   <div className="text-white font-semibold text-lg">{userProfile.total_posts}</div>
                   <div className="text-dark-400 text-xs">Posts</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-white font-semibold text-lg">{userProfile.followers_count}</div>
+                <div className={`text-center transition-colors ${isLoadingFollowers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-blue-400'}`} onClick={!isLoadingFollowers ? loadFollowersList : undefined}>
+                  <div className="text-white font-semibold text-lg">
+                    {isLoadingFollowers ? '...' : userProfile.followers_count}
+                  </div>
                   <div className="text-dark-400 text-xs">Followers</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-white font-semibold text-lg">{userProfile.following_count}</div>
+                <div className={`text-center transition-colors ${isLoadingFollowing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-blue-400'}`} onClick={!isLoadingFollowing ? loadFollowingList : undefined}>
+                  <div className="text-white font-semibold text-lg">
+                    {isLoadingFollowing ? '...' : userProfile.following_count}
+                  </div>
                   <div className="text-dark-400 text-xs">Following</div>
                 </div>
                 <div className="text-center">
@@ -415,7 +514,8 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
               { id: 'posts', label: 'Posts', icon: Grid },
               { id: 'messages', label: 'Messages', icon: MessageSquare },
               { id: 'communities', label: 'Communities', icon: Users },
-              { id: 'activity', label: 'Activity', icon: MessageCircle }
+              { id: 'activity', label: 'Activity', icon: MessageCircle },
+              { id: 'followers', label: 'Followers', icon: Users }
             ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -630,8 +730,214 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
               )}
             </div>
           )}
+
+          {activeTab === 'followers' && (
+            <div className="space-y-6">
+              {/* Followers Section */}
+              <div className="bg-dark-700 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-white text-lg font-semibold">Followers ({userProfile.followers_count})</h3>
+                  <button
+                    onClick={loadFollowersList}
+                    disabled={isLoadingFollowers}
+                    className="text-blue-400 hover:text-blue-300 text-sm transition-colors"
+                  >
+                    {isLoadingFollowers ? 'Loading...' : 'View All'}
+                  </button>
+                </div>
+                
+                {isLoadingFollowers ? (
+                  <div className="text-center py-8 text-dark-400">Loading followers...</div>
+                ) : (
+                  <div className="space-y-3">
+                    {/* Show first 5 followers as preview */}
+                    {followersList.slice(0, 5).map((follower: any) => (
+                      <div key={follower.follower_id} className="flex items-center space-x-3 p-3 bg-dark-600 rounded-lg">
+                        <Image
+                          src={follower.avatar_url || '/4.png'}
+                          alt={follower.username || 'User'}
+                          width={40}
+                          height={40}
+                          className="w-10 h-10 rounded-full"
+                        />
+                        <div className="flex-1">
+                          <div className="text-white font-medium">{follower.username || 'Unknown User'}</div>
+                          <div className="text-dark-400 text-sm">{follower.email || ''}</div>
+                        </div>
+                        <button 
+                          onClick={() => handleViewUserProfile(follower.follower_id)}
+                          className="text-blue-400 hover:text-blue-300 text-sm"
+                        >
+                          View Profile
+                        </button>
+                      </div>
+                    ))}
+                    
+                    {followersList.length === 0 && (
+                      <div className="text-center py-8 text-dark-400">
+                        No followers yet
+                      </div>
+                    )}
+                    
+                    {followersList.length > 5 && (
+                      <div className="text-center pt-4">
+                        <button
+                          onClick={loadFollowersList}
+                          className="text-blue-400 hover:text-blue-300 text-sm transition-colors"
+                        >
+                          View All {userProfile.followers_count} Followers
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Following Section */}
+              <div className="bg-dark-700 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-white text-lg font-semibold">Following ({userProfile.following_count})</h3>
+                  <button
+                    onClick={loadFollowingList}
+                    disabled={isLoadingFollowing}
+                    className="text-blue-400 hover:text-blue-300 text-sm transition-colors"
+                  >
+                    {isLoadingFollowing ? 'Loading...' : 'View All'}
+                  </button>
+                </div>
+                
+                {isLoadingFollowing ? (
+                  <div className="text-center py-8 text-dark-400">Loading following...</div>
+                ) : (
+                  <div className="space-y-3">
+                    {/* Show first 5 following as preview */}
+                    {followingList.slice(0, 5).map((following: any) => (
+                      <div key={following.following_id} className="flex items-center space-x-3 p-3 bg-dark-600 rounded-lg">
+                        <Image
+                          src={following.avatar_url || '/4.png'}
+                          alt={following.username || 'User'}
+                          width={40}
+                          height={40}
+                          className="w-10 h-10 rounded-full"
+                        />
+                        <div className="flex-1">
+                          <div className="text-white font-medium">{following.username || 'Unknown User'}</div>
+                          <div className="text-dark-400 text-sm">{following.email || ''}</div>
+                        </div>
+                        <button 
+                          onClick={() => handleViewUserProfile(following.following_id)}
+                          className="text-blue-400 hover:text-blue-300 text-sm"
+                        >
+                          View Profile
+                        </button>
+                      </div>
+                    ))}
+                    
+                    {followingList.length === 0 && (
+                      <div className="text-center py-8 text-dark-400">
+                        Not following anyone yet
+                      </div>
+                    )}
+                    
+                    {followingList.length > 5 && (
+                      <div className="text-center pt-4">
+                        <button
+                          onClick={loadFollowingList}
+                          className="text-blue-400 hover:text-blue-300 text-sm transition-colors"
+                        >
+                          View All {userProfile.following_count} Following
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
+      
+      {/* Followers List Modal */}
+      {showFollowersList && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowFollowersList(false)}>
+          <div className="bg-dark-800 rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white text-lg font-semibold">Followers</h3>
+              <button
+                onClick={() => setShowFollowersList(false)}
+                className="text-dark-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {isLoadingFollowers ? (
+              <div className="text-center py-4 text-dark-400">Loading...</div>
+            ) : followersList.length > 0 ? (
+              <div className="space-y-3">
+                {followersList.map((follower: any) => (
+                  <div key={follower.follower_id} className="flex items-center space-x-3 p-3 bg-dark-700 rounded-lg">
+                    <Image
+                      src={follower.avatar_url || '/4.png'}
+                      alt={follower.username || 'User'}
+                      width={40}
+                      height={40}
+                      className="w-10 h-10 rounded-full"
+                    />
+                    <div className="flex-1">
+                      <div className="text-white font-medium">{follower.username || 'Unknown User'}</div>
+                      <div className="text-dark-400 text-sm">{follower.email || ''}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-dark-400">No followers yet</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Following List Modal */}
+      {showFollowingList && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowFollowingList(false)}>
+          <div className="bg-dark-800 rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white text-lg font-semibold">Following</h3>
+              <button
+                onClick={() => setShowFollowingList(false)}
+                className="text-dark-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {isLoadingFollowing ? (
+              <div className="text-center py-4 text-dark-400">Loading...</div>
+            ) : followingList.length > 0 ? (
+              <div className="space-y-3">
+                {followingList.map((following: any) => (
+                  <div key={following.following_id} className="flex items-center space-x-3 p-3 bg-dark-700 rounded-lg">
+                    <Image
+                      src={following.avatar_url || '/4.png'}
+                      alt={following.username || 'User'}
+                      width={40}
+                      height={40}
+                      className="w-10 h-10 rounded-full"
+                    />
+                    <div className="flex-1">
+                      <div className="text-white font-medium">{following.username || 'Unknown User'}</div>
+                      <div className="text-dark-400 text-sm">{following.email || ''}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-dark-400">Not following anyone yet</div>
+            )}
+          </div>
+        </div>
+      )}
       
       {session?.dbUser && (
         <div className="hidden md:block top-20 w-[300px]">

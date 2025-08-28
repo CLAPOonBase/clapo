@@ -12,15 +12,23 @@ type Props = {
   posts: Post[]
 }
 
-type Tab = "Posts" | "Activity"
+type Tab = "Posts" | "Activity" | "Followers"
 
 export function ProfilePage({ user, posts }: Props) {
   const { data: session } = useSession()
-  const { getUserProfile, updateUserProfile } = useApi()
+  const { getUserProfile, updateUserProfile, getUserFollowers, getUserFollowing } = useApi()
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>("Posts")
   const [showUpdateModal, setShowUpdateModal] = useState(false)
+  
+  // Follower/Following lists state
+  const [followersList, setFollowersList] = useState<any[]>([])
+  const [followingList, setFollowingList] = useState<any[]>([])
+  const [isLoadingFollowers, setIsLoadingFollowers] = useState(false)
+  const [isLoadingFollowing, setIsLoadingFollowing] = useState(false)
+  const [showFollowersList, setShowFollowersList] = useState(false)
+  const [showFollowingList, setShowFollowingList] = useState(false)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -58,6 +66,36 @@ export function ProfilePage({ user, posts }: Props) {
     } catch (error) {
       console.error('Failed to update profile:', error)
       throw error
+    }
+  }
+
+  const loadFollowersList = async () => {
+    if (isLoadingFollowers || !session?.dbUser?.id) return
+    
+    setIsLoadingFollowers(true)
+    try {
+      const response = await getUserFollowers(session.dbUser.id, 100, 0)
+      setFollowersList(response?.followers || [])
+      setShowFollowersList(true)
+    } catch (error) {
+      console.error('Failed to load followers:', error)
+    } finally {
+      setIsLoadingFollowers(false)
+    }
+  }
+
+  const loadFollowingList = async () => {
+    if (isLoadingFollowing || !session?.dbUser?.id) return
+    
+    setIsLoadingFollowing(true)
+    try {
+      const response = await getUserFollowing(session.dbUser.id, 100, 0)
+      setFollowingList(response?.following || [])
+      setShowFollowingList(true)
+    } catch (error) {
+      console.error('Failed to load following:', error)
+    } finally {
+      setIsLoadingFollowing(false)
     }
   }
 
@@ -163,11 +201,19 @@ export function ProfilePage({ user, posts }: Props) {
         
         {/* Followers/Following Section */}
         <div className="flex items-center space-x-6 text-sm">
-          <button className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors">
+          <button 
+            onClick={loadFollowingList}
+            disabled={isLoadingFollowing}
+            className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <span className="font-semibold text-white">{profile.following_count || 0}</span>
             <span className="text-gray-400">Following</span>
           </button>
-          <button className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors">
+          <button 
+            onClick={loadFollowersList}
+            disabled={isLoadingFollowers}
+            className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <span className="font-semibold text-white">{profile.followers_count || 0}</span>
             <span className="text-gray-400">Followers</span>
           </button>
@@ -203,7 +249,7 @@ export function ProfilePage({ user, posts }: Props) {
       {/* Tabs */}
       <div className="-t -gray-700">
         <div className="flex px-6">
-          {(["Posts", "Activity"] as Tab[]).map((tab) => (
+          {(["Posts", "Activity", "Followers"] as Tab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -385,6 +431,122 @@ export function ProfilePage({ user, posts }: Props) {
             )}
           </div>
         )}
+
+        {activeTab === "Followers" && (
+          <div className="space-y-6">
+            {/* Followers Section */}
+            <div className="bg-dark-700/50 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white text-lg font-semibold">Followers ({profile.followers_count || 0})</h3>
+                <button
+                  onClick={loadFollowersList}
+                  disabled={isLoadingFollowers}
+                  className="text-blue-400 hover:text-blue-300 text-sm transition-colors disabled:opacity-50"
+                >
+                  {isLoadingFollowers ? 'Loading...' : 'View All'}
+                </button>
+              </div>
+              
+              {isLoadingFollowers ? (
+                <div className="text-center py-8 text-gray-400">Loading followers...</div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Show first 5 followers as preview */}
+                  {followersList.slice(0, 5).map((follower: any) => (
+                    <div key={follower.follower_id} className="flex items-center space-x-3 p-3 bg-dark-600 rounded-lg">
+                      <img
+                        src={follower.avatar_url || "https://robohash.org/default.png"}
+                        alt={follower.username || 'User'}
+                        className="w-10 h-10 rounded-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "https://robohash.org/default.png";
+                        }}
+                      />
+                      <div className="flex-1">
+                        <div className="text-white font-medium">{follower.username || 'Unknown User'}</div>
+                        <div className="text-gray-400 text-sm">{follower.email || ''}</div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {followersList.length === 0 && (
+                    <div className="text-center py-8 text-gray-400">
+                      No followers yet
+                    </div>
+                  )}
+                  
+                  {followersList.length > 5 && (
+                    <div className="text-center pt-4">
+                      <button
+                        onClick={loadFollowersList}
+                        className="text-blue-400 hover:text-blue-300 text-sm transition-colors"
+                      >
+                        View All {profile.followers_count || 0} Followers
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Following Section */}
+            <div className="bg-dark-700/50 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white text-lg font-semibold">Following ({profile.following_count || 0})</h3>
+                <button
+                  onClick={loadFollowingList}
+                  disabled={isLoadingFollowing}
+                  className="text-blue-400 hover:text-blue-300 text-sm transition-colors disabled:opacity-50"
+                >
+                  {isLoadingFollowing ? 'Loading...' : 'View All'}
+                </button>
+              </div>
+              
+              {isLoadingFollowing ? (
+                <div className="text-center py-8 text-gray-400">Loading following...</div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Show first 5 following as preview */}
+                  {followingList.slice(0, 5).map((following: any) => (
+                    <div key={following.following_id} className="flex items-center space-x-3 p-3 bg-dark-600 rounded-lg">
+                      <img
+                        src={following.avatar_url || "https://robohash.org/default.png"}
+                        alt={following.username || 'User'}
+                        className="w-10 h-10 rounded-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "https://robohash.org/default.png";
+                        }}
+                      />
+                      <div className="flex-1">
+                        <div className="text-white font-medium">{following.username || 'Unknown User'}</div>
+                        <div className="text-gray-400 text-sm">{following.email || ''}</div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {followingList.length === 0 && (
+                    <div className="text-center py-8 text-gray-400">
+                      Not following anyone yet
+                    </div>
+                  )}
+                  
+                  {followingList.length > 5 && (
+                    <div className="text-center pt-4">
+                      <button
+                        onClick={loadFollowingList}
+                        className="text-blue-400 hover:text-blue-300 text-sm transition-colors"
+                      >
+                        View All {profile.following_count || 0} Following
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Update Profile Modal */}
@@ -394,6 +556,92 @@ export function ProfilePage({ user, posts }: Props) {
         onUpdate={handleUpdateProfile}
         currentProfile={profile}
       />
+
+      {/* Followers List Modal */}
+      {showFollowersList && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowFollowersList(false)}>
+          <div className="bg-dark-800 rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white text-lg font-semibold">Followers</h3>
+              <button
+                onClick={() => setShowFollowersList(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <Ellipsis className="w-5 h-5 rotate-90" />
+              </button>
+            </div>
+            
+            {isLoadingFollowers ? (
+              <div className="text-center py-4 text-gray-400">Loading...</div>
+            ) : followersList.length > 0 ? (
+              <div className="space-y-3">
+                {followersList.map((follower: any) => (
+                  <div key={follower.follower_id} className="flex items-center space-x-3 p-3 bg-dark-700 rounded-lg">
+                    <img
+                      src={follower.avatar_url || "https://robohash.org/default.png"}
+                      alt={follower.username || 'User'}
+                      className="w-10 h-10 rounded-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "https://robohash.org/default.png";
+                      }}
+                    />
+                    <div className="flex-1">
+                      <div className="text-white font-medium">{follower.username || 'Unknown User'}</div>
+                      <div className="text-gray-400 text-sm">{follower.email || ''}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-gray-400">No followers yet</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Following List Modal */}
+      {showFollowingList && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowFollowingList(false)}>
+          <div className="bg-dark-800 rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white text-lg font-semibold">Following</h3>
+              <button
+                onClick={() => setShowFollowingList(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <Ellipsis className="w-5 h-5 rotate-90" />
+              </button>
+            </div>
+            
+            {isLoadingFollowing ? (
+              <div className="text-center py-4 text-gray-400">Loading...</div>
+            ) : followingList.length > 0 ? (
+              <div className="space-y-3">
+                {followingList.map((following: any) => (
+                  <div key={following.following_id} className="flex items-center space-x-3 p-3 bg-dark-700 rounded-lg">
+                    <img
+                      src={following.avatar_url || "https://robohash.org/default.png"}
+                      alt={following.username || 'User'}
+                      className="w-10 h-10 rounded-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "https://robohash.org/default.png";
+                      }}
+                    />
+                    <div className="flex-1">
+                      <div className="text-white font-medium">{following.username || 'Unknown User'}</div>
+                      <div className="text-gray-400 text-sm">{following.email || ''}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-gray-400">Not following anyone yet</div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
