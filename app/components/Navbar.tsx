@@ -131,7 +131,7 @@ export default function Navbar() {
          style={{
         boxShadow:
           "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(26, 19, 161, 0.50), 0px 0px 0px 1px #4F47EB",
-        backgroundColor: "#4F47EB",
+        backgroundColor: "#6E54FF",
         color: "white",
         padding: "8px 16px",
         // borderRadius: "8px",
