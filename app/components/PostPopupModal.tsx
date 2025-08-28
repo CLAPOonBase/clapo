@@ -14,7 +14,7 @@ interface PostPopupModalProps {
 
 export const PostPopupModal = ({ post, isOpen, onClose }: PostPopupModalProps) => {
   const { data: session } = useSession()
-  const { likePost, unlikePost, commentOnPost, retweetPost, unretweetPost, bookmarkPost, unbookmarkPost } = useApi()
+  const { likePost, unlikePost, commentPost, retweetPost, bookmarkPost, unbookmarkPost } = useApi()
   
   const [isLiked, setIsLiked] = useState(false)
   const [isRetweeted, setIsRetweeted] = useState(false)
@@ -42,12 +42,12 @@ export const PostPopupModal = ({ post, isOpen, onClose }: PostPopupModalProps) =
     
     try {
       if (isLiked) {
-        await unlikePost(post.id, { userId: currentUserId })
+        await unlikePost(post.id, currentUserId)
         setIsLiked(false)
         // Update like count in the post object
         post.like_count = Math.max(0, post.like_count - 1)
       } else {
-        await likePost(post.id, { userId: currentUserId })
+        await likePost(post.id, currentUserId)
         setIsLiked(true)
         // Update like count in the post object
         post.like_count = post.like_count + 1
@@ -62,12 +62,12 @@ export const PostPopupModal = ({ post, isOpen, onClose }: PostPopupModalProps) =
     
     try {
       if (isRetweeted) {
-        await unretweetPost(post.id, { userId: currentUserId })
+        // Note: No unretweet API available, just update local state
         setIsRetweeted(false)
         // Update retweet count in the post object
         post.retweet_count = Math.max(0, post.retweet_count - 1)
       } else {
-        await retweetPost(post.id, { userId: currentUserId })
+        await retweetPost(post.id, currentUserId)
         setIsRetweeted(true)
         // Update retweet count in the post object
         post.retweet_count = post.retweet_count + 1
@@ -82,10 +82,10 @@ export const PostPopupModal = ({ post, isOpen, onClose }: PostPopupModalProps) =
     
     try {
       if (isBookmarked) {
-        await unbookmarkPost(post.id, { userId: currentUserId })
+        await unbookmarkPost(post.id, currentUserId)
         setIsBookmarked(false)
       } else {
-        await bookmarkPost(post.id, { userId: currentUserId })
+        await bookmarkPost(post.id, currentUserId)
         setIsBookmarked(true)
       }
     } catch (error) {
@@ -98,8 +98,8 @@ export const PostPopupModal = ({ post, isOpen, onClose }: PostPopupModalProps) =
     
     setIsSubmittingComment(true)
     try {
-      const response = await commentOnPost(post.id, {
-        userId: currentUserId,
+      const response = await commentPost(post.id, {
+        commenterId: currentUserId,
         content: commentText.trim()
       })
       
