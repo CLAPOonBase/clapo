@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Drawer,
@@ -57,7 +57,6 @@ export default function Navbar() {
   return (
     <>
       <nav className="w-full sticky top-0 p-4 md:p-6 flex items-center justify-between backdrop-blur-lg font-mono z-[9999]">
-        
         {/* Mobile + iPad Menu Drawer (visible until lg) */}
         <div className="lg:hidden z-50">
           <Drawer>
@@ -74,7 +73,11 @@ export default function Navbar() {
                     key={item.href}
                     href={item.href}
                     className={`tracking-[0.3em] text-sm font-bold ${
-                      pathname === item.href
+                      item.href === "/"
+                        ? pathname === "/"
+                          ? "text-[#E4761B]"
+                          : "text-[#A0A0A0] hover:text-white"
+                        : pathname.startsWith(item.href)
                         ? "text-[#E4761B]"
                         : "text-[#A0A0A0] hover:text-white"
                     }`}
@@ -105,7 +108,11 @@ export default function Navbar() {
               key={item.href}
               href={item.href}
               className={`tracking-widest text-sm font-bold transition-colors ${
-                pathname === item.href
+                item.href === "/"
+                  ? pathname === "/" // Home must match exactly
+                    ? "text-[#4F47EB]"
+                    : "text-[#A0A0A0] hover:text-white"
+                  : pathname.startsWith(item.href) // Sub-routes use startsWith
                   ? "text-[#4F47EB]"
                   : "text-[#A0A0A0] hover:text-white"
               }`}
@@ -117,25 +124,20 @@ export default function Navbar() {
 
         {/* Desktop Buttons (only lg and up) */}
         <div className="hidden lg:flex gap-2 items-center">
-          
           <button
-     
             onClick={() => openDialog("x")}
             className="inline-flex items-center justify-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 gap-[6px] min-w-[105px] transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)] bg-[hsla(220,10%,12%,1)] text-white shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000] hover:bg-[hsla(220,10%,18%,1)] px-3 py-1.5 text-xs rounded-full leading-[24px] font-bold w-full sm:w-auto whitespace-nowrap"
           >
-            {isLoggedIn
-              ? session.dbUser?.username || "CONNECTED"
-              : "CONNECT X"}
+            {isLoggedIn ? session.dbUser?.username || "CONNECTED" : "CONNECT X"}
           </button>
           <button
-         style={{
-        boxShadow:
-          "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(26, 19, 161, 0.50), 0px 0px 0px 1px #4F47EB",
-        backgroundColor: "#6E54FF",
-        color: "white",
-        padding: "8px 16px",
-        // borderRadius: "8px",
-      }}
+            style={{
+              boxShadow:
+                "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(26, 19, 161, 0.50), 0px 0px 0px 1px #4F47EB",
+              backgroundColor: "#6E54FF",
+              color: "white",
+              padding: "8px 16px",
+            }}
             onClick={() => {
               openDialog("wallet");
             }}
@@ -150,42 +152,37 @@ export default function Navbar() {
         {/* Mobile + iPad Connect Button */}
         <div className="flex lg:hidden justify-center">
           <button
-           style={{
-    boxShadow:
-      "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(161, 87, 19, 0.50), 0px 0px 0px 1px #F97316",
-    backgroundColor: "#6C54F8",
-    color: "white",
-    padding: "8px 16px",
-  }}
+            style={{
+              boxShadow:
+                "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(161, 87, 19, 0.50), 0px 0px 0px 1px #F97316",
+              backgroundColor: "#6C54F8",
+              color: "white",
+              padding: "8px 16px",
+            }}
             onClick={() => openDialog("x")}
             className="text-[#E4761B] bg-white rounded-full px-3 py-1 text-xs font-bold shadow hover:text-white hover:bg-[#E4761B] transition"
           >
-
-            {isLoggedIn
-              ? session.dbUser?.username || "Connected"
-              : "Connect"}
+            {isLoggedIn ? session.dbUser?.username || "Connected" : "Connect"}
           </button>
         </div>
       </nav>
 
-<AnimatePresence>
-  {activeDialog && (
-    <motion.div
-      key="dialog"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[10000]"
-      onClick={closeDialog}
-    >
-      <div onClick={(e) => e.stopPropagation()}>
-        <SignInPage close={closeDialog} />
-      </div>
-    </motion.div>
-  )}
-</AnimatePresence>
-
-
+      <AnimatePresence>
+        {activeDialog && (
+          <motion.div
+            key="dialog"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[10000]"
+            onClick={closeDialog}
+          >
+            <div onClick={(e) => e.stopPropagation()}>
+              <SignInPage close={closeDialog} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

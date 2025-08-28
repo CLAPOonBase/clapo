@@ -487,7 +487,7 @@ const handleImageClick = (e: React.MouseEvent) => {
       loop 
       playsInline
       controls
-      className="w-full max-h-96 bg-black rounded-lg"
+      className="w-auto max-h-96 bg-black rounded-lg"
       onClick={(e) => e.stopPropagation()}
     />
   ) : /\.(mp3|wav|ogg|m4a)$/i.test(postImage) ? (
