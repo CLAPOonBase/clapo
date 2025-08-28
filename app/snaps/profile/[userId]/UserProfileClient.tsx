@@ -55,7 +55,7 @@ interface UserProfileClientProps {
 export default function UserProfileClient({ userId }: UserProfileClientProps) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'posts' | 'messages' | 'communities' | 'activity' | 'followers'>('posts')
+  const [activeTab, setActiveTab] = useState<'posts' | 'activity' | 'followers'>('posts')
   const [isFollowing, setIsFollowing] = useState(false)
   const [isCheckingFollowStatus, setIsCheckingFollowStatus] = useState(false)
   const [currentPage, setCurrentPage] = useState<'home' | 'explore' | 'notifications' | 'likes' | 'activity' | 'profile' | 'messages' | 'bookmarks' | 'share' | 'search'>('home')
@@ -116,11 +116,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
 
   // Load mock data for messages and communities
   useEffect(() => {
-    if (activeTab === 'messages') {
-      loadMessageThreads()
-    } else if (activeTab === 'communities') {
-      loadCommunities()
-    } else if (activeTab === 'followers') {
+    if (activeTab === 'followers') {
       // Load followers and following data when the followers tab is selected
       if (followersList.length === 0) {
         loadFollowersList()
@@ -512,8 +508,6 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
           <div className="flex">
             {[
               { id: 'posts', label: 'Posts', icon: Grid },
-              { id: 'messages', label: 'Messages', icon: MessageSquare },
-              { id: 'communities', label: 'Communities', icon: Users },
               { id: 'activity', label: 'Activity', icon: MessageCircle },
               { id: 'followers', label: 'Followers', icon: Users }
             ].map(({ id, label, icon: Icon }) => (
@@ -604,96 +598,6 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
                   No posts yet
                 </div>
               )}
-            </div>
-          )}
-          
-          {activeTab === 'messages' && (
-            <div className="bg-dark-700 rounded-lg p-4">
-              <div className="mb-4">
-                <div className="flex space-x-2 mb-4">
-                  <button
-                    onClick={() => setDmSection('threads')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      dmSection === 'threads'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-dark-600 text-dark-300 hover:text-white'
-                    }`}
-                  >
-                    Threads
-                  </button>
-                  <button
-                    onClick={() => setDmSection('search')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      dmSection === 'search'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-dark-600 text-dark-300 hover:text-white'
-                    }`}
-                  >
-                    Search Users
-                  </button>
-                </div>
-                
-                <DMSection
-                  dmSection={dmSection}
-                  state={{ messageThreads, communities: [] }}
-                  session={session}
-                  selectedThread={selectedThread}
-                  onSelectThread={setSelectedThread}
-                  searchQuery={searchQuery}
-                  setSearchQuery={setSearchQuery}
-                  onStartChat={handleStartChat}
-                  unreadCounts={{}}
-                  lastMessages={{}}
-                />
-              </div>
-            </div>
-          )}
-          
-          {activeTab === 'communities' && (
-            <div className="bg-dark-700 rounded-lg p-4">
-              <div className="mb-4">
-                <div className="flex space-x-2 mb-4">
-                  <button
-                    onClick={() => setCommunitySection('my')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      communitySection === 'my'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-dark-600 text-dark-300 hover:text-white'
-                    }`}
-                  >
-                    My Communities
-                  </button>
-                  <button
-                    onClick={() => setCommunitySection('join')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      communitySection === 'join'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-dark-600 text-dark-300 hover:text-white'
-                    }`}
-                  >
-                    Join Communities
-                  </button>
-                  <button
-                    onClick={() => setCommunitySection('create')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      communitySection === 'create'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-dark-600 text-dark-300 hover:text-white'
-                    }`}
-                  >
-                    Create Community
-                  </button>
-                </div>
-                
-                <CommunitySection
-                  communitySection={communitySection}
-                  state={{ communities, messageThreads: [] }}
-                  session={session}
-                  selectedCommunity={selectedCommunity}
-                  onSelectCommunity={setSelectedCommunity}
-                  onJoinCommunity={handleJoinCommunity}
-                />
-              </div>
             </div>
           )}
           
