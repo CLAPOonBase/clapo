@@ -201,7 +201,7 @@ function SocialFeedPageContent() {
     <button
       key={tab}
       onClick={() => handleTabChange(tab as "FOR YOU" | "FOLLOWING")}
-      className={`pb-2 font-semibold w-full relative z-10 ${
+      className={`p-2 font-semibold w-full relative z-10 ${
         activeTab === tab ? "text-white" : "text-secondary"
       }`}
     >
@@ -210,13 +210,12 @@ function SocialFeedPageContent() {
   ))}
 
   <motion.div
-    className="absolute top-2.5 h-[40px] bg-dark-700/70 rounded-full"
+    className="absolute h-[40px] bg-dark-700/70 rounded-full"
    style={{
   boxShadow:
     "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
   backgroundColor: "#6E54FF",
   color: "white",
-  padding: "8px 16px",
 }}
 
     initial={false}

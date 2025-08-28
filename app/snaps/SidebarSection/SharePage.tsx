@@ -20,7 +20,7 @@ interface ShareData {
 export default function SharePage() {
   const { data: session } = useSession();
   const { state } = useApi();
-  const [activeTab, setActiveTab] = useState<'my-shares' | 'trending' | 'market'>('my-shares');
+  const [activeTab, setActiveTab] = useState<'my-shares' | 'Users' | 'Community'>('my-shares');
   const [shares, setShares] = useState<ShareData[]>([]);
   const [loading, setLoading] = useState(false);
 
