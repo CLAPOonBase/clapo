@@ -83,7 +83,7 @@ export default function UserProfileCard({ onManageClick }: Props) {
               alt={profile.username}
               width={80}
               height={80}
-              className="rounded-full w-20 h-20 border-4 border-dark-900 object-cover"
+              className="rounded-full w-20 h-20 border-2 border-dark-900 object-cover"
               onError={(e) => {
                 const target = e.currentTarget as HTMLImageElement
                 target.src = '/4.png'
