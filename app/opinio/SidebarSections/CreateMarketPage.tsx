@@ -481,7 +481,7 @@ const App = () => {
   if (!hydrated) return null; // prevents SSR/localStorage mismatch
 
   return (
-    <div className="min-h-screen bg-black text-white relative">
+    <div className="min-h-screen text-white relative">
       {/* Navigation */}
       <div className="mx-auto">
         <div
