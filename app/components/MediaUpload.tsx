@@ -54,7 +54,7 @@ const MediaUpload = forwardRef<MediaUploadHandle, MediaUploadProps>(
     }
 
     const validateFile = (file: File): { isValid: boolean; error?: string } => {
-      const maxSize = 50 * 1024 * 1024 // 50MB
+      const maxSize = 100 * 1024 * 1024 // 100MB
       const allowedTypes = [
         'image/jpeg',
         'image/png',
@@ -63,13 +63,28 @@ const MediaUpload = forwardRef<MediaUploadHandle, MediaUploadProps>(
         'video/mp4',
         'video/webm',
         'video/ogg',
+        'video/avi',
+        'video/mkv',
+        'video/flv',
+        'video/wmv',
+        'video/m4v',
+        'video/3gp',
+        'video/ts',
+        'video/mts',
+        'video/m2ts',
         'audio/mpeg',
         'audio/wav',
         'audio/ogg',
+        'audio/aac',
+        'audio/flac',
+        'audio/wma',
+        'audio/opus',
+        'audio/aiff',
+        'audio/pcm',
       ]
 
       if (file.size > maxSize) {
-        return { isValid: false, error: 'File size must be less than 50MB' }
+        return { isValid: false, error: 'File size must be less than 100MB' }
       }
 
       if (!allowedTypes.includes(file.type)) {
@@ -83,7 +98,6 @@ const MediaUpload = forwardRef<MediaUploadHandle, MediaUploadProps>(
       const file = event.target.files?.[0]
       if (!file || !userId) return
 
-      // Validate file
       const validation = validateFile(file)
       if (!validation.isValid) {
         alert(validation.error || 'Invalid file')
@@ -92,31 +106,40 @@ const MediaUpload = forwardRef<MediaUploadHandle, MediaUploadProps>(
 
       setIsUploading(true)
       try {
-        // Create FormData for upload
         const formData = new FormData()
         formData.append('file', file)
 
-        // Upload through backend API
         const response = await fetch('/api/upload', {
           method: 'POST',
           body: formData,
         })
 
         if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || 'Upload failed')
+          let errorMessage = 'Upload failed'
+          try {
+            const errorData = await response.json()
+            errorMessage = errorData.error || 'Upload failed'
+          } catch (parseError) {
+            console.error('Failed to parse error response:', parseError)
+            if (response.status === 413) {
+              errorMessage = 'File too large. Please try a smaller file.'
+            } else if (response.status === 408) {
+              errorMessage = 'Upload timeout. Please try again.'
+            } else if (response.status >= 500) {
+              errorMessage = 'Server error. Please try again later.'
+            }
+          }
+          throw new Error(errorMessage)
         }
 
         const result = await response.json()
         
-        // Return the permanent S3 URL
         onMediaUploaded(result.url)
       } catch (error) {
         console.error('Failed to upload file:', error)
         alert(error instanceof Error ? error.message : 'Failed to upload file. Please try again.')
       } finally {
         setIsUploading(false)
-        // Reset input
         if (fileInputRef.current) {
           fileInputRef.current.value = ''
         }
