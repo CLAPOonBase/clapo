@@ -190,6 +190,9 @@ export class OpinioContractService {
   }
 
   async getWalletAddress(): Promise<string> {
+    if (!this.signer) {
+      throw new Error('Signer not initialized');
+    }
     return await this.signer.getAddress();
   }
 
@@ -216,6 +219,9 @@ export class OpinioContractService {
         console.warn('⚠️ Not on Monad Testnet, USDC contract may not exist');
       }
 
+      if (!this.signer) {
+        throw new Error('Signer not initialized');
+      }
       const userAddress = await this.signer.getAddress();
       console.log('👤 Checking USDC status for address:', userAddress);
       console.log('💰 USDC contract address:', MOCK_USDC_ADDRESS);
@@ -390,7 +396,10 @@ export class OpinioContractService {
       const usdcAmount = ethers.parseUnits(amount.toString(), decimals);
       
       // Check allowance and auto-approve if needed
-      const userAddress = await this.wallet.getAddress();
+      if (!this.signer) {
+        throw new Error('Signer not initialized');
+      }
+      const userAddress = await this.signer.getAddress();
       const currentAllowance = await this.usdcContract.allowance(userAddress, this.opinioContract.target);
       
       if (currentAllowance < usdcAmount) {
@@ -874,7 +883,11 @@ export class OpinioContractService {
       const decimals = await this.usdcContract.decimals();
       const usdcAmount = ethers.parseUnits(amount.toString(), decimals);
       
-      const tx = await this.usdcContract.mint(await this.signer.getAddress(), usdcAmount);
+      if (!this.signer) {
+        throw new Error('Signer not initialized');
+      }
+      const userAddress = await this.signer.getAddress();
+      const tx = await this.usdcContract.mint(userAddress, usdcAmount);
       const receipt = await tx.wait();
       
       return {
@@ -906,4 +919,8 @@ export const getOpinioContractService = (): OpinioContractService => {
     throw new Error("Opinio contract service not initialized. Call initializeOpinioContract or initializeOpinioContractWithMetaMask first.");
   }
   return opinioContractService;
+};
+
+export const isOpinioContractServiceInitialized = (): boolean => {
+  return opinioContractService !== null;
 };

@@ -148,7 +148,13 @@ export default function MainVoting() {
                       </div>
                       <div className="flex justify-between text-xs">
                         <span className="text-gray-400">STATUS</span>
-                        <span className="text-white">{market.status === 0 ? 'Active' : market.status === 1 ? 'Resolved' : 'Closed'}</span>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          market.isActive 
+                            ? 'bg-green-900/30 text-green-400' 
+                            : 'bg-red-900/30 text-red-400'
+                        }`}>
+                          {market.isActive ? 'Active' : 'Closed'}
+                        </span>
                       </div>
                       <div className="flex justify-between text-xs">
                         <span className="text-gray-400">CATEGORY</span>
