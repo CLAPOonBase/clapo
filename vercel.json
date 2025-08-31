@@ -1,0 +1,13 @@
+{
+  "buildCommand": "npm run build",
+  "installCommand": "npm ci",
+  "functions": {
+    "app/api/**/*.ts": {
+      "runtime": "@vercel/node"
+    }
+  },
+  "env": {
+    "NPM_CONFIG_FUND": "false",
+    "NPM_CONFIG_AUDIT": "false"
+  }
+}
