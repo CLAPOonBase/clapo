@@ -1,4 +1,5 @@
 import { useWalletContext } from "@/context/WalletContext";
+import { useOpinioContext } from "@/app/Context/OpinioContext";
 import React, { useState, useEffect } from "react";
 import { Wallet, WalletCards, RefreshCw } from "lucide-react";
 
@@ -11,16 +12,19 @@ const UserDetails = () => {
     getTokenBalance,
     getETHBalance,
   } = useWalletContext();
+  
+  const { usdcStatus, refreshData } = useOpinioContext();
+  
   const [tokenBalance, setTokenBalance] = useState<string>("0");
-  const [ethBalance, setEthBalance] = useState<string>("0");
+  const [usdcBalance, setUsdcBalance] = useState<string>("0");
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [tokenInfo, setTokenInfo] = useState<{ symbol: string; name: string }>({
     symbol: "",
     name: "",
   });
 
-  // Your specific token address
-  const TOKEN_ADDRESS = "0x4fCF1784B31630811181f670Aea7A7bEF803eaED";
+  // Your Mock USDC token address
+  const MOCK_USDC_TOKEN_ADDRESS = "0xCADCa295a223E3DA821a243520df8e2a302C9840";
 
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -32,23 +36,33 @@ const UserDetails = () => {
     try {
       setIsLoadingBalance(true);
 
-      // Fetch both token and ETH balances
-      const [tokenData, ethBal] = await Promise.all([
-        getTokenBalance(TOKEN_ADDRESS),
-        getETHBalance(),
-      ]);
-
+      // Fetch Mock USDC token balance
+      const tokenData = await getTokenBalance(MOCK_USDC_TOKEN_ADDRESS);
       setTokenBalance(parseFloat(tokenData.formatted).toFixed(4));
-      setEthBalance(parseFloat(ethBal).toFixed(4));
       setTokenInfo({ symbol: tokenData.symbol, name: tokenData.name });
+      
     } catch (error) {
       console.error("Failed to fetch balances:", error);
       setTokenBalance("Error");
-      setEthBalance("Error");
     } finally {
       setIsLoadingBalance(false);
     }
   };
+
+  // Update USDC balance when usdcStatus changes
+  useEffect(() => {
+    if (usdcStatus) {
+      try {
+        const balance = parseFloat(usdcStatus.balance.toString()) / Math.pow(10, Number(usdcStatus.decimals));
+        setUsdcBalance(balance.toFixed(4));
+      } catch (error) {
+        console.error("Failed to format USDC balance:", error);
+        setUsdcBalance("Error");
+      }
+    } else {
+      setUsdcBalance("0");
+    }
+  }, [usdcStatus]);
 
   // Fetch balances when wallet connects
   useEffect(() => {
@@ -57,7 +71,7 @@ const UserDetails = () => {
     } else {
       // Reset balances when disconnected
       setTokenBalance("0");
-      setEthBalance("0");
+      setUsdcBalance("0");
       setTokenInfo({ symbol: "", name: "" });
     }
   }, [address]);
@@ -70,9 +84,13 @@ const UserDetails = () => {
     }
   };
 
-  const handleRefreshBalance = () => {
+  const handleRefreshBalance = async () => {
     if (address) {
       fetchBalances();
+      // Also refresh USDC data from Opinio contract
+      if (refreshData) {
+        await refreshData();
+      }
     }
   };
 
@@ -144,28 +162,23 @@ const UserDetails = () => {
 
             {address ? (
               <div className="w-full space-y-2 mt-2">
-                {/* ETH Balance */}
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">ETH:</span>
-                  <span className="text-lg text-white">
-                    {isLoadingBalance ? "Loading..." : `${ethBalance} ETH`}
-                  </span>
-                </div>
-
-                {/* Token Balance */}
+                {/* Mock USDC Balance */}
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-400">
-                    {tokenInfo.symbol || "Token"}:
+                    {tokenInfo.symbol || "Mock USDC"}:
                   </span>
                   <span className="text-lg text-white">
                     {isLoadingBalance
                       ? "Loading..."
-                      : `${tokenBalance} ${tokenInfo.symbol}`}
+                      : `${tokenBalance} ${tokenInfo.symbol || "USDC"}`}
                   </span>
                 </div>
 
                 <span className="text-xs text-green-400 mt-1">
                   Wallet Connected ✓
+                </span>
+                <span className="text-xs text-gray-400 mt-1">
+                  Token: {MOCK_USDC_TOKEN_ADDRESS.slice(0, 6)}...{MOCK_USDC_TOKEN_ADDRESS.slice(-4)}
                 </span>
               </div>
             ) : (

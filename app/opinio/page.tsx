@@ -9,6 +9,7 @@ import WalletPage from "./SidebarSections/WalletPage";
 import SettingsPage from "./SidebarSections/SettingsPage";
 import CreateMarketPage from "./SidebarSections/CreateMarketPage";
 
+
 export default function OpinioPage() {
   const [currentPage, setCurrentPage] = useState<
     "exploremarket" | "myportfolio" | "wallet" | "settings" | "createmarket"

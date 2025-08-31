@@ -1,15 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import UserDetails from '../Sections/UserDetails';
+"use client";
+import { useState } from "react";
+import UserDetails from "../Sections/UserDetails";
+import { useOpinioContext } from "@/app/Context/OpinioContext";
+import OpinioWalletConnect from "@/app/components/OpinioWalletConnect";
 
 const CreateMarketPage = ({ onMarketCreated, markets }) => {
   const [questionType, setQuestionType] = useState("no-options");
   const [options, setOptions] = useState(["", "", "", ""]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [title, setTitle] = useState("");
+  const [question, setQuestion] = useState("");
   const [description, setDescription] = useState("");
-  const [endDate, setEndDate] = useState({ day: "", month: "", year: "" });
+  const [endDate, setEndDate] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  
+  const { isConnected, createMarket, isLoading, error } = useOpinioContext();
 
   const availableTags = [
     { label: "TRENDING" },
@@ -62,45 +67,57 @@ const CreateMarketPage = ({ onMarketCreated, markets }) => {
     setSelectedTags((prev) => prev.filter((tag) => tag !== tagToRemove));
   };
 
-  const handleCreateMarket = () => {
-    if (!title.trim()) {
-      alert("Please enter a market title");
+  const handleCreateMarket = async () => {
+    if (!question.trim()) {
+      alert("Please enter a question");
       return;
     }
 
-    const market = {
-      id: Date.now(),
-      title: title.trim(),
-      description: description.trim(),
-      questionType,
-      options: questionType === "with-options" ? options.filter(opt => opt.trim()) : [],
-      tags: selectedTags,
-      endDate,
-      createdAt: new Date().toISOString(),
-      status: "Active"
-    };
+    if (!endDate) {
+      alert("Please select an end date");
+      return;
+    }
 
-    // Call the callback to update the parent component
-    onMarketCreated(market);
-
-    // Reset form
-    setTitle("");
-    setDescription("");
-    setQuestionType("no-options");
-    setOptions(["", "", "", ""]);
-    setSelectedTags([]);
-    setEndDate({ day: "", month: "", year: "" });
-
-    alert("Market created successfully!");
-  };
+    try {
+      setIsCreating(true);
+      const endTime = Math.floor(new Date(endDate).getTime() / 1000);
+      const marketType = questionType === "with-options" ? 1 : 0;
+      const marketOptions = questionType === "with-options" ? options.filter(opt => opt.trim()) : ["Yes", "No"];
+      
+      const result = await createMarket(
+        question, 
+        description, 
+        "General", // category
+        ["NEW"], // tags
+        endTime, 
+        marketType, 
+        0, // initialLiquidity
+        0, // minLiquidity
+        1000000 // maxMarketSize
+      );
+      
+      alert(`Market created successfully! Market ID: ${result.marketId}`);
+      
+      setQuestion("");
+      setDescription("");
+      setEndDate("");
+      setOptions(["", "", "", ""]);
+      setSelectedTags([]);
+    } catch (err) {
+      console.error("Failed to create market:", err);
+      alert("Failed to create market. Please try again.");
+    } finally {
+      setIsCreating(false);
+    }  };
 
   return (
     <div className="space-y-6 px-4 sm:px-6 text-left">
       <UserDetails />
-            <div>
-        <h2 className="text-xl font-semibold tracking-widest mb-4 h-10"></h2>
-      </div>
-      <div className="p-4 sm:p-6 bg-[#1A1A1A] text-white rounded-lg space-y-4 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+      
+      {!isConnected ? (
+        <OpinioWalletConnect />
+      ) : (
+        <div className="p-4 sm:p-6 bg-[#1A1A1A] text-white rounded-lg space-y-4 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
         <h2 className="text-xl font-semibold tracking-widest">CREATE MARKET</h2>
 
         <div>
@@ -135,8 +152,8 @@ const CreateMarketPage = ({ onMarketCreated, markets }) => {
           <label className="block text-sm mb-1">MARKET TITLE</label>
           <input
             type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
             placeholder={
               questionType === "no-options"
                 ? "WRITE YOUR QUESTION (e.g., Will it rain tomorrow?)"
@@ -180,29 +197,12 @@ const CreateMarketPage = ({ onMarketCreated, markets }) => {
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <label className="block text-sm mb-1">END DATE</label>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="text"
-                placeholder="DAY"
-                value={endDate.day}
-                onChange={(e) => setEndDate(prev => ({ ...prev, day: e.target.value }))}
-                className="flex-1 bg-transparent border border-[#2A2A2A] px-3 py-2 rounded text-sm outline-none text-white placeholder-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="MONTH"
-                value={endDate.month}
-                onChange={(e) => setEndDate(prev => ({ ...prev, month: e.target.value }))}
-                className="flex-1 bg-transparent border border-[#2A2A2A] px-3 py-2 rounded text-sm outline-none text-white placeholder-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="YEAR"
-                value={endDate.year}
-                onChange={(e) => setEndDate(prev => ({ ...prev, year: e.target.value }))}
-                className="flex-1 bg-transparent border border-[#2A2A2A] px-3 py-2 rounded text-sm outline-none text-white placeholder-gray-400"
-              />
-            </div>
+            <input
+              type="datetime-local"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full bg-transparent border border-[#2A2A2A] px-3 py-2 rounded text-sm outline-none text-white placeholder-gray-400"
+            />
           </div>
           <div className="flex-1">
             <label className="block text-sm mb-1">CATEGORY/TAGS</label>
@@ -287,11 +287,19 @@ const CreateMarketPage = ({ onMarketCreated, markets }) => {
 
         <button 
           onClick={handleCreateMarket}
-          className="w-full bg-[#6E54FF] hover:bg-[#836EF9] text-white font-semibold py-3 rounded-[100px] transition-all duration-200 shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB] hover:shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]"
+          disabled={isCreating || isLoading}
+          className="w-full bg-[#6E54FF] hover:bg-[#836EF9] disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-[100px] transition-all duration-200 shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB] hover:shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]"
         >
-          CREATE MARKET
+          {isCreating ? 'Creating Market...' : 'CREATE MARKET'}
         </button>
-      </div>
+        
+        {error && (
+          <div className="p-2 bg-red-900/20 border border-red-500/30 rounded text-red-400 text-xs">
+            {error}
+          </div>
+        )}
+        </div>
+      )}
     </div>
   );
 };
