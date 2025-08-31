@@ -228,7 +228,7 @@ export class OpinioContractService {
         return {
           balance: 0n,
           allowance: 0n,
-          decimals: 6n,
+          decimals: 6,
           name: 'Mock USDC',
           symbol: 'USDC',
           totalSupply: 0n
@@ -248,7 +248,7 @@ export class OpinioContractService {
         }),
         this.usdcContract.decimals().catch(e => {
           console.warn('Failed to get USDC decimals:', e.message);
-          return 6n;
+          return 6;
         }),
         this.usdcContract.name().catch(e => {
           console.warn('Failed to get USDC name:', e.message);
@@ -272,7 +272,7 @@ export class OpinioContractService {
       return {
         balance: 0n,
         allowance: 0n,
-        decimals: 6n,
+        decimals: 6,
         name: 'Mock USDC',
         symbol: 'USDC',
         totalSupply: 0n

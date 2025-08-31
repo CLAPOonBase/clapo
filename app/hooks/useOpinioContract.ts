@@ -230,7 +230,7 @@ export const useOpinioContract = (): UseOpinioContractReturn => {
         console.log('🗳️ Initial votes loaded:', votes);
         setUserVotes(votes);
 
-        const summary = await service.getTradingSummary(address);
+        const summary = await service.getUserTradingSummary(address);
         console.log('📈 Initial trading summary loaded:', summary);
         setTradingSummary({
           totalTrades: summary.totalTrades,

@@ -11,16 +11,23 @@ interface OpinioContextType {
   marketCount: string | null;
   markets: any[];
   portfolio: any;
+  userPositions: any[];
+  userVotes: any[];
+  tradingSummary: any;
   isLoading: boolean;
   error: string | null;
   
   connect: (rpcUrl: string, privateKey: string) => Promise<void>;
+  connectWithMetaMask: (provider: any, signer: any) => Promise<void>;
   disconnect: () => void;
   refreshData: () => Promise<void>;
   
   createMarket: (title: string, description: string, category: string, tags: string[], endDate: number, marketType?: number, initialLiquidity?: number, minLiquidity?: number, maxMarketSize?: number) => Promise<{ marketId: string; transaction: any }>;
   addMarketOption: (marketId: number, optionText: string) => Promise<any>;
   castVote: (marketId: number, prediction: number, confidence: number, amount: number) => Promise<any>;
+  buyShares: (marketId: number, amount: number, isLong: boolean, optionId: number) => Promise<any>;
+  sellShares: (marketId: number, amount: number, isLong: boolean, optionId: number) => Promise<any>;
+  approveUSDC: (amount: number) => Promise<any>;
   
   getMarket: (marketId: number) => Promise<any>;
   getOption: (marketId: number, optionId: number) => Promise<any>;

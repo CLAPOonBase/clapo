@@ -38,17 +38,19 @@ export default function OpinioTrading({ marketId, marketData }: OpinioTradingPro
       setIsTrading(true);
       
       if (tradeType === 'buy') {
-        const result = await buyShares(marketId, selectedOption, parseFloat(amount));
-        alert(`Successfully bought ${result.sharesReceived} shares!`);
+        // buyShares(marketId, amount, isLong, optionId)
+        const result = await buyShares(marketId, parseFloat(amount), true, selectedOption);
+        alert(`Successfully bought shares!`);
       } else {
-        const result = await sellShares(marketId, selectedOption, parseFloat(amount));
-        alert(`Successfully sold shares for ${result.usdcReceived} USDC!`);
+        // sellShares(marketId, amount, isLong, optionId)
+        const result = await sellShares(marketId, parseFloat(amount), true, selectedOption);
+        alert(`Successfully sold shares!`);
       }
       
       setAmount('');
     } catch (err) {
       console.error('Trade failed:', err);
-      alert('Trade failed. Please try again.');
+      alert(`Trade failed: ${err instanceof Error ? err.message : 'Please try again.'}`);
     } finally {
       setIsTrading(false);
     }
