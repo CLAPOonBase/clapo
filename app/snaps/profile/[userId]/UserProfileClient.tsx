@@ -414,57 +414,98 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
             <span>Back</span>
           </button>
         </div>
+        <div className='bg-dark-800 rounded-2xl p-6 shadow-custom'>
+          <div>
+            <Image src='https://pbs.twimg.com/profile_banners/1296970423851077632/1693025431/600x200' alt={''} className='h-40 w-full object-cover rounded-2xl' width={1000} height={1000}/>
+          </div>
+             <div className="flex items-center justify-end py-2 text-secondary space-x-6 text-sm text-dark-400 mb-4">
+                <div className="flex items-center space-x-1">
+                  <Calendar className="w-4 h-4" />
+                  <span>Joined {formatDate(userProfile.created_at)}</span>
+                </div>
+              </div>
+        </div>
 
         {/* Profile Header */}
-        <div className="p-6 border-b border-dark-700 mb-6">
-          <div className="flex items-start space-x-4">
-            <div className="flex-shrink-0">
-              <Image
+        <div className="p-6 -mt-20 border-dark-700 bg-dark-800">
+          <div className="flex flex-col items-start space-x-4">
+                    <div className='flex w-full items-center mb-4'>
+                            <Image
                 src={userProfile.avatar_url || '/4.png'}
                 alt={userProfile.username}
                 width={80}
                 height={80}
                 className="w-20 h-20 rounded-full"
               />
+                          <div className="flex justify-center items-center px-2">
+<div className='flex items-center justify-center space-x-3 mb-3'>
+  {!isOwnProfile && (
+    <>
+      <button
+        onClick={handleFollowToggle}
+        disabled={isCheckingFollowStatus}
+        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+          isCheckingFollowStatus
+            ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+            : isFollowing
+            ? 'bg-red-600 text-white hover:bg-red-700'
+            : 'bg-blue-600 text-white hover:bg-blue-700'
+        }`}
+      >
+        {isCheckingFollowStatus ? 'Checking...' : isFollowing ? 'Unfollow' : 'Follow'}
+      </button>
+
+      <button
+        onClick={() => {
+          const profileLink = `${window.location.origin}/user/${userProfile.username}`;
+          navigator.clipboard.writeText(profileLink);
+          alert('Profile link copied!');
+        }}
+        className="px-4 py-2 rounded-full text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
+      >
+        Share
+      </button>
+    </>
+  )}
+</div>
+
+          
+              
+                    </div>
+          
+
+              {/* Stats Grid */}
+
+
+              {/* Additional Stats */}
+              {/* <div className="grid grid-cols-3 gap-4 text-xs text-dark-400">
+                <div className="text-center">
+                  <span>Comments: {userProfile.total_comments_made}</span>
+                </div>
+                <div className="text-center">
+                  <span>Retweets: {userProfile.total_retweets_made}</span>
+                </div>
+                <div className="text-center">
+                  <span>Bookmarks: {userProfile.total_bookmarks_made}</span>
+                </div>
+              </div> */}
             </div>
-            
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-3 mb-3">
-                <h3 className="text-white text-xl font-bold">
+            <div className="">
+
+                              <h3 className="text-white text-xl font-bold">
                   {userProfile.username}
                 </h3>
-                {!isOwnProfile && (
-                  <button
-                    onClick={handleFollowToggle}
-                    disabled={isCheckingFollowStatus}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                      isCheckingFollowStatus
-                        ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
-                        : isFollowing
-                        ? 'bg-red-600 text-white hover:bg-red-700'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
-                  >
-                    {isCheckingFollowStatus ? 'Checking...' : isFollowing ? 'Unfollow' : 'Follow'}
-                  </button>
-                )}
-              </div>
-              
-              {userProfile.bio && (
+                    {userProfile.bio && (
                 <p className="text-dark-300 text-sm mb-4">
                   {userProfile.bio}
                 </p>
               )}
-              
-              <div className="flex items-center space-x-6 text-sm text-dark-400 mb-4">
-                <div className="flex items-center space-x-1">
-                  <Calendar className="w-4 h-4" />
-                  <span>Joined {formatDate(userProfile.created_at)}</span>
-                </div>
-              </div>
+            </div>
+            
 
-              {/* Stats Grid */}
-              <div className="grid grid-cols-4 gap-4 mb-4">
+          </div>
+        </div>
+                      <div className="flex items-center space-x-8 mb-4 px-6">
                 <div className="text-center">
                   <div className="text-white font-semibold text-lg">{userProfile.total_posts}</div>
                   <div className="text-dark-400 text-xs">Posts</div>
@@ -486,22 +527,6 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
                   <div className="text-dark-400 text-xs">Likes</div>
                 </div>
               </div>
-
-              {/* Additional Stats */}
-              <div className="grid grid-cols-3 gap-4 text-xs text-dark-400">
-                <div className="text-center">
-                  <span>Comments: {userProfile.total_comments_made}</span>
-                </div>
-                <div className="text-center">
-                  <span>Retweets: {userProfile.total_retweets_made}</span>
-                </div>
-                <div className="text-center">
-                  <span>Bookmarks: {userProfile.total_bookmarks_made}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Tabs */}
         <div className="border-b border-dark-700 mb-6">
@@ -528,7 +553,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
         </div>
 
         {/* Tab Content */}
-        <div className="p-6">
+        <div className="">
           {activeTab === 'posts' && (
             <div className="space-y-4">
               {userProfile?.posts?.length > 0 ? (
