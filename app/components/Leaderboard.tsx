@@ -41,8 +41,8 @@ export default function Leaderboard({ rows, currentUsername }: Props) {
                 <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[120px] sm:min-w-0">TOTAL MINDSHARE</th>
                 <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[120px] sm:min-w-0">CLAPO MINDSHARE</th>
                 <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[120px] sm:min-w-0">CLAPO 24H CHANGE</th>
-                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[120px] sm:min-w-0">SUI MINDSHARE</th>
-                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[120px] sm:min-w-0">SUI 24H CHANGE</th>
+                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[120px] sm:min-w-0">MONAD MINDSHARE</th>
+                <th className="py-2 sm:py-3 px-2 sm:px-4 font-normal min-w-[120px] sm:min-w-0">MONAD 24H CHANGE</th>
               </tr>
             </thead>
             <tbody>
