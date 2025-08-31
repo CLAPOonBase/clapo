@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import UserDetails from "../Sections/UserDetails";
 import { useOpinioContext } from "@/app/Context/OpinioContext";
 import OpinioWalletConnect from "@/app/components/OpinioWalletConnect";

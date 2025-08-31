@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "NEXT_DISABLE_ESLINT=1 next build",
+    "build": "next build",
+    "build:no-lint": "cross-env NEXT_DISABLE_ESLINT=1 next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -36,6 +37,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^7.0.3",
     "eslint": "^9",
     "eslint-config-next": "15.1.5",
     "postcss": "^8",

@@ -1,15 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['@aws-sdk/client-s3'],
-  },
-  api: {
-    bodyParser: {
-      sizeLimit: '100mb',
-    },
-    responseLimit: false,
-  },
+  serverExternalPackages: ['@aws-sdk/client-s3'],
   images: {
     remotePatterns: [
       {
