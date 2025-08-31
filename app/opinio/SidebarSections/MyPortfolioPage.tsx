@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowRight, TrendingUp, TrendingDown } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   LineChart,
   Line,
@@ -14,6 +14,8 @@ import {
 import UserDetails from "../Sections/UserDetails";
 import { motion } from "framer-motion";
 import TradingTabs from "../Sections/TradingTabs";
+import { useOpinioContext } from "@/app/Context/OpinioContext";
+import OpinioWalletConnect from "@/app/components/OpinioWalletConnect";
 
 interface ChartDataItem {
   time: string;
@@ -25,8 +27,20 @@ interface ChartData {
 }
 
 const MyPortfolioPage = () => {
-  const portfolio = 123456.78;
+  const [portfolio, setPortfolio] = useState(123456.78);
   const [selectedPeriod, setSelectedPeriod] = useState<'1d' | '1w' | '1m' | '1y'>('1d');
+  
+  const { 
+    isConnected, 
+    usdcStatus, 
+    portfolio: userPortfolio, 
+    userPositions, 
+    userVotes, 
+    tradingSummary, 
+    isLoading, 
+    error,
+    refreshData
+  } = useOpinioContext();
 
   const chartData: ChartData = {
     '1d': [
@@ -65,10 +79,24 @@ const MyPortfolioPage = () => {
     ],
   };
 
-  const initialPortfolioValue = 120000;
-  const profitLoss = portfolio - initialPortfolioValue;
+  // Calculate real profit/loss from blockchain data
+  const realProfitLoss = userPortfolio ? parseFloat(userPortfolio.totalProfitLoss.toString()) / 1e6 : 0;
+  const totalInvested = userPortfolio ? parseFloat(userPortfolio.totalInvested.toString()) / 1e6 : 0;
+  
+  const profitLoss = realProfitLoss;
   const isProfit = profitLoss > 0;
-  const profitLossPercentage = ((profitLoss / initialPortfolioValue) * 100).toFixed(2);
+  const profitLossPercentage = totalInvested > 0 ? ((profitLoss / totalInvested) * 100).toFixed(2) : '0.00';
+
+  useEffect(() => {
+    if (isConnected && userPortfolio) {
+      const totalValue = parseFloat(userPortfolio.totalValue.toString()) / 1e6; // Convert from wei
+      setPortfolio(totalValue);
+    } else if (isConnected && usdcStatus) {
+      // Fallback to USDC balance if portfolio not available
+      const usdcBalance = parseFloat(usdcStatus.balance.toString()) / Math.pow(10, Number(usdcStatus.decimals));
+      setPortfolio(usdcBalance);
+    }
+  }, [isConnected, userPortfolio, usdcStatus]);
 
   const periods: { key: '1d' | '1w' | '1m' | '1y'; label: string }[] = [
     { key: '1d', label: '1d' },
@@ -86,7 +114,13 @@ const MyPortfolioPage = () => {
     >
       <UserDetails />
 
-      <div className="w-full flex flex-col lg:flex-row gap-4">
+
+
+      {!isConnected ? (
+        <OpinioWalletConnect />
+      ) : (
+        <>
+          <div className="w-full flex flex-col lg:flex-row gap-4">
         <div className="bg-[#1A1A1A] p-4 space-y-4 rounded-md w-full flex flex-col text-left group border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
           <div className="justify-between flex">
             <span className="flex items-center">
@@ -231,9 +265,161 @@ const MyPortfolioPage = () => {
         </div>
       </div>
 
+      {/* Trading Statistics */}
+      {tradingSummary && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-[#1A1A1A] p-3 rounded-md border border-[#2A2A2A]">
+            <p className="text-xs text-gray-400">Total Trades</p>
+            <p className="text-lg font-semibold text-white">{tradingSummary.totalTrades}</p>
+          </div>
+          <div className="bg-[#1A1A1A] p-3 rounded-md border border-[#2A2A2A]">
+            <p className="text-xs text-gray-400">Total Volume</p>
+            <p className="text-lg font-semibold text-white">${tradingSummary.totalVolume}</p>
+          </div>
+          <div className="bg-[#1A1A1A] p-3 rounded-md border border-[#2A2A2A]">
+            <p className="text-xs text-gray-400">Win Rate</p>
+            <p className="text-lg font-semibold text-green-400">{tradingSummary.winRate}%</p>
+          </div>
+          <div className="bg-[#1A1A1A] p-3 rounded-md border border-[#2A2A2A]">
+            <p className="text-xs text-gray-400">Avg Trade Size</p>
+            <p className="text-lg font-semibold text-white">${tradingSummary.avgTradeSize}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Real User Positions */}
+      <div className="bg-[#1A1A1A] p-4 rounded-md border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+        <h3 className="text-lg font-semibold mb-4 text-white">Your Positions</h3>
+        
+        {userPositions.length > 0 ? (
+          <div className="space-y-3">
+            {userPositions.map((position, index) => (
+              <div key={index} className="bg-[#2A2A2A] p-3 rounded-md border border-[#3A3A3A]">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-white truncate">
+                      {position.marketTitle}
+                    </h4>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Option: {position.optionText}
+                    </p>
+                  </div>
+                  <div className="text-right ml-2">
+                    <span className={`text-sm font-semibold ${
+                      parseFloat(position.profitLoss) >= 0 ? 'text-green-500' : 'text-red-500'
+                    }`}>
+                      {parseFloat(position.profitLoss) >= 0 ? '+' : ''}${position.profitLoss}
+                    </span>
+                    <p className="text-xs text-gray-400">
+                      ({parseFloat(position.profitLossPercentage) >= 0 ? '+' : ''}{position.profitLossPercentage}%)
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <span className="text-gray-400">Shares:</span>
+                    <span className="text-white ml-1">{parseFloat(position.shares).toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Avg Price:</span>
+                    <span className="text-white ml-1">${position.avgPrice}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Invested:</span>
+                    <span className="text-white ml-1">${position.totalInvested}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Current Value:</span>
+                    <span className="text-white ml-1">${position.currentValue}</span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center mt-2 pt-2 border-t border-[#3A3A3A]">
+                  <span className={`text-xs px-2 py-1 rounded ${
+                    position.isLong ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'
+                  }`}>
+                    {position.isLong ? 'LONG' : 'SHORT'}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {position.createdAt}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-400">
+            <p>No positions found</p>
+            <p className="text-xs mt-1">Start trading to see your positions here</p>
+          </div>
+        )}
+      </div>
+
+      {/* User Votes History */}
+      <div className="bg-[#1A1A1A] p-4 rounded-md border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+        <h3 className="text-lg font-semibold mb-4 text-white">Your Votes</h3>
+        
+        {userVotes.length > 0 ? (
+          <div className="space-y-3">
+            {userVotes.slice(0, 5).map((vote, index) => (
+              <div key={index} className="bg-[#2A2A2A] p-3 rounded-md border border-[#3A3A3A]">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-white truncate">
+                      {vote.marketTitle}
+                    </h4>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Prediction: Option {vote.prediction}
+                    </p>
+                  </div>
+                  <div className="text-right ml-2">
+                    <span className="text-sm font-semibold text-blue-400">
+                      ${vote.amount}
+                    </span>
+                    <p className="text-xs text-gray-400">
+                      {vote.confidence}% confidence
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center pt-2 border-t border-[#3A3A3A]">
+                  <span className={`text-xs px-2 py-1 rounded ${
+                    vote.isActive ? 'bg-green-900/30 text-green-400' : 'bg-gray-900/30 text-gray-400'
+                  }`}>
+                    {vote.isActive ? 'ACTIVE' : 'INACTIVE'}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {vote.timestamp}
+                  </span>
+                </div>
+              </div>
+            ))}
+            {userVotes.length > 5 && (
+              <p className="text-xs text-gray-400 text-center">
+                Showing 5 of {userVotes.length} votes
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-400">
+            <p>No votes found</p>
+            <p className="text-xs mt-1">Cast your first vote on a market</p>
+          </div>
+        )}
+      </div>
+
       <TradingTabs />
-    </motion.div>
-  );
+      
+      {error && (
+        <div className="p-2 bg-red-900/20 border border-red-500/30 rounded text-red-400 text-xs">
+          {error}
+        </div>
+      )}
+    </>
+  )}
+</motion.div>
+);
 };
 
 export default MyPortfolioPage;
