@@ -10,26 +10,25 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useOpinioContext } from "@/app/Context/OpinioContext";
 import OpinioWalletConnect from "@/app/components/OpinioWalletConnect";
 import { useRouter } from "next/navigation";
+import MarketProbabilities from "@/app/components/MarketProbabilities";
 
 
 const navItems = [
+  { label: "ALL" },
   { label: "TRENDING" },
   { label: "NEW" },
+  { label: "ACTIVE" },
+  { label: "CLOSED" },
+  { label: "TECHNOLOGY" },
   { label: "POLITICS" },
+  { label: "ECONOMY" },
   { label: "SPORTS" },
   { label: "CRYPTO" },
-  { label: "TECH" },
-  { label: "CELEBRITY" },
-  { label: "WORLD" },
-  { label: "ECONOMY" },
-  { label: "TRUMP" },
-  { label: "ELECTIONS" },
-  { label: "MENTIONS" },
 ];
 
 export default function MainVoting() {
   const [opinions] = useState<Opinion[]>(mockOpinions);
-  const [selectedCategory, setSelectedCategory] = useState<string>("TRENDING");
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   
   const router = useRouter();
   const { isConnected, markets, isLoading, error } = useOpinioContext();
@@ -50,19 +49,37 @@ export default function MainVoting() {
     }
   }, [markets]);
 
-  const filteredOpinions = opinions.filter((opinion) => {
+  // Filter real markets based on selected category and validity
+  const filteredMarkets = markets ? markets.filter((market) => {
+    // Filter out invalid markets (empty titles, wrong dates, etc.)
+    if (!market.title || market.title.trim() === '' || 
+        Number(market.endDate) === 0 || 
+        market.creator === '0x0000000000000000000000000000000000000000') {
+      return false;
+    }
+    
+    // Apply category filtering
+    if (selectedCategory === "ALL") {
+      return true; // Show all valid markets
+    }
     if (selectedCategory === "TRENDING") {
-      return opinion.totalVotes > 1000;
+      return Number(market.totalVotes) > 1000;
     }
     if (selectedCategory === "NEW") {
-      const createdAt = new Date(opinion.createdAt);
+      const createdAt = new Date(Number(market.createdAt) * 1000);
       const now = new Date();
-      const diffInHours =
-        (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+      const diffInHours = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
       return diffInHours <= 72;
     }
-    return opinion.category === selectedCategory;
-  });
+    if (selectedCategory === "ACTIVE") {
+      return market.isActive === true;
+    }
+    if (selectedCategory === "CLOSED") {
+      return market.isActive === false;
+    }
+    // For other categories, check if market category matches
+    return market.category && market.category.toLowerCase() === selectedCategory.toLowerCase();
+  }) : [];
 
   return (
     <motion.div
@@ -119,8 +136,8 @@ export default function MainVoting() {
                 <div className="col-span-full text-center text-gray-400">
                   Loading markets from blockchain...
                 </div>
-              ) : markets && markets.length > 0 ? (
-                markets.map((market, index) => (
+              ) : filteredMarkets && filteredMarkets.length > 0 ? (
+                filteredMarkets.map((market, index) => (
                   <motion.div
                     key={index}
                     className="bg-[#1A1A1A] rounded-lg p-4 border border-[#2A2A2A] hover:border-[#6E54FF]/30 transition-all duration-200 shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)] hover:shadow-[0px_8px_30px_0px_rgba(110,84,255,0.1)] cursor-pointer"
@@ -164,6 +181,15 @@ export default function MainVoting() {
                         <span className="text-gray-400">END DATE</span>
                         <span className="text-white">{new Date(Number(market.endDate) * 1000).toLocaleDateString()}</span>
                       </div>
+                    </div>
+
+                    {/* Market Probabilities */}
+                    <div className="mb-4">
+                      <MarketProbabilities 
+                        marketId={Number(market.marketId)} 
+                        className="w-full"
+                        refreshTrigger={Date.now()}
+                      />
                     </div>
 
                     <div className="flex justify-between items-center text-xs text-gray-400">

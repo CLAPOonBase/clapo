@@ -9,7 +9,7 @@ import { useSmartContract } from '@/app/lib/useSmartContract';
 interface MarketProbabilitiesProps {
   marketId: number;
   className?: string;
-  refreshTrigger?: number; // Add this to force refresh when trades happen
+  refreshTrigger?: number;
 }
 
 interface ProbabilityData {
@@ -17,7 +17,7 @@ interface ProbabilityData {
   noPercentage: number;
   yesPrice: number;
   noPrice: number;
-  source?: string; // Track which method was used
+  source?: string;
   lastCalculated?: Date;
 }
 
@@ -25,233 +25,72 @@ export default function MarketProbabilities({ marketId, className = '', refreshT
   const [probabilities, setProbabilities] = useState<ProbabilityData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { getMarket, isConnected } = useOpinioContext();
   const { getPrices, getMarketDetails } = useSmartContract();
 
   const manualRefresh = async () => {
     console.log('🔄 Manual refresh triggered for market', marketId);
-    setIsLoading(true);
-    // The useEffect will handle the actual refresh
-    setLastUpdated(null); // Clear last updated to show loading
+    setIsRefreshing(true);
+    setError(null);
+    setLastUpdated(null);
   };
 
   useEffect(() => {
     const fetchProbabilities = async () => {
       try {
-        setIsLoading(true);
+        if (!isRefreshing) {
+          setIsLoading(true);
+        }
         
         console.log(`🎲 Fetching probabilities for market ${marketId}`);
-        console.log('🔍 Available functions:', { 
-          getMarket: !!getMarket, 
-          getPrices: !!getPrices, 
-          getMarketDetails: !!getMarketDetails,
-          isConnected 
-        });
         
-        // Method 1: Try new comprehensive probability calculation
-        if (isConnected) {
+        // Always set a default 50/50 probability first
+        const defaultProbabilities = {
+          yesPercentage: 50,
+          noPercentage: 50,
+          yesPrice: 0.5,
+          noPrice: 0.5,
+          source: 'Default 50/50',
+          lastCalculated: new Date()
+        };
+        
+        setProbabilities(defaultProbabilities);
+        
+        // Try to get real probabilities if connected
+        if (isConnected && marketId) {
           try {
-            console.log('📊 Trying new comprehensive probability calculation...');
+            console.log('📊 Trying to get real probabilities...');
             const service = getOpinioContractService();
             const probData = await service.getMarketProbabilities(marketId);
             
-            if (probData) {
-              console.log(`✅ Got probabilities: YES ${probData.yesPercent.toFixed(1)}%, NO ${probData.noPercent.toFixed(1)}%`);
+            if (probData && probData.yesPercent !== undefined && probData.noPercent !== undefined) {
+              console.log(`✅ Got real probabilities: YES ${probData.yesPercent}%, NO ${probData.noPercent}%`);
               
               setProbabilities({
                 yesPercentage: Math.round(probData.yesPercent),
                 noPercentage: Math.round(probData.noPercent),
                 yesPrice: probData.yesPercent / 100,
                 noPrice: probData.noPercent / 100,
-                source: probData.source,
+                source: probData.source || 'Contract Calculation',
                 lastCalculated: new Date()
               });
-              return;
+            } else {
+              console.log('⚠️ No real probability data, keeping 50/50 default');
             }
-            
-            // Try market data from Opinio contract
-            const market = await getMarket(marketId);
-            if (market) {
-              console.log('📊 Full market data from Opinio:', market);
-              
-              // Method 1: Use getMarketProbability for markets with trading, getMarketPositions for new markets
-              try {
-                const service = getOpinioContractService();
-                const positionDetails = await service.getMarketPositionDetails(Number(marketId));
-                
-                if (positionDetails) {
-                  const totalShares = positionDetails.totalLongShares + positionDetails.totalShortShares;
-                  
-                  if (totalShares > 0) {
-                    // Market has trading activity - use getMarketProbability (which uses calculatePositionRate)
-                    const probData = await service.getMarketProbabilities(Number(marketId));
-                    
-                    if (probData) {
-                      console.log(`📈 Market with trading: ${positionDetails.totalLongShares.toFixed(2)} LONG, ${positionDetails.totalShortShares.toFixed(2)} SHORT`);
-                      console.log(`📈 Using getMarketProbability: YES ${probData.yesPercent}%, NO ${probData.noPercent}%`);
-                      
-                      setProbabilities({
-                        yesPercentage: Math.round(probData.yesPercent),
-                        noPercentage: Math.round(probData.noPercent),
-                        yesPrice: probData.yesPercent / 100,
-                        noPrice: probData.noPercent / 100,
-                        source: probData.source,
-                        lastCalculated: new Date()
-                      });
-                      return;
-                    }
-                  } else {
-                    // New market with no trading - use percentages from getMarketPositions (50/50)
-                    console.log(`📈 New market with no trading: LONG ${positionDetails.longPercentage}%, SHORT ${positionDetails.shortPercentage}%`);
-                    setProbabilities({
-                      yesPercentage: Math.round(positionDetails.longPercentage),
-                      noPercentage: Math.round(positionDetails.shortPercentage),
-                      yesPrice: positionDetails.longPercentage / 100,
-                      noPrice: positionDetails.shortPercentage / 100,
-                      source: 'New Market Default',
-                      lastCalculated: new Date()
-                    });
-                    return;
-                  }
-                }
-              } catch (positionError) {
-                console.log('⚠️ Could not get position details:', positionError.message);
-              }
-              
-              // Method 2: Check if market has any liquidity but no trading yet
-              if (market.totalLiquidity && Number(market.totalLiquidity) > 0) {
-                console.log('💰 Market has liquidity but no trading yet - using 50/50 default');
-                setProbabilities({
-                  yesPercentage: 50,
-                  noPercentage: 50,
-                  yesPrice: 0.5,
-                  noPrice: 0.5,
-                  source: 'Default 50/50 (No Trading Yet)',
-                  lastCalculated: new Date()
-                });
-                return;
-              }
-              
-              // Method 2: Check if we have option-specific data
-              if (market.optionVotes && market.optionVotes.length >= 2) {
-                const yesVotes = Number(market.optionVotes[0]) / 1e6;
-                const noVotes = Number(market.optionVotes[1]) / 1e6;
-                const totalVotes = yesVotes + noVotes;
-                
-                if (totalVotes > 0) {
-                  const yesPercentage = (yesVotes / totalVotes) * 100;
-                  const noPercentage = (noVotes / totalVotes) * 100;
-                  
-                  console.log(`📈 Calculated from option votes - YES: ${yesPercentage.toFixed(1)}%, NO: ${noPercentage.toFixed(1)}%`);
-                  
-                  setProbabilities({
-                    yesPercentage: Math.round(yesPercentage),
-                    noPercentage: Math.round(noPercentage),
-                    yesPrice: yesPercentage / 100,
-                    noPrice: noPercentage / 100,
-                    source: 'Opinio Market Option Votes',
-                    lastCalculated: new Date()
-                  });
-                  return;
-                }
-              }
-              
-              // Method 3: Check if we have liquidity data that might indicate positions
-              if (market.totalLiquidity && Number(market.totalLiquidity) > 0) {
-                console.log('📊 Market has liquidity but no clear vote distribution or currentRate');
-                console.log('🔍 Available market fields:', Object.keys(market));
-              }
-            }
-          } catch (opinioError) {
-            console.log('⚠️ Opinio contract failed, trying Smart Contract:', opinioError.message);
+          } catch (contractError) {
+            console.log('⚠️ Contract error, keeping 50/50 default:', contractError.message);
           }
+        } else {
+          console.log('ℹ️ Not connected or no marketId, using 50/50 default');
         }
         
-        // Method 2: Try Smart Contract (for Sepolia markets with actual prices)
-        try {
-          console.log('📊 Trying Smart Contract getPrices...');
-          const prices = await getPrices(marketId);
-          
-          if (prices && prices.priceYes && prices.priceNo) {
-            console.log('✅ Found market prices:', prices);
-            
-            // Convert BigNumber prices to regular numbers
-            const yesPrice = Number(prices.priceYes) / 1e18; // Assuming 18 decimals
-            const noPrice = Number(prices.priceNo) / 1e18;
-            
-            console.log(`💰 Raw prices - YES: ${yesPrice}, NO: ${noPrice}`);
-            
-            // In prediction markets, prices represent probabilities
-            // They should add up to ~1.0 in a well-functioning AMM
-            const totalPrice = yesPrice + noPrice;
-            
-            if (totalPrice > 0) {
-              const yesPercentage = (yesPrice / totalPrice) * 100;
-              const noPercentage = (noPrice / totalPrice) * 100;
-              
-              console.log(`📈 Calculated from prices - YES: ${yesPercentage.toFixed(1)}%, NO: ${noPercentage.toFixed(1)}%`);
-              
-              setProbabilities({
-                yesPercentage: Math.round(yesPercentage),
-                noPercentage: Math.round(noPercentage),
-                yesPrice,
-                noPrice,
-                source: 'Smart Contract Prices',
-                lastCalculated: new Date()
-              });
-              return;
-            }
-          }
-          
-          // Try market details for total YES/NO shares
-          const marketDetails = await getMarketDetails(marketId);
-          if (marketDetails && marketDetails.totalYes && marketDetails.totalNo) {
-            console.log('✅ Found market details with YES/NO totals:', marketDetails);
-            
-            const yesTotal = Number(marketDetails.totalYes);
-            const noTotal = Number(marketDetails.totalNo);
-            const total = yesTotal + noTotal;
-            
-            if (total > 0) {
-              const yesPercentage = (yesTotal / total) * 100;
-              const noPercentage = (noTotal / total) * 100;
-              
-              console.log(`📈 Calculated from YES/NO totals - YES: ${yesPercentage.toFixed(1)}%, NO: ${noPercentage.toFixed(1)}%`);
-              
-              setProbabilities({
-                yesPercentage: Math.round(yesPercentage),
-                noPercentage: Math.round(noPercentage),
-                yesPrice: yesPercentage / 100,
-                noPrice: noPercentage / 100,
-                source: 'Smart Contract Market Details',
-                lastCalculated: new Date()
-              });
-              return;
-            }
-          }
-        } catch (smartContractError) {
-          console.log('⚠️ Smart Contract failed:', smartContractError.message);
-        }
+      } catch (error) {
+        console.error('❌ Error in fetchProbabilities:', error);
+        setError(error instanceof Error ? error.message : 'Unknown error');
         
-        // Method 3: Fallback to 50/50 with a note
-        console.log('⚠️ All methods failed, using 50/50 default');
-        console.log('📊 This means:');
-        console.log('   - Opinio contract getMarketOptions failed or returned no data');
-        console.log('   - Opinio contract getMarket failed or returned no usable vote data');
-        console.log('   - Smart contract getPrices failed or returned no data');
-        console.log('   - Smart contract getMarketDetails failed or returned no data');
-        setProbabilities({
-          yesPercentage: 50,
-          noPercentage: 50,
-          yesPrice: 0.5,
-          noPrice: 0.5,
-          source: 'Fallback (No Data Found)',
-          lastCalculated: new Date()
-        });
-        
-              } catch (error) {
-        console.error('❌ Failed to fetch market probabilities:', error);
-        console.log('🔄 Using 50/50 fallback due to error');
+        // Always ensure we have probabilities even on error
         setProbabilities({
           yesPercentage: 50,
           noPercentage: 50,
@@ -262,6 +101,7 @@ export default function MarketProbabilities({ marketId, className = '', refreshT
         });
       } finally {
         setIsLoading(false);
+        setIsRefreshing(false);
         setLastUpdated(new Date());
       }
     };
@@ -269,13 +109,14 @@ export default function MarketProbabilities({ marketId, className = '', refreshT
     if (marketId !== undefined) {
       fetchProbabilities();
       
-      // Refresh probabilities every 10 seconds (more frequent for real-time updates)
-      const interval = setInterval(fetchProbabilities, 10000);
+      // Refresh probabilities every 2 seconds
+      const interval = setInterval(fetchProbabilities, 2000);
       return () => clearInterval(interval);
     }
-  }, [marketId, getMarket, isConnected, getPrices, getMarketDetails, refreshTrigger]); // Add refreshTrigger to dependencies
+  }, [marketId, getMarket, isConnected, getPrices, getMarketDetails, refreshTrigger, isRefreshing]);
 
-  if (isLoading) {
+  // Show loading state
+  if (isLoading && !probabilities) {
     return (
       <div className={`flex space-x-2 ${className}`}>
         <div className="flex-1 bg-gray-600 rounded-lg p-3 animate-pulse">
@@ -290,16 +131,32 @@ export default function MarketProbabilities({ marketId, className = '', refreshT
     );
   }
 
+  // Always show probabilities (even if it's 50/50 default)
   if (!probabilities) {
     return (
       <div className={`text-center text-gray-400 ${className}`}>
-        Unable to load market probabilities
+        Loading market probabilities...
       </div>
     );
   }
 
-    return (
+  return (
     <div className={className}>
+      {/* Auto-refresh indicator */}
+      {isRefreshing && (
+        <div className="text-xs text-blue-400 mb-2 flex items-center">
+          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-400 mr-2"></div>
+          Auto-refreshing...
+        </div>
+      )}
+      
+      {/* Error indicator */}
+      {error && (
+        <div className="text-xs text-yellow-400 mb-2">
+          ⚠️ {error}
+        </div>
+      )}
+      
       <motion.div
         className="flex space-x-2"
         initial={{ opacity: 0, y: 10 }}
@@ -339,6 +196,7 @@ export default function MarketProbabilities({ marketId, className = '', refreshT
         </motion.div>
       </motion.div>
       
+
 
     </div>
   );

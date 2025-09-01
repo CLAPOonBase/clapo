@@ -30,7 +30,14 @@ const OPINIO_MARKET_ABI = [
   "function emergencyPause() external",
   "function emergencyUnpause() external",
   "function withdrawFees() external",
-  "function verifiedCreators(address) external view returns (bool)"
+  "function verifiedCreators(address) external view returns (bool)",
+  // Additional functions for probability calculation
+  "function userShares(uint256 marketId, address user) external view returns (uint256 marketId, address user, uint256 amount, uint256 price, uint256 timestamp, bool isLong, uint256 optionId)",
+  "function getCurrentPrice(uint256 marketId, uint256 optionId) external view returns (uint256)",
+  "function calculateOptionPrice(uint256 marketId, uint256 optionId) external view returns (uint256)",
+  // New functions for real-time probability tracking
+  "function getMarketProbability(uint256 marketId) external view returns (uint256 yesPercentage, uint256 noPercentage)",
+  "function getMarketPositions(uint256 marketId) external view returns (uint256 totalLongShares, uint256 totalShortShares, uint256 totalLongVolume, uint256 totalShortVolume, uint256 longPercentage, uint256 shortPercentage)"
 ];
 
 // MockUSDC Contract ABI
@@ -48,9 +55,9 @@ const MOCK_USDC_ABI = [
   "function totalSupply() external view returns (uint256)"
 ];
 
-// Contract addresses from Monad testnet deployment
-const OPINIO_MARKET_ADDRESS = "0xDfd05ed372C5eD9f7aaD54A5A2d5A5c94a99f5fb";
-const MOCK_USDC_ADDRESS = "0xcaC4DF2Bd3723CEA847e1AE07F37Fb4B33c6Cb61";
+// Contract addresses from Monad testnet deployment - Updated with latest deployment
+const OPINIO_MARKET_ADDRESS = "0x34e9B6C40890A0cB991BcEEBd4491dFbFF16601B";
+const MOCK_USDC_ADDRESS = "0x44aAAEeC1A83c30Fe5784Af49E6a38D3709Ee148";
 
 // Types
 export interface MarketData {
@@ -572,6 +579,125 @@ export class OpinioContractService {
       }));
     } catch (error) {
       throw new Error(`Failed to get market votes: ${error}`);
+    }
+  }
+
+  // Get market probabilities using the new contract functions
+  async getMarketProbabilities(marketId: number): Promise<{yesPercent: number, noPercent: number, source: string} | null> {
+    if (!this.opinioContract) {
+      throw new Error("Contract not initialized");
+    }
+
+    try {
+      console.log(`📊 Getting probabilities for market ${marketId} using new contract functions`);
+
+      // Method 1: Use getMarketProbability for markets with trading, getMarketPositions for new markets
+      try {
+        const positions = await this.opinioContract.getMarketPositions(marketId);
+        const totalLongShares = Number(positions[0]) / 1e6;
+        const totalShortShares = Number(positions[1]) / 1e6;
+        const totalShares = totalLongShares + totalShortShares;
+        
+        if (totalShares > 0) {
+          // Market has trading activity - use getMarketProbability (which uses calculatePositionRate)
+          const [yesPercentage, noPercentage] = await this.opinioContract.getMarketProbability(marketId);
+          const yesPercent = Number(yesPercentage);
+          const noPercent = Number(noPercentage);
+          
+          console.log(`✅ Market with trading: ${totalLongShares.toFixed(2)} LONG, ${totalShortShares.toFixed(2)} SHORT`);
+          console.log(`✅ Using getMarketProbability: YES ${yesPercent}%, NO ${noPercent}%`);
+          return { yesPercent, noPercent, source: 'Contract Probability Calculation' };
+        } else {
+          // New market with no trading - use percentages from getMarketPositions (50/50)
+          const longPercentage = Number(positions[4]);
+          const shortPercentage = Number(positions[5]);
+          console.log(`✅ New market with no trading: LONG ${longPercentage}%, SHORT ${shortPercentage}%`);
+          return { yesPercent: longPercentage, noPercent: shortPercentage, source: 'New Market Default' };
+        }
+      } catch (positionError) {
+        console.log('⚠️ Could not get position data:', positionError.message);
+      }
+
+      // Method 2: Fallback to WITH_OPTIONS logic if available
+      const market = await this.opinioContract.getMarket(marketId);
+      console.log(`📊 Market type: ${market.marketType}, currentRate: ${Number(market.currentRate)}`);
+
+      if (market.marketType === 1) { // WITH_OPTIONS
+        const options = await this.opinioContract.getMarketOptions(marketId);
+        if (options && options.length >= 2) {
+          const yesShares = Number(options[0].totalShares) / 1e6;
+          const noShares = Number(options[1].totalShares) / 1e6;
+          const totalShares = yesShares + noShares;
+          
+          if (totalShares > 0) {
+            const yesPercent = (yesShares / totalShares) * 100;
+            const noPercent = (noShares / totalShares) * 100;
+            console.log(`✅ WITH_OPTIONS fallback: YES ${yesPercent.toFixed(1)}%, NO ${noPercent.toFixed(1)}%`);
+            return { yesPercent, noPercent, source: 'Option Shares Distribution' };
+          }
+        }
+      }
+
+      // Method 3: Fallback to getMarketProbability (contract calculation)
+      try {
+        const [yesPercentage, noPercentage] = await this.opinioContract.getMarketProbability(marketId);
+        const yesPercent = Number(yesPercentage);
+        const noPercent = Number(noPercentage);
+        
+        console.log(`⚠️ Using contract probability calculation: YES ${yesPercent}%, NO ${noPercent}%`);
+        console.log(`⚠️ Note: This may be hardcoded 55% for new markets`);
+        
+        return { 
+          yesPercent, 
+          noPercent, 
+          source: 'Contract Probability (May be hardcoded)' 
+        };
+      } catch (probabilityError) {
+        console.log('⚠️ Could not get contract probability:', probabilityError.message);
+      }
+      
+      // Method 4: Default to 50/50 for new markets with no trading
+      console.log(`✅ No trading data found, using 50/50 default for market ${marketId}`);
+      return { yesPercent: 50, noPercent: 50, source: 'Default 50/50 (No Trading)' };
+
+      return null;
+    } catch (error) {
+      console.error('❌ Error getting market probabilities:', error);
+      return null;
+    }
+  }
+
+  // Get detailed market position information
+  async getMarketPositionDetails(marketId: number): Promise<{
+    totalLongShares: number,
+    totalShortShares: number,
+    totalLongVolume: number,
+    totalShortVolume: number,
+    longPercentage: number,
+    shortPercentage: number,
+    source: string
+  } | null> {
+    if (!this.opinioContract) {
+      throw new Error("Contract not initialized");
+    }
+
+    try {
+      console.log(`📈 Getting position details for market ${marketId}`);
+      
+      const positions = await this.opinioContract.getMarketPositions(marketId);
+      
+      return {
+        totalLongShares: Number(positions[0]) / 1e6,
+        totalShortShares: Number(positions[1]) / 1e6,
+        totalLongVolume: Number(positions[2]) / 1e6,
+        totalShortVolume: Number(positions[3]) / 1e6,
+        longPercentage: Number(positions[4]),
+        shortPercentage: Number(positions[5]),
+        source: 'Contract Position Tracking'
+      };
+    } catch (error) {
+      console.error('❌ Error getting position details:', error);
+      return null;
     }
   }
 

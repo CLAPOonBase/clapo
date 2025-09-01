@@ -71,9 +71,6 @@ export class SmartContractService {
 
   // Get wallet address
   async getWalletAddress(): Promise<string> {
-    if (!this.wallet) {
-      throw new Error('Wallet not initialized');
-    }
     return await this.wallet.getAddress();
   }
 
@@ -94,9 +91,6 @@ export class SmartContractService {
   // Check USDC status
   async checkUSDCStatus(): Promise<USDCStatus> {
     try {
-      if (!this.wallet) {
-        throw new Error('Wallet not initialized');
-      }
       const userAddress = await this.wallet.getAddress();
       console.log('Checking USDC status for address:', userAddress);
       console.log('USDC contract address:', USDC_CONTRACT_ADDRESS);
@@ -158,9 +152,6 @@ export class SmartContractService {
       const decimals = await this.usdcContract.decimals();
       const usdcAmount = ethers.parseUnits(usdcAmountInDollars.toString(), decimals);
       
-      if (!this.wallet) {
-        throw new Error('Wallet not initialized');
-      }
       const userAddress = await this.wallet.getAddress();
       const balance = await this.usdcContract.balanceOf(userAddress);
 
