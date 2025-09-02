@@ -74,11 +74,11 @@ export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
      
       `}
       >
-        <div className="flex items-center pt-4 rounded-md bg-[#1A1A1A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)] border border-[#2A2A2A]">
+        <div className="flex items-center pt-4 rounded-md bg-[#1A1A1A] shadow-custom border border-[#2A2A2A]">
           <Hero />
         </div>
 
-        <nav className="space-y-2 bg-[#1A1A1A] rounded-md p-4 text-gray-300 shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)] border border-[#2A2A2A]">
+        <nav className="space-y-2 bg-[#1A1A1A] rounded-md p-4 text-gray-300 shadow-custom border border-[#2A2A2A]">
           {navItems
             .filter((item) => item.showOnDesktop !== false)
             .map(({ label, value, icon }) => (

@@ -121,7 +121,7 @@ export const NotificationBell = ({ className = '' }: NotificationBellProps) => {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-96 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)] z-50 max-h-96 overflow-hidden">
+        <div className="absolute top-full right-0 mt-2 w-96 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg shadow-custom z-50 max-h-96 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-[#2A2A2A]">
             <h3 className="text-lg font-semibold text-white">Notifications</h3>

@@ -71,7 +71,7 @@ function OpinionDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen text-white bg-[#0A0A0A] flex items-center justify-center">
+      <div className="min-h-screen text-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6E54FF] mx-auto mb-4"></div>
           <p className="text-gray-400">Loading market data...</p>
@@ -82,7 +82,7 @@ function OpinionDetailPage() {
 
   if (!marketData) {
     return (
-      <div className="min-h-screen text-white bg-[#0A0A0A] flex items-center justify-center">
+      <div className="min-h-screen text-white flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-400 mb-4">
             {!isConnected ? 'Please connect your wallet to view market details' : 'Market not found'}
@@ -102,7 +102,7 @@ function OpinionDetailPage() {
   }
 
   return (
-    <div className="min-h-screen text-white bg-[#0A0A0A]">
+    <div className="min-h-screen text-white">
       {/* Back Button */}
       <div className="p-4">
         <button 
@@ -118,7 +118,7 @@ function OpinionDetailPage() {
         {/* Main Content */}
         <div className="flex-1">
           {/* Market Header */}
-          <div className="bg-[#1A1A1A] rounded-lg p-6 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)] mb-6">
+          <div className="bg-[#1A1A1A] rounded-lg p-4 shadow-custom mb-4">
             <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-[#6E54FF] rounded-md flex items-center justify-center overflow-hidden shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]">
                   <span className="text-white text-lg font-bold">M</span>
@@ -132,7 +132,7 @@ function OpinionDetailPage() {
                   <span>•</span>
                   <span>{marketData.category || 'General'}</span>
                   <span>•</span>
-                  <span className={`px-2 py-1 rounded text-xs ${
+                  <span className={`px-2 py-1 rounded text-sm ${
                     marketData.isActive 
                       ? 'bg-green-900/30 text-green-400' 
                       : 'bg-red-900/30 text-red-400'
@@ -144,8 +144,48 @@ function OpinionDetailPage() {
             </div>
           </div>
 
+                    {/* Market Probabilities */}
+          {marketId && (
+            <div className="bg-[#1A1A1A] rounded-lg p-4 shadow-custom mb-4">
+              <h2 className="text-lg font-semibold mb-4">Market Probabilities</h2>
+              <MarketProbabilities 
+                marketId={marketId} 
+                className="w-full"
+                refreshTrigger={Date.now()}
+              />
+            </div>
+          )}
+
+             {/* Market Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="bg-[#1A1A1A] p-4 rounded-lg shadow-custom">
+              <p className="text-sm text-gray-400 mb-1">Total Liquidity</p>
+              <p className="text-lg font-semibold text-white">
+                ${(Number(marketData.totalLiquidity) / 1e6).toLocaleString()}
+              </p>
+            </div>
+            <div className="bg-[#1A1A1A] p-4 rounded-lg shadow-custom">
+              <p className="text-sm text-gray-400 mb-1">Total Shares</p>
+              <p className="text-lg font-semibold text-white">
+                {(Number(marketData.totalShares) / 1e6).toLocaleString()}
+              </p>
+            </div>
+            <div className="bg-[#1A1A1A] p-4 rounded-lg shadow-custom">
+              <p className="text-sm text-gray-400 mb-1">Total Votes</p>
+              <p className="text-lg font-semibold text-white">
+                {Number(marketData.totalVotes).toLocaleString()}
+              </p>
+            </div>
+            <div className="bg-[#1A1A1A] p-4 rounded-lg shadow-custom">
+              <p className="text-sm text-gray-400 mb-1">End Date</p>
+              <p className="text-lg font-semibold text-white">
+                {new Date(Number(marketData.endDate) * 1000).toLocaleDateString()}
+              </p>
+            </div>
+            </div>
+
           {/* Market Description */}
-          <div className="bg-[#1A1A1A] rounded-lg p-6 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)] mb-6">
+          <div className="bg-[#1A1A1A] rounded-lg p-4 shadow-custom mb-4">
             <h2 className="text-lg font-semibold mb-3">About This Market</h2>
             <p className="text-gray-300 text-sm leading-relaxed">
               {marketData.description || 'No description provided for this market.'}
@@ -157,7 +197,7 @@ function OpinionDetailPage() {
                   {marketData.tags.map((tag: string, index: number) => (
                     <span 
                       key={index}
-                      className="px-2 py-1 bg-[#2A2A2A] text-gray-300 rounded text-xs"
+                      className="px-2 py-1 bg-[#2A2A2A] text-gray-300 rounded text-sm"
                     >
                       {tag}
                     </span>
@@ -167,48 +207,12 @@ function OpinionDetailPage() {
             )}
                   </div>
 
-          {/* Market Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
-              <p className="text-xs text-gray-400 mb-1">Total Liquidity</p>
-              <p className="text-lg font-semibold text-white">
-                ${(Number(marketData.totalLiquidity) / 1e6).toLocaleString()}
-              </p>
-            </div>
-            <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
-              <p className="text-xs text-gray-400 mb-1">Total Shares</p>
-              <p className="text-lg font-semibold text-white">
-                {(Number(marketData.totalShares) / 1e6).toLocaleString()}
-              </p>
-            </div>
-            <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
-              <p className="text-xs text-gray-400 mb-1">Total Votes</p>
-              <p className="text-lg font-semibold text-white">
-                {Number(marketData.totalVotes).toLocaleString()}
-              </p>
-            </div>
-            <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
-              <p className="text-xs text-gray-400 mb-1">End Date</p>
-              <p className="text-lg font-semibold text-white">
-                {new Date(Number(marketData.endDate) * 1000).toLocaleDateString()}
-              </p>
-            </div>
-            </div>
+       
 
-          {/* Market Probabilities */}
-          {marketId && (
-            <div className="bg-[#1A1A1A] rounded-lg p-6 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)] mb-6">
-              <h2 className="text-lg font-semibold mb-4">Market Probabilities</h2>
-              <MarketProbabilities 
-                marketId={marketId} 
-                className="w-full"
-                refreshTrigger={Date.now()}
-              />
-            </div>
-          )}
+
 
           {/* Market Creator Info */}
-          <div className="bg-[#1A1A1A] rounded-lg p-4 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+          <div className="bg-[#1A1A1A] rounded-lg p-4 shadow-custom">
             <div className="flex justify-between items-center">
               <span className="text-gray-400 text-sm">Market Created By</span>
               <div className="flex items-center space-x-2">
@@ -231,7 +235,7 @@ function OpinionDetailPage() {
         <div className="w-full lg:w-96">
           <div className="sticky top-4">
             {!isConnected ? (
-              <div className="bg-[#1A1A1A] rounded-lg p-6 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)] text-center">
+              <div className="bg-[#1A1A1A] rounded-lg p-6 border border-[#2A2A2A] shadow-custom text-center">
                 <p className="text-gray-400 mb-4">Connect your wallet to trade or vote</p>
                 <button 
                   onClick={() => router.push('/opinio')}
@@ -254,7 +258,7 @@ function OpinionDetailPage() {
                 }}
               />
             ) : (
-              <div className="bg-[#1A1A1A] rounded-lg p-6 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)] text-center">
+              <div className="bg-[#1A1A1A] rounded-lg p-6 border border-[#2A2A2A] shadow-custom text-center">
                 <p className="text-gray-400">Market data not available</p>
               </div>
             )}

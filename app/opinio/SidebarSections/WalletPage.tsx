@@ -39,7 +39,7 @@ const WalletPage = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="bg-[#1A1A1A] p-4 rounded-xl text-sm border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]"
+            className="bg-[#1A1A1A] p-4 rounded-xl text-sm border border-[#2A2A2A] shadow-custom"
           >
             <p className="text-[#999]">HEY, {user.walletAddress}</p>
             <p className="text-[#666]">Welcome back! Here’s what’s trending in the markets.</p>
@@ -49,7 +49,7 @@ const WalletPage = () => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="bg-[#1A1A1A] rounded-xl p-6 space-y-4 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]"
+            className="bg-[#1A1A1A] rounded-xl p-6 space-y-4 border border-[#2A2A2A] shadow-custom"
           >
             <div className="flex space-x-4 text-sm">
               {Object.entries(tabs).map(([key, label]) => (
@@ -83,7 +83,7 @@ const WalletPage = () => {
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-[#1A1A1A] rounded-xl p-6 w-full xl:w-1/2 text-center border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]"
+          className="bg-[#1A1A1A] rounded-xl p-6 w-full xl:w-1/2 text-center border border-[#2A2A2A] shadow-custom"
         >
           <p className="text-[#888] text-xs">TOTAL BALANCE</p>
           <p className="text-4xl font-bold">${user.totalBalance.toLocaleString()}</p>
@@ -104,7 +104,7 @@ const WalletPage = () => {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-[#1A1A1A] rounded-xl p-6 space-y-4 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]"
+        className="bg-[#1A1A1A] rounded-xl p-6 space-y-4 border border-[#2A2A2A] shadow-custom"
       >
         <div className="flex justify-between items-center">
           <p className="text-sm text-[#aaa]">TRANSACTION</p>

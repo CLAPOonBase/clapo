@@ -82,7 +82,7 @@ export default function VotingInterface({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="bg-[#1A1A1A] p-6 rounded-lg border border-[#2A2A2A] space-y-6"
+      className="bg-[#1A1A1A] p-4 rounded-lg shadow-custom space-y-4"
     >
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-white">Buy Shares</h3>

@@ -25,14 +25,14 @@ export default function TradingVotingTabs({
   const [activeTab, setActiveTab] = useState<TabType>('trading');
 
   const tabs = [
-    { id: 'trading' as TabType, label: 'Trade Shares', icon: '📊' },
-    { id: 'voting' as TabType, label: 'Buy Shares', icon: '💰' }
+    // { id: 'trading' as TabType, label: 'Trade Shares', icon: '📊' },
+    // { id: 'voting' as TabType, label: 'Buy Shares', icon: '💰' }
   ];
 
   return (
     <div className="w-full">
       {/* Tab Navigation */}
-      <div className="flex space-x-1 bg-[#2A2A2A] p-1 rounded-lg mb-6">
+      {/* <div className="flex space-x-1 bg-[#2A2A2A] p-1 rounded-lg mb-6">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -47,7 +47,7 @@ export default function TradingVotingTabs({
             <span>{tab.label}</span>
           </button>
         ))}
-      </div>
+      </div> */}
 
       {/* Tab Content */}
       <div className="relative">
@@ -78,7 +78,7 @@ export default function TradingVotingTabs({
       </div>
 
       {/* Tab Info */}
-      <div className="mt-4 p-3 bg-[#1A1A1A] rounded-md border border-[#2A2A2A]">
+      <div className="mt-4 p-3 bg-[#1A1A1A] rounded-md shadow-custom">
         <div className="text-xs text-gray-400">
           {activeTab === 'trading' ? (
             <div className="space-y-1">

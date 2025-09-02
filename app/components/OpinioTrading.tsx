@@ -20,7 +20,7 @@ export default function OpinioTrading({ marketId, marketData }: OpinioTradingPro
   // Don't render if marketData is not available
   if (!marketData) {
     return (
-      <div className="bg-[#1A1A1A] rounded-lg p-4 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+      <div className="bg-[#1A1A1A] rounded-lg p-4 shadow-custom">
         <div className="text-gray-400 text-sm text-center">
           Market data not available
         </div>
@@ -81,7 +81,7 @@ export default function OpinioTrading({ marketId, marketData }: OpinioTradingPro
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-[#1A1A1A] rounded-lg p-4 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]"
+      className="bg-[#1A1A1A] rounded-lg p-4 shadow-custom"
     >
       <h3 className="text-white font-semibold mb-4">Trade Market #{marketId}</h3>
       

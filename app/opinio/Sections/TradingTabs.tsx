@@ -21,7 +21,7 @@ export default function TradingTabs() {
   );
 
   return (
-    <div className="bg-[#1A1A1A] text-white rounded-xl w-full mx-auto p-4 space-y-4 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+    <div className="bg-[#1A1A1A] text-white rounded-xl w-full mx-auto p-4 space-y-4 border border-[#2A2A2A] shadow-custom">
       <div className="flex items-center space-x-4 text-sm border-b justify-between border-slate-700">
         {tabs.map(tab => (
           <button
