@@ -11,16 +11,17 @@ export default function OpinioWalletConnect() {
   const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [useMetaMask, setUseMetaMask] = useState(true);
   
-  const {
-    isConnected,
-    walletAddress,
-    networkInfo,
-    usdcStatus,
-    isLoading,
-    error,
-    connect,
-    connectWithMetaMask,
-    disconnect
+        const { 
+    isConnected, 
+    walletAddress, 
+    networkInfo, 
+    usdcStatus, 
+
+    connect, 
+    connectWithMetaMask, 
+    disconnect,
+    refreshData
+
   } = useOpinioContext();
   
   const {
@@ -57,41 +58,70 @@ export default function OpinioWalletConnect() {
   const handleConnect = async () => {
     if (useMetaMask) {
       try {
-        // First connect MetaMask if not already connected
+        console.log('🦊 Starting MetaMask connection...');
+        
+        // First connect to MetaMask if not already connected
         if (!metaMaskAddress) {
+          console.log('🦊 Connecting to MetaMask...');
           await connectMetaMask();
         }
         
-        // Wait a moment for MetaMask to settle after network changes
+        // Wait a bit for MetaMask to be ready
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Get fresh provider and signer after potential network change
+        // Always create fresh provider and signer to ensure we have the latest connection
         if (window.ethereum) {
-          const freshProvider = new (await import('ethers')).BrowserProvider(window.ethereum);
+          console.log('🦊 Creating fresh provider and signer...');
+          const { ethers } = await import('ethers');
+          const freshProvider = new ethers.BrowserProvider(window.ethereum);
           const freshSigner = await freshProvider.getSigner();
+          const freshAddress = await freshSigner.getAddress();
+          
+          console.log('🦊 Fresh connection details:', {
+            address: freshAddress,
+            provider: !!freshProvider,
+            signer: !!freshSigner
+          });
           
           await connectWithMetaMask(freshProvider, freshSigner);
-        } else if (metaMaskProvider && metaMaskSigner) {
-          await connectWithMetaMask(metaMaskProvider, metaMaskSigner);
+        } else {
+          console.error('❌ window.ethereum not available');
+          alert('MetaMask not detected. Please make sure MetaMask is installed and unlocked.');
         }
       } catch (err) {
-        console.error('MetaMask connection failed:', err);
-        // If network change error, suggest refresh
+        console.error('❌ MetaMask connection failed:', err);
+
         if (err instanceof Error && err.message.includes('network changed')) {
           alert('Network changed detected. Please refresh the page and try connecting again.');
+        } else {
+          alert(`Connection failed: ${err.message}`);
         }
       }
     } else {
-      // Fallback to private key method
+      // Private key connection
       if (!rpcUrl || !privateKey) {
         alert('Please enter both RPC URL and private key');
         return;
       }
       
       try {
-        await connect(rpcUrl, privateKey);
+        console.log('🔑 Starting private key connection...');
+        const { ethers } = await import('ethers');
+        
+        const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+        const provider = new ethers.JsonRpcProvider(rpcUrl);
+        const wallet = new ethers.Wallet(formattedPrivateKey, provider);
+        
+        console.log('🔑 Private key connection details:', {
+          address: wallet.address,
+          provider: !!provider,
+          wallet: !!wallet
+        });
+        
+        await connect(provider, wallet);
       } catch (err) {
-        console.error('Connection failed:', err);
+        console.error('❌ Private key connection failed:', err);
+        alert(`Connection failed: ${err.message}`);
       }
     }
   };
@@ -102,19 +132,33 @@ export default function OpinioWalletConnect() {
     setPrivateKey('');
   };
 
-  // Auto-connect to Opinio when MetaMask connects
+
   useEffect(() => {
     if (useMetaMask && metaMaskAddress && metaMaskProvider && metaMaskSigner && !isConnected) {
-      // Add a small delay to allow network changes to settle
-      const timer = setTimeout(() => {
-        connectWithMetaMask(metaMaskProvider, metaMaskSigner).catch(err => {
-          console.error('Auto-connection to Opinio failed:', err);
+      console.log('🔄 Auto-connecting to Opinio with MetaMask...');
+      
+      const timer = setTimeout(async () => {
+        try {
+          // Create fresh provider and signer for auto-connection too
+          if (window.ethereum) {
+            const { ethers } = await import('ethers');
+            const freshProvider = new ethers.BrowserProvider(window.ethereum);
+            const freshSigner = await freshProvider.getSigner();
+            
+            console.log('🔄 Auto-connection with fresh provider/signer');
+            await connectWithMetaMask(freshProvider, freshSigner);
+          } else {
+            console.log('🔄 Auto-connection with existing provider/signer');
+            await connectWithMetaMask(metaMaskProvider, metaMaskSigner);
+          }
+        } catch (err) {
+          console.error('❌ Auto-connection to Opinio failed:', err);
           // If it's a network change error, don't auto-retry to avoid loops
           if (!err.message?.includes('network changed')) {
             console.log('Will retry auto-connection...');
           }
-        });
-      }, 500);
+        }
+      }, 1000); // Increased delay to 1 second
       
       return () => clearTimeout(timer);
     }
@@ -203,12 +247,28 @@ export default function OpinioWalletConnect() {
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-white font-semibold">Wallet Connected</h3>
-          <button
-            onClick={handleDisconnect}
-            className="text-red-400 hover:text-red-300 text-sm transition-colors"
-          >
-            Disconnect
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={async () => {
+                console.log('🔄 Manual refresh requested');
+                try {
+                  await refreshData();
+                  console.log('✅ Manual refresh completed');
+                } catch (err) {
+                  console.error('❌ Manual refresh failed:', err);
+                }
+              }}
+              className="text-blue-400 hover:text-blue-300 text-sm transition-colors"
+            >
+              🔄 Refresh
+            </button>
+            <button
+              onClick={handleDisconnect}
+              className="text-red-400 hover:text-red-300 text-sm transition-colors"
+            >
+              Disconnect
+            </button>
+          </div>
         </div>
         
         <div className="space-y-3">
@@ -255,11 +315,7 @@ export default function OpinioWalletConnect() {
           )}
         </div>
         
-        {error && (
-          <div className="mt-3 p-2 bg-red-900/20 border border-red-500/30 rounded text-red-400 text-xs">
-            {error}
-          </div>
-        )}
+
       </motion.div>
     );
   }
@@ -357,34 +413,13 @@ export default function OpinioWalletConnect() {
         
       <button
         onClick={handleConnect}
-        disabled={isLoading || metaMaskConnecting || (!useMetaMask && (!rpcUrl || !privateKey))}
+        disabled={metaMaskConnecting || (!useMetaMask && (!rpcUrl || !privateKey))}
         className="w-full bg-[#6E54FF] hover:bg-[#836EF9] disabled:bg-gray-600 disabled:cursor-not-available text-white font-semibold py-2 rounded transition-all duration-200 mt-4"
       >
-        {isLoading || metaMaskConnecting ? 'Connecting...' : useMetaMask ? '🦊 Connect MetaMask' : '🔑 Connect with Private Key'}
+        {metaMaskConnecting ? 'Connecting...' : useMetaMask ? '🦊 Connect MetaMask' : '🔑 Connect with Private Key'}
       </button>
       
-      {error && (
-        <div className="mt-3 p-2 bg-red-900/20 border border-red-500/30 rounded text-red-400 text-xs">
-          <div className="font-semibold mb-1">Connection Error:</div>
-          {error}
-          {error.includes('USDC') && (
-            <div className="mt-2 text-yellow-400">
-              💡 This may be because you're not on Monad Testnet. Try clicking "Add/Switch to Monad Testnet" above.
-            </div>
-          )}
-          {error.includes('network changed') && (
-            <div className="mt-2 text-green-400">
-              ✅ Network switch detected! Click "🦊 Connect MetaMask" again to connect with the new network.
-              <button
-                onClick={() => window.location.reload()}
-                className="ml-2 px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded"
-              >
-                🔄 Refresh Page
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+
       
       <div className="mt-3 text-xs text-gray-500">
         {useMetaMask ? (

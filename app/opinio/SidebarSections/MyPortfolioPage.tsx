@@ -33,14 +33,23 @@ const MyPortfolioPage = () => {
   const { 
     isConnected, 
     usdcStatus, 
-    portfolio: userPortfolio, 
+    markets,
     userPositions, 
     userVotes, 
     tradingSummary, 
-    isLoading, 
-    error,
     refreshData
   } = useOpinioContext();
+
+
+  useEffect(() => {
+    if (isConnected && refreshData) {
+      console.log('🔄 MyPortfolioPage useEffect - refreshing full data...');
+      refreshData().catch(err => {
+        console.error('Failed to refresh data:', err);
+      });
+    }
+
+  }, [isConnected, refreshData]);
 
   const chartData: ChartData = {
     '1d': [
@@ -79,24 +88,24 @@ const MyPortfolioPage = () => {
     ],
   };
 
-  // Calculate real profit/loss from blockchain data
-  const realProfitLoss = userPortfolio ? parseFloat(userPortfolio.totalProfitLoss.toString()) / 1e6 : 0;
-  const totalInvested = userPortfolio ? parseFloat(userPortfolio.totalInvested.toString()) / 1e6 : 0;
+
+  const realProfitLoss = 0;
+  const totalInvested = 0;
   
   const profitLoss = realProfitLoss;
   const isProfit = profitLoss > 0;
   const profitLossPercentage = totalInvested > 0 ? ((profitLoss / totalInvested) * 100).toFixed(2) : '0.00';
 
   useEffect(() => {
-    if (isConnected && userPortfolio) {
-      const totalValue = parseFloat(userPortfolio.totalValue.toString()) / 1e6; // Convert from wei
+    if (isConnected) {
+      const totalValue = 0;
       setPortfolio(totalValue);
     } else if (isConnected && usdcStatus) {
       // Fallback to USDC balance if portfolio not available
       const usdcBalance = parseFloat(usdcStatus.balance.toString()) / Math.pow(10, Number(usdcStatus.decimals));
       setPortfolio(usdcBalance);
     }
-  }, [isConnected, userPortfolio, usdcStatus]);
+  }, [isConnected, usdcStatus]);
 
   const periods: { key: '1d' | '1w' | '1m' | '1y'; label: string }[] = [
     { key: '1d', label: '1d' },
@@ -116,6 +125,13 @@ const MyPortfolioPage = () => {
 
 
 
+      {/* Debug Info */}
+      <div className="text-xs text-gray-400 text-center bg-[#1A1A1A] p-2 rounded border border-[#2A2A2A]">
+        Markets: {markets?.length || 0} | Positions: {userPositions?.length || 0} | 
+        Ready | 
+        {isConnected ? ' Connected' : ' Not Connected'}
+      </div>
+
       {!isConnected ? (
         <OpinioWalletConnect />
       ) : (
@@ -127,14 +143,25 @@ const MyPortfolioPage = () => {
               <ArrowRight className="-rotate-45 text-green-500 transition-transform duration-200" />
               Portfolio
             </span>
-            <span
-              className={`text-[8px] rounded-full px-2 flex justify-center items-center py-1 ${
-                isProfit ? 'bg-green-700' : 'bg-red-700'
-              }`}
-            >
-              {isProfit ? '+' : ''}
-              {profitLossPercentage}%
-            </span>
+            <div className="flex items-center space-x-2">
+              <span
+                className={`text-[8px] rounded-full px-2 flex justify-center items-center py-1 ${
+                  isProfit ? 'bg-green-700' : 'bg-red-700'
+                }`}
+              >
+                {isProfit ? '+' : ''}
+                {profitLossPercentage}%
+              </span>
+              <button
+                onClick={() => window.location.reload()}
+                className="p-1 bg-[#6E54FF] hover:bg-[#836EF9] rounded transition-colors"
+                title="Refresh Data"
+              >
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            </div>
           </div>
           <span className="text-2xl text-white font-semibold">
             ${portfolio.toLocaleString()}
@@ -411,11 +438,7 @@ const MyPortfolioPage = () => {
 
       <TradingTabs />
       
-      {error && (
-        <div className="p-2 bg-red-900/20 border border-red-500/30 rounded text-red-400 text-xs">
-          {error}
-        </div>
-      )}
+
     </>
   )}
 </motion.div>

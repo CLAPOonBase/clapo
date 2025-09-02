@@ -10,33 +10,41 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useOpinioContext } from "@/app/Context/OpinioContext";
 import OpinioWalletConnect from "@/app/components/OpinioWalletConnect";
 import { useRouter } from "next/navigation";
+import { MarketProbabilities } from "@/app/components/MarketProbabilities";
 
 
 const navItems = [
+  { label: "ALL" },
   { label: "TRENDING" },
   { label: "NEW" },
+  { label: "ACTIVE" },
+  { label: "CLOSED" },
+  { label: "TECHNOLOGY" },
   { label: "POLITICS" },
+  { label: "ECONOMY" },
   { label: "SPORTS" },
   { label: "CRYPTO" },
-  { label: "TECH" },
-  { label: "CELEBRITY" },
-  { label: "WORLD" },
-  { label: "ECONOMY" },
-  { label: "TRUMP" },
-  { label: "ELECTIONS" },
-  { label: "MENTIONS" },
 ];
 
 export default function MainVoting() {
   const [opinions] = useState<Opinion[]>(mockOpinions);
-  const [selectedCategory, setSelectedCategory] = useState<string>("TRENDING");
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   
   const router = useRouter();
-  const { isConnected, markets, isLoading, error } = useOpinioContext();
+  const { isConnected, markets, refreshData } = useOpinioContext();
   
   console.log('🔍 MainVoting render - markets:', markets);
-  console.log('🔍 MainVoting render - isLoading:', isLoading);
-  console.log('🔍 MainVoting render - error:', error);
+  
+  // Refresh data when component mounts (only once)
+  useEffect(() => {
+    if (isConnected && refreshData) {
+      console.log('🔄 MainVoting useEffect - refreshing full data...');
+      refreshData().catch(err => {
+        console.error('Failed to refresh data:', err);
+      });
+    }
+    // Markets are loaded once on app initialization - no need to refresh
+  }, [isConnected, refreshData]);
   
   useEffect(() => {
     console.log('🔄 MainVoting useEffect - markets changed:', markets);
@@ -50,19 +58,37 @@ export default function MainVoting() {
     }
   }, [markets]);
 
-  const filteredOpinions = opinions.filter((opinion) => {
+  // Filter real markets based on selected category and validity
+  const filteredMarkets = markets ? markets.filter((market) => {
+    // Filter out invalid markets (empty titles, wrong dates, etc.)
+    if (!market.title || market.title.trim() === '' || 
+        Number(market.endDate) === 0 || 
+        market.creator === '0x0000000000000000000000000000000000000000') {
+      return false;
+    }
+    
+    // Apply category filtering
+    if (selectedCategory === "ALL") {
+      return true; // Show all valid markets
+    }
     if (selectedCategory === "TRENDING") {
-      return opinion.totalVotes > 1000;
+      return Number(market.totalVotes) > 1000;
     }
     if (selectedCategory === "NEW") {
-      const createdAt = new Date(opinion.createdAt);
+      const createdAt = new Date(Number(market.createdAt) * 1000);
       const now = new Date();
-      const diffInHours =
-        (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+      const diffInHours = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
       return diffInHours <= 72;
     }
-    return opinion.category === selectedCategory;
-  });
+    if (selectedCategory === "ACTIVE") {
+      return market.isActive === true;
+    }
+    if (selectedCategory === "CLOSED") {
+      return market.isActive === false;
+    }
+    // For other categories, check if market category matches
+    return market.category && market.category.toLowerCase() === selectedCategory.toLowerCase();
+  }) : [];
 
   return (
     <motion.div
@@ -101,6 +127,22 @@ export default function MainVoting() {
             placeholder="Search Market"
             className="w-full p-2 bg-transparent text-white placeholder-gray-400 focus:outline-none"
           />
+          <button
+            onClick={() => window.location.reload()}
+            className="ml-2 p-2 bg-[#6E54FF] hover:bg-[#836EF9] rounded-md transition-colors"
+            title="Refresh Markets"
+          >
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
+        
+        {/* Debug Info */}
+        <div className="text-xs text-gray-400 text-center">
+          Markets: {markets?.length || 0} | Filtered: {filteredMarkets?.length || 0} | 
+          Ready | 
+          {isConnected ? ' Connected' : ' Not Connected'}
         </div>
       </div>
 
@@ -115,12 +157,12 @@ export default function MainVoting() {
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.3 }}
             >
-              {isLoading ? (
+              {false ? (
                 <div className="col-span-full text-center text-gray-400">
                   Loading markets from blockchain...
                 </div>
-              ) : markets && markets.length > 0 ? (
-                markets.map((market, index) => (
+              ) : filteredMarkets && filteredMarkets.length > 0 ? (
+                filteredMarkets.map((market, index) => (
                   <motion.div
                     key={index}
                     className="bg-[#1A1A1A] rounded-lg p-4 border border-[#2A2A2A] hover:border-[#6E54FF]/30 transition-all duration-200 shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)] hover:shadow-[0px_8px_30px_0px_rgba(110,84,255,0.1)] cursor-pointer"
@@ -166,6 +208,15 @@ export default function MainVoting() {
                       </div>
                     </div>
 
+                    {/* Market Probabilities */}
+                    <div className="mb-4">
+                      <MarketProbabilities 
+                        marketId={Number(market.marketId)} 
+                        className="w-full"
+                        refreshTrigger={Date.now()}
+                      />
+                    </div>
+
                     <div className="flex justify-between items-center text-xs text-gray-400">
                       <span>Created by: {market.creator.slice(0, 6)}...{market.creator.slice(-4)}</span>
                       <span>
@@ -209,11 +260,7 @@ export default function MainVoting() {
         </>
       )}
       
-      {error && (
-        <div className="p-2 bg-red-900/20 border border-red-500/30 rounded text-red-400 text-xs">
-          {error}
-        </div>
-      )}
+
     </motion.div>
   );
 }

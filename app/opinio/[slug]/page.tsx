@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useOpinioContext } from "@/app/Context/OpinioContext";
 import { useParams, useRouter } from "next/navigation";
 import TradingVotingTabs from "@/app/components/TradingVotingTabs";
+import { MarketProbabilities } from "@/app/components/MarketProbabilities";
 
 function OpinionDetailPage() {
   const [marketData, setMarketData] = useState<any>(null);
@@ -193,6 +194,18 @@ function OpinionDetailPage() {
               </p>
             </div>
             </div>
+
+          {/* Market Probabilities */}
+          {marketId && (
+            <div className="bg-[#1A1A1A] rounded-lg p-6 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)] mb-6">
+              <h2 className="text-lg font-semibold mb-4">Market Probabilities</h2>
+              <MarketProbabilities 
+                marketId={marketId} 
+                className="w-full"
+                refreshTrigger={Date.now()}
+              />
+            </div>
+          )}
 
           {/* Market Creator Info */}
           <div className="bg-[#1A1A1A] rounded-lg p-4 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">

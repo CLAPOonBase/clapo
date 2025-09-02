@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import VotingInterface from './VotingInterface';
-import TradingInterface from './TradingInterface';
+import { TradingInterface } from './TradingInterface';
 
 interface TradingVotingTabsProps {
   marketId: number;
