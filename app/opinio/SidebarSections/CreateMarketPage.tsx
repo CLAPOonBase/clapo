@@ -15,7 +15,7 @@ const CreateMarketPage = ({ onMarketCreated, markets }) => {
   const [endDate, setEndDate] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   
-  const { isConnected, createMarket, isLoading, error } = useOpinioContext();
+  const { isConnected, createMarket } = useOpinioContext();
 
   const availableTags = [
     { label: "TRENDING" },
@@ -82,6 +82,17 @@ const CreateMarketPage = ({ onMarketCreated, markets }) => {
     try {
       setIsCreating(true);
       const endTime = Math.floor(new Date(endDate).getTime() / 1000);
+      
+      // Debug logging
+      console.log('🔍 Date Debug:', {
+        originalEndDate: endDate,
+        parsedDate: new Date(endDate),
+        endTimeTimestamp: endTime,
+        currentTimestamp: Math.floor(Date.now() / 1000),
+        differenceInSeconds: endTime - Math.floor(Date.now() / 1000),
+        differenceInDays: (endTime - Math.floor(Date.now() / 1000)) / (24 * 60 * 60)
+      });
+      
       const marketType = questionType === "with-options" ? 1 : 0;
       const marketOptions = questionType === "with-options" ? options.filter(opt => opt.trim()) : ["Yes", "No"];
       
@@ -97,7 +108,7 @@ const CreateMarketPage = ({ onMarketCreated, markets }) => {
         1000000 // maxMarketSize
       );
       
-      alert(`Market created successfully! Market ID: ${result.marketId}`);
+      alert(`Market created successfully! Transaction hash: ${result.hash}`);
       
       setQuestion("");
       setDescription("");
@@ -288,17 +299,13 @@ const CreateMarketPage = ({ onMarketCreated, markets }) => {
 
         <button 
           onClick={handleCreateMarket}
-          disabled={isCreating || isLoading}
+          disabled={isCreating}
           className="w-full bg-[#6E54FF] hover:bg-[#836EF9] disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-[100px] transition-all duration-200 shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB] hover:shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]"
         >
           {isCreating ? 'Creating Market...' : 'CREATE MARKET'}
         </button>
         
-        {error && (
-          <div className="p-2 bg-red-900/20 border border-red-500/30 rounded text-red-400 text-xs">
-            {error}
-          </div>
-        )}
+
         </div>
       )}
     </div>

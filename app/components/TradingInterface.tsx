@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useOpinioContext } from '@/app/Context/OpinioContext';
+import { useOpinioContext } from '../Context/OpinioContext';
 
 interface TradingInterfaceProps {
   marketId: number;
@@ -14,13 +14,13 @@ interface TradingInterfaceProps {
 
 type TradeType = 'buy' | 'sell';
 
-export default function TradingInterface({ 
+export const TradingInterface: React.FC<TradingInterfaceProps> = ({ 
   marketId, 
   marketTitle, 
   marketData,
   onTradeSuccess, 
   onError 
-}: TradingInterfaceProps) {
+}: TradingInterfaceProps) => {
   const [tradeType, setTradeType] = useState<TradeType>('buy');
   const [amount, setAmount] = useState<number>(100);
   const [optionId] = useState<number>(0); // Default to 0 for binary markets
@@ -28,7 +28,7 @@ export default function TradingInterface({
   const [isTrading, setIsTrading] = useState(false);
   const [userPosition, setUserPosition] = useState<any>(null);
   
-  const { buyShares, sellShares, approveUSDC, isConnected, isLoading, userPositions, usdcStatus } = useOpinioContext();
+  const { buyShares, sellShares, approveUSDC, isConnected, userPositions, usdcStatus } = useOpinioContext();
   
   // Find user's current position for this market
   useEffect(() => {
@@ -198,7 +198,7 @@ export default function TradingInterface({
                     setIsTrading(false);
                   }
                 }}
-                disabled={isTrading || isLoading}
+                disabled={isTrading}
                 className="w-full py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-xs font-medium transition disabled:bg-gray-600 disabled:cursor-not-allowed"
               >
                 {isTrading ? 'Approving...' : 'Approve USDC Spending'}
@@ -284,8 +284,6 @@ export default function TradingInterface({
         )}
       </div>
 
-
-
       {/* Amount */}
       <div className="space-y-2">
         <label className="block text-sm font-medium text-gray-300">
@@ -337,9 +335,9 @@ export default function TradingInterface({
       {/* Submit Button */}
       <button
         onClick={handleTrade}
-        disabled={!isConnected || isTrading || isLoading}
+        disabled={!isConnected || isTrading}
         className={`w-full py-3 rounded-md font-semibold text-sm transition-all duration-200 ${
-          !isConnected || isTrading || isLoading
+          !isConnected || isTrading
             ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
             : tradeType === 'buy'
             ? 'bg-[#6E54FF] text-white hover:bg-[#836EF9] shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]'
@@ -348,7 +346,7 @@ export default function TradingInterface({
       >
         {!isConnected 
           ? 'Connect Wallet to Trade' 
-          : isTrading || isLoading
+          : isTrading
           ? `${tradeType === 'buy' ? 'Buying' : 'Selling'}...`
           : `${tradeType === 'buy' ? 'Buy' : 'Sell'} Shares`
         }
@@ -363,4 +361,4 @@ export default function TradingInterface({
       </div>
     </motion.div>
   );
-}
+};

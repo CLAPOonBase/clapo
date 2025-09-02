@@ -7,7 +7,7 @@ import Image from "next/image";
 import { useOpinioContext } from "@/app/Context/OpinioContext";
 import { useParams, useRouter } from "next/navigation";
 import TradingVotingTabs from "@/app/components/TradingVotingTabs";
-import MarketProbabilities from "@/app/components/MarketProbabilities";
+import { MarketProbabilities } from "@/app/components/MarketProbabilities";
 
 function OpinionDetailPage() {
   const [marketData, setMarketData] = useState<any>(null);

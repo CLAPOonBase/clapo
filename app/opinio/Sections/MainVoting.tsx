@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useOpinioContext } from "@/app/Context/OpinioContext";
 import OpinioWalletConnect from "@/app/components/OpinioWalletConnect";
 import { useRouter } from "next/navigation";
-import MarketProbabilities from "@/app/components/MarketProbabilities";
+import { MarketProbabilities } from "@/app/components/MarketProbabilities";
 
 
 const navItems = [
@@ -31,11 +31,20 @@ export default function MainVoting() {
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   
   const router = useRouter();
-  const { isConnected, markets, isLoading, error } = useOpinioContext();
+  const { isConnected, markets, refreshData } = useOpinioContext();
   
   console.log('🔍 MainVoting render - markets:', markets);
-  console.log('🔍 MainVoting render - isLoading:', isLoading);
-  console.log('🔍 MainVoting render - error:', error);
+  
+  // Refresh data when component mounts (only once)
+  useEffect(() => {
+    if (isConnected && refreshData) {
+      console.log('🔄 MainVoting useEffect - refreshing full data...');
+      refreshData().catch(err => {
+        console.error('Failed to refresh data:', err);
+      });
+    }
+    // Markets are loaded once on app initialization - no need to refresh
+  }, [isConnected, refreshData]);
   
   useEffect(() => {
     console.log('🔄 MainVoting useEffect - markets changed:', markets);
@@ -118,6 +127,22 @@ export default function MainVoting() {
             placeholder="Search Market"
             className="w-full p-2 bg-transparent text-white placeholder-gray-400 focus:outline-none"
           />
+          <button
+            onClick={() => window.location.reload()}
+            className="ml-2 p-2 bg-[#6E54FF] hover:bg-[#836EF9] rounded-md transition-colors"
+            title="Refresh Markets"
+          >
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
+        
+        {/* Debug Info */}
+        <div className="text-xs text-gray-400 text-center">
+          Markets: {markets?.length || 0} | Filtered: {filteredMarkets?.length || 0} | 
+          Ready | 
+          {isConnected ? ' Connected' : ' Not Connected'}
         </div>
       </div>
 
@@ -132,7 +157,7 @@ export default function MainVoting() {
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.3 }}
             >
-              {isLoading ? (
+              {false ? (
                 <div className="col-span-full text-center text-gray-400">
                   Loading markets from blockchain...
                 </div>
@@ -235,11 +260,7 @@ export default function MainVoting() {
         </>
       )}
       
-      {error && (
-        <div className="p-2 bg-red-900/20 border border-red-500/30 rounded text-red-400 text-xs">
-          {error}
-        </div>
-      )}
+
     </motion.div>
   );
 }

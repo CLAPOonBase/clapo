@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useOpinioContext } from '@/app/Context/OpinioContext';
-import { getOpinioContractService } from '@/app/lib/opinioContract';
+
 import { useSmartContract } from '@/app/lib/useSmartContract';
 
 interface MarketDataDebuggerProps {
@@ -23,7 +23,7 @@ export default function MarketDataDebugger({ marketId, className = '' }: MarketD
   const [isLoading, setIsLoading] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   
-  const { getMarket, isConnected } = useOpinioContext();
+  const { getMarket, getMarketOptions, getMarketProbabilities, isConnected } = useOpinioContext();
   const { getPrices, getMarketDetails } = useSmartContract();
 
   // Custom JSON serializer to handle BigInt values
@@ -55,49 +55,31 @@ export default function MarketDataDebugger({ marketId, className = '' }: MarketD
         console.log('✅ Opinio getMarket result:', market);
         
         // Get market options
-        const service = getOpinioContractService();
-        const options = await service.getMarketOptions(marketId);
+        const options = await getMarketOptions(marketId);
         console.log('✅ Opinio getMarketOptions result:', options);
         
-        // Get user shares (if wallet is connected)
-        let userShares = null;
-        try {
-          const walletAddress = await service.getWalletAddress();
-          if (walletAddress) {
-            userShares = await service.getUserShares(marketId, walletAddress);
-            console.log('✅ Opinio getUserShares result:', userShares);
-          }
-        } catch (shareError) {
-          console.log('⚠️ Could not get user shares:', shareError.message);
-        }
-        
-        // Get detailed position information using new functions
-        let positionDetails = null;
+        // Get market probabilities
         let contractProbabilities = null;
         try {
-          positionDetails = await service.getMarketPositionDetails(marketId);
-          contractProbabilities = await service.getMarketProbabilities(marketId);
-          console.log('✅ New contract functions:', { positionDetails, contractProbabilities });
+          contractProbabilities = await getMarketProbabilities(marketId);
+          console.log('✅ Market probabilities:', contractProbabilities);
         } catch (newFunctionError) {
-          console.log('⚠️ New functions not available (using old contract):', newFunctionError.message);
+          console.log('⚠️ Could not get market probabilities:', newFunctionError.message);
         }
 
         opinioData = {
           market,
           options,
-          userShares,
-          positionDetails,
           contractProbabilities,
           marketFields: market ? Object.keys(market) : [],
-          optionFields: options && options.length > 0 ? Object.keys(options[0]) : [],
-          userShareFields: userShares ? Object.keys(userShares) : []
+          optionFields: options && options.length > 0 ? Object.keys(options[0]) : []
         };
 
         // Calculate probabilities from Opinio data
         
         // Method 1: Use new comprehensive probability calculation
         try {
-          const probData = await service.getMarketProbabilities(marketId);
+          const probData = await getMarketProbabilities(marketId);
           if (probData) {
             calculatedProbabilities.newComprehensiveMethod = {
               yesPercent: probData.yesPercent,

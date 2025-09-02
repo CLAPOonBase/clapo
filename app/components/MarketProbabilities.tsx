@@ -2,9 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useOpinioContext } from '@/app/Context/OpinioContext';
-import { getOpinioContractService } from '@/app/lib/opinioContract';
-import { useSmartContract } from '@/app/lib/useSmartContract';
+import { useOpinioContext } from '../Context/OpinioContext';
 
 interface MarketProbabilitiesProps {
   marketId: number;
@@ -21,14 +19,13 @@ interface ProbabilityData {
   lastCalculated?: Date;
 }
 
-export default function MarketProbabilities({ marketId, className = '', refreshTrigger }: MarketProbabilitiesProps) {
+export const MarketProbabilities: React.FC<MarketProbabilitiesProps> = ({ marketId, className = '', refreshTrigger }: MarketProbabilitiesProps) => {
   const [probabilities, setProbabilities] = useState<ProbabilityData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { getMarket, isConnected } = useOpinioContext();
-  const { getPrices, getMarketDetails } = useSmartContract();
+  const { getMarketProbabilities, isConnected } = useOpinioContext();
 
   const manualRefresh = async () => {
     console.log('🔄 Manual refresh triggered for market', marketId);
@@ -62,8 +59,7 @@ export default function MarketProbabilities({ marketId, className = '', refreshT
         if (isConnected && marketId) {
           try {
             console.log('📊 Trying to get real probabilities...');
-            const service = getOpinioContractService();
-            const probData = await service.getMarketProbabilities(marketId);
+            const probData = await getMarketProbabilities(marketId);
             
             if (probData && probData.yesPercent !== undefined && probData.noPercent !== undefined) {
               console.log(`✅ Got real probabilities: YES ${probData.yesPercent}%, NO ${probData.noPercent}%`);
@@ -109,11 +105,11 @@ export default function MarketProbabilities({ marketId, className = '', refreshT
     if (marketId !== undefined) {
       fetchProbabilities();
       
-      // Refresh probabilities every 2 seconds
-      const interval = setInterval(fetchProbabilities, 2000);
+      // Refresh probabilities every 5 seconds to avoid rate limiting
+      const interval = setInterval(fetchProbabilities, 5000);
       return () => clearInterval(interval);
     }
-  }, [marketId, getMarket, isConnected, getPrices, getMarketDetails, refreshTrigger, isRefreshing]);
+  }, [marketId, getMarketProbabilities, isConnected, refreshTrigger, isRefreshing]);
 
   // Show loading state
   if (isLoading && !probabilities) {
@@ -186,7 +182,7 @@ export default function MarketProbabilities({ marketId, className = '', refreshT
           whileTap={{ scale: 0.98 }}
           onClick={manualRefresh}
         >
-          <div className="text-red-400 text-xs font-medium mb-1">NO</div>
+          <div className="text-green-400 text-xs font-medium mb-1">NO</div>
           <div className="text-red-300 text-lg font-bold">
             {probabilities.noPercentage}%
           </div>
@@ -195,9 +191,6 @@ export default function MarketProbabilities({ marketId, className = '', refreshT
           </div>
         </motion.div>
       </motion.div>
-      
-
-
     </div>
   );
-}
+};

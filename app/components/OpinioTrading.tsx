@@ -15,7 +15,7 @@ export default function OpinioTrading({ marketId, marketData }: OpinioTradingPro
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
   const [isTrading, setIsTrading] = useState(false);
   
-  const { buyShares, sellShares, isLoading, error } = useOpinioContext();
+  const { buyShares, sellShares } = useOpinioContext();
 
   // Don't render if marketData is not available
   if (!marketData) {
@@ -167,17 +167,13 @@ export default function OpinioTrading({ marketId, marketData }: OpinioTradingPro
         
         <button
           onClick={handleTrade}
-          disabled={isTrading || isLoading || !selectedOption || !amount}
+          disabled={isTrading || !selectedOption || !amount}
           className="w-full bg-[#6E54FF] hover:bg-[#836EF9] disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-2 rounded transition-all duration-200"
         >
           {isTrading ? 'Processing...' : `${tradeType === 'buy' ? 'Buy' : 'Sell'} Shares`}
         </button>
         
-        {error && (
-          <div className="p-2 bg-red-900/20 border border-red-500/30 rounded text-red-400 text-xs">
-            {error}
-          </div>
-        )}
+
       </div>
       
       <div className="mt-4 pt-4 border-t border-[#2A2A2A]">

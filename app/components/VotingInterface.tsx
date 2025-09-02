@@ -24,7 +24,7 @@ export default function VotingInterface({
   const [isVoting, setIsVoting] = useState(false);
   
   // Polymarket-style: voting = buying shares
-  const { buyShares, isConnected, isLoading } = useOpinioContext();
+  const { buyShares, isConnected } = useOpinioContext();
   
   // Mock prices (in real Polymarket, these come from the market)
   const yesPrice = 0.65; // 65 cents per YES share
@@ -174,9 +174,9 @@ export default function VotingInterface({
       {/* Buy Button */}
       <button
         onClick={handleVote}
-        disabled={!isConnected || isVoting || isLoading}
+        disabled={!isConnected || isVoting}
         className={`w-full py-4 rounded-lg font-bold text-lg transition-all duration-200 ${
-          !isConnected || isVoting || isLoading
+          !isConnected || isVoting
             ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
             : voteChoice === 'yes'
             ? 'bg-green-600 text-white hover:bg-green-700'
@@ -185,7 +185,7 @@ export default function VotingInterface({
       >
         {!isConnected 
           ? 'Connect Wallet' 
-          : isVoting || isLoading
+          : isVoting
           ? 'Buying...'
           : `Buy ${voteChoice.toUpperCase()} ${sharesReceived.toFixed(2)} shares`
         }
