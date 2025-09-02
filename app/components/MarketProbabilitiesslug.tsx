@@ -130,7 +130,7 @@ export const MarketProbabilities: React.FC<MarketProbabilitiesProps> = ({ market
   // Always show probabilities (even if it's 50/50 default)
   if (!probabilities) {
     return (
-      <div className={`text-center text-gray-400 text-xs ${className}`}>
+      <div className={`text-center text-gray-400 text-sm ${className}`}>
         Loading probabilities...
       </div>
     );
@@ -144,7 +144,7 @@ export const MarketProbabilities: React.FC<MarketProbabilitiesProps> = ({ market
           {isRefreshing && (
             <div className="animate-spin rounded-full h-2 w-2 border border-blue-400 border-t-transparent mr-1"></div>
           )}
-          {error && <span className="text-yellow-400 text-xs">⚠</span>}
+          {error && <span className="text-yellow-400 text-sm">⚠</span>}
         </div>
       )}
       
@@ -156,34 +156,38 @@ export const MarketProbabilities: React.FC<MarketProbabilitiesProps> = ({ market
       >
         {/* YES Probability */}
         <motion.div 
-          className="flex-1 bg-green-900/20  shadow-custom rounded-md p-2 hover:bg-green-900/30 transition-colors cursor-pointer"
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
-          // onClick={manualRefresh}
-        >
-          <div className="text-green-400 text-xs font-medium mb-0.5">YES</div>
-          <div className="flex items-center justify-between w-full space-x-2 text-green-300 text-base font-bold leading-tight">
-            {probabilities.yesPercentage}%   <div className="text-green-400/60 text-xs leading-tight">
-            ${probabilities.yesPrice.toFixed(2)}
-          </div></div>
-        </motion.div>
-
-        {/* NO Probability */}
-        <motion.div 
-          className="flex-1 bg-red-900/20 shadow-custom rounded-md p-2 hover:bg-red-900/30 transition-colors cursor-pointer"
+          className="w-full flex justify-between"
           whileHover={{ scale: 1.01 }}
           // whileTap={{ scale: 0.99 }}
           // onClick={manualRefresh}
         >
-          <div className="text-red-400 text-xs font-medium">NO</div>
-          <div className="flex items-center justify-between w-full space-x-2 text-red-300 text-base font-bold leading-tight">
-            {probabilities.noPercentage}%   <div className="text-red-400/60 text-xs leading-tight">
-            ${probabilities.noPrice.toFixed(2)}
-          </div>
-          </div>
-       
+          <div className="flex w-full justify-start items-center text-secondary text-sm font-medium">YES</div>
+          <div className="flex w-full items-center justify-end space-x-2 text-green-300 text-sm font-bold leading-tight">{probabilities.yesPercentage}%   </div>
         </motion.div>
+
+        {/* NO Probability */}
+         <motion.div 
+          className="w-full flex justify-between"
+          whileHover={{ scale: 1.01 }}
+          // whileTap={{ scale: 0.99 }}
+          // onClick={manualRefresh}
+        >
+          <div className="flex w-full justify-start items-center text-secondary text-sm font-medium">No</div>
+          <div className="flex w-full items-center justify-end space-x-2 text-red-300 text-sm font-bold leading-tight">{probabilities.noPercentage}%   </div>
+        </motion.div>
+      
       </motion.div>
+        <motion.div 
+          className="w-full flex justify-between mt-2"
+          // whileHover={{ scale: 1.01 }}
+
+          // whileTap={{ scale: 0.99 }}
+          onClick={manualRefresh}
+        >
+        <button className="w-full bg-[#6E54FF] hover:bg-[#836EF9] transition-all duration-200 text-white font-medium py-2.5 rounded-[100px] text-sm mb-3 shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB] hover:shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]">
+          CAST YOUR OPINION
+        </button>
+          </motion.div>
     </div>
   );
 };

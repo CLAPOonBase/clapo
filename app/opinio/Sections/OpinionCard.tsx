@@ -11,7 +11,7 @@ interface OpinionCardProps {
 
 export const OpinionCard: React.FC<OpinionCardProps> = ({ opinion }) => {
   return (
-    <div className="bg-[#1A1A1A] rounded-lg p-4 border border-[#2A2A2A] hover:border-[#6E54FF]/30 transition-all duration-200 shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)] hover:shadow-[0px_8px_30px_0px_rgba(110,84,255,0.1)]">
+    <div className="bg-[#1A1A1A] rounded-lg p-4 border border-[#2A2A2A] hover:border-[#6E54FF]/30 transition-all duration-200 shadow-custom hover:shadow-[0px_8px_30px_0px_rgba(110,84,255,0.1)]">
       <div className="flex items-center gap-3 mb-4">
         <div className="flex items-center justify-center w-8 h-8 bg-[#6E54FF] rounded-md shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]">
           <Image

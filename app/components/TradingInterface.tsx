@@ -119,9 +119,9 @@ export const TradingInterface: React.FC<TradingInterfaceProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="bg-[#1A1A1A] p-6 rounded-lg border border-[#2A2A2A] space-y-6"
+      className="bg-[#1A1A1A] p-4 rounded-lg shadow-custom space-y-4"
     >
-      <div className="flex items-center justify-between">
+      {/* <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-white">Trade Shares</h3>
         <div className="flex items-center space-x-2">
           <button
@@ -138,9 +138,9 @@ export const TradingInterface: React.FC<TradingInterfaceProps> = ({
             Market ID: {marketId}
           </div>
         </div>
-      </div>
+      </div> */}
 
-      <div className="text-sm text-gray-300 mb-4">
+      <div className="text-lg font-bold capitalize text-gray-300 mb-4">
         {marketTitle}
       </div>
 
@@ -233,7 +233,14 @@ export const TradingInterface: React.FC<TradingInterfaceProps> = ({
         <div className="flex space-x-2">
           <button
             onClick={() => setTradeType('buy')}
-            className={`flex-1 py-3 rounded-md font-semibold text-sm transition ${
+             style={{
+              boxShadow:
+                "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(26, 19, 161, 0.50), 0px 0px 0px 1px #4F47EB",
+              backgroundColor: "#6E54FF",
+              color: "white",
+              // padding: "8px 16px",
+            }}
+            className={`flex-1 py-2 rounded-full font-semibold text-sm transition ${
               tradeType === 'buy'
                 ? 'bg-[#6E54FF] text-white shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]'
                 : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#3A3A3A]'
@@ -250,7 +257,7 @@ export const TradingInterface: React.FC<TradingInterfaceProps> = ({
               }
             }}
             disabled={!userPosition}
-            className={`flex-1 py-3 rounded-md font-semibold text-sm transition ${
+            className={`flex-1 py-2 rounded-full shadow-custom font-semibold text-sm transition ${
               !userPosition
                 ? 'bg-gray-600 text-gray-500 cursor-not-allowed'
                 : tradeType === 'sell'
@@ -262,12 +269,7 @@ export const TradingInterface: React.FC<TradingInterfaceProps> = ({
           </button>
         </div>
         
-        {/* Debug Info */}
-        <div className="text-xs text-gray-500 bg-[#1A1A1A] p-2 rounded border border-[#2A2A2A]">
-          <div>Debug: userPositions count: {userPositions?.length || 0}</div>
-          <div>Debug: userPosition for market {marketId}: {userPosition ? 'FOUND' : 'NOT FOUND'}</div>
-          <div>Debug: userPosition details: {userPosition ? JSON.stringify(userPosition, null, 2) : 'null'}</div>
-        </div>
+       
       </div>
 
       {/* Position Type */}
@@ -278,23 +280,23 @@ export const TradingInterface: React.FC<TradingInterfaceProps> = ({
         <div className="flex space-x-2">
           <button
             onClick={() => setIsLong(true)}
-            className={`flex-1 py-3 rounded-md font-semibold text-sm transition ${
+            className={`flex-1 shadow-custom py-2 rounded-full font-semibold text-sm transition ${
               isLong
                 ? 'bg-green-600 text-white'
                 : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#3A3A3A]'
             }`}
           >
-            LONG (Yes)
+           Yes
           </button>
           <button
             onClick={() => setIsLong(false)}
-            className={`flex-1 py-3 rounded-md font-semibold text-sm transition ${
+            className={`flex-1 py-2 shadow-custom rounded-full  font-semibold text-sm transition ${
               !isLong
                 ? 'bg-red-600 text-white'
                 : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#3A3A3A]'
             }`}
           >
-            SHORT (No)
+         No
           </button>
         </div>
         <p className="text-xs text-gray-400">

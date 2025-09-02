@@ -129,7 +129,11 @@ const CreateMarketPage = ({ onMarketCreated, markets }) => {
       {!isConnected ? (
         <OpinioWalletConnect />
       ) : (
-        <div className="p-4 sm:p-6 bg-[#1A1A1A] text-white rounded-lg space-y-4 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+     <div>
+             <div>
+        <h2 className="text-xl font-semibold tracking-widest mb-4 h-10"></h2>
+      </div>
+        <div className="p-4 sm:p-6 bg-[#1A1A1A] text-white rounded-lg space-y-4 border border-[#2A2A2A] shadow-custom">
         <h2 className="text-xl font-semibold tracking-widest">CREATE MARKET</h2>
 
         <div>
@@ -238,7 +242,7 @@ const CreateMarketPage = ({ onMarketCreated, markets }) => {
                 </span>
               </button>
               {isDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-[#1A1A1A] border border-[#2A2A2A] rounded max-h-48 overflow-y-auto z-10 shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[#1A1A1A] border border-[#2A2A2A] rounded max-h-48 overflow-y-auto z-10 shadow-custom">
                   {availableTags.map((tag) => (
                     <button
                       key={tag.label}
@@ -307,6 +311,7 @@ const CreateMarketPage = ({ onMarketCreated, markets }) => {
         
 
         </div>
+     </div>
       )}
     </div>
   );
@@ -341,7 +346,7 @@ const MyMarketsPage = ({ markets, handleDelete }) => {
       <div>
         <h2 className="text-xl font-semibold tracking-widest mb-4 h-10"></h2>
       </div>
-      <div className="p-4 sm:p-6 bg-[#1A1A1A] text-white rounded-lg space-y-4 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+      <div className="p-4 sm:p-6 bg-[#1A1A1A] text-white rounded-lg space-y-4 border border-[#2A2A2A] shadow-custom">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold tracking-widest">MY MARKETS</h2>
           <div className="text-sm text-gray-400">

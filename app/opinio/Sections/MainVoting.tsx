@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useOpinioContext } from "@/app/Context/OpinioContext";
 import OpinioWalletConnect from "@/app/components/OpinioWalletConnect";
 import { useRouter } from "next/navigation";
-import { MarketProbabilities } from "@/app/components/MarketProbabilities";
+import { MarketProbabilities } from "@/app/components/MarketProbabilitiesslug";
 
 
 const navItems = [
@@ -120,7 +120,7 @@ export default function MainVoting() {
           ))}
         </div>
 
-        <div className="w-full mt-4 flex justify-center items-center px-4 py-3 rounded-md bg-[#1A1A1A] border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+        <div className="w-full mt-4 flex justify-center items-center px-4 rounded-md bg-[#1A1A1A] border border-[#2A2A2A] shadow-custom">
           <Search className="text-gray-400 mr-2" />
           <input
             type="search"
@@ -139,11 +139,11 @@ export default function MainVoting() {
         </div>
         
         {/* Debug Info */}
-        <div className="text-xs text-gray-400 text-center">
+        {/* <div className="text-sm text-gray-400 text-center">
           Markets: {markets?.length || 0} | Filtered: {filteredMarkets?.length || 0} | 
           Ready | 
           {isConnected ? ' Connected' : ' Not Connected'}
-        </div>
+        </div> */}
       </div>
 
 
@@ -163,79 +163,83 @@ export default function MainVoting() {
                 </div>
               ) : filteredMarkets && filteredMarkets.length > 0 ? (
                 filteredMarkets.map((market, index) => (
-                  <motion.div
-                    key={index}
-                    className="bg-[#1A1A1A] rounded-lg p-4 border border-[#2A2A2A] hover:border-[#6E54FF]/30 transition-all duration-200 shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)] hover:shadow-[0px_8px_30px_0px_rgba(110,84,255,0.1)] cursor-pointer"
-                    onClick={() => router.push(`/opinio/market-${market.marketId}`)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="flex items-center justify-center w-8 h-8 bg-[#6E54FF] rounded-md shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]">
-                        <span className="text-white text-xs font-bold">M</span>
-                      </div>
-                      <h3 className="text-white font-medium text-sm">{market.title}</h3>
-                    </div>
+<motion.div
+  key={index}
+  className="bg-[#1A1A1A] rounded-lg p-3 border border-[#2A2A2A] hover:border-[#6E54FF]/30 hover:shadow-custom transition-all duration-200 shadow-custom cursor-pointer"
+  onClick={() => router.push(`/opinio/market-${market.marketId}`)}
+  // whileHover={{ scale: 1.01 }}
+  whileTap={{ scale: 0.99 }}
+>
+  {/* Header */}
+  <div className="flex items-center gap-2 mb-2">
+    <div className="flex items-center justify-center w-7 h-7 bg-[#6E54FF] rounded-md shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]">
+      <span className="text-white text-sm font-bold">M</span>
+    </div>
+    <h3 className="text-white font-medium text-sm leading-tight flex-1">{market.title}</h3>
+  </div>
 
-                    {market.description && (
-                      <p className="text-gray-400 text-xs mb-3 line-clamp-2">
-                        {market.description}
-                      </p>
-                    )}
+  {/* Description */}
+  {market.description && (
+    <p className="text-gray-400 text-sm mb-2 line-clamp-2 leading-relaxed">
+      {market.description}
+    </p>
+  )}
 
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-gray-400">MARKET ID</span>
-                        <span className="text-white">#{market.marketId}</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-gray-400">STATUS</span>
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          market.isActive 
-                            ? 'bg-green-900/30 text-green-400' 
-                            : 'bg-red-900/30 text-red-400'
-                        }`}>
-                          {market.isActive ? 'Active' : 'Closed'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-gray-400">CATEGORY</span>
-                        <span className="text-white">{market.category || 'General'}</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-gray-400">END DATE</span>
-                        <span className="text-white">{new Date(Number(market.endDate) * 1000).toLocaleDateString()}</span>
-                      </div>
-                    </div>
+  {/* Market Details Grid */}
+  <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mb-3 text-sm">
+    {/* <div className="flex justify-between">
+      <span className="text-gray-500">ID</span>
+      <span className="text-white font-medium">#{market.marketId}</span>
+    </div>
+    <div className="flex justify-between">
+      <span className="text-gray-500">Status</span>
+      <span className={`px-1.5 py-0.5 rounded text-sm font-medium ${
+        market.isActive 
+          ? 'bg-green-900/30 text-green-400' 
+          : 'bg-red-900/30 text-red-400'
+      }`}>
+        {market.isActive ? 'Active' : 'Closed'}
+      </span>
+    </div> */}
+    <div className="flex justify-between">
+      <span className="text-gray-500">Category</span>
+      <span className="font-medium bg-green-900/30 px-1 rounded-md text-green-400">{market.category || 'General'}</span>
+    </div>
+    <div className="flex justify-between">
+      <span className="text-gray-500">Ends</span>
+      <span className="text-white font-medium">{new Date(Number(market.endDate) * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+    </div>
+  </div>
 
-                    {/* Market Probabilities */}
-                    <div className="mb-4">
-                      <MarketProbabilities 
-                        marketId={Number(market.marketId)} 
-                        className="w-full"
-                        refreshTrigger={Date.now()}
-                      />
-                    </div>
+  {/* Market Probabilities */}
+  <div className="mb-3">
+    <MarketProbabilities 
+      marketId={Number(market.marketId)} 
+      className="w-full"
+      refreshTrigger={Date.now()}
+    />
+  </div>
 
-                    <div className="flex justify-between items-center text-xs text-gray-400">
-                      <span>Created by: {market.creator.slice(0, 6)}...{market.creator.slice(-4)}</span>
-                      <span>
-                        <div className="flex justify-center items-center">
-                          <span className="text-gray-400">Market By</span>
-                          <img
-                            src="/navlogo.png"
-                            alt="clapo logo"
-                            className="w-auto h-4"
-                          />
-                          <img
-                            src="/verified.svg"
-                            alt="clapo logo"
-                            className="w-auto h-2 px-1"
-                          />
-                        </div>
-                      </span>
-                    </div>
-                  </motion.div>
+  {/* Footer */}
+  <div className="flex justify-between items-center text-sm">
+    <span className="text-gray-500">
+      By {market.creator.slice(0, 6)}...{market.creator.slice(-4)}
+    </span>
+    <div className="flex items-center gap-1">
+      <span className="text-gray-500">Market By</span>
+      <img
+        src="/navlogo.png"
+        alt="clapo logo"
+        className="w-auto h-3"
+      />
+      <img
+        src="/verified.svg"
+        alt="verified"
+        className="w-auto h-2"
+      />
+    </div>
+  </div>
+</motion.div>
                 ))
               ) : (
                 <div className="col-span-full text-center">

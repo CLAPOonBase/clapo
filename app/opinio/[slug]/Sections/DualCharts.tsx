@@ -101,7 +101,7 @@ const DualCharts: React.FC = () => {
   }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg p-3 shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+        <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg p-3 shadow-custom">
           <p className="text-white text-sm mb-2 font-medium">{label}</p>
           {payload.map((entry, index) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
@@ -258,7 +258,7 @@ const DualCharts: React.FC = () => {
   };
 
   return (
-    <div className="w-full relative pb-12 bg-[#1A1A1A] rounded-lg p-6 border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+    <div className="w-full relative pb-12 bg-[#1A1A1A] rounded-lg p-6 border border-[#2A2A2A] shadow-custom">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-8">
           <div className="flex items-center space-x-2">

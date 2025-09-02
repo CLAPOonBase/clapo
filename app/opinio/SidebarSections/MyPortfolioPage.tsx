@@ -137,7 +137,7 @@ const MyPortfolioPage = () => {
       ) : (
         <>
           <div className="w-full flex flex-col lg:flex-row gap-4">
-        <div className="bg-[#1A1A1A] p-4 space-y-4 rounded-md w-full flex flex-col text-left group border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+        <div className="bg-[#1A1A1A] p-4 space-y-4 rounded-md w-full flex flex-col text-left group border border-[#2A2A2A] shadow-custom">
           <div className="justify-between flex">
             <span className="flex items-center">
               <ArrowRight className="-rotate-45 text-green-500 transition-transform duration-200" />
@@ -189,7 +189,7 @@ const MyPortfolioPage = () => {
           </div>
         </div>
 
-        <div className="bg-[#1A1A1A] p-4 space-y-4 rounded-md w-full flex flex-col text-left border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+        <div className="bg-[#1A1A1A] p-4 space-y-4 rounded-md w-full flex flex-col text-left border border-[#2A2A2A] shadow-custom">
           <div className="justify-between flex">
             <span className="flex items-center">
               {isProfit ? (
@@ -315,7 +315,7 @@ const MyPortfolioPage = () => {
       )}
 
       {/* Real User Positions */}
-      <div className="bg-[#1A1A1A] p-4 rounded-md border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+      <div className="bg-[#1A1A1A] p-4 rounded-md border border-[#2A2A2A] shadow-custom">
         <h3 className="text-lg font-semibold mb-4 text-white">Your Positions</h3>
         
         {userPositions.length > 0 ? (
@@ -384,7 +384,7 @@ const MyPortfolioPage = () => {
       </div>
 
       {/* User Votes History */}
-      <div className="bg-[#1A1A1A] p-4 rounded-md border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+      <div className="bg-[#1A1A1A] p-4 rounded-md border border-[#2A2A2A] shadow-custom">
         <h3 className="text-lg font-semibold mb-4 text-white">Your Votes</h3>
         
         {userVotes.length > 0 ? (

@@ -8,6 +8,7 @@ import MyPortfolioPage from "./SidebarSections/MyPortfolioPage";
 import WalletPage from "./SidebarSections/WalletPage";
 import SettingsPage from "./SidebarSections/SettingsPage";
 import CreateMarketPage from "./SidebarSections/CreateMarketPage";
+import Footer from "../components/Footer";
 
 export default function OpinioPage() {
   const [currentPage, setCurrentPage] = useState<
@@ -42,10 +43,11 @@ export default function OpinioPage() {
       className="min-h-screen bg-[#0A0A0A]"
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
-      <div className="flex sticky top-20">
+      <div className="flex sticky top-20 h-[600px]">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
         <div className="w-full bg-[#0A0A0A]">{renderContent()}</div>
       </div>
+      <Footer />
     </motion.div>
   );
 }

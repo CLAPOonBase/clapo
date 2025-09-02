@@ -97,7 +97,7 @@ const UserDetails = () => {
   return (
     <div>
       <div className="w-full rounded-md md:flex md:space-x-4 space-y-4 md:space-y-0 justify-between">
-        <div className="bg-[#1A1A1A] p-4 rounded-md w-full flex flex-col text-left border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+        <div className="bg-[#1A1A1A] p-4 rounded-md w-full flex flex-col text-left border border-[#2A2A2A] shadow-custom">
           <div className="flex items-center space-x-2 mb-2">
             <span className="text-2xl text-secondary">
               Hey, {address ? formatAddress(address) : "Guest"}
@@ -156,7 +156,7 @@ const UserDetails = () => {
           </div>
         </div>
 
-        <div className="bg-[#1A1A1A] p-4 rounded-md w-full flex justify-between items-center border border-[#2A2A2A] shadow-[0px_4px_20px_0px_rgba(0,0,0,0.3)]">
+        <div className="bg-[#1A1A1A] p-4 rounded-md w-full flex justify-between items-center border border-[#2A2A2A] shadow-custom">
           <div className="flex flex-col items-start text-gray-400 w-full">
             <span>Balances</span>
 
