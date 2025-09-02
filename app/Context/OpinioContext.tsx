@@ -126,8 +126,20 @@ export const OpinioProvider: React.FC<OpinioProviderProps> = ({ children }) => {
   }, []);
 
   const refreshData = useCallback(async () => {
+    console.log('🔄 refreshData called with:', {
+      service: !!service,
+      serviceType: service?.constructor?.name,
+      isConnected,
+      walletAddress: walletAddress,
+      walletAddressType: typeof walletAddress
+    });
+    
     if (!service || !isConnected || !walletAddress) {
-
+      console.log('⚠️ refreshData early return - missing:', {
+        service: !!service,
+        isConnected,
+        walletAddress: !!walletAddress
+      });
 
       setUserPositions([]);
       setUserVotes([]);
@@ -135,11 +147,23 @@ export const OpinioProvider: React.FC<OpinioProviderProps> = ({ children }) => {
       setUsdcStatus(null);
       return;
     }
+    
+    // Force refresh markets data as well
+    console.log('🔄 Force refreshing markets data...');
+    try {
+      const marketsData = await service.getAllMarkets();
+      setMarkets(marketsData);
+      console.log('✅ Markets refreshed:', marketsData.length);
+    } catch (err) {
+      console.error('❌ Failed to refresh markets:', err);
+    }
 
     setLoading(true);
     setError(null);
 
     try {
+      console.log('🔄 Starting data fetch for wallet:', walletAddress);
+      
       const [
         marketsData,
         positions,
@@ -154,13 +178,30 @@ export const OpinioProvider: React.FC<OpinioProviderProps> = ({ children }) => {
         service.getUSDCStatus(walletAddress)
       ]);
 
+      console.log('📊 Data fetch results:', {
+        markets: marketsData?.length || 0,
+        positions: positions?.length || 0,
+        votes: votes?.length || 0,
+        summary: !!summary,
+        usdc: !!usdcData
+      });
+
+      console.log('📊 Detailed position data:', {
+        positionsArray: positions,
+        positionsType: typeof positions,
+        positionsLength: positions?.length,
+        firstPosition: positions?.[0]
+      });
+
       setMarkets(marketsData);
       setUserPositions(positions);
       setUserVotes(votes);
       setTradingSummary(summary);
       setUsdcStatus(usdcData);
+      
+      console.log('✅ State updated - userPositions set to:', positions?.length || 0, 'positions');
     } catch (err) {
-      console.error('Error refreshing data:', err);
+      console.error('❌ Error refreshing data:', err);
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
     } finally {
       setLoading(false);
@@ -220,9 +261,15 @@ export const OpinioProvider: React.FC<OpinioProviderProps> = ({ children }) => {
       
 
       const newService = new OpinioContractService(newProvider, newSigner);
+      console.log('🔧 Creating new service:', {
+        serviceType: newService.constructor.name,
+        provider: !!newProvider,
+        signer: !!newSigner
+      });
       setService(newService);
       
       const address = await newSigner.getAddress();
+      console.log('🔧 Setting wallet address:', address);
       setWalletAddress(address);
       
       const finalNetwork = await newProvider.getNetwork();
@@ -233,6 +280,15 @@ export const OpinioProvider: React.FC<OpinioProviderProps> = ({ children }) => {
       
       setIsConnected(true);
       
+      // Force refresh markets with the new service
+      console.log('🔄 Refreshing markets with new service...');
+      try {
+        const freshMarkets = await newService.getAllMarkets();
+        setMarkets(freshMarkets);
+        console.log('✅ Markets refreshed with new service:', freshMarkets.length);
+      } catch (err) {
+        console.error('❌ Failed to refresh markets with new service:', err);
+      }
 
       await refreshData();
     } catch (err) {
@@ -240,6 +296,29 @@ export const OpinioProvider: React.FC<OpinioProviderProps> = ({ children }) => {
       setIsConnected(false);
     }
   }, [refreshData]);
+
+  // Periodic refresh for connected users
+  useEffect(() => {
+    if (!isConnected || !service || !walletAddress) return;
+    
+    const interval = setInterval(async () => {
+      console.log('🔄 Periodic refresh triggered...');
+      try {
+        // Refresh markets data
+        const freshMarkets = await service.getAllMarkets();
+        setMarkets(freshMarkets);
+        
+        // Refresh user data
+        await refreshData();
+        
+        console.log('✅ Periodic refresh completed');
+      } catch (err) {
+        console.error('❌ Periodic refresh failed:', err);
+      }
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [isConnected, service, walletAddress, refreshData]);
 
   const connectWithMetaMask = useCallback(async (newProvider: ethers.Provider, newSigner: ethers.Signer) => {
 

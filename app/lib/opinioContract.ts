@@ -672,13 +672,13 @@ export class OpinioContractService {
           let option = options.find(opt => Number(opt.optionId) === Number(userShares.optionId));
           
 
-          if (!option && options.length === 0) {
+          if (!option) {
             console.log(`📝 Market ${marketId} has no options - creating default Yes/No option`);
             option = {
               optionId: userShares.optionId,
               optionText: userShares.isLong ? "Yes" : "No",
               totalShares: 0n,
-              currentPrice: 500000n,
+              currentPrice: userShares.price,
               isWinning: false,
               totalVotes: 0n
             };

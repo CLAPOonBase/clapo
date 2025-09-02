@@ -32,6 +32,10 @@ export const TradingInterface: React.FC<TradingInterfaceProps> = ({
   
   // Find user's current position for this market
   useEffect(() => {
+    console.log('🔍 TradingInterface useEffect - userPositions:', userPositions);
+    console.log('🔍 TradingInterface useEffect - marketId:', marketId);
+    console.log('🔍 TradingInterface useEffect - isConnected:', isConnected);
+    
     if (userPositions && userPositions.length > 0) {
       const position = userPositions.find(pos => Number(pos.marketId) === marketId);
       setUserPosition(position);
@@ -43,9 +47,10 @@ export const TradingInterface: React.FC<TradingInterfaceProps> = ({
         console.log('🔄 Auto-set position to match user holdings:', position.isLong ? 'LONG' : 'SHORT');
       }
     } else {
+      console.log('⚠️ No userPositions found or empty array');
       setUserPosition(null);
     }
-  }, [userPositions, marketId, tradeType]);
+  }, [userPositions, marketId, tradeType, isConnected]);
 
   const handleTrade = async () => {
     if (!isConnected) {
@@ -118,8 +123,20 @@ export const TradingInterface: React.FC<TradingInterfaceProps> = ({
     >
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-white">Trade Shares</h3>
-        <div className="text-xs text-gray-400">
-          Market ID: {marketId}
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => {
+              console.log('🔄 Manual refresh requested');
+              // Trigger a refresh of the context data
+              window.location.reload();
+            }}
+            className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition"
+          >
+            🔄 Refresh
+          </button>
+          <div className="text-xs text-gray-400">
+            Market ID: {marketId}
+          </div>
         </div>
       </div>
 
@@ -243,6 +260,13 @@ export const TradingInterface: React.FC<TradingInterfaceProps> = ({
           >
             Sell Shares {!userPosition ? '(No Position)' : ''}
           </button>
+        </div>
+        
+        {/* Debug Info */}
+        <div className="text-xs text-gray-500 bg-[#1A1A1A] p-2 rounded border border-[#2A2A2A]">
+          <div>Debug: userPositions count: {userPositions?.length || 0}</div>
+          <div>Debug: userPosition for market {marketId}: {userPosition ? 'FOUND' : 'NOT FOUND'}</div>
+          <div>Debug: userPosition details: {userPosition ? JSON.stringify(userPosition, null, 2) : 'null'}</div>
         </div>
       </div>
 
