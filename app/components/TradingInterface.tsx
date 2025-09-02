@@ -304,8 +304,10 @@ export const TradingInterface: React.FC<TradingInterfaceProps> = ({
       </div>
 
       {/* Trade Summary */}
-      <div className="bg-[#2A2A2A] p-4 rounded-md space-y-2">
+      <div className="bg-[#2A2A2A] p-4 rounded-md space-y-3">
         <h4 className="text-sm font-medium text-white">Trade Summary</h4>
+        
+        {/* Basic Trade Info */}
         <div className="grid grid-cols-2 gap-4 text-xs">
           <div>
             <span className="text-gray-400">Action:</span>
@@ -327,6 +329,57 @@ export const TradingInterface: React.FC<TradingInterfaceProps> = ({
             <span className="text-gray-400">Expected:</span>
             <div className="text-white font-medium">
               {isLong ? 'Outcome happens' : 'Outcome doesn\'t happen'}
+            </div>
+          </div>
+        </div>
+
+        {/* Trading Details */}
+        <div className="border-t border-[#3A3A3A] pt-3">
+          <h5 className="text-xs font-medium text-gray-300 mb-2">Trading Details</h5>
+          <div className="grid grid-cols-2 gap-4 text-xs">
+            <div>
+              <span className="text-gray-400">Shares:</span>
+              <div className="text-white font-medium">
+                {marketData && marketData.currentLongPrice && marketData.currentShortPrice ? 
+                  (isLong ? 
+                    (amount / (Number(marketData.currentLongPrice) / 1e6)).toFixed(2) :
+                    (amount / (Number(marketData.currentShortPrice) / 1e6)).toFixed(2)
+                  ) : 'Calculating...'
+                }
+              </div>
+            </div>
+            <div>
+              <span className="text-gray-400">Avg Price:</span>
+              <div className="text-white font-medium">
+                {marketData && marketData.currentLongPrice && marketData.currentShortPrice ? 
+                  `$${(isLong ? 
+                    Number(marketData.currentLongPrice) / 1e6 :
+                    Number(marketData.currentShortPrice) / 1e6
+                  ).toFixed(3)}` : 'Calculating...'
+                }
+              </div>
+            </div>
+            <div>
+              <span className="text-gray-400">Max Payout:</span>
+              <div className="text-white font-medium">
+                {marketData && marketData.currentLongPrice && marketData.currentShortPrice ? 
+                  `$${(isLong ? 
+                    (amount / (Number(marketData.currentLongPrice) / 1e6)) :
+                    (amount / (Number(marketData.currentShortPrice) / 1e6))
+                  ).toFixed(2)}` : 'Calculating...'
+                }
+              </div>
+            </div>
+            <div>
+              <span className="text-gray-400">Potential Return:</span>
+              <div className="text-white font-medium">
+                {marketData && marketData.currentLongPrice && marketData.currentShortPrice ? 
+                  `${(isLong ? 
+                    ((1 - Number(marketData.currentLongPrice) / 1e6) / (Number(marketData.currentLongPrice) / 1e6) * 100) :
+                    ((1 - Number(marketData.currentShortPrice) / 1e6) / (Number(marketData.currentShortPrice) / 1e6) * 100)
+                  ).toFixed(1)}%` : 'Calculating...'
+                }
+              </div>
             </div>
           </div>
         </div>
