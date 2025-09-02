@@ -52,6 +52,29 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   const postAvatar = isApiPost ? post.avatar_url : undefined
   const currentUserId = session?.dbUser?.id
   const currentUserAvatar = session?.dbUser?.avatar_url
+  console.log("Current User Avatar:", session.dbUser.avatar_url);
+  const [profile, setProfile] = useState<any | null>(null)
+const [loading, setLoading] = useState(false)
+  const { getUserProfile, getUserFollowers, getUserFollowing, followUser, unfollowUser } = useApi()
+
+useEffect(() => {
+  const fetchProfile = async () => {
+    if (session?.dbUser?.id) {
+      try {
+        setLoading(true)
+        const profileData = await getUserProfile(session.dbUser.id)
+        setProfile(profileData.profile)
+      } catch (error) {
+        console.error('Failed to fetch profile:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+  }
+
+  fetchProfile()
+}, [session?.dbUser?.id, getUserProfile])
+
 
   const isUserInLikes = isApiPost && post.likes?.some(u => u.user_id === currentUserId)
   const isUserInRetweets = isApiPost && post.retweets?.some(u => u.user_id === currentUserId)
@@ -625,8 +648,8 @@ const handleImageClick = (e: React.MouseEvent) => {
 
           <form onSubmit={handleCommentSubmit} className="flex items-center space-x-3 pt-4 ">
             <div className="relative w-10 h-10 flex-shrink-0">
-              {currentUserAvatar ? (
-                <img src={currentUserAvatar} alt="Your avatar" className="w-full h-full rounded-full object-cover" />
+              {profile?.avatar_url ? (
+                <img src={profile?.avatar_url} alt="Your avatar" className="w-full h-full rounded-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-indigo-500 rounded-full flex items-center justify-center text-sm font-semibold text-white">
                   {session?.dbUser?.username?.substring(0, 2)?.toUpperCase() || 'U'}
