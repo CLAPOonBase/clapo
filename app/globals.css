@@ -501,3 +501,10 @@ input[type=number] {
     0px 1px 2px 0px rgba(0, 0, 0, 0.8),
     0px 0px 0px 1px #1a1a1a;
 }
+
+.shadow-custom-purple {
+  box-shadow: 
+    0px 1px 0.5px 0px rgba(255, 255, 255, 0.5) inset, /* inner white highlight */
+    0px 1px 2px 0px rgba(110, 84, 255, 0.5),         /* purple glow */
+    0px 0px 0px 1px #6E54FF;                         /* purple border */
+}

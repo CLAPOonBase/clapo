@@ -276,7 +276,7 @@ export default function MessagePage() {
 
   return (
       <div className="md:static fixed inset-x-0 z-[9999]">
-    <div className="md:h-[700px] h-screen flex">
+    <div className=" flex">
       {/* Mobile Layout */}
       <div className="md:hidden w-full flex">
         {/* Sidebar View */}
@@ -286,7 +286,7 @@ export default function MessagePage() {
           {/* Header */}
           <div className="p-4 border-b border-slate-700/50">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold bg-[#6E54FF] bg-clip-text text-transparent">
+              <h2 className="text-xl font-bold text-[#6E54FF]">
                 Messages
               </h2>
               <ConnectionStatus isConnected={isConnected} />
@@ -366,9 +366,9 @@ export default function MessagePage() {
       </div>
 
       {/* Desktop Layout */}
-      <div  className="hidden md:flex w-full rounded-xl shadow-2xl overflow-hidden">
+      <div  className="hidden md:flex w-full shadow-2xl overflow-hidden">
         {/* Sidebar */}
-        <div  className="w-80 flex flex-col border-r border-secondary/50">
+        <div  className="w-80 h-screen flex flex-col border-r border-gray-700/70">
           {/* Header */}
           <div className="p-6 border-b border-slate-700/50">
             <div className="flex items-center justify-between mb-6">
@@ -416,7 +416,7 @@ export default function MessagePage() {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 max-h-screen flex flex-col">
           <ChatHeader 
             activeTab={activeTab}
             currentThread={currentThread}

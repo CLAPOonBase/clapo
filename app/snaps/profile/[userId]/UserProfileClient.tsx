@@ -372,7 +372,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
     return (
       <div className="flex-col md:flex-row text-white flex mx-auto">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-        <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky top-20 bg-dark-800 p-4">
+        <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-dark-800 p-4">
           <div className="animate-pulse">
             <div className="flex items-center space-x-4 mb-6">
               <div className="w-20 h-20 bg-dark-700 rounded-full"></div>
@@ -391,7 +391,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
     return (
       <div className="flex-col md:flex-row text-white flex mx-auto">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-        <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky top-20 bg-dark-800 p-4">
+        <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-dark-800 p-4">
           <div className="text-center py-8 text-dark-400">
             User not found
           </div>
@@ -403,7 +403,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
   return (
     <div className="flex-col md:flex-row text-white flex mx-auto">
       <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-      <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky top-20 bg-dark-800 p-4">
+      <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-dark-800 p-4">
         {/* Back Button */}
         <div className="mb-6">
           <button
@@ -935,7 +935,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
       )}
       
       {session?.dbUser && (
-        <div className="hidden md:block top-20 w-[300px]">
+        <div className="hidden md:block  w-[300px]">
           <UserActivityFeed username={session.dbUser.username} activity={[]} />
         </div>
       )}

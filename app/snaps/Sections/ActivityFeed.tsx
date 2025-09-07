@@ -137,30 +137,21 @@ export default function UserActivityFeed({ username, activity }: UserActivityFee
   const displayActivity = activity && activity.length > 0 ? activity : fakeActivity
 
   return (
-    <div 
-      style={{
-        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.1) inset, 0px 1px 2px 0px rgba(0, 0, 0, 0.8), 0px 0px 0px 1px #1a1a1a",
-      }}
-      className="bg-dark-800 text-white rounded-2xl mx-4 sticky top-20 overflow-hidden"
-    >
-      {/* Header */}
-      <div className="p-4 ">
-        <h2 className="text-sm font-medium text-gray-300 uppercase tracking-wider">
-          ACTIVITY FEED
-        </h2>
-      </div>
-
+    <div className="text-white">
       {/* Activity List */}
-      <div className="max-h-96 overflow-y-auto">
+      <div className="max-h-72 overflow-y-auto">
         {displayActivity.map((activityItem, index) => (
-          <div key={index} className="flex items-start p-4 hover:bg-gray-800 transition-colors">
+          <div 
+            key={index} 
+            className="flex items-start p-4 hover:bg-gray-800 transition-colors"
+          >
             <img 
               src={activityItem.avatar} 
               alt={activityItem.user}
               className="w-8 h-8 rounded-full mr-3 flex-shrink-0"
             />
             <div className="flex-1">
-              <div className="text-sm font-medium text-white mb-1">
+              <div className="text-xs font-medium text-white mb-1">
                 {activityItem.user}
               </div>
               <div className="text-xs text-gray-300 mb-1">
@@ -168,7 +159,7 @@ export default function UserActivityFeed({ username, activity }: UserActivityFee
               </div>
               <div className="flex items-center">
                 {getActivityIcon(activityItem.activity_type)}
-                <div className="text-sm font-semibold text-green-400 ml-2">
+                <div className="text-xs font-semibold text-green-400 ml-2">
                   FOR ${activityItem.price.toFixed(2)}
                 </div>
               </div>
@@ -177,12 +168,7 @@ export default function UserActivityFeed({ username, activity }: UserActivityFee
         ))}
       </div>
 
-      {/* See More Footer */}
-      <div className="p-4 border-t border-gray-700 text-center">
-        <button className="text-xs text-gray-400 hover:text-white transition-colors uppercase tracking-wider">
-          SEE MORE
-        </button>
-      </div>
+      
     </div>
   )
 }

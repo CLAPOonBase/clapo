@@ -12,6 +12,7 @@ import Toast from '../../components/Toast'
 import { AnimatePresence, motion } from "framer-motion"
 import CommentInputBar from './CommentInputBar'
 import { UserProfileHover } from '../../components/UserProfileHover'
+import PostTrade from '@/app/components/PostTrade'
 
 type Props = {
   post: Post | ApiPost
@@ -394,7 +395,7 @@ const handleImageClick = (e: React.MouseEvent) => {
   return (
     <>
       <div 
-        className="shadow-custom bg-dark-700/70 rounded-3xl mt-6 p-6 mb-6 shadow-sm hover:shadow-md transition-all duration-200" 
+        className="shadow-custom rounded-3xl mt-6 p-6 mb-6 shadow-sm hover:shadow-md transition-all duration-200" 
         onClick={handleView}
       >
         <div className="flex flex-col space-y-4">
@@ -567,7 +568,10 @@ const handleImageClick = (e: React.MouseEvent) => {
                 <span className="text-sm font-medium">{localEngagement.retweets} Share</span>
               </button>
             </div>
-
+    <div className='flex items-center space-x-6'>
+      <div>
+        <PostTrade/>
+      </div>
             <button 
               onClick={e => { 
                 e.stopPropagation()
@@ -579,6 +583,7 @@ const handleImageClick = (e: React.MouseEvent) => {
               <Bookmark className={`w-5 h-5 transition-all duration-200 ${userEngagement.bookmarked ? 'fill-purple-500 scale-110' : ''}`} />
               <span className="text-sm hidden md:block font-medium">{localEngagement.bookmarks} Saved</span>
             </button>
+    </div>
           </div>
 
           <AnimatePresence>

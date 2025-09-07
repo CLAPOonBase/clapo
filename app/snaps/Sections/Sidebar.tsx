@@ -1,130 +1,182 @@
 "use client";
-
-import { Home, Search, Bell, User, MessageCircle, Activity, Share, Blocks } from "lucide-react";
-import { PageKey } from "@/app/types";
+import { Home, Bell, User, MessageCircle, Activity, Blocks } from "lucide-react";
 import { useState } from "react";
-import UserProfileCard from "./UserProfileCard";
+import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
+
+type PageKey = "home" | "notifications" | "activity" | "messages" | "profile" | "share";
 
 type SidebarProps = {
   setCurrentPage: (page: PageKey) => void;
   currentPage?: PageKey;
+  collapsibleItems?: PageKey[];
+  alwaysExpanded?: boolean;
 };
 
 const navItems: {
   label: string;
   value: PageKey;
   icon: React.ReactNode;
+  activeIcon: React.ReactNode;
   showOnMobile?: boolean;
   showOnDesktop?: boolean;
 }[] = [
-  { label: "Home", value: "home", icon: <Home className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
-  // { label: "Explore", value: "explore", icon: <Search className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
-  { label: "Notifications", value: "notifications", icon: <Bell className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
-  { label: "Activity", value: "activity", icon: <Activity className="w-5 h-5 md:mr-4" />, showOnDesktop: false },
-  { label: "Messages", value: "messages", icon: <MessageCircle className="w-5 h-5 md:mr-4" />, showOnMobile: true },
-  { label: "Profile", value: "profile", icon: <User className="w-5 h-5 md:mr-4" />, showOnDesktop: true },
-  { label: "Share", value: "share", icon: <Blocks className="w-5 h-5 md:mr-4" />, showOnDesktop: true },
+  { 
+    label: "Home", 
+    value: "home", 
+    icon: <Home className="w-6 h-6" />, 
+    activeIcon: <Home className="w-6 h-6" fill="currentColor" />,
+    showOnMobile: true, 
+    showOnDesktop: true 
+  },
+  { 
+    label: "Notifications", 
+    value: "notifications", 
+    icon: <Bell className="w-6 h-6" />, 
+    activeIcon: <Bell className="w-6 h-6" fill="currentColor" />,
+    showOnMobile: true, 
+    showOnDesktop: true 
+  },
+  { 
+    label: "Activity", 
+    value: "activity", 
+    icon: <Activity className="w-6 h-6" />, 
+    activeIcon: <Activity className="w-6 h-6" fill="currentColor" />,
+    showOnDesktop: true 
+  },
+  { 
+    label: "Messages", 
+    value: "messages", 
+    icon: <MessageCircle className="w-6 h-6" />, 
+    activeIcon: <MessageCircle className="w-6 h-6" fill="currentColor" />,
+    showOnMobile: true 
+  },
+  { 
+    label: "Profile", 
+    value: "profile", 
+    icon: <User className="w-6 h-6" />, 
+    activeIcon: <User className="w-6 h-6" fill="currentColor" />,
+    showOnDesktop: true 
+  },
+  { 
+    label: "Share", 
+    value: "share", 
+    icon: <Blocks className="w-6 h-6" />, 
+    activeIcon: <Blocks className="w-6 h-6" fill="currentColor" />,
+    showOnDesktop: true 
+  },
 ];
 
-export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+export default function Sidebar({ 
+  setCurrentPage, 
+  currentPage = "home",
+  collapsibleItems = ["messages"], 
+  alwaysExpanded = false
+}: SidebarProps) {
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleNavClick = (value: PageKey) => {
     setCurrentPage(value);
-    setIsMobileMenuOpen(false);
   };
 
+  const shouldCollapse = !alwaysExpanded && collapsibleItems.includes(currentPage);
+  const sidebarWidth = shouldCollapse ? (isHovered ? 220 : 85) : 220;
+
   return (
-    <>
-      {/* Mobile Overlay */}
-      {isMobileMenuOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* Desktop Sidebar (only visible on lg and up) */}
-      <div
-        className={`shadow-custom
-          hidden lg:block
-          sticky top-20
-          h-full
-          w-16 lg:w-64
-          px-4
-          bg-dark-800 mx-4 rounded-2xl
-          space-y-4
-          overflow-y-auto
-          pb-4
-        `}
+    <div className="fixed left-0 top-0 max-h-screen bg-black border-r-2 border-gray-700/70 z-50">
+      <motion.div
+        onMouseEnter={() => shouldCollapse && setIsHovered(true)}
+        onMouseLeave={() => shouldCollapse && setIsHovered(false)}
+        animate={{ width: sidebarWidth }}
+        transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.8 }}
+        className="flex flex-col justify-between h-screen px-4 py-6 overflow-hidden"
       >
-        {/* User Profile Section */}
-        <UserProfileCard onManageClick={() => handleNavClick("profile")} />
+        {/* Logo Section */}
+        <div>
+          <div className="flex items-center justify-start px-4 mb-36">
+            <Image
+              src="/navlogo.png"
+              alt="Clapo Logo"
+              width={140}
+              height={40}
+              className="object-contain h-8 w-auto"
+            />
+          </div>
 
-        {/* Navigation */}
-        <nav className="space-y-2 relative bg-dark-800 rounded-md text-secondary">
-          <div
-            className="absolute bg-primary rounded-full transition-all duration-300 ease-in-out"
-            style={{
-              top: `${
-                0 +
-                navItems
-                  .filter((item) => item.showOnDesktop !== false)
-                  .findIndex((item) => item.value === currentPage) * 56
-              }px`,
-              left: "0px",
-              right: "0px",
-              height: "48px",
-              opacity: currentPage ? 1 : 0,
-               boxShadow:
-          "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(26, 19, 161, 0.50), 0px 0px 0px 1px #4F47EB",
-        backgroundColor: "#6E54FF",
-        color: "white",
-        padding: "8px 16px"
-            }}
-          />
-          {navItems
-            .filter((item) => item.showOnDesktop !== false)
-            .map(({ label, value, icon }) => (
-              <div
-                key={value}
-                onClick={() => handleNavClick(value)}
-                className={`
-                  relative flex items-center p-3 rounded-lg cursor-pointer transition-colors duration-300
-                  ${currentPage === value ? "text-white" : "text-gray-400"}
-                `}
-                title={label}
-              >
-                <div className="flex-shrink-0 z-10">{icon}</div>
-                <span className="hidden lg:block ml-4 truncate z-10">{label}</span>
-              </div>
-            ))}
-        </nav>
-      </div>
+          {/* Navigation */}
+          <nav className="flex flex-col gap-1">
+            {navItems
+              .filter((item) => item.showOnDesktop !== false)
+              .map(({ label, value, icon, activeIcon }, index) => {
+                const showLabel = !shouldCollapse || isHovered;
+                const isActive = currentPage === value;
 
-      {/* Bottom Navigation Bar (Mobile + iPad, hidden only on lg and up) */}
-      <div
-        style={{ zIndex: "1000" }}
-        className="lg:hidden fixed bottom-0 left-0 right-0 bg-dark-800 border-t border-gray-700 z-30"
-      >
-        <div className="flex justify-around items-center py-2 px-4">
-          {navItems
-            .filter((item) => item.showOnMobile !== false)
-            .map(({ value, icon }) => (
-              <button
-                key={value}
-                onClick={() => handleNavClick(value)}
-                className={`flex flex-col items-center justify-center p-2 min-w-0 flex-1 ${
-                  currentPage === value
-                    ? "text-white bg-gray-700 rounded-full"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                <div className="w-5 h-5 mb-1">{icon}</div>
-              </button>
-            ))}
+                return (
+                  <motion.button
+                    key={value}
+                    onClick={() => handleNavClick(value)}
+                    className={`flex items-center px-4 py-1.5 rounded-xl transition-all duration-200 group relative text-left
+                      ${isActive 
+                        ? "text-white font-semibold" 
+                        : "text-gray-400 hover:text-white hover:bg-gray-700/40"
+                      }
+                    `}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <span className="flex-shrink-0">
+                      {isActive ? activeIcon : icon}
+                    </span>
+
+                    <AnimatePresence mode="wait">
+                      {showLabel && (
+                        <motion.span
+                          className="ml-4 whitespace-nowrap font-medium text-sm"
+                          initial={shouldCollapse ? { opacity: 0, x: -10 } : { opacity: 1, x: 0 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={shouldCollapse ? { opacity: 0, x: -10 } : { opacity: 1, x: 0 }}
+                          transition={{ duration: 0.15, ease: "easeOut" }}
+                        >
+                          {label}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+                );
+              })}
+          </nav>
         </div>
-      </div>
-    </>
+
+        {/* Bottom Section */}
+        <AnimatePresence>
+          {(!shouldCollapse || isHovered) && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ delay: 0.1 }}
+              className="space-y-3"
+            >
+              <div className="text-xs text-gray-500 uppercase tracking-wider px-4">
+                Explore More
+              </div>
+              
+              <div className="space-y-2">
+                <button className="w-full px-4 py-2 rounded-lg text-center bg-gray-700/30 border border-gray-600/40 hover:bg-gray-700/50 transition-colors">
+                  <div className="text-gray-300 font-medium text-sm">Opinio</div>
+                </button>
+                
+                <button className="w-full px-4 py-2 rounded-lg text-center bg-gray-700/30 border border-gray-600/40 hover:bg-gray-700/50 transition-colors">
+                  <div className="text-gray-300 font-medium text-sm">Snaps</div>
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </div>
   );
 }
