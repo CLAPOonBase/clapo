@@ -164,7 +164,7 @@ const NotificationPage = () => {
 
   if (loading && notifications.length === 0) {
     return (
-      <div className="sticky top-20 bg-dark-700/70 p-4 rounded-2xl flex flex-col items-center justify-center text-white border border-[#2A2A2A] shadow-custom">
+      <div className="sticky  bg-dark-700/70 p-4 rounded-2xl flex flex-col items-center justify-center text-white border border-[#2A2A2A] shadow-custom">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6E54FF] mb-4"></div>
         <div className="text-gray-400">Loading notifications...</div>
       </div>
@@ -172,7 +172,7 @@ const NotificationPage = () => {
   }
 
   return (
-    <div className="sticky top-20 flex flex-col rounded-2xl bg-dark-700/70 border border-[#2A2A2A] shadow-custom">
+    <div className="sticky  flex flex-col rounded-2xl bg-dark-700/70 border border-[#2A2A2A] shadow-custom">
       {/* Header */}
       <div className="p-6 border-b border-[#2A2A2A]">
         <div className="flex items-center justify-between mb-4">

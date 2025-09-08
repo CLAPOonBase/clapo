@@ -296,10 +296,10 @@ export function SnapComposer() {
         onClose={handleCloseToast}
       />
       
-      <div className="w-full shadow-custom bg-dark-800 backdrop-blur-sm rounded-xl p-5 shadow-xl">
+      <div className="w-full border-2 border-gray-700/70 shadow-custom backdrop-blur-sm rounded-xl p-2 shadow-xl">
         {/* Text Input */}
          <div className='flex'>
-         <div className='rounded-full h-14 w-14'>
+         <div className='rounded-full h-12 w-12'>
        <Image
         src={profile?.avatar_url && profile.avatar_url.trim() !== "" ? profile.avatar_url : "/4.png"}
         alt="profile avatar"
@@ -309,9 +309,9 @@ export function SnapComposer() {
       />
 
          </div>
-        <div className="relative w-full ">
+        <div className="relative w-full">
           <TextareaAutosize
-            minRows={3}
+            minRows={1}
             maxRows={8}
             value={content}
             onChange={(e) => setContent(e.target.value)}
