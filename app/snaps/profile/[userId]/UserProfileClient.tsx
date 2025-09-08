@@ -58,7 +58,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
   const [activeTab, setActiveTab] = useState<'posts' | 'activity' | 'followers'>('posts')
   const [isFollowing, setIsFollowing] = useState(false)
   const [isCheckingFollowStatus, setIsCheckingFollowStatus] = useState(false)
-  const [currentPage, setCurrentPage] = useState<'home' | 'explore' | 'notifications' | 'likes' | 'activity' | 'profile' | 'messages' | 'bookmarks' | 'share' | 'search'>('home')
+  const [currentPage, setCurrentPage] = useState<'home' | 'notifications' | 'likes' | 'activity' | 'profile' | 'messages' | 'bookmarks' | 'share' | 'search'>('home')
   
   // Message state
   const [selectedThread, setSelectedThread] = useState<string | null>(null)

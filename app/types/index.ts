@@ -87,6 +87,8 @@ export type PageKey =
   | 'activity'
   | 'messages'
   | 'share'
+  | 'explore'
+  | 'search';
 
   export type OpinionPageKey =
   | 'exploremarket'
