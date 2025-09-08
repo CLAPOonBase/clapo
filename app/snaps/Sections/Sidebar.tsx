@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
-type PageKey = "home" | "notifications" | "activity" | "messages" | "profile" | "share" |" explore" | "search";
+type PageKey = "home" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks";
 
 type SidebarProps = {
   setCurrentPage: (page: PageKey) => void;
