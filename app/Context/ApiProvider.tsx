@@ -551,7 +551,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
     try {
       dispatch({ type: 'SET_LOADING', payload: true })
-      const response = await apiService.getPosts(targetUserId)
+      const response = await apiService.getPosts(targetUserId, 150, 0)
       
       const currentPosts = state.posts.posts
       const newPostsFromAPI = response.posts
@@ -598,7 +598,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
     try {
       dispatch({ type: 'SET_LOADING', payload: true })
-      const response = await apiService.getPosts(targetUserId)
+      const response = await apiService.getPosts(targetUserId, 150, 0)
       
       const freshPosts = response.posts.map(post => {
         const { 

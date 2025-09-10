@@ -15,6 +15,7 @@ import {
 import MediaUpload, { MediaUploadHandle } from '@/app/components/MediaUpload'
 import { useSession } from 'next-auth/react'
 import { useApi } from '@/app/Context/ApiProvider'
+import { usePostToken } from '@/app/hooks/usePostToken'
 
 // Toast Component
 const Toast = ({ 
@@ -61,7 +62,13 @@ export function SnapComposer() {
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   
+  // Token creation parameters
+  const [tokenPrice, setTokenPrice] = useState('0.01')
+  const [tokenIncrement, setTokenIncrement] = useState('0.01')
+  const [freebieCount, setFreebieCount] = useState(100)
+  
   const { createPost, fetchPosts } = useApi();
+  const { createPostToken, isConnected, connectWallet, isConnecting, address } = usePostToken();
   const { data: session, status } = useSession();
   const { getUserProfile, updateUserProfile } = useApi()
   const [loading, setLoading] = useState(true)
@@ -96,15 +103,6 @@ export function SnapComposer() {
   const mediaUploadRef = useRef<MediaUploadHandle>(null)
   const userId = session?.dbUser?.id
 
-  console.log('🔍 Composer Debug:', {
-    content,
-    isSubmitting,
-    mediaUrl,
-    uploadedMedia,
-    userId,
-    sessionDbUser: session?.dbUser,
-    sessionDbUserId: session?.dbUser?.id
-  })
 
   React.useEffect(() => {
     console.log('🔍 Session changed:', {
@@ -170,7 +168,9 @@ export function SnapComposer() {
       sessionDbUserId: session?.dbUser?.id,
       userId,
       content: content.trim(),
-      mediaUrl
+      mediaUrl,
+      createPostToken: !!createPostToken,
+      isConnected
     })
     
     if (!userId) {
@@ -194,8 +194,37 @@ export function SnapComposer() {
       }
 
       console.log('🚀 About to call createPost with data:', postData)
-      await createPost(postData)
-      console.log('✅ createPost completed successfully')
+      const response = await createPost(postData)
+      console.log('✅ createPost completed successfully', response)
+
+      // Always create post token if wallet is connected
+      if (isConnected) {
+        try {
+          console.log('🚀 Creating post token...')
+          const postId = response?.id || response?.post?.id
+          console.log('Post ID for token creation:', postId)
+          if (postId) {
+            const tokenTxHash = await createPostToken(
+              postId,
+              content.trim(),
+              mediaUrl || '',
+              tokenPrice,
+              tokenIncrement,
+              freebieCount
+            )
+            console.log('✅ Post token created successfully, TX:', tokenTxHash)
+            showSuccessToast(`Snap posted and token created! TX: ${tokenTxHash.slice(0, 10)}...`)
+          } else {
+            console.error('No post ID found in response:', response)
+            showSuccessToast('Snap posted but no post ID found for token creation')
+          }
+        } catch (tokenError) {
+          console.error('Failed to create post token:', tokenError)
+          showSuccessToast('Snap posted successfully, but token creation failed')
+        }
+      } else {
+        showSuccessToast('Snap posted successfully! (Connect wallet to enable token trading)')
+      }
 
       // Reset form immediately after successful post creation
       setContent('')
@@ -204,9 +233,6 @@ export function SnapComposer() {
       
       // Reset loading state immediately
       setIsSubmitting(false)
-      
-      // Show success toast instead of alert
-      showSuccessToast('Snap posted successfully!')
       
       // Fetch posts in background (don't wait for it)
       fetchPosts(userId).catch(error => {
@@ -342,8 +368,99 @@ export function SnapComposer() {
         {/* Media Preview */}
         {renderMediaPreview()}
 
+        {/* Wallet Connection Status */}
+        <div className="mt-4 p-3 rounded-lg border border-gray-700/50 bg-gray-800/30">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-lg ${isConnected ? 'bg-green-600/20' : 'bg-gray-600/20'}`}>
+                <CheckCircle className={`w-4 h-4 ${isConnected ? 'text-green-400' : 'text-gray-400'}`} />
+              </div>
+              <div>
+                <div className="text-sm font-medium text-white">
+                  {isConnected ? 'Wallet Connected' : 'Wallet Not Connected'}
+                </div>
+                <div className="text-xs text-gray-400">
+                  {isConnected 
+                    ? `Connected: ${address?.slice(0, 6)}...${address?.slice(-4)}` 
+                    : 'Connect wallet to enable token creation'
+                  }
+                </div>
+              </div>
+            </div>
+            {!isConnected && (
+              <button
+                onClick={connectWallet}
+                disabled={isConnecting}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white text-sm rounded-lg transition-colors"
+              >
+                {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Token Parameters */}
+        {isConnected && (
+          <div className="mt-4 p-3 rounded-lg border border-gray-700/50 bg-gray-800/30">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1.5 bg-blue-600/20 rounded-lg">
+                <CheckCircle className="w-4 h-4 text-blue-400" />
+              </div>
+              <div className="text-sm font-medium text-white">Token Parameters</div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Starting Price */}
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Starting Price (USDC)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={tokenPrice}
+                  onChange={(e) => setTokenPrice(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0.01"
+                />
+              </div>
+              
+              {/* Price Increment */}
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Price Increment (USDC)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={tokenIncrement}
+                  onChange={(e) => setTokenIncrement(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0.01"
+                />
+              </div>
+              
+              {/* Freebie Count */}
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Free Shares</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="1000"
+                  value={freebieCount}
+                  onChange={(e) => setFreebieCount(parseInt(e.target.value) || 100)}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="100"
+                />
+              </div>
+            </div>
+            
+            <div className="mt-2 text-xs text-gray-500">
+              Price starts at ${tokenPrice} and increases by ${tokenIncrement} per paid buyer. {freebieCount} free shares available.
+            </div>
+          </div>
+        )}
+
         {/* Divider */}
-        <div className="border-t border-dark-700/50 mt-4 pt-4">
+        <div className="border-t border-dark-700/50 pt-4">
           <div className="flex items-center justify-between">
             {/* Media Actions */}
             <div className="flex items-center gap-4">

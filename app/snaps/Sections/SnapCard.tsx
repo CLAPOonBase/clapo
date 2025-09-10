@@ -12,7 +12,8 @@ import Toast from '../../components/Toast'
 import { AnimatePresence, motion } from "framer-motion"
 import CommentInputBar from './CommentInputBar'
 import { UserProfileHover } from '../../components/UserProfileHover'
-import PostTrade from '@/app/components/PostTrade'
+import PostTokenPrice from '../../components/PostTokenPrice'
+import PostTokenTrading from '../../components/PostTokenTrading'
 
 type Props = {
   post: Post | ApiPost
@@ -36,6 +37,7 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   const [commentText, setCommentText] = useState('')
   const [showInlineComments, setShowInlineComments] = useState(false)
   const [comments, setComments] = useState<any[]>([])
+  const [showTokenTrading, setShowTokenTrading] = useState(false)
   const hasInitialized = useRef(false)
 
   const { likePost, unlikePost, retweetPost, bookmarkPost, unbookmarkPost, viewPost, addComment, getPostComments, state } = useApi()
@@ -487,6 +489,7 @@ const handleImageClick = (e: React.MouseEvent) => {
               </button>
             )}
 
+
             {postImage && (
 <div className="overflow-hidden">
   {/\.(jpg|jpeg|png|gif|webp)$/i.test(postImage) ? (
@@ -570,7 +573,11 @@ const handleImageClick = (e: React.MouseEvent) => {
             </div>
     <div className='flex items-center space-x-6'>
       <div>
-        <PostTrade/>
+        <PostTokenPrice 
+          postId={postId}
+          postContent={postContent}
+          onTradeClick={() => setShowTokenTrading(true)}
+        />
       </div>
             <button 
               onClick={e => { 
@@ -757,6 +764,14 @@ const handleImageClick = (e: React.MouseEvent) => {
       )}
 
       {toast && <Toast id="snap-toast" title="Notification" message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
+      {/* Post Token Trading Modal */}
+      <PostTokenTrading
+        postId={postId}
+        postContent={postContent}
+        isOpen={showTokenTrading}
+        onClose={() => setShowTokenTrading(false)}
+      />
     </>
   )
 }

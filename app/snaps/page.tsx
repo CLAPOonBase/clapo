@@ -8,7 +8,7 @@ import Sidebar from "./Sections/Sidebar";
 import { SnapComposer } from "./Sections/SnapComposer";
 import SnapCard from "./Sections/SnapCard";
 import Image from "next/image";
-// import ActivityFeed from './Sections/ActivityFeed'
+import ActivityFeed from './Sections/ActivityFeed'
 import { ExplorePage } from "./SidebarSection/ExplorePage";
 import NotificationPage from "./SidebarSection/NotificationPage";
 import BookmarkPage from "./SidebarSection/BookmarkPage";
@@ -24,6 +24,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import SharePage from "./SidebarSection/SharePage";
 import { X } from "lucide-react";
 import Stories from "../components/Story";
+import SnapsSharesTrading from "./Sections/SnapsSharesTrading";
 
 function SocialFeedPageContent() {
   const [activeTab, setActiveTab] = useState<"FOR YOU" | "FOLLOWING">(
@@ -40,6 +41,7 @@ function SocialFeedPageContent() {
     | "bookmarks"
     | "share"
     | "search"
+    | "shares"
   >("home");
   const [followingPosts, setFollowingPosts] = useState<any[]>([]);
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(false);
@@ -75,6 +77,7 @@ function SocialFeedPageContent() {
         "bookmarks",
         "share",
         "search",
+        "shares",
       ];
       if (validPages.includes(pageParam as any)) {
         setCurrentPage(pageParam as any);
@@ -124,6 +127,7 @@ function SocialFeedPageContent() {
         "bookmarks",
         "share",
         "search",
+        "shares",
       ];
       if (validPages.includes(targetPage as any)) {
         setCurrentPage(targetPage as any);
@@ -194,6 +198,14 @@ function SocialFeedPageContent() {
     }
   };
 
+  const handleNavigateToOpinio = () => {
+    window.location.href = '/opinio';
+  };
+
+  const handleNavigateToSnaps = () => {
+    setCurrentPage('home');
+  };
+
   const toggleSet = (set: Set<number>, id: number): Set<number> => {
     const newSet = new Set(set);
     if (newSet.has(id)) newSet.delete(id);
@@ -262,6 +274,8 @@ function SocialFeedPageContent() {
         return <div className="w-full max-w-3xl mx-auto">
           <SharePage />
         </div>;
+      case "shares":
+        return <SnapsSharesTrading onClose={() => setCurrentPage("home")} />;
       case "messages":
         return (
           <div className="w-full pl-20">
@@ -452,7 +466,12 @@ function SocialFeedPageContent() {
         transition={{ duration: 0.6, ease: "easeOut" }}
       >
         <div className="flex-col md:flex-row mx-auto text-white flex">
-          <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+          <Sidebar 
+            currentPage={currentPage} 
+            setCurrentPage={setCurrentPage}
+            onNavigateToOpinio={handleNavigateToOpinio}
+            onNavigateToSnaps={handleNavigateToSnaps}
+          />
           <div className="flex-1 ml-4 mr-6 rounded-md">
             <div className="bg-[#1A1A1A] rounded-2xl border border-gray-800 overflow-hidden">
               <div className="flex flex-col lg:flex-row min-h-[550px]">
@@ -510,7 +529,12 @@ function SocialFeedPageContent() {
       <div className="flex text-white mx-auto">
         {/* Left Sidebar - Fixed width */}
         <div className="">
-          <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+          <Sidebar 
+            currentPage={currentPage} 
+            setCurrentPage={setCurrentPage}
+            onNavigateToOpinio={handleNavigateToOpinio}
+            onNavigateToSnaps={handleNavigateToSnaps}
+          />
         </div>
 
         {/* Main Content - Flexible center */}

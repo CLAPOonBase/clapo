@@ -1,16 +1,18 @@
 "use client";
-import { Home, Bell, User, MessageCircle, Activity, Blocks } from "lucide-react";
+import { Home, Bell, User, MessageCircle, Activity, Blocks, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
-type PageKey = "home" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks";
+type PageKey = "home" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks" | "shares";
 
 type SidebarProps = {
   setCurrentPage: (page: PageKey) => void;
   currentPage?: PageKey;
   collapsibleItems?: PageKey[];
   alwaysExpanded?: boolean;
+  onNavigateToOpinio?: () => void;
+  onNavigateToSnaps?: () => void;
 };
 
 const navItems: {
@@ -65,13 +67,22 @@ const navItems: {
     activeIcon: <Blocks className="w-6 h-6" fill="currentColor" />,
     showOnDesktop: true 
   },
+  { 
+    label: "SnapsShares", 
+    value: "shares", 
+    icon: <TrendingUp className="w-6 h-6" />, 
+    activeIcon: <TrendingUp className="w-6 h-6" fill="currentColor" />,
+    showOnDesktop: true 
+  },
 ];
 
 export default function Sidebar({ 
   setCurrentPage, 
   currentPage = "home",
   collapsibleItems = ["messages"], 
-  alwaysExpanded = false
+  alwaysExpanded = false,
+  onNavigateToOpinio,
+  onNavigateToSnaps
 }: SidebarProps) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -165,11 +176,17 @@ export default function Sidebar({
               </div>
               
               <div className="space-y-2">
-                <button className="w-full px-4 py-2 rounded-lg text-center bg-gray-700/30 border border-gray-600/40 hover:bg-gray-700/50 transition-colors">
+                <button 
+                  onClick={onNavigateToOpinio}
+                  className="w-full px-4 py-2 rounded-lg text-center bg-gray-700/30 border border-gray-600/40 hover:bg-gray-700/50 transition-colors"
+                >
                   <div className="text-gray-300 font-medium text-sm">Opinio</div>
                 </button>
                 
-                <button className="w-full px-4 py-2 rounded-lg text-center bg-gray-700/30 border border-gray-600/40 hover:bg-gray-700/50 transition-colors">
+                <button 
+                  onClick={onNavigateToSnaps}
+                  className="w-full px-4 py-2 rounded-lg text-center bg-gray-700/30 border border-gray-600/40 hover:bg-gray-700/50 transition-colors"
+                >
                   <div className="text-gray-300 font-medium text-sm">Snaps</div>
                 </button>
               </div>
