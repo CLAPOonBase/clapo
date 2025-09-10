@@ -110,14 +110,6 @@ export const MessageItem = ({
             {message.content}
           </p>
           
-          {/* Message tail - only show on last message of group (where avatar is shown) */}
-          {showAvatar && (
-            <div className={`absolute bottom-3 w-0 h-0 ${
-              isOwnMessage 
-                ? '-right-1 border-l-[8px] border-l-blue-600 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent' 
-                : '-left-1 border-r-[8px] border-r-slate-800/60 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent'
-            }`} />
-          )}
         </div>
 
         {/* Timestamp - only show on last message of group */}
