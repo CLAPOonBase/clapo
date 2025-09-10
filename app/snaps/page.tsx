@@ -24,7 +24,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import SharePage from "./SidebarSection/SharePage";
 import { X } from "lucide-react";
 import Stories from "../components/Story";
-import SnapsSharesTrading from "./Sections/SnapsSharesTrading";
 
 function SocialFeedPageContent() {
   const [activeTab, setActiveTab] = useState<"FOR YOU" | "FOLLOWING">(
@@ -274,8 +273,6 @@ function SocialFeedPageContent() {
         return <div className="w-full max-w-3xl mx-auto">
           <SharePage />
         </div>;
-      case "shares":
-        return <SnapsSharesTrading onClose={() => setCurrentPage("home")} />;
       case "messages":
         return (
           <div className="w-full pl-20">

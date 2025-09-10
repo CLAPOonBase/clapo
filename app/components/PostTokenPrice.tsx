@@ -42,32 +42,56 @@ export default function PostTokenPrice({ postId, postContent, onTradeClick }: Po
   }, [postId, isConnected]);
 
   const loadTokenData = async () => {
-    if (!isConnected) return;
+    if (!isConnected) {
+      console.log(`Not connected to wallet, skipping token data load for post: ${postId}`);
+      return;
+    }
+    
+    console.log(`🔍 Starting token data load for post: ${postId}`);
+    console.log(`Wallet connection status:`, { isConnected, address, isConnecting });
     
     setIsLoading(true);
     try {
-      console.log(`Loading token data for post: ${postId}`);
+      console.log(`📋 Step 1: Checking if post has a token...`);
       
       // Check if post has a token
       const exists = await checkPostTokenExists(postId);
-      console.log(`Post ${postId} token exists:`, exists);
+      console.log(`✅ Post ${postId} token exists:`, exists);
       setHasToken(exists);
 
       if (exists) {
-        console.log(`Loading token stats for post: ${postId}`);
+        console.log(`📊 Step 2: Loading token stats for post: ${postId}`);
         try {
-          const [price, postStats, freebies] = await Promise.all([
-            getCurrentPrice(postId),
-            getPostStats(postId),
-            getRemainingFreebies(postId)
-          ]);
+          console.log(`📊 Step 2a: Getting current price...`);
+          const price = await getCurrentPrice(postId);
+          console.log(`💰 Current price:`, price);
+          
+          console.log(`📊 Step 2b: Getting post stats...`);
+          const postStats = await getPostStats(postId);
+          console.log(`📈 Post stats:`, postStats);
+          
+          console.log(`📊 Step 2c: Getting remaining freebies...`);
+          const freebies = await getRemainingFreebies(postId);
+          console.log(`🎁 Remaining freebies:`, freebies);
 
-          console.log(`Token data loaded for post ${postId}:`, { price, postStats, freebies });
+          console.log(`✅ Token data loaded successfully for post ${postId}:`, { 
+            price, 
+            postStats, 
+            freebies,
+            hasToken: true
+          });
+          
           setCurrentPrice(price);
           setStats(postStats);
           setRemainingFreebies(freebies);
         } catch (error) {
-          console.error(`Error loading token data for post ${postId}:`, error);
+          console.error(`❌ Error loading token data for post ${postId}:`, error);
+          console.error(`Error details:`, {
+            message: error.message,
+            code: error.code,
+            reason: error.reason,
+            stack: error.stack
+          });
           // If loading fails, treat as no token
           setHasToken(false);
           setCurrentPrice(0);
@@ -75,16 +99,26 @@ export default function PostTokenPrice({ postId, postContent, onTradeClick }: Po
           setRemainingFreebies(0);
         }
       } else {
-        console.log(`No token found for post: ${postId}`);
+        console.log(`❌ Post ${postId} has no token`);
         setCurrentPrice(0);
         setStats(null);
         setRemainingFreebies(0);
       }
     } catch (error) {
-      console.error('Error loading token data:', error);
+      console.error(`❌ Error checking token existence for post ${postId}:`, error);
+      console.error(`Error details:`, {
+        message: error.message,
+        code: error.code,
+        reason: error.reason,
+        stack: error.stack
+      });
       setHasToken(false);
+      setCurrentPrice(0);
+      setStats(null);
+      setRemainingFreebies(0);
     } finally {
       setIsLoading(false);
+      console.log(`🏁 Finished loading token data for post: ${postId}`);
     }
   };
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
-type PageKey = "home" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks" | "shares";
+type PageKey = "home" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks";
 
 type SidebarProps = {
   setCurrentPage: (page: PageKey) => void;
@@ -65,13 +65,6 @@ const navItems: {
     value: "share", 
     icon: <Blocks className="w-6 h-6" />, 
     activeIcon: <Blocks className="w-6 h-6" fill="currentColor" />,
-    showOnDesktop: true 
-  },
-  { 
-    label: "SnapsShares", 
-    value: "shares", 
-    icon: <TrendingUp className="w-6 h-6" />, 
-    activeIcon: <TrendingUp className="w-6 h-6" fill="currentColor" />,
     showOnDesktop: true 
   },
 ];

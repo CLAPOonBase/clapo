@@ -30,7 +30,7 @@ const CONTRACT_ABI = [
   "event SharesSold(uint256 indexed postId, address indexed seller, uint256 amount, uint256 payout, bool isFreebie, uint256 transactionId)"
 ];
 
-const CONTRACT_ADDRESS = "0x23Ef1aE7fBF47977c1f40d6E6C98FB4371d87850"; // Fixed contract with proper freebie sell pricing
+const CONTRACT_ADDRESS = "0x23Ef1aE7fBF47977c1f40d6E6C98FB4371d87850"; // New contract with proper freebie sell pricing
 const MOCK_USDC_ADDRESS = "0x44aAAEeC1A83c30Fe5784Af49E6a38D3709Ee148";
 
 export interface PostTokenStats {
@@ -152,14 +152,42 @@ export const usePostToken = () => {
     priceIncrement: string = "0.01", // $0.01 USDC
     freebieCount: number = 100
   ) => {
+    console.log('🚀 createPostToken called with:', {
+      customPostId,
+      content: content.substring(0, 50) + '...',
+      imageUrl,
+      priceStart,
+      priceIncrement,
+      freebieCount,
+      contractAddress: CONTRACT_ADDRESS,
+      hasContract: !!contract,
+      hasSigner: !!signer,
+      userAddress: address
+    });
+
     if (!contract || !signer) {
+      console.error('❌ Contract or signer not connected:', { hasContract: !!contract, hasSigner: !!signer });
       throw new Error('Contract not connected');
     }
 
     setLoading(true);
     try {
+      console.log('💰 Converting prices to Wei...');
       const priceStartWei = ethers.parseUnits(priceStart, 6); // USDC has 6 decimals
       const priceIncrementWei = ethers.parseUnits(priceIncrement, 6);
+      
+      console.log('📊 Price conversion results:', {
+        priceStart,
+        priceStartWei: priceStartWei.toString(),
+        priceIncrement,
+        priceIncrementWei: priceIncrementWei.toString()
+      });
+
+      console.log('📝 Calling contract.createPostWithId...');
+      console.log('Contract method details:', {
+        method: 'createPostWithId',
+        params: [customPostId, content, imageUrl, priceStartWei, priceIncrementWei, freebieCount]
+      });
 
       const tx = await contract.createPostWithId(
         customPostId,
@@ -170,10 +198,32 @@ export const usePostToken = () => {
         freebieCount
       );
 
-      await tx.wait();
+      console.log('✅ Transaction sent:', {
+        hash: tx.hash,
+        from: tx.from,
+        to: tx.to,
+        gasLimit: tx.gasLimit?.toString(),
+        gasPrice: tx.gasPrice?.toString()
+      });
+
+      console.log('⏳ Waiting for transaction confirmation...');
+      const receipt = await tx.wait();
+      console.log('🎉 Transaction confirmed:', {
+        hash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed.toString(),
+        status: receipt.status
+      });
+
       return tx.hash;
     } catch (error) {
-      console.error('Failed to create post token:', error);
+      console.error('❌ Failed to create post token:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        reason: error.reason,
+        data: error.data
+      });
       throw error;
     } finally {
       setLoading(false);
@@ -381,25 +431,35 @@ export const usePostToken = () => {
 
   // Check if post token exists
   const checkPostTokenExists = async (customPostId: string): Promise<boolean> => {
+    console.log(`🔍 checkPostTokenExists called for post: ${customPostId}`);
+    console.log(`Contract status:`, { 
+      hasContract: !!contract, 
+      contractAddress: CONTRACT_ADDRESS,
+      hasSigner: !!signer,
+      userAddress: address
+    });
+    
     if (!contract) {
-      console.log('No contract available for checking post existence');
+      console.log('❌ No contract available for checking post existence');
       return false;
     }
 
     try {
-      console.log(`Checking if post ${customPostId} exists using contract ${CONTRACT_ADDRESS}`);
+      console.log(`📞 Calling contract.doesCustomPostExist(${customPostId})...`);
       // Use the safe function that doesn't revert
       const exists = await contract.doesCustomPostExist(customPostId);
-      console.log(`Post ${customPostId} exists:`, exists);
+      console.log(`✅ Contract response - Post ${customPostId} exists:`, exists);
       return exists;
     } catch (error) {
-      console.error('Failed to check if post token exists:', error);
-      console.log('Error details:', {
+      console.error('❌ Failed to check if post token exists:', error);
+      console.error('Error details:', {
         postId: customPostId,
         contractAddress: CONTRACT_ADDRESS,
         error: error,
         errorMessage: error?.message,
-        errorCode: error?.code
+        errorCode: error?.code,
+        errorReason: error?.reason,
+        errorData: error?.data
       });
       
       // If the call fails, assume the post doesn't exist
