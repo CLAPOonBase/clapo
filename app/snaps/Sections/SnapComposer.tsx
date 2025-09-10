@@ -201,7 +201,7 @@ export function SnapComposer() {
       if (isConnected) {
         try {
           console.log('🚀 Creating post token...')
-          const postId = response?.id || response?.post?.id
+          const postId = response?.post?.id
           console.log('Post ID for token creation:', postId)
           if (postId) {
             const tokenTxHash = await createPostToken(

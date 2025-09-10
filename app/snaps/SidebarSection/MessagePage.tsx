@@ -181,10 +181,10 @@ export default function MessagePage() {
       setSelectedUserProfile({
         username: currentCommunity.name,
         name: currentCommunity.name,
-        avatar: currentCommunity.avatar || '/api/placeholder/80/80',
+        avatar: currentCommunity.creator_avatar || '/api/placeholder/80/80',
         bio: currentCommunity.description || 'No description available',
         status: 'community',
-        members: currentCommunity.memberCount || 0,
+        members: currentCommunity.member_count || 0,
         type: 'community'
       });
     } else {

@@ -68,6 +68,7 @@ const [currentPage, setCurrentPage] = useState<
     | "messages"
     | "bookmarks"
     | "share"
+    | "shares"
     | "search"
   >("home");  
   // Message state

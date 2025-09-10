@@ -497,6 +497,15 @@ export interface MessageThread {
   isGroup: boolean
   name: string
   createdAt: string
+  participants?: Array<{
+    id: string
+    user_id: string
+    username: string
+    name?: string
+    avatar?: string
+    bio?: string
+    lastSeen?: string
+  }>
 }
 
 export interface ThreadMessage {
