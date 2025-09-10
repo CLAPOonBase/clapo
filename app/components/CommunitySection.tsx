@@ -88,7 +88,7 @@ export const CommunitySection = ({
 
   if (showMembers && selectedCommunityData) {
     return (
-      <div className="p-4">
+      <div className="py-4">
         <div className="mb-4">
           <button
             onClick={handleBackToCommunities}
@@ -200,7 +200,7 @@ export const CommunitySection = ({
   }
 
   return (
-    <div className="p-4">
+    <div className="py-4">
       <div className="mb-4">
         {communitySection === 'my' ? (
           <div className="space-y-2">
@@ -279,7 +279,7 @@ export const CommunitySection = ({
               state.communities?.filter((community: any) => !community.user_joined_at)?.map((community: any) => (
                 <div
                   key={community.id}
-                  className="p-4 rounded-xl bg-slate-700/30 border border-slate-600/30 hover:bg-slate-700/50 hover:border-slate-500/50 transition-all duration-200"
+                  className="py-4 rounded-xl bg-slate-700/30 border border-slate-600/30 hover:bg-slate-700/50 hover:border-slate-500/50 transition-all duration-200"
                 >
                   <div className="flex items-center space-x-3 mb-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">

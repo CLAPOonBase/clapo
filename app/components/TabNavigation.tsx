@@ -38,13 +38,13 @@ export const TabNavigation = ({
       {/* Main Tabs */}
       <div className="relative flex justify-between items-center py-2 rounded-2xl">
         {[
-          { key: "dms", label: "DM", icon: <MessageCircle className="w-4 h-4" /> },
+          { key: "dms", label: "Personal", icon: <MessageCircle className="w-4 h-4" /> },
           { key: "communities", label: "Communities", icon: <Users className="w-4 h-4" /> },
         ].map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key as "dms" | "communities")}
-            className={`flex items-center w-full justify-center py-2 font-medium relative z-10 ${
+            className={`flex items-center w-full justify-center py-2 gap-2 font-medium relative z-10 ${
               activeTab === tab.key ? "text-white" : "text-secondary"
             }`}
           >
@@ -55,7 +55,7 @@ export const TabNavigation = ({
 
         {/* Animated background highlight */}
         <motion.div
-          className="absolute h-[40px] rounded-full"
+          className=" left-0 absolute h-[30px] rounded-full"
           style={{
             boxShadow:
               "0px 1px 0.5px 0px rgba(255,255,255,0.5) inset, 0px 1px 2px 0px rgba(110,84,255,0.5), 0px 0px 0px 1px #6E54FF",
@@ -72,7 +72,7 @@ export const TabNavigation = ({
 
       {/* Sub Navigation */}
       {activeTab === "dms" && (
-        <div className="relative flex justify-between gap-2 items-center">
+        <div className="relative flex justify-start gap-2 items-center">
           {[
             { key: "threads", label: "My Chats" },
             { key: "search", label: "Find Users" },
@@ -81,7 +81,7 @@ export const TabNavigation = ({
               key={section.key}
               onClick={() => setDmSection(section.key as "threads" | "search")}
               className={`relative px-3 py-1 text-sm font-medium z-10 ${
-                dmSection === section.key ? "text-white" : "text-slate-400"
+                dmSection === section.key ? "text-white bg-dark-700 rounded-full" : "text-slate-400"
               }`}
             >
               {section.label}
@@ -109,7 +109,7 @@ export const TabNavigation = ({
       )}
 
       {activeTab === "communities" && (
-        <div className="relative flex items-center justify-between w-full gap-2">
+        <div className="relative flex justify-start gap-2 items-center">
           {[
             { key: "my", label: "My Communities" },
             { key: "join", label: "Discover" },
@@ -118,7 +118,7 @@ export const TabNavigation = ({
               key={section.key}
               onClick={() => setCommunitySection(section.key as "my" | "join")}
               className={`relative px-3 py-1 text-sm font-medium z-10 ${
-                communitySection === section.key ? "text-white" : "text-slate-400"
+                communitySection === section.key ? "text-white bg-dark-700 rounded-full" : "text-slate-400"
               }`}
             >
               {section.label}

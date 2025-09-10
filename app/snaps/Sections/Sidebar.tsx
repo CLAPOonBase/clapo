@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
-type PageKey = "home" | "notifications" | "activity" | "messages" | "profile" | "share" |" explore" | "search";
+type PageKey = "home" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks";
 
 type SidebarProps = {
   setCurrentPage: (page: PageKey) => void;
@@ -93,13 +93,13 @@ export default function Sidebar({
       >
         {/* Logo Section */}
         <div>
-          <div className="flex items-center justify-start px-4 mb-36">
+          <div className="flex items-center justify-start mb-36">
             <Image
               src="/navlogo.png"
               alt="Clapo Logo"
-              width={140}
-              height={40}
-              className="object-contain h-8 w-auto"
+              width={1000}
+              height={1000}
+              className="object-contain w-40 h-auto"
             />
           </div>
 

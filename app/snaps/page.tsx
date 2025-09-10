@@ -264,7 +264,7 @@ function SocialFeedPageContent() {
         </div>;
       case "messages":
         return (
-          <div className="w-full ml-24">
+          <div className="w-full pl-20">
             <MessagePage />
           </div>
         );
