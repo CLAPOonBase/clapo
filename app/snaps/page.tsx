@@ -281,7 +281,7 @@ function SocialFeedPageContent() {
         );
       case "home":
       default:
-        return <div className="max-w-2xl mx-auto">
+        return <div className="max-w-3xl mr-44 mx-auto">
              <>
             <Stories />
             <SnapComposer />
@@ -546,7 +546,7 @@ function SocialFeedPageContent() {
         {/* Right Sidebar - Only visible at 2xl breakpoint */}
         {currentPage !== "messages" && session?.dbUser && (
           <div
-            className="hidden 2xl:block w-96 border-l-2 h-screen border-gray-700/70 sticky top-0"
+            className="hidden 2xl:block w-96  h-screen  sticky top-0"
             style={{ zIndex: 999 }}
           >
             <div className="p-6">
