@@ -126,7 +126,7 @@ export default function SmartContractDemo() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-dark-800 rounded-lg p-6 mb-6"
+          className="bg-black rounded-lg p-6 mb-6"
         >
           <h2 className="text-2xl font-bold mb-4">Initialize Contract</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -195,7 +195,7 @@ export default function SmartContractDemo() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-dark-800 rounded-lg p-6"
+              className="bg-black rounded-lg p-6"
             >
               <h3 className="text-xl font-bold mb-4">Market Operations</h3>
               
@@ -243,7 +243,7 @@ export default function SmartContractDemo() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-dark-800 rounded-lg p-6"
+              className="bg-black rounded-lg p-6"
             >
               <h3 className="text-xl font-bold mb-4">Trading Operations</h3>
               
@@ -323,7 +323,7 @@ export default function SmartContractDemo() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-dark-800 rounded-lg p-6"
+              className="bg-black rounded-lg p-6"
             >
               <h3 className="text-xl font-bold mb-4">Admin Operations</h3>
               
@@ -372,7 +372,7 @@ export default function SmartContractDemo() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-dark-800 rounded-lg p-6"
+              className="bg-black rounded-lg p-6"
             >
               <h3 className="text-xl font-bold mb-4">Utility Operations</h3>
               
@@ -412,7 +412,7 @@ export default function SmartContractDemo() {
             animate={{ opacity: 1 }}
             className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           >
-            <div className="bg-dark-800 rounded-lg p-6 text-center">
+            <div className="bg-black rounded-lg p-6 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
               <p className="text-white">Processing transaction...</p>
             </div>

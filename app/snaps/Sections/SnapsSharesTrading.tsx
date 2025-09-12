@@ -289,7 +289,7 @@ export default function SnapsSharesTrading({ onClose }: SnapsSharesTradingProps)
                             max={portfolio.balance}
                             value={sellAmount}
                             onChange={(e) => setSellAmount(Math.max(1, Math.min(portfolio.balance, parseInt(e.target.value) || 1)))}
-                            className="w-20 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-sm"
+                            className="w-20 px-2 py-1 bg-black border border-gray-600 rounded text-sm"
                           />
                           <span className="text-xs text-gray-400">
                             / {portfolio.balance} available

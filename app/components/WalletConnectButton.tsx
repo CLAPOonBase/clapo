@@ -56,7 +56,7 @@ export default function WalletConnectButton({
                 onDisconnect();
                 setShowDisconnect(false);
               }}
-              className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-700 rounded-lg transition-colors"
+              className="w-full px-4 py-2 text-left text-red-400 hover:bg-black rounded-lg transition-colors"
             >
               Disconnect
             </button>

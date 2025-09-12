@@ -261,7 +261,7 @@ export function SnapComposer() {
 
     return (
       <div className="relative group mt-3">
-        <div className="relative overflow-hidden rounded-lg flex justify-center bg-dark-800/50 border border-dark-700/50">
+        <div className="relative overflow-hidden rounded-lg flex justify-center bg-black/50 border border-dark-700/50">
           {uploadedMedia.type === 'image' && (
             <Image
               src={uploadedMedia.url}
@@ -349,7 +349,7 @@ export function SnapComposer() {
               ? 'text-red-400 bg-red-900/20' 
               : charCount > 180 
                 ? 'text-amber-400 bg-amber-900/20'
-                : 'text-dark-400 bg-dark-800/50'
+                : 'text-dark-400 bg-black/50'
           }`}>
             {charCount}/200
           </div>
@@ -419,7 +419,7 @@ export function SnapComposer() {
                   min="0.01"
                   value={tokenPrice}
                   onChange={(e) => setTokenPrice(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-black border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="0.01"
                 />
               </div>
@@ -433,7 +433,7 @@ export function SnapComposer() {
                   min="0.01"
                   value={tokenIncrement}
                   onChange={(e) => setTokenIncrement(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-black border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="0.01"
                 />
               </div>
@@ -447,7 +447,7 @@ export function SnapComposer() {
                   max="1000"
                   value={freebieCount}
                   onChange={(e) => setFreebieCount(parseInt(e.target.value) || 100)}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-black border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="100"
                 />
               </div>
@@ -469,7 +469,7 @@ export function SnapComposer() {
                   key={label}
                   onClick={() => mediaUploadRef.current?.openFileDialog(type)}
                   disabled={isSubmitting}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-dark-800/50 transition-all duration-200 ${color} ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-black/50 transition-all duration-200 ${color} ${
                     isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                   }`}
                   title={label}

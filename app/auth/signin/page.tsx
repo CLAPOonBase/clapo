@@ -58,7 +58,7 @@ export default function SignIn() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-dark-800 rounded-lg p-8 w-full max-w-md"
+        className="bg-black rounded-lg p-8 w-full max-w-md"
       >
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-white mb-2">Welcome to Clapo</h1>
@@ -94,7 +94,7 @@ export default function SignIn() {
             <div className="w-full border-t border-gray-600"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-dark-800 text-gray-400">Or continue with</span>
+            <span className="px-2 bg-black text-gray-400">Or continue with</span>
           </div>
         </div>
 

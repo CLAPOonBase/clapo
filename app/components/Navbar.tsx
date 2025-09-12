@@ -42,10 +42,10 @@ export default function Navbar() {
   const { data: session } = useSession() as { data: ExtendedSession | null };
 
   const navItems = [
-    { label: "CLAPS", href: "/" },
-    { label: "SNAPS", href: "/snaps" },
-    { label: "OPINIO", href: "/opinio" },
-    { label: "SMART CONTRACT", href: "/smart-contract-demo" },
+    // { label: "CLAPS", href: "/" },
+    // { label: "SNAPS", href: "/snaps" },
+    // { label: "OPINIO", href: "/opinio" },
+    // { label: "SMART CONTRACT", href: "/smart-contract-demo" },
   ];
 
   const openDialog = (type: "x" | "wallet") => setActiveDialog(type);
@@ -56,14 +56,14 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="w-full sticky top-0 p-4 md:p-6 flex items-center justify-between backdrop-blur-lg font-mono z-[9999]">
+      <nav className="w-full top-0 p-4 md:p-6 flex items-center justify-between font-mono">
         {/* Mobile + iPad Menu Drawer (visible until lg) */}
         <div className="lg:hidden z-50">
           <Drawer>
             <DrawerTrigger className="p-2 text-white">
               <Menu size={24} />
             </DrawerTrigger>
-            <DrawerContent className="bg-dark-800 text-white border-none mb-20 rounded-t-[40px]">
+            <DrawerContent className="bg-black text-white border-none mb-20 rounded-t-[40px]">
               <DrawerHeader>
                 <DrawerTitle className="text-primary"></DrawerTitle>
               </DrawerHeader>

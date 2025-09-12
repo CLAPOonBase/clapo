@@ -24,16 +24,16 @@ export function ExplorePage() {
       transition={{ duration: 0.3 }}
       className="text-white space-y-4"
     >
-        <div className="flex justify-between items-center bg-dark-800 text-sm rounded-md">
+        <div className="flex justify-between items-center bg-black text-sm rounded-md">
             <Search className="text-secondary pl-2"/>
              <motion.input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search username"
-        className="w-full bg-dark-800 text-white px-4 py-2 rounded outline-none"
+        className="w-full bg-black text-white px-4 py-2 rounded outline-none"
       />
         </div>
- <div className="flex justify-around bg-dark-800 rounded-md p-2">
+ <div className="flex justify-around bg-black rounded-md p-2">
   {["top", "activity"].map((key) => (
     <button
       key={key}
@@ -52,7 +52,7 @@ export function ExplorePage() {
 
      
 
-      <div className="space-y-2 bg-dark-800 p-2 rounded-md">
+      <div className="space-y-2 bg-black p-2 rounded-md">
         {tab === "top" &&
           (filteredUsers.length === 0 ? (
             <motion.div
@@ -103,7 +103,7 @@ export function ExplorePage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
                 transition={{ duration: 0.2 }}
-                className="bg-dark-800 p-3 rounded flex flex-col items-start "
+                className="bg-black p-3 rounded flex flex-col items-start "
               >
                 <div className="flex justify-between w-full">
                     <img

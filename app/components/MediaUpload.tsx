@@ -159,7 +159,7 @@ const MediaUpload = forwardRef<MediaUploadHandle, MediaUploadProps>(
         />
         {isUploading && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="bg-dark-800 rounded-lg p-6 text-center">
+            <div className="bg-black rounded-lg p-6 text-center">
               <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
               <p className="text-white">Uploading to S3...</p>
             </div>

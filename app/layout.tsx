@@ -22,7 +22,7 @@ export default function RootLayout({
     <html lang="en">
       <body style={{background:"black"}} className={inter.className}>
         <Providers>
-          <Navbar />
+          {/* <Navbar /> */}
           {children}
           {/* <Footer/> */}
           <ToastContainer />

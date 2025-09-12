@@ -36,13 +36,13 @@ export default function UserProfileCard({ onManageClick }: Props) {
 
   if (loading) {
     return (
-    <div className="group my-4 relative rounded-2xl border border-secondary/20 overflow-hidden bg-dark-800 transition-all duration-300 hover:shadow-xl hover:border-slate-600 p-4">
-        <div className="h-28 bg-gray-700 rounded mb-4"></div>
+    <div className="group my-4 relative rounded-2xl border border-secondary/20 overflow-hidden bg-black transition-all duration-300 hover:shadow-xl hover:border-slate-600 p-4">
+        <div className="h-28 bg-black rounded mb-4"></div>
         <div className="flex items-center space-x-4">
-          <div className="w-16 h-16 bg-gray-700 rounded-full"></div>
+          <div className="w-16 h-16 bg-black rounded-full"></div>
           <div className="flex-1">
-            <div className="h-5 bg-gray-700 rounded mb-2"></div>
-            <div className="h-4 bg-gray-700 rounded"></div>
+            <div className="h-5 bg-black rounded mb-2"></div>
+            <div className="h-4 bg-black rounded"></div>
           </div>
         </div>
       </div>
@@ -51,7 +51,7 @@ export default function UserProfileCard({ onManageClick }: Props) {
 
   if (!profile) {
     return (
-      <div className="rounded-2xl border border-secondary/20 bg-dark-800 p-6 text-white">
+      <div className="rounded-2xl border border-secondary/20 bg-black p-6 text-white">
         <p>Failed to load profile</p>
       </div>
     )
@@ -61,7 +61,7 @@ export default function UserProfileCard({ onManageClick }: Props) {
   const coverUrl = '/default-cover.jpg'
 
   return (
-    <div className="group my-4 relative rounded-2xl border border-secondary/20 overflow-hidden bg-dark-800 transition-all duration-300 hover:shadow-xl hover:border-slate-600">
+    <div className="group my-4 relative rounded-2xl border border-secondary/20 overflow-hidden bg-black transition-all duration-300 hover:shadow-xl hover:border-slate-600">
       {/* Cover */}
       <div className="relative h-28 w-full overflow-hidden">
         <Image

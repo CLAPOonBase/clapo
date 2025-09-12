@@ -382,7 +382,7 @@ const [currentPage, setCurrentPage] = useState<
     return (
       <div className="flex-col md:flex-row text-white flex mx-auto">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-        <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-dark-800 p-4">
+        <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-black p-4">
           <div className="animate-pulse">
             <div className="flex items-center space-x-4 mb-6">
               <div className="w-20 h-20 bg-dark-700 rounded-full"></div>
@@ -401,7 +401,7 @@ const [currentPage, setCurrentPage] = useState<
     return (
       <div className="flex-col md:flex-row text-white flex mx-auto">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-        <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-dark-800 p-4">
+        <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-black p-4">
           <div className="text-center py-8 text-dark-400">
             User not found
           </div>
@@ -413,7 +413,7 @@ const [currentPage, setCurrentPage] = useState<
   return (
     <div className="flex-col md:flex-row text-white flex mx-auto">
       <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-      <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-dark-800 p-4">
+      <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-black p-4">
         {/* Back Button */}
         <div className="mb-6">
           <button
@@ -424,7 +424,7 @@ const [currentPage, setCurrentPage] = useState<
             <span>Back</span>
           </button>
         </div>
-        <div className='bg-dark-800 rounded-2xl p-6 shadow-custom'>
+        <div className='bg-black rounded-2xl p-6 shadow-custom'>
           <div>
             <Image src='https://pbs.twimg.com/profile_banners/1296970423851077632/1693025431/600x200' alt={''} className='h-40 w-full object-cover rounded-2xl' width={1000} height={1000}/>
           </div>
@@ -437,7 +437,7 @@ const [currentPage, setCurrentPage] = useState<
         </div>
 
         {/* Profile Header */}
-        <div className="p-6 -mt-20 border-dark-700 bg-dark-800">
+        <div className="p-6 -mt-20 border-dark-700 bg-black">
           <div className="flex flex-col items-start space-x-4">
                     <div className='flex w-full items-center mb-4'>
                             <Image
@@ -606,14 +606,14 @@ const [currentPage, setCurrentPage] = useState<
                                 onClick={(e) => e.stopPropagation()}
                               />
                             ) : post.media_url.match(/\.(mp3|wav|ogg|m4a|aac|flac|wma|opus|aiff|pcm)$/i) ? (
-                              <div className="bg-dark-800 p-4 flex items-center space-x-3 rounded-lg">
+                              <div className="bg-black p-4 flex items-center space-x-3 rounded-lg">
                                 <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
                                   <Volume2 className="w-5 h-5 text-indigo-600" />
                                 </div>
                                 <audio src={post.media_url} controls className="flex-1" />
                               </div>
                             ) : post.media_url.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|rtf|odt|ods|odp)$/i) ? (
-                              <div className="bg-dark-800 p-4 flex items-center space-x-3 rounded-lg">
+                              <div className="bg-black p-4 flex items-center space-x-3 rounded-lg">
                                 <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
                                   <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
@@ -627,7 +627,7 @@ const [currentPage, setCurrentPage] = useState<
                                 </div>
                               </div>
                             ) : post.media_url.match(/\.(zip|rar|7z|tar|gz|bz2|xz)$/i) ? (
-                              <div className="bg-dark-800 p-4 flex items-center space-x-3 rounded-lg">
+                              <div className="bg-black p-4 flex items-center space-x-3 rounded-lg">
                                 <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
                                   <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clipRule="evenodd" />
@@ -641,7 +641,7 @@ const [currentPage, setCurrentPage] = useState<
                                 </div>
                               </div>
                             ) : post.media_url.match(/\.(exe|msi|dmg|pkg|deb|rpm|appimage)$/i) ? (
-                              <div className="bg-dark-800 p-4 flex items-center space-x-3 rounded-lg">
+                              <div className="bg-black p-4 flex items-center space-x-3 rounded-lg">
                                 <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
                                   <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
@@ -655,7 +655,7 @@ const [currentPage, setCurrentPage] = useState<
                                 </div>
                               </div>
                             ) : (
-                              <div className="bg-dark-800 p-4 flex items-center space-x-3 rounded-lg">
+                              <div className="bg-black p-4 flex items-center space-x-3 rounded-lg">
                                 <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
                                   <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -865,7 +865,7 @@ const [currentPage, setCurrentPage] = useState<
       {/* Followers List Modal */}
       {showFollowersList && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowFollowersList(false)}>
-          <div className="bg-dark-800 rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-black rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white text-lg font-semibold">Followers</h3>
               <button
@@ -906,7 +906,7 @@ const [currentPage, setCurrentPage] = useState<
       {/* Following List Modal */}
       {showFollowingList && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowFollowingList(false)}>
-          <div className="bg-dark-800 rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-black rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white text-lg font-semibold">Following</h3>
               <button

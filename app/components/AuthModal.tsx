@@ -45,7 +45,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-dark-800 rounded-lg p-6 w-full max-w-md mx-4">
+      <div className="bg-black rounded-lg p-6 w-full max-w-md mx-4">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-white">
             {isLogin ? 'Login' : 'Sign Up'}

@@ -150,7 +150,7 @@ const NotificationDemo = () => {
     const stats = getNotificationStats();
 
     return (
-      <div className="p-6 bg-dark-800 rounded-xl border border-slate-700/50">
+      <div className="p-6 bg-black rounded-xl border border-slate-700/50">
         <div className="mb-6">
           <h3 className="text-xl font-bold text-white mb-2">
             Enhanced Notification System Demo

@@ -64,11 +64,11 @@ export default function CommentSection({ post, onClose, onCommentAdded }: Commen
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 mx-auto">
-      <div className="flex w-full max-w-2xl flex-col rounded-2xl bg-dark-800 shadow-xl max-h-[90vh] overflow-hidden">
+      <div className="flex w-full max-w-2xl flex-col rounded-2xl bg-black shadow-xl max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-700 px-4 py-3">
           <h3 className="text-lg font-semibold text-white">Comments</h3>
-          <button onClick={onClose} className="rounded-full p-1 text-gray-400 hover:bg-gray-700 hover:text-white transition-colors">
+          <button onClick={onClose} className="rounded-full p-1 text-gray-400 hover:bg-black hover:text-white transition-colors">
             <X className="h-6 w-6" />
           </button>
         </div>
@@ -122,7 +122,7 @@ export default function CommentSection({ post, onClose, onCommentAdded }: Commen
         </div>
 
         {/* Input */}
-        <div className="border-t border-gray-700 bg-dark-800 p-3">
+        <div className="border-t border-gray-700 bg-black p-3">
           <div className="flex items-center gap-3">
             <img
               src={session?.dbUser?.avatar_url || 'https://robohash.org/default.png'}

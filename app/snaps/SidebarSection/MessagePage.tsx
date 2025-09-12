@@ -75,9 +75,6 @@ export default function MessagePage() {
   // Mobile view state: 'sidebar' or 'chat'
   const [mobileView, setMobileView] = useState<'sidebar' | 'chat'>('sidebar');
 
-  // New state for activity and suggestions
-  const [recentActivity, setRecentActivity] = useState([]);
-  const [followerSuggestions, setFollowerSuggestions] = useState([]);
   const [selectedUserProfile, setSelectedUserProfile] = useState(null);
 
   const { socket, isConnected } = useSocket(selectedThread, selectedCommunity);
@@ -95,73 +92,6 @@ export default function MessagePage() {
         sender_avatar: msg.sender_avatar ?? msg.senderAvatar,
       }));
 
-  // Mock data for demonstration - replace with actual API calls
-  useEffect(() => {
-    // Mock recent activity data
-    setRecentActivity([
-      {
-        id: 1,
-        type: 'message',
-        user: { username: 'john_doe', avatar: '/api/placeholder/32/32' },
-        content: 'Sent you a message',
-        timestamp: '2 min ago',
-        community: null
-      },
-      {
-        id: 2,
-        type: 'community_join',
-        user: { username: 'alice_crypto', avatar: '/api/placeholder/32/32' },
-        content: 'Joined Trading Signals',
-        timestamp: '5 min ago',
-        community: 'Trading Signals'
-      },
-      {
-        id: 3,
-        type: 'community_message',
-        user: { username: 'bob_trader', avatar: '/api/placeholder/32/32' },
-        content: 'Posted in DeFi Discussion',
-        timestamp: '10 min ago',
-        community: 'DeFi Discussion'
-      }
-    ]);
-
-    // Mock follower suggestions
-    setFollowerSuggestions([
-      {
-        id: 1,
-        username: 'sarah_defi',
-        name: 'Sarah Johnson',
-        avatar: '/api/placeholder/40/40',
-        mutualFollowers: 5,
-        bio: 'DeFi enthusiast & trader'
-      },
-      {
-        id: 2,
-        username: 'mike_crypto',
-        name: 'Mike Chen',
-        avatar: '/api/placeholder/40/40',
-        mutualFollowers: 12,
-        bio: 'Blockchain developer'
-      },
-      {
-        id: 3,
-        username: 'emma_nft',
-        name: 'Emma Rodriguez',
-        avatar: '/api/placeholder/40/40',
-        mutualFollowers: 8,
-        bio: 'NFT collector & artist'
-      },
-      {
-        id: 4,
-        username: 'alex_web3',
-        name: 'Alex Thompson',
-        avatar: '/api/placeholder/40/40',
-        mutualFollowers: 3,
-        bio: 'Web3 consultant'
-      }
-    ]);
-  }, []);
-
   // Update selected user profile based on current thread or community
   useEffect(() => {
     if (currentThread && currentThread.participants) {
@@ -174,7 +104,8 @@ export default function MessagePage() {
           bio: otherUser.bio || 'No bio available',
           status: 'online',
           lastSeen: otherUser.lastSeen || 'Recently',
-          mutualFollowers: Math.floor(Math.random() * 20) + 1
+          mutualFollowers: Math.floor(Math.random() * 20) + 1,
+          type: 'user'
         });
       }
     } else if (currentCommunity) {
@@ -185,7 +116,9 @@ export default function MessagePage() {
         bio: currentCommunity.description || 'No description available',
         status: 'community',
         members: currentCommunity.member_count || 0,
-        type: 'community'
+        type: 'community',
+        createdBy: currentCommunity.creator_username || 'Unknown',
+        createdAt: currentCommunity.created_at || 'Recently'
       });
     } else {
       setSelectedUserProfile(null);
@@ -376,31 +309,13 @@ export default function MessagePage() {
     }
   }, [selectedThread, selectedCommunity]);
 
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'message':
-        return <MessageSquare className="w-4 h-4 text-blue-400" />;
-      case 'community_join':
-        return <UserPlus className="w-4 h-4 text-green-400" />;
-      case 'community_message':
-        return <Hash className="w-4 h-4 text-purple-400" />;
-      default:
-        return <Eye className="w-4 h-4 text-gray-400" />;
-    }
-  };
-
-  const handleFollowUser = (userId: number) => {
-    // Implement follow functionality
-    console.log('Following user:', userId);
-  };
-
   return (
       <div className="md:static fixed inset-x-0 z-[9999]">
     <div className=" flex">
       {/* Mobile Layout */}
       <div className="md:hidden w-full flex">
         {/* Sidebar View */}
-        <div className={`w-full bg-dark-800 rounded-xl backdrop-blur-sm flex flex-col transition-transform duration-300 ${
+        <div className={`w-full bg-black rounded-xl backdrop-blur-sm flex flex-col transition-transform duration-300 ${
           mobileView === 'chat' ? '-translate-x-full absolute' : 'translate-x-0'
         }`}>
           {/* Header */}
@@ -450,7 +365,7 @@ export default function MessagePage() {
         </div>
 
         {/* Chat View */}
-        <div className={`w-full bg-dark-800 rounded-xl backdrop-blur-sm flex flex-col transition-transform duration-300 ${
+        <div className={`w-full bg-black rounded-xl backdrop-blur-sm flex flex-col transition-transform duration-300 ${
           mobileView === 'sidebar' ? 'translate-x-full absolute' : 'translate-x-0'
         }`}>
           {/* Back Button + Chat Header */}
@@ -476,7 +391,7 @@ export default function MessagePage() {
             currentUserId={session?.dbUser?.id} 
           />
 
-          <div className="p-4 absolute bottom-52 bg-dark-800 w-full">
+          <div className="p-4 absolute bottom-52 bg-black w-full">
             <MessageInput 
               onSend={handleSendMessage}
               disabled={!selectedThread && !selectedCommunity}
@@ -492,13 +407,6 @@ export default function MessagePage() {
         <div  className="w-80 h-screen flex flex-col border-r border-gray-700/70 pr-2">
           {/* Header */}
           <div className="">
-            {/* <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold bg-white bg-clip-text text-transparent">
-                Messages
-              </h2>
-              <ConnectionStatus isConnected={isConnected} />
-            </div> */}
-            
             <TabNavigation 
               activeTab={activeTab}
               setActiveTab={setActiveTab}
@@ -537,176 +445,134 @@ export default function MessagePage() {
         </div>
 
         {/* Chat Area */}
-   <div className="flex w-full">
-         <div className="flex-1 max-h-screen flex flex-col">
-          <ChatHeader 
-            activeTab={activeTab}
-            currentThread={currentThread}
-            currentCommunity={currentCommunity}
-            session={session}
-          />
-
-          <MessageList 
-            messages={currentMessages} 
-            currentUserId={session?.dbUser?.id} 
-          />
-
-          <div className="px-6 py-4">
-            <MessageInput 
-              onSend={handleSendMessage}
-              disabled={!selectedThread && !selectedCommunity}
+        <div className="flex w-full">
+          <div className="flex-1 max-h-screen flex flex-col">
+            <ChatHeader 
+              activeTab={activeTab}
+              currentThread={currentThread}
+              currentCommunity={currentCommunity}
+              session={session}
             />
-          </div>
-         
-        </div>
-          <div>
-        <div
-                   className="hidden 2xl:block w-96 border-l-2 h-screen border-gray-700/70 sticky top-0"
-                   style={{ zIndex: 999 }}
-                 >
-                   <div className="p-6">
-                     {/* Recent Activity */}
-                     <div className="h-80 overflow-y-auto flex flex-col border-2 border-gray-700/70 rounded-2xl mb-4">
-                       <div className="bg-dark-700 rounded-full px-3 py-1 mt-2 mx-2 self-start">
-                         <span className="text-sm font-medium text-slate-300">Recent Activity</span>
-                       </div>
-                       
-                       {selectedUserProfile && (
-                         <div className="p-4 border-b border-gray-700/50">
-                           <div className="flex items-center space-x-3 mb-3">
-                             <img 
-                               src={selectedUserProfile.avatar} 
-                               alt={selectedUserProfile.name}
-                               className="w-12 h-12 rounded-full object-cover"
-                             />
-                             <div className="flex-1">
-                               <h4 className="font-semibold text-white text-sm">
-                                 {selectedUserProfile.name}
-                               </h4>
-                               <p className="text-xs text-slate-400">
-                                 @{selectedUserProfile.username}
-                               </p>
-                               {selectedUserProfile.type === 'community' ? (
-                                 <p className="text-xs text-green-400">
-                                   {selectedUserProfile.members} members
-                                 </p>
-                               ) : (
-                                 <p className="text-xs text-green-400">
-                                   {selectedUserProfile.status}
-                                 </p>
-                               )}
-                             </div>
-                           </div>
-                           <p className="text-xs text-slate-300 mb-2">
-                             {selectedUserProfile.bio}
-                           </p>
-                           {selectedUserProfile.mutualFollowers && (
-                             <p className="text-xs text-blue-400">
-                               {selectedUserProfile.mutualFollowers} mutual followers
-                             </p>
-                           )}
-                         </div>
-                       )}
 
-                       <div className="flex-1 p-3">
-                         {recentActivity.length > 0 ? (
-                           recentActivity.map((activity) => (
-                             <div key={activity.id} className="flex items-start space-x-3 mb-4 p-2 hover:bg-slate-800/30 rounded-lg transition-colors">
-                               <div className="flex-shrink-0 mt-1">
-                                 {getActivityIcon(activity.type)}
-                               </div>
-                               <div className="flex-1 min-w-0">
-                                 <div className="flex items-center space-x-2 mb-1">
-                                   <img 
-                                     src={activity.user.avatar} 
-                                     alt={activity.user.username}
-                                     className="w-5 h-5 rounded-full object-cover"
-                                   />
-                                   <span className="text-xs font-medium text-white">
-                                     {activity.user.username}
-                                   </span>
-                                 </div>
-                                 <p className="text-xs text-slate-300 mb-1">
-                                   {activity.content}
-                                 </p>
-                                 <div className="flex items-center justify-between">
-                                   <p className="text-xs text-slate-400">
-                                     {activity.timestamp}
-                                   </p>
-                                   {activity.community && (
-                                     <span className="text-xs text-purple-400">
-                                       #{activity.community}
-                                     </span>
-                                   )}
-                                 </div>
-                               </div>
-                             </div>
-                           ))
-                         ) : (
-                           <div className="flex flex-col items-center justify-center h-32 text-slate-400">
-                             <Clock className="w-8 h-8 mb-2" />
-                             <p className="text-sm">No recent activity</p>
-                           </div>
-                         )}
-                       </div>
-                     </div>
-       
-                     {/* Followers Suggestions */}
-                     <div className="h-80 overflow-y-auto flex flex-col border-2 border-gray-700/70 rounded-2xl">
-                       <div className="bg-dark-700 rounded-full px-3 py-1 mt-2 mx-2 self-start">
-                         <span className="text-sm font-medium text-slate-300">Followers Suggestions</span>
-                       </div>
-                       
-                       <div className="flex-1 p-3">
-                         {followerSuggestions.length > 0 ? (
-                           followerSuggestions.map((user) => (
-                             <div key={user.id} className="flex items-start space-x-3 mb-4 p-2 hover:bg-slate-800/30 rounded-lg transition-colors">
-                               <img 
-                                 src={user.avatar} 
-                                 alt={user.username}
-                                 className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                               />
-                               <div className="flex-1 min-w-0">
-                                 <div className="flex items-center justify-between mb-1">
-                                   <div>
-                                     <h4 className="text-sm font-medium text-white truncate">
-                                       {user.name}
-                                     </h4>
-                                     <p className="text-xs text-slate-400">
-                                       @{user.username}
-                                     </p>
-                                   </div>
-                                   <button
-                                     onClick={() => handleFollowUser(user.id)}
-                                     className="flex items-center space-x-1 bg-[#6E54FF] hover:bg-[#5940CC] text-white text-xs px-2 py-1 rounded-full transition-colors"
-                                   >
-                                     <UserPlus className="w-3 h-3" />
-                                     <span>Follow</span>
-                                   </button>
-                                 </div>
-                                 <p className="text-xs text-slate-300 mb-1 line-clamp-2">
-                                   {user.bio}
-                                 </p>
-                                 <p className="text-xs text-blue-400">
-                                   {user.mutualFollowers} mutual followers
-                                 </p>
-                               </div>
-                             </div>
-                           ))
-                         ) : (
-                           <div className="flex flex-col items-center justify-center h-32 text-slate-400">
-                             <Users className="w-8 h-8 mb-2" />
-                             <p className="text-sm">No suggestions available</p>
-                           </div>
-                         )}
-                       </div>
-                     </div>
-                   </div>
-                 </div>
+            <MessageList 
+              messages={currentMessages} 
+              currentUserId={session?.dbUser?.id} 
+            />
+
+            <div className="px-6 py-4">
+              <MessageInput 
+                onSend={handleSendMessage}
+                disabled={!selectedThread && !selectedCommunity}
+              />
+            </div>
+          </div>
+
+          {/* Selected Chat Details Sidebar */}
+          <div className="hidden 2xl:block w-96 border-l-2 h-screen border-gray-700/70 sticky top-0" style={{ zIndex: 999 }}>
+            <div className="p-6">
+              {selectedUserProfile ? (
+                <div className="border-2 border-gray-700/70 rounded-2xl p-6">
+                  <div className="text-center mb-6">
+                    <img 
+                      src={selectedUserProfile.avatar} 
+                      alt={selectedUserProfile.name}
+                      className="w-24 h-24 rounded-full object-cover mx-auto mb-4"
+                    />
+                    <h3 className="text-xl font-bold text-white mb-1">
+                      {selectedUserProfile.name}
+                    </h3>
+                    <p className="text-sm text-slate-400 mb-2">
+                      @{selectedUserProfile.username}
+                    </p>
+                    
+                    {selectedUserProfile.type === 'community' ? (
+                      <div className="space-y-2">
+                        <div className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm inline-block">
+                          Community
+                        </div>
+                        <p className="text-sm text-green-400">
+                          {selectedUserProfile.members} members
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Created by @{selectedUserProfile.createdBy}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {new Date(selectedUserProfile.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-sm inline-block">
+                          {selectedUserProfile.status}
+                        </div>
+                        {selectedUserProfile.mutualFollowers && (
+                          <p className="text-sm text-blue-400">
+                            {selectedUserProfile.mutualFollowers} mutual followers
+                          </p>
+                        )}
+                        <p className="text-xs text-slate-400">
+                          Last seen: {selectedUserProfile.lastSeen}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="border-t border-gray-700/50 pt-4">
+                    <h4 className="text-sm font-semibold text-slate-300 mb-2">
+                      {selectedUserProfile.type === 'community' ? 'Description' : 'Bio'}
+                    </h4>
+                    <p className="text-sm text-slate-300 leading-relaxed">
+                      {selectedUserProfile.bio}
+                    </p>
+                  </div>
+
+                  {selectedUserProfile.type === 'community' && (
+                    <div className="border-t border-gray-700/50 pt-4 mt-4">
+                      <h4 className="text-sm font-semibold text-slate-300 mb-3">
+                        Community Actions
+                      </h4>
+                      <div className="space-y-2">
+                        <button className="w-full bg-[#6E54FF] hover:bg-[#5940CC] text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                          View Members
+                        </button>
+                        <button className="w-full bg-slate-700 hover:bg-slate-600 text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                          Community Settings
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedUserProfile.type === 'user' && (
+                    <div className="border-t border-gray-700/50 pt-4 mt-4">
+                      <h4 className="text-sm font-semibold text-slate-300 mb-3">
+                        User Actions
+                      </h4>
+                      <div className="space-y-2">
+                        <button className="w-full bg-[#6E54FF] hover:bg-[#5940CC] text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                          View Profile
+                        </button>
+                        <button className="w-full bg-slate-700 hover:bg-slate-600 text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                          Block User
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="border-2 border-gray-700/70 rounded-2xl p-6 text-center">
+                  <MessageCircle className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-slate-400 mb-2">
+                    No chat selected
+                  </h3>
+                  <p className="text-sm text-slate-500">
+                    Select a conversation to view details
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
-   </div>
-      </div>
-      
 
       <CreateCommunityModal 
         show={showCreateCommunityModal}

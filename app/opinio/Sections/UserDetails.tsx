@@ -144,7 +144,7 @@ const UserDetails = () => {
               <button
                 onClick={handleRefreshBalance}
                 disabled={isLoadingBalance}
-                className="flex items-center space-x-1 px-2 py-1.5 rounded-md text-sm bg-gray-600 hover:bg-gray-700 text-white transition-colors disabled:opacity-50"
+                className="flex items-center space-x-1 px-2 py-1.5 rounded-md text-sm bg-gray-600 hover:bg-black text-white transition-colors disabled:opacity-50"
               >
                 <RefreshCw
                   size={14}

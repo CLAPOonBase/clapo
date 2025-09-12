@@ -343,7 +343,7 @@ const Dashboard = () => {
                 <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-sm">{activeEvent.logo}</span>
                 </div>
-                <span className="text-red-500 bg-dark-800 rounded-md px-2 font-bold text-xs">
+                <span className="text-red-500 bg-black rounded-md px-2 font-bold text-xs">
                   {activeEvent.status}
                 </span>
               </div>
@@ -353,7 +353,7 @@ const Dashboard = () => {
                 <p className="text-sm text-gray-400">Date: {activeEvent.date}</p>
               </div>
             </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-400 bg-dark-800 shadow-custom rounded-lg px-3 py-1">
+            <div className="flex items-center space-x-2 text-sm text-gray-400 bg-black shadow-custom rounded-lg px-3 py-1">
               <span className="flex">
                 <Trophy className="mr-2" /> Reward: Coming Soon
               </span>
@@ -367,7 +367,7 @@ const Dashboard = () => {
 
       <div className="p-4 sm:p-6">
         {/* Stats Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-[70%_30%] gap-6 mb-8 p-6 rounded-2xl shadow-custom bg-dark-800">
+        <div className="grid grid-cols-1 lg:grid-cols-[70%_30%] gap-6 mb-8 p-6 rounded-2xl shadow-custom bg-black">
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold">Mindshare • 4.20%</h2>
@@ -403,12 +403,12 @@ const Dashboard = () => {
 
         {/* About Campaign */}
         <div className='font-bold text-xl mb-6'>About Campaign</div>
-        <div className="shadow-custom flex justify-between bg-dark-800 rounded-2xl p-6 mb-8">
+        <div className="shadow-custom flex justify-between bg-black rounded-2xl p-6 mb-8">
           <div className="flex flex-col items-center space-y-4 mb-4 w-[20%]">
             <div className='mr-4'>
               <div className='flex justify-start space-x-2 items-center'>
                 <h2 className="text-lg font-semibold">Set Leaderboard</h2>
-                <span className="text-red-500 bg-dark-800 rounded-md px-2 font-bold text-xs">Live</span>
+                <span className="text-red-500 bg-black rounded-md px-2 font-bold text-xs">Live</span>
               </div>
               <p className="text-sm text-gray-400">Get Leaderboard Rewards and Build Your Identity</p>
               <p className="text-sm text-gray-400">Share your content across social media platforms to increase your Mindshare.</p>
