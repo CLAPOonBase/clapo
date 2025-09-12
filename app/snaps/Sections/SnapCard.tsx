@@ -397,7 +397,7 @@ const handleImageClick = (e: React.MouseEvent) => {
   return (
     <>
       <div 
-        className="shadow-custom rounded-3xl mt-6 p-6 mb-6 shadow-sm hover:shadow-md transition-all duration-200" 
+        className="shadow-custom border-2 border-gray-700 rounded-3xl mt-6 p-6 mb-6 shadow-sm hover:shadow-md transition-all duration-200" 
         onClick={handleView}
       >
         <div className="flex flex-col space-y-4">

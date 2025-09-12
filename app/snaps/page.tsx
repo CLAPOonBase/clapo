@@ -285,44 +285,48 @@ function SocialFeedPageContent() {
              <>
             <Stories />
             <SnapComposer />
+   <div className="bg-gray-700/70 rounded-full mt-2 p-1">
+      <div>
+        <div
+          style={{ zIndex: 999 }}
+          className="flex justify-around bg-black m-1 p-1 items-center sticky rounded-full relative"
+        >
+          {["FOR YOU", "FOLLOWING"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => handleTabChange(tab)}
+              className={`p-2 mb-2 font-semibold w-full relative z-10 ${
+                activeTab === tab ? "text-white" : "text-gray-400"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
 
-            <div className="border-2 border-gray-700/70 shadow-custom mt-2 pt-4 rounded-2xl">
-              <div
-                style={{ zIndex: 999 }}
-                className="flex justify-around items-center sticky rounded-2xl  md:"
-              >
-                {["FOR YOU", "FOLLOWING"].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() =>
-                      handleTabChange(tab as "FOR YOU" | "FOLLOWING")
-                    }
-                    className={`p-2 mb-2 font-semibold w-full relative z-10 ${
-                      activeTab === tab ? "text-white" : "text-secondary"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
+          <motion.div
+            className="absolute rounded-full"
+            style={{
+              height: '40px', // Match button height including padding
+              boxShadow:
+                "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
+              backgroundColor: "#6E54FF",
+              top: '7px', // Account for p-1 on parent
+              margin: '0 6px', // Account for the p-1 spacing
+            }}
+            initial={false}
+            animate={{
+              left: activeTab === "FOR YOU" ? "0%" : "calc(50% - 6px)",
+              width: "calc(50% - 6px)", // Subtract margin to fit properly
+            }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          />
+        </div>
+      </div>
+    </div>
+            <div className="mt-2 pt-2 rounded-2xl">
+            
 
-                <motion.div
-                  className="absolute h-[40px] bg-dark-700/70 rounded-full"
-                  style={{
-                    boxShadow:
-                      "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
-                    backgroundColor: "#6E54FF",
-                    color: "white",
-                  }}
-                  initial={false}
-                  animate={{
-                    left: activeTab === "FOR YOU" ? "5%" : "55%", // centers under button
-                    width: "40%", // same width for both
-                  }}
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                />
-              </div>
-
-              <div className="p-4">
+              <div className="">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeTab}

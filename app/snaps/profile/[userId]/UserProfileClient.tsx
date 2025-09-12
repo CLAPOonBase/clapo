@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { X, User, Users, MapPin, Calendar, Link, Grid, Heart, MessageCircle, Share2, Image as ImageIcon, Eye, ArrowLeft, MessageSquare, Volume2 } from 'lucide-react'
+import { X, User, Users, MapPin, Calendar, Link, Grid, Heart, MessageCircle, Share2, Image as ImageIcon, Eye, ArrowLeft, MessageSquare, Volume2, TrendingUp } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useApi } from '@/app/Context/ApiProvider'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../Sections/Sidebar'
-import UserActivityFeed from '../../Sections/ActivityFeed'
-import { DMSection } from '@/app/components/DMSection'
-import { CommunitySection } from '@/app/components/CommunitySection'
+// import UserActivityFeed from '../../Sections/ActivityFeed'
+// import { DMSection } from '@/app/components/DMSection'
+// import { CommunitySection } from '@/app/components/CommunitySection'
 
 interface UserProfile {
   id: string
@@ -380,7 +380,7 @@ const [currentPage, setCurrentPage] = useState<
 
   if (isLoading) {
     return (
-      <div className="flex-col md:flex-row text-white flex mx-auto">
+      <div className="flex-col max-w-3xl border md:flex-row text-white flex mx-auto">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
         <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-black p-4">
           <div className="animate-pulse">
@@ -411,7 +411,7 @@ const [currentPage, setCurrentPage] = useState<
   }
 
   return (
-    <div className="flex-col md:flex-row text-white flex mx-auto">
+    <div className="flex-col md:flex-row max-w-3xl border-x-2 border-gray-700/70 text-white flex mx-auto">
       <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
       <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-black p-4">
         {/* Back Button */}
@@ -436,7 +436,8 @@ const [currentPage, setCurrentPage] = useState<
               </div>
         </div>
 
-        {/* Profile Header */}
+   <div className='flex justify-between'>
+         {/* Profile Header */}
         <div className="p-6 -mt-20 border-dark-700 bg-black">
           <div className="flex flex-col items-start space-x-4">
                     <div className='flex w-full items-center mb-4'>
@@ -532,11 +533,47 @@ const [currentPage, setCurrentPage] = useState<
                   </div>
                   <div className="text-dark-400 text-xs">Following</div>
                 </div>
-                <div className="text-center">
+                {/* <div className="text-center">
                   <div className="text-white font-semibold text-lg">{userProfile.total_likes_given}</div>
                   <div className="text-dark-400 text-xs">Likes</div>
-                </div>
+                </div> */}
               </div>
+   </div>
+    <div className="w-full">
+      <div className="bg-black rounded-2xl w-full p-0 shadow-2xl border border-gray-700/70 overflow-hidden">
+        <div className="flex h-24">
+          {/* Share Price Section */}
+          <div className="flex bg-black/50 backdrop-blur-sm p-4 w-full items-center justify-between border-r border-gray-700/70">
+            <div>
+              <h3 className="text-white text-sm font-bold tracking-wide mb-1">SHARE PRICE</h3>
+              <div className="flex items-center gap-1">
+                <span className="text-green-400 text-lg font-bold">$2910</span>
+                <TrendingUp className="text-green-400 w-4 h-4" />
+              </div>
+            </div>
+            <div className="flex">
+              <button className="bg-green-500 rounded-l-md hover:bg-green-600 text-white font-bold py-1 px-2 text-xs transition-colors duration-200 shadow-lg">
+                BUY
+              </button>
+              <button className="bg-red-500 rounded-r-md hover:bg-red-600 text-white font-bold py-1 px-2 text-xs transition-colors duration-200 shadow-lg">
+                SELL
+              </button>
+            </div>
+          </div>
+          
+          {/* Pool Rewards Section */}
+          <div className="flex w-full bg-black/50 backdrop-blur-sm p-4 items-center">
+            <div>
+              <h3 className="text-white text-sm font-bold tracking-wide mb-1">POOL REWARDS</h3>
+              <div className="flex items-center gap-1">
+                <span className="text-green-400 text-lg font-bold">$13.6K</span>
+                <TrendingUp className="text-green-400 w-4 h-4" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
         {/* Tabs */}
         <div className="border-b border-dark-700 mb-6">
@@ -944,11 +981,7 @@ const [currentPage, setCurrentPage] = useState<
         </div>
       )}
       
-      {session?.dbUser && (
-        <div className="hidden md:block  w-[300px]">
-          <UserActivityFeed username={session.dbUser.username} activity={[]} />
-        </div>
-      )}
+
     </div>
   )
 }
