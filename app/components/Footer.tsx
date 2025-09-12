@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="relative w-full mt-20 py-20 bg-dark-800 px-6 sm:px-10 text-xs text-[#A0A0A0] overflow-visible">
+    <footer className="relative w-full mt-20 py-20 bg-black px-6 sm:px-10 text-xs text-[#A0A0A0] overflow-visible">
       <div
         className="absolute -top-10 left-0 w-full h-40 bg-no-repeat bg-top"
         style={{ backgroundImage: 'url("/footer.svg")', zIndex: "998" }}

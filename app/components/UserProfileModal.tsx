@@ -162,9 +162,9 @@ export function UserProfileModal({
 
   return (
     <div style={{zIndex: '999'}} className="fixed flex justify-center rounded-2xl border border-dark-700 bg-black/80">
-      <div className="bg-dark-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-black rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-dark-800 border-b border-dark-700 p-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-black border-b border-dark-700 p-4 flex items-center justify-between">
           <h2 className="text-white text-xl font-bold">Profile</h2>
           <button
             onClick={onClose}
@@ -341,14 +341,14 @@ export function UserProfileModal({
                                 onClick={(e) => e.stopPropagation()}
                               />
                             ) : post.media_url.match(/\.(mp3|wav|ogg|m4a|aac|flac|wma|opus|aiff|pcm)$/i) ? (
-                              <div className="bg-dark-800 p-4 flex items-center space-x-3 rounded-lg">
+                              <div className="bg-black p-4 flex items-center space-x-3 rounded-lg">
                                 <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
                                   <Volume2 className="w-5 h-5 text-indigo-600" />
                                 </div>
                                 <audio src={post.media_url} controls className="flex-1" />
                               </div>
                             ) : post.media_url.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|rtf|odt|ods|odp)$/i) ? (
-                              <div className="bg-dark-800 p-4 flex items-center space-x-3 rounded-lg">
+                              <div className="bg-black p-4 flex items-center space-x-3 rounded-lg">
                                 <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
                                   <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
@@ -362,7 +362,7 @@ export function UserProfileModal({
                                 </div>
                               </div>
                             ) : post.media_url.match(/\.(zip|rar|7z|tar|gz|bz2|xz)$/i) ? (
-                              <div className="bg-dark-800 p-4 flex items-center space-x-3 rounded-lg">
+                              <div className="bg-black p-4 flex items-center space-x-3 rounded-lg">
                                 <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
                                   <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clipRule="evenodd" />
@@ -376,7 +376,7 @@ export function UserProfileModal({
                                 </div>
                               </div>
                             ) : post.media_url.match(/\.(exe|msi|dmg|pkg|deb|rpm|appimage)$/i) ? (
-                              <div className="bg-dark-800 p-4 flex items-center space-x-3 rounded-lg">
+                              <div className="bg-black p-4 flex items-center space-x-3 rounded-lg">
                                 <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
                                   <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
@@ -390,7 +390,7 @@ export function UserProfileModal({
                                 </div>
                               </div>
                             ) : (
-                              <div className="bg-dark-800 p-4 flex items-center space-x-3 rounded-lg">
+                              <div className="bg-black p-4 flex items-center space-x-3 rounded-lg">
                                 <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
                                   <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />

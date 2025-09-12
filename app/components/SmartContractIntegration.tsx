@@ -154,7 +154,7 @@ export default function SmartContractIntegration({
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="bg-dark-800 rounded-lg p-6 text-center"
+        className="bg-black rounded-lg p-6 text-center"
       >
         <h3 className="text-xl font-bold mb-4">Smart Contract Trading</h3>
         <p className="text-gray-400 mb-4">
@@ -174,7 +174,7 @@ export default function SmartContractIntegration({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-dark-800 rounded-lg p-6"
+      className="bg-black rounded-lg p-6"
     >
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-xl font-bold">Smart Contract Trading</h3>

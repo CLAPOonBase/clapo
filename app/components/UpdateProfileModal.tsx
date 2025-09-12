@@ -134,7 +134,7 @@ export const UpdateProfileModal = ({
 
   return (
     <div className="absolute top-0 inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4">
-      <div className="bg-dark-800 rounded-2xl p-8 w-full max-w-md border border-slate-700/50 shadow-2xl">
+      <div className="bg-black rounded-2xl p-8 w-full max-w-md border border-slate-700/50 shadow-2xl">
         <div className="flex items-center space-x-3 mb-6">
           <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
             <User className="w-6 h-6 text-white" />

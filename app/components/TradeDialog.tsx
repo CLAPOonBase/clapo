@@ -52,14 +52,14 @@ const TradeDialog: React.FC<TradeDialogProps> = ({
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => setAmount((a) => Math.max(1, a - 1))}
-            className="w-10 h-10 flex items-center justify-center bg-gray-700 rounded-full text-xl"
+            className="w-10 h-10 flex items-center justify-center bg-black rounded-full text-xl"
           >
             -
           </button>
           <span className="text-2xl font-bold">{amount}</span>
           <button
             onClick={() => setAmount((a) => a + 1)}
-            className="w-10 h-10 flex items-center justify-center bg-gray-700 rounded-full text-xl"
+            className="w-10 h-10 flex items-center justify-center bg-black rounded-full text-xl"
           >
             +
           </button>

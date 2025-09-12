@@ -180,9 +180,9 @@ export function UserProfileHover({
         
         {showProfile && (
           <div className={`absolute ${getPositionClasses()} z-50`}>
-            <div className="bg-dark-800 border border-dark-700 rounded-lg shadow-xl p-4 w-80 max-w-sm">
+            <div className="bg-black border border-dark-700 rounded-lg shadow-xl p-4 w-80 max-w-sm">
               {/* Arrow */}
-              <div className={`absolute w-3 h-3 bg-dark-800 border-l border-t border-dark-700 transform rotate-45 ${
+              <div className={`absolute w-3 h-3 bg-black border-l border-t border-dark-700 transform rotate-45 ${
                 position === 'top' ? 'top-full -mt-1.5' :
                 position === 'bottom' ? 'bottom-full -mb-1.5' :
                 position === 'left' ? 'left-full -ml-1.5' :

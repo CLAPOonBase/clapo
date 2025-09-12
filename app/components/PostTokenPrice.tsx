@@ -140,8 +140,8 @@ export default function PostTokenPrice({ postId, postContent, onTradeClick }: Po
     return (
       <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/50">
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
-          <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+          <div className="h-4 bg-black rounded w-3/4 mb-2"></div>
+          <div className="h-3 bg-black rounded w-1/2"></div>
         </div>
       </div>
     );

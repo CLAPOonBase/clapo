@@ -101,7 +101,7 @@ export function ProfilePage({ user, posts }: Props) {
 
   if (loading) {
     return (
-      <div className="text-white bg-dark-800 rounded-lg shadow-xl p-4">
+      <div className="text-white bg-black rounded-lg shadow-xl p-4">
         <div className="animate-pulse">
           <div className="h-48 bg-gray-700/50 rounded-lg mb-4"></div>
           <div className="flex items-center space-x-4">
@@ -118,7 +118,7 @@ export function ProfilePage({ user, posts }: Props) {
 
   if (!profile) {
     return (
-      <div className="text-white bg-dark-800 rounded-lg shadow-xl p-4">
+      <div className="text-white bg-black rounded-lg shadow-xl p-4">
         <div className="text-center">
           <p className="text-gray-400">Failed to load profile</p>
         </div>
@@ -148,7 +148,7 @@ export function ProfilePage({ user, posts }: Props) {
   }
 
   return (
-    <div className="text-white bg-dark-800 rounded-lg shadow-xl overflow-hidden">
+    <div className="text-white bg-black border-x-2 border-gray-700/70 rounded-lg shadow-xl overflow-hidden">
       {/* Cover Image */}
       <div className="relative h-48 w-full bg-gradient-to-r from-blue-600 to-purple-600">
         <img
@@ -347,7 +347,7 @@ export function ProfilePage({ user, posts }: Props) {
                         )}
                         
                         {post.original_post_content && (
-                          <div className="bg-dark-800  -gray-600 rounded-lg p-4 mb-4">
+                          <div className="bg-black  -gray-600 rounded-lg p-4 mb-4">
                             <p className="text-gray-300 text-sm">
                               <span className="text-gray-400 font-medium">Original by @{post.original_post_username}:</span>
                               <br />
@@ -560,7 +560,7 @@ export function ProfilePage({ user, posts }: Props) {
       {/* Followers List Modal */}
       {showFollowersList && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowFollowersList(false)}>
-          <div className="bg-dark-800 rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-black rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white text-lg font-semibold">Followers</h3>
               <button
@@ -603,7 +603,7 @@ export function ProfilePage({ user, posts }: Props) {
       {/* Following List Modal */}
       {showFollowingList && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowFollowingList(false)}>
-          <div className="bg-dark-800 rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-black rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white text-lg font-semibold">Following</h3>
               <button

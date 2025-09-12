@@ -518,14 +518,14 @@ const handleImageClick = (e: React.MouseEvent) => {
       onClick={(e) => e.stopPropagation()}
     />
   ) : /\.(mp3|wav|ogg|m4a)$/i.test(postImage) ? (
-    <div className="bg-dark-800 p-4 flex items-center space-x-3 rounded-lg">
+    <div className="bg-black p-4 flex items-center space-x-3 rounded-lg">
       <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
         <Volume2 className="w-5 h-5 text-indigo-600" />
       </div>
       <audio src={postImage} controls className="flex-1" />
     </div>
   ) : (
-    <div className="bg-dark-800 p-4 text-center rounded-lg">
+    <div className="bg-black p-4 text-center rounded-lg">
       <p className="text-gray-400 text-sm mb-2">Media file</p>
       <a href={postImage} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 text-sm font-medium">
         View media
@@ -676,7 +676,7 @@ const handleImageClick = (e: React.MouseEvent) => {
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 disabled={isLoading.comment || !currentUserId}
-                className="w-full py-3 px-4 bg-dark-800 rounded-full text-secondary placeholder:text-secondary placeholder-dark-800 focus:outline-none focus:ring-2 focus:bg-dark-800 transition-all disabled:opacity-50"
+                className="w-full py-3 px-4 bg-black rounded-full text-secondary placeholder:text-secondary placeholder-dark-800 focus:outline-none focus:ring-2 focus:bg-black transition-all disabled:opacity-50"
                 onClick={(e) => e.stopPropagation()}
               />
             </div>

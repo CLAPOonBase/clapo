@@ -252,7 +252,7 @@ export default function MarketDataDebugger({ marketId, className = '' }: MarketD
           </button>
           <button
             onClick={() => setShowDebug(false)}
-            className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs"
+            className="px-3 py-1 bg-gray-600 hover:bg-black text-white rounded text-xs"
           >
             ✕ Close
           </button>

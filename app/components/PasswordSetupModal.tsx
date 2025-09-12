@@ -256,7 +256,7 @@ export default function PasswordSetupModal({ isOpen, onClose, onComplete }: Pass
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-dark-800 rounded-lg p-6 w-full max-w-md"
+          className="bg-black rounded-lg p-6 w-full max-w-md"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between mb-6">

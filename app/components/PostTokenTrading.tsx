@@ -384,7 +384,7 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                       : !userCanClaimFreebie && remainingFreebies > 0
                       ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                       : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  } ${loading || !isConnected ? 'disabled:bg-gray-700 disabled:cursor-not-allowed' : ''}`}
+                  } ${loading || !isConnected ? 'disabled:bg-black disabled:cursor-not-allowed' : ''}`}
                 >
                   {loading ? 'Processing...' : 
                    userCanClaimFreebie && remainingFreebies > 0 ? 'Claim Free Share' :
@@ -433,7 +433,7 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                     remainingFreebies > 0
                       ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                       : 'bg-red-600 hover:bg-red-700 text-white'
-                  } ${loading || !isConnected || !portfolio || portfolio.balance < amount ? 'disabled:bg-gray-700 disabled:cursor-not-allowed' : ''}`}
+                  } ${loading || !isConnected || !portfolio || portfolio.balance < amount ? 'disabled:bg-black disabled:cursor-not-allowed' : ''}`}
                 >
                   {loading ? 'Processing...' : 
                    remainingFreebies > 0 ? 'Cannot sell until all freebies claimed' :
