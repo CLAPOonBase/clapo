@@ -7,6 +7,7 @@ import Leaderboard from "./components/Leaderboard";
 import { Row } from "./types";
 import RewardPoolsPage from "./components/LeaderboardBox";
 import Footer from "./components/Footer";
+import SocialFeedPage from "./snaps/page";
 
 export default function Home() {
   const [mockRows, setMockRows] = useState<Row[]>([]);
@@ -103,27 +104,8 @@ export default function Home() {
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: 'easeOut' }}
-    >
-      <div className="text-white font-mono flex flex-col items-center w-full">
-        <main className="flex-1 w-full flex flex-col items-center">
-          <Hero />
-          <section className="w-full flex flex-col items-center px-8 mt-24">
-            <span className="text-[40px] font-bold tracking-[0.18em] mb-12">
-              LEADERBOARD
-            </span>
-            <PodiumComponent leaderboard={leaderboard} />
-          <div className="mt-16 w-full">
-            <RewardPoolsPage/>
-          </div>
-            {hasMounted && <Leaderboard rows={mockRows} currentUsername="user55" />}
-          </section>
-        </main>
-      </div>
-      <Footer/>
-    </motion.div>
+<div>
+  <SocialFeedPage/>
+</div>
   );
 }

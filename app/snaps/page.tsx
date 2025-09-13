@@ -217,11 +217,11 @@ function SocialFeedPageContent() {
   const renderContent = () => {
     switch (currentPage) {
       case "explore":
-        return <div className="w-full max-w-3xl mx-auto">
+        return <div className="w-full max-w-3xl ml-80">
           <ExplorePage/>
         </div>
       case "notifications":
-        return <div className="w-full max-w-3xl mx-auto"> <NotificationPage/></div>
+        return <div className="w-full max-w-3xl ml-80"> <NotificationPage/></div>
       case "likes":
         return allPosts.length > 0 ? (
           <SnapCard
@@ -254,23 +254,23 @@ function SocialFeedPageContent() {
           </div>
         );
       case "bookmarks":
-        return <div className="w-full max-w-3xl mx-auto">
+        return <div className="w-full max-w-3xl ml-80">
           <BookmarkPage />
         </div>;
       case "activity":
-        return <div className="w-full max-w-3xl mx-auto">
+        return <div className="w-full max-w-3xl ml-80">
           <ActivityPage />{" "}
         </div>;
       case "profile":
-        return <div className="w-full max-w-3xl mx-auto">
+        return <div className="w-full max-w-3xl ml-80">
           <ProfilePage user={mockUsers[0]} posts={[]} />{" "}
         </div>;
       case "search":
-        return <div className="w-full max-w-3xl mx-auto">
+        return <div className="w-full max-w-3xl ml-80">
           <SearchPage />
         </div>;
       case "share":
-        return <div className="w-full max-w-3xl mx-auto">
+        return <div className="w-full max-w-3xl ml-80">
           <SharePage />
         </div>;
       case "messages":
@@ -281,7 +281,7 @@ function SocialFeedPageContent() {
         );
       case "home":
       default:
-        return <div className="max-w-3xl mr-44 mx-auto">
+        return <div className="max-w-3xl ml-80">
              <>
             <Stories />
             <SnapComposer />
@@ -466,7 +466,7 @@ function SocialFeedPageContent() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
       >
-        <div className="flex-col md:flex-row mx-auto text-white flex">
+        <div className="flex-col md:flex-row ml-80 text-white flex">
           <Sidebar 
             currentPage={currentPage} 
             setCurrentPage={setCurrentPage}
@@ -539,14 +539,14 @@ function SocialFeedPageContent() {
         </div>
 
         {/* Main Content - Flexible center */}
-        <div className="flex-1 p-4">
+        <div className="flex-1 px-4">
           <div className="">{renderContent()}</div>
         </div>
 
         {/* Right Sidebar - Only visible at 2xl breakpoint */}
         {currentPage !== "messages" && session?.dbUser && (
           <div
-            className="hidden 2xl:block w-96  h-screen  sticky top-0"
+            className="2xl:block w-80 h-screen  sticky top-0"
             style={{ zIndex: 999 }}
           >
             <div className="p-6">
