@@ -330,8 +330,8 @@ export default function MessagePage() {
             <TabNavigation 
               activeTab={activeTab}
               setActiveTab={setActiveTab}
-              dmSection={dmSection}
-              setDmSection={setDmSection}
+              // dmSection={dmSection}
+              // setDmSection={setDmSection}
               communitySection={communitySection}
               setCommunitySection={setCommunitySection}
               setShowCreateCommunityModal={setShowCreateCommunityModal}
@@ -342,13 +342,13 @@ export default function MessagePage() {
           <div className="flex-1 overflow-y-auto scrollbar-hide">
             {activeTab === 'dms' ? (
               <DMSection 
-                dmSection={dmSection}
+                // dmSection={dmSection}
                 state={state}
                 session={session}
                 selectedThread={selectedThread}
                 onSelectThread={handleSelectThread}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
+                // searchQuery={searchQuery}
+                // setSearchQuery={setSearchQuery}
                 onStartChat={handleStartChatWithUser}
               />
             ) : (
@@ -410,8 +410,8 @@ export default function MessagePage() {
             <TabNavigation 
               activeTab={activeTab}
               setActiveTab={setActiveTab}
-              dmSection={dmSection}
-              setDmSection={setDmSection}
+              // dmSection={dmSection}
+              // setDmSection={setDmSection}
               communitySection={communitySection}
               setCommunitySection={setCommunitySection}
               setShowCreateCommunityModal={setShowCreateCommunityModal}
@@ -422,13 +422,13 @@ export default function MessagePage() {
           <div className="flex-1 overflow-y-auto scrollbar-hide scrollbar-thumb-slate-600 scrollbar-track-transparent">
             {activeTab === 'dms' ? (
               <DMSection 
-                dmSection={dmSection}
+                // dmSection={dmSection}
                 state={state}
                 session={session}
                 selectedThread={selectedThread}
                 onSelectThread={handleSelectThread}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
+                // searchQuery={searchQuery}
+                // setSearchQuery={setSearchQuery}
                 onStartChat={handleStartChatWithUser}
               />
             ) : (
