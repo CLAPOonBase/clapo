@@ -45,7 +45,7 @@ export const DMSection = ({
         const response = await fetch('https://server.blazeswap.io/api/snaps/friends');
         const data = await response.json();
         if (data.friends) {
-          const friendIds = new Set(data.friends.map((friend: any) => friend.id));
+          const friendIds = new Set<string>(data.friends.map((friend: any) => String(friend.id)));
           setFriends(friendIds);
         }
       } catch (error) {

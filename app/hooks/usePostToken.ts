@@ -219,7 +219,7 @@ export const usePostToken = () => {
         userMessage = 'Insufficient funds for gas fees. Please add ETH to your wallet.';
       }
       
-      const enhancedError = new Error(userMessage);
+      const enhancedError = new Error(userMessage) as Error & { originalError: any };
       enhancedError.originalError = error;
       throw enhancedError;
     } finally {

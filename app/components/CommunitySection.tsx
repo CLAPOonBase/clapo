@@ -144,7 +144,9 @@ export const CommunitySection = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                community.creator_id && handleUserClick(community.creator_id);
+                if (community.creator_id) {
+                  handleUserClick(community.creator_id);
+                }
               }}
               className="text-blue-400 hover:text-blue-300 hover:underline"
             >

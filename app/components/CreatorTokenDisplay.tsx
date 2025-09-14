@@ -57,7 +57,7 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
             getCreatorStats(tokenUuid),
             getRemainingFreebies(tokenUuid),
             getUserPortfolio(tokenUuid, address),
-            canClaimFreebie(tokenUuid)
+            canClaimFreebie(tokenUuid, address)
           ])
 
           setCurrentPrice(price)
@@ -75,7 +75,7 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
     if (isConnected && tokenUuid && address) {
       loadTokenData()
     }
-  }, [isConnected, tokenUuid, address]) // Simple dependencies
+  }, [isConnected, tokenUuid, address, getCurrentPrice, getCreatorStats, getRemainingFreebies, getUserPortfolio, canClaimFreebie, checkCreatorExists])
 
   const refreshData = async () => {
     if (!isConnected || !tokenUuid || !address) return
@@ -86,7 +86,7 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
         getCreatorStats(tokenUuid),
         getRemainingFreebies(tokenUuid),
         getUserPortfolio(tokenUuid, address),
-        canClaimFreebie(tokenUuid)
+        canClaimFreebie(tokenUuid, address)
       ])
 
       setCurrentPrice(price)

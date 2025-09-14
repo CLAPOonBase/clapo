@@ -125,6 +125,11 @@ export function SnapComposer() {
     setShowToast(true)
   }
 
+  const showErrorToast = (message: string) => {
+    setToastMessage(message)
+    setShowToast(true)
+  }
+
   const handleCloseToast = () => {
     setShowToast(false)
   }

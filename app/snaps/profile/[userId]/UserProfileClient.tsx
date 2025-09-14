@@ -164,7 +164,7 @@ const [currentPage, setCurrentPage] = useState<
         loadFollowingList()
       }
     }
-  }, [activeTab])
+  }, [activeTab, followersList.length, followingList.length])
 
   const loadUserProfile = async () => {
     if (!userId || isLoading) return
