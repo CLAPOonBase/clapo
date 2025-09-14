@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { User, Post } from "@/app/types"
-import { Ellipsis, Eye, Heart, MessageCircle, Repeat2, Bookmark, ThumbsUp, FileText } from "lucide-react"
+import { Ellipsis, Eye, Heart, MessageCircle, Repeat2, Bookmark, ThumbsUp, FileText, X } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useApi } from "../../Context/ApiProvider"
 import { UpdateProfileModal } from "@/app/components/UpdateProfileModal"
+import { useCreatorToken } from "@/app/hooks/useCreatorToken"
+import { generateCreatorTokenUUID } from "@/app/lib/uuid"
+import { CreatorTokenDisplay } from "@/app/components/CreatorTokenDisplay"
 
 type Props = {
   user?: User
@@ -17,10 +20,24 @@ type Tab = "Posts" | "Activity" | "Followers"
 export function ProfilePage({ user, posts }: Props) {
   const { data: session } = useSession()
   const { getUserProfile, updateUserProfile, getUserFollowers, getUserFollowing } = useApi()
+  const { createCreatorToken, checkCreatorExists, isConnected, connectWallet, isConnecting } = useCreatorToken()
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>("Posts")
   const [showUpdateModal, setShowUpdateModal] = useState(false)
+  const [showCreateTokenModal, setShowCreateTokenModal] = useState(false)
+  
+  // Creator token creation state
+  const [tokenName, setTokenName] = useState('')
+  const [tokenDescription, setTokenDescription] = useState('')
+  const [freebieCount, setFreebieCount] = useState(100)
+  const [quadraticDivisor, setQuadraticDivisor] = useState(1)
+  const [isCreatingToken, setIsCreatingToken] = useState(false)
+  
+  // Creator token existence state
+  const [creatorTokenExists, setCreatorTokenExists] = useState(false)
+  const [checkingTokenExists, setCheckingTokenExists] = useState(false)
+  const [creatorTokenUserId, setCreatorTokenUserId] = useState<string | null>(null)
   
   // Follower/Following lists state
   const [followersList, setFollowersList] = useState<any[]>([])
@@ -49,6 +66,30 @@ export function ProfilePage({ user, posts }: Props) {
 
     fetchProfile()
   }, [session?.dbUser?.id, getUserProfile])
+
+  // Check if creator token exists
+  useEffect(() => {
+    const checkTokenExists = async () => {
+      if (session?.dbUser?.id) {
+        try {
+          setCheckingTokenExists(true)
+          const tokenUuid = generateCreatorTokenUUID(session.dbUser.id)
+          const exists = await checkCreatorExists(tokenUuid)
+          setCreatorTokenExists(exists)
+          if (exists) {
+            setCreatorTokenUserId(session.dbUser.id)
+          }
+        } catch (error) {
+          console.error('Failed to check creator token existence:', error)
+          setCreatorTokenExists(false)
+        } finally {
+          setCheckingTokenExists(false)
+        }
+      }
+    }
+
+    checkTokenExists()
+  }, [session?.dbUser?.id, checkCreatorExists])
 
   const handleUpdateProfile = async (updateData: { username?: string; bio?: string; avatarUrl?: string }) => {
     if (!session?.dbUser?.id) return
@@ -96,6 +137,59 @@ export function ProfilePage({ user, posts }: Props) {
       console.error('Failed to load following:', error)
     } finally {
       setIsLoadingFollowing(false)
+    }
+  }
+
+  const handleCreateCreatorToken = async () => {
+    if (!isConnected) {
+      await connectWallet()
+      return
+    }
+
+    if (!tokenName.trim() || !tokenDescription.trim()) {
+      alert('Please fill in all required fields')
+      return
+    }
+
+    setIsCreatingToken(true)
+    try {
+      const tokenUuid = generateCreatorTokenUUID(session?.dbUser?.id)
+      
+      const tokenTxHash = await createCreatorToken(
+        tokenUuid,
+        tokenName.trim(),
+        profile?.avatar_url || '',
+        tokenDescription.trim(),
+        freebieCount,
+        quadraticDivisor
+      )
+      
+      alert(`Creator token created successfully! TX: ${tokenTxHash.slice(0, 10)}...`)
+      
+      setTokenName('')
+      setTokenDescription('')
+      setFreebieCount(100)
+      setQuadraticDivisor(1)
+      setShowCreateTokenModal(false)
+      
+      setCreatorTokenExists(true)
+      setCreatorTokenUserId(session?.dbUser?.id || null)
+      
+    } catch (error) {
+      console.error('Failed to create creator token:', error)
+      let errorMessage = 'Failed to create creator token'
+      
+      if (error.message?.includes('Creator with this UUID already exists')) {
+        errorMessage = 'Creator token already exists for this user'
+      } else if (error.message?.includes('Insufficient')) {
+        errorMessage = 'Insufficient USDC for token creation'
+      } else if (error.message?.includes('reverted')) {
+        errorMessage = 'Token creation transaction failed'
+      }
+      
+      alert(errorMessage)
+    } finally {
+      setIsCreatingToken(false)
     }
   }
 
@@ -175,9 +269,32 @@ export function ProfilePage({ user, posts }: Props) {
 
         <div className="flex-1 flex justify-between items-end pb-4">
           <div className="flex gap-3">
-            <button className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg px-6 py-2 text-sm font-semibold hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg">
-              Buy Ticket
-            </button>
+            {checkingTokenExists ? (
+              <div className="bg-gray-600 text-white rounded-lg px-6 py-2 text-sm font-semibold flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Checking...
+              </div>
+            ) : creatorTokenExists ? (
+              <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg px-6 py-2 text-sm font-semibold flex items-center">
+                <span>✅ Creator Token Active</span>
+              </div>
+            ) : !isConnected ? (
+              <button 
+                onClick={connectWallet}
+                disabled={isConnecting}
+                className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg disabled:opacity-50"
+              >
+                {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+              </button>
+            ) : (
+              <button 
+                onClick={() => setShowCreateTokenModal(true)}
+                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg px-6 py-2 text-sm font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg"
+              >
+                Create Creator Token
+              </button>
+            )}
+            
             <button 
               onClick={() => setShowUpdateModal(true)}
               className="bg-dark-700 hover:bg-dark-600 text-white  -gray-600 rounded-lg px-6 py-2 text-sm font-semibold transition-all duration-200"
@@ -246,7 +363,18 @@ export function ProfilePage({ user, posts }: Props) {
         </div>
       </div>
 
-      {/* Tabs */}
+      {creatorTokenExists && creatorTokenUserId && (
+        <div className="px-6 pb-6">
+          <CreatorTokenDisplay 
+            userId={creatorTokenUserId}
+            username={profile.username}
+            avatarUrl={profile.avatar_url}
+            isOwnProfile={true}
+            forceShow={true}
+          />
+        </div>
+      )}
+
       <div className="-t -gray-700">
         <div className="flex px-6">
           {(["Posts", "Activity", "Followers"] as Tab[]).map((tab) => (
@@ -642,6 +770,106 @@ export function ProfilePage({ user, posts }: Props) {
           </div>
         </div>
       )}
+
+      {/* Create Creator Token Modal */}
+      {showCreateTokenModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowCreateTokenModal(false)}>
+          <div className="bg-black rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-white text-lg font-semibold">Create Creator Token</h3>
+              <button
+                onClick={() => setShowCreateTokenModal(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Token Name */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Token Name *</label>
+                <input
+                  type="text"
+                  value={tokenName}
+                  onChange={(e) => setTokenName(e.target.value)}
+                  className="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter token name"
+                  maxLength={50}
+                />
+              </div>
+
+              {/* Token Description */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Description *</label>
+                <textarea
+                  value={tokenDescription}
+                  onChange={(e) => setTokenDescription(e.target.value)}
+                  className="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Describe your creator token"
+                  rows={3}
+                  maxLength={200}
+                />
+              </div>
+
+              {/* Token Parameters */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Freebie Count */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Free Shares</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="1000"
+                    value={freebieCount}
+                    onChange={(e) => setFreebieCount(parseInt(e.target.value) || 100)}
+                    className="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="100"
+                  />
+                </div>
+                
+                {/* Quadratic Divisor */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Price Curve</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={quadraticDivisor}
+                    onChange={(e) => setQuadraticDivisor(parseInt(e.target.value) || 1)}
+                    className="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="1"
+                  />
+                </div>
+              </div>
+
+              {/* Info Text */}
+              <div className="text-xs text-gray-500 bg-dark-800 p-3 rounded-lg">
+                <p>Uses quadratic pricing: Price = (Tokens Held)² / {quadraticDivisor}</p>
+                <p>{freebieCount} free shares available. Lower divisor = steeper price curve.</p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowCreateTokenModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateCreatorToken}
+                  disabled={isCreatingToken || !tokenName.trim() || !tokenDescription.trim()}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  {isCreatingToken ? 'Creating...' : isConnected ? 'Create Token' : 'Connect Wallet'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

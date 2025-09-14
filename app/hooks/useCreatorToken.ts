@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
+import { useWalletContext } from '@/context/WalletContext';
 
 // Contract ABI for Creator Token
 const CREATOR_TOKEN_ABI = [
@@ -77,88 +78,77 @@ export interface CreatorData {
 }
 
 export const useCreatorToken = () => {
+  const { provider, signer, address, isConnecting, connect, disconnect } = useWalletContext();
   const [contract, setContract] = useState<ethers.Contract | null>(null);
-  const [signer, setSigner] = useState<ethers.Signer | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [address, setAddress] = useState<string | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
+  
+  console.log('🔄 useCreatorToken hook initialized with wallet context:', { 
+    hasProvider: !!provider,
+    hasSigner: !!signer, 
+    hasAddress: !!address, 
+    isConnecting 
+  });
+  
+  // Derive isConnected from global wallet context
+  const isConnected = !!signer && !!address;
 
-  // Check if wallet is already connected
+  // Update contract when wallet connection changes
   useEffect(() => {
-    const checkConnection = async () => {
-      if (typeof window !== 'undefined' && window.ethereum) {
-        try {
-          console.log('Checking wallet connection...');
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          const accounts = await provider.listAccounts();
-          console.log('Available accounts:', accounts.length);
-          
-          if (accounts.length > 0) {
-            const signer = await provider.getSigner();
-            const contract = new ethers.Contract(CREATOR_TOKEN_ADDRESS, CREATOR_TOKEN_ABI, signer);
-            const address = await signer.getAddress();
-            
-            console.log('Wallet connected:', address);
-            console.log('Creator Token Contract address:', CREATOR_TOKEN_ADDRESS);
-            
-            setContract(contract);
-            setSigner(signer);
-            setAddress(address);
-            setIsConnected(true);
-          } else {
-            console.log('No accounts found');
-            setIsConnected(false);
-          }
-        } catch (error) {
-          console.error('Failed to check wallet connection:', error);
-          setIsConnected(false);
-        }
-      } else {
-        console.log('window.ethereum not available');
-        setIsConnected(false);
-      }
-    };
-
-    checkConnection();
-  }, []);
-
-  // Connect wallet
-  const connectWallet = async () => {
-    if (typeof window === 'undefined' || !window.ethereum) {
-      throw new Error('MetaMask not found! Please install MetaMask to use this feature.');
-    }
-
-    setIsConnecting(true);
-    try {
-      console.log('Connecting wallet...');
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(CREATOR_TOKEN_ADDRESS, CREATOR_TOKEN_ABI, signer);
-      const address = await signer.getAddress();
-      
-      console.log('Wallet connected successfully:', address);
+    console.log('🔄 useCreatorToken useEffect triggered:', { 
+      hasSigner: !!signer, 
+      hasAddress: !!address, 
+      signer, 
+      address 
+    });
+    
+    if (signer && address) {
+      console.log('✅ Setting up Creator Token contract with global wallet context');
+      console.log('Wallet connected:', address);
       console.log('Creator Token Contract address:', CREATOR_TOKEN_ADDRESS);
       
-      setContract(contract);
-      setSigner(signer);
-      setAddress(address);
-      setIsConnected(true);
+      try {
+        const contract = new ethers.Contract(CREATOR_TOKEN_ADDRESS, CREATOR_TOKEN_ABI, signer);
+        console.log('✅ Contract created successfully:', contract);
+        setContract(contract);
+        console.log('✅ Contract state updated');
+      } catch (error) {
+        console.error('❌ Error creating contract:', error);
+      }
+    } else {
+      console.log('❌ No wallet connection - clearing contract');
+      setContract(null);
+    }
+  }, [signer, address]);
+
+  // Force contract setup if we have signer and address but no contract
+  useEffect(() => {
+    if (signer && address && !contract) {
+      console.log('🔄 Force setting up contract - we have signer and address but no contract');
+      try {
+        const newContract = new ethers.Contract(CREATOR_TOKEN_ADDRESS, CREATOR_TOKEN_ABI, signer);
+        console.log('✅ Force contract created successfully:', newContract);
+        setContract(newContract);
+      } catch (error) {
+        console.error('❌ Error in force contract creation:', error);
+      }
+    }
+  }, [signer, address, contract]);
+
+  // Connect wallet using global wallet context
+  const connectWallet = async () => {
+    try {
+      console.log('Connecting wallet using global wallet context...');
+      await connect();
     } catch (error) {
       console.error('Failed to connect wallet:', error);
       throw error;
-    } finally {
-      setIsConnecting(false);
     }
   };
 
-  // Disconnect wallet
+  // Disconnect wallet using global wallet context
   const disconnectWallet = () => {
     setContract(null);
-    setSigner(null);
-    setAddress(null);
-    setIsConnected(false);
+    disconnect();
   };
 
   // Create creator token
@@ -190,13 +180,18 @@ export const useCreatorToken = () => {
 
     setLoading(true);
     try {
+      const currentContract = getContract();
+      if (!currentContract) {
+        throw new Error('Contract not connected');
+      }
+
       console.log('📝 Calling contract.createCreator...');
       console.log('Contract method details:', {
         method: 'createCreator',
         params: [uuid, name, imageUrl, description, freebieCount, quadraticDivisor]
       });
 
-      const tx = await contract.createCreator(
+      const tx = await currentContract.createCreator(
         uuid,
         name,
         imageUrl,
@@ -239,13 +234,14 @@ export const useCreatorToken = () => {
 
   // Buy creator tokens
   const buyCreatorTokens = async (uuid: string) => {
-    if (!contract || !signer) {
+    const currentContract = getContract();
+    if (!currentContract || !signer) {
       throw new Error('Contract not connected');
     }
 
     setLoading(true);
     try {
-      const tx = await contract.buyCreatorTokensByUuid(uuid);
+      const tx = await currentContract.buyCreatorTokensByUuid(uuid);
       await tx.wait();
       return tx.hash;
     } catch (error) {
@@ -258,13 +254,14 @@ export const useCreatorToken = () => {
 
   // Sell creator tokens
   const sellCreatorTokens = async (uuid: string, amount: number) => {
-    if (!contract || !signer) {
+    const currentContract = getContract();
+    if (!currentContract || !signer) {
       throw new Error('Contract not connected');
     }
 
     setLoading(true);
     try {
-      const tx = await contract.sellCreatorTokensByUuid(uuid, amount);
+      const tx = await currentContract.sellCreatorTokensByUuid(uuid, amount);
       await tx.wait();
       return tx.hash;
     } catch (error) {
@@ -277,18 +274,19 @@ export const useCreatorToken = () => {
 
   // Get current price
   const getCurrentPrice = async (uuid: string): Promise<number> => {
-    if (!contract) {
+    const currentContract = getContract();
+    if (!currentContract) {
       throw new Error('Contract not connected');
     }
 
     try {
-      const exists = await contract.doesUuidExist(uuid);
+      const exists = await currentContract.doesUuidExist(uuid);
       if (!exists) {
         console.log(`Creator ${uuid} does not exist, returning 0 price`);
         return 0;
       }
 
-      const price = await contract.getCurrentPriceByUuid(uuid);
+      const price = await currentContract.getCurrentPriceByUuid(uuid);
       return parseFloat(ethers.formatUnits(price, 6)); // Convert from wei to USDC
     } catch (error) {
       console.error('Failed to get current price:', error);
@@ -298,18 +296,19 @@ export const useCreatorToken = () => {
 
   // Get actual price
   const getActualPrice = async (uuid: string): Promise<number> => {
-    if (!contract) {
+    const currentContract = getContract();
+    if (!currentContract) {
       throw new Error('Contract not connected');
     }
 
     try {
-      const exists = await contract.doesUuidExist(uuid);
+      const exists = await currentContract.doesUuidExist(uuid);
       if (!exists) {
         console.log(`Creator ${uuid} does not exist, returning 0 actual price`);
         return 0;
       }
 
-      const price = await contract.getActualPriceByUuid(uuid);
+      const price = await currentContract.getActualPriceByUuid(uuid);
       return parseFloat(ethers.formatUnits(price, 6)); // USDC has 6 decimals
     } catch (error) {
       console.error('Failed to get actual price:', error);
@@ -319,18 +318,19 @@ export const useCreatorToken = () => {
 
   // Get creator stats
   const getCreatorStats = async (uuid: string): Promise<CreatorTokenStats | null> => {
-    if (!contract) {
+    const currentContract = getContract();
+    if (!currentContract) {
       throw new Error('Contract not connected');
     }
 
     try {
-      const exists = await contract.doesUuidExist(uuid);
+      const exists = await currentContract.doesUuidExist(uuid);
       if (!exists) {
         console.log(`Creator ${uuid} does not exist, returning null stats`);
         return null;
       }
 
-      const stats = await contract.getCreatorStatsByUuid(uuid);
+      const stats = await currentContract.getCreatorStatsByUuid(uuid);
       return {
         totalBuyers: Number(stats.totalBuyers),
         payingBuyers: Number(stats.payingBuyers),
@@ -351,12 +351,13 @@ export const useCreatorToken = () => {
 
   // Get user portfolio
   const getUserPortfolio = async (uuid: string, userAddress: string): Promise<CreatorPortfolio | null> => {
-    if (!contract) {
+    const currentContract = getContract();
+    if (!currentContract) {
       throw new Error('Contract not connected');
     }
 
     try {
-      const portfolio = await contract.getUserCreatorPortfolioByUuid(uuid, userAddress);
+      const portfolio = await currentContract.getUserCreatorPortfolioByUuid(uuid, userAddress);
       return {
         balance: Number(portfolio.balance),
         totalBought: Number(portfolio.totalBought),
@@ -376,18 +377,19 @@ export const useCreatorToken = () => {
 
   // Get remaining freebies
   const getRemainingFreebies = async (uuid: string): Promise<number> => {
-    if (!contract) {
+    const currentContract = getContract();
+    if (!currentContract) {
       throw new Error('Contract not connected');
     }
 
     try {
-      const exists = await contract.doesUuidExist(uuid);
+      const exists = await currentContract.doesUuidExist(uuid);
       if (!exists) {
         console.log(`Creator ${uuid} does not exist, returning 0 freebies`);
         return 0;
       }
 
-      const freebies = await contract.getRemainingFreebiesByUuid(uuid);
+      const freebies = await currentContract.getRemainingFreebiesByUuid(uuid);
       return Number(freebies);
     } catch (error) {
       console.error('Failed to get remaining freebies:', error);
@@ -397,7 +399,8 @@ export const useCreatorToken = () => {
 
   // Check if user can claim freebie
   const canClaimFreebie = async (uuid: string, userAddress: string): Promise<boolean> => {
-    if (!contract) {
+    const currentContract = getContract();
+    if (!currentContract) {
       console.log('No contract available for checking freebie eligibility');
       return false;
     }
@@ -408,14 +411,14 @@ export const useCreatorToken = () => {
     }
 
     try {
-      const exists = await contract.doesUuidExist(uuid);
+      const exists = await currentContract.doesUuidExist(uuid);
       if (!exists) {
         console.log(`Creator ${uuid} does not exist, returning false for freebie eligibility`);
         return false;
       }
 
       console.log(`Checking freebie eligibility for user ${userAddress} on creator ${uuid}`);
-      const canClaim = await contract.canClaimFreebieByUuid(uuid, userAddress);
+      const canClaim = await currentContract.canClaimFreebieByUuid(uuid, userAddress);
       console.log(`User ${userAddress} can claim freebie on creator ${uuid}:`, canClaim);
       return canClaim;
     } catch (error) {
@@ -431,24 +434,48 @@ export const useCreatorToken = () => {
     }
   };
 
+  // Helper function to get or create contract
+  const getContract = (): ethers.Contract | null => {
+    if (contract) {
+      return contract;
+    }
+    
+    if (signer && address) {
+      console.log('🔧 Creating contract on-demand');
+      try {
+        const newContract = new ethers.Contract(CREATOR_TOKEN_ADDRESS, CREATOR_TOKEN_ABI, signer);
+        setContract(newContract); // Update state for future calls
+        return newContract;
+      } catch (error) {
+        console.error('❌ Error creating contract on-demand:', error);
+        return null;
+      }
+    }
+    
+    return null;
+  };
+
   // Check if creator exists
   const checkCreatorExists = async (uuid: string): Promise<boolean> => {
     console.log(`🔍 checkCreatorExists called for creator: ${uuid}`);
+    
+    const currentContract = getContract();
     console.log(`Contract status:`, { 
-      hasContract: !!contract, 
+      hasContract: !!currentContract, 
       contractAddress: CREATOR_TOKEN_ADDRESS,
       hasSigner: !!signer,
-      userAddress: address
+      userAddress: address,
+      isConnected
     });
     
-    if (!contract) {
+    if (!currentContract) {
       console.log('❌ No contract available for checking creator existence');
       return false;
     }
 
     try {
       console.log(`📞 Calling contract.doesUuidExist(${uuid})...`);
-      const exists = await contract.doesUuidExist(uuid);
+      const exists = await currentContract.doesUuidExist(uuid);
       console.log(`✅ Contract response - Creator ${uuid} exists:`, exists);
       return exists;
     } catch (error) {
@@ -463,25 +490,33 @@ export const useCreatorToken = () => {
         errorData: error?.data
       });
       
-      // If the call fails, assume the creator doesn't exist
+      // Check if it's a network-related error
+      if (error?.code === 'CALL_EXCEPTION' || error?.message?.includes('missing revert data')) {
+        console.log('🌐 Network error detected - wallet may not be connected to Monad testnet');
+        console.log('💡 User should connect wallet to Monad testnet to check token existence');
+      }
+      
+      // If the call fails due to network issues, return false
+      // This prevents the UI from breaking when wallet is not connected to the right network
       return false;
     }
   };
 
   // Get creator data
   const getCreatorData = async (uuid: string): Promise<CreatorData | null> => {
-    if (!contract) {
+    const currentContract = getContract();
+    if (!currentContract) {
       throw new Error('Contract not connected');
     }
 
     try {
-      const exists = await contract.doesUuidExist(uuid);
+      const exists = await currentContract.doesUuidExist(uuid);
       if (!exists) {
         console.log(`Creator ${uuid} does not exist, returning null data`);
         return null;
       }
 
-      const creator = await contract.getCreatorByUuid(uuid);
+      const creator = await currentContract.getCreatorByUuid(uuid);
       return {
         creatorId: Number(creator.creatorId),
         uuid: creator.uuid,
@@ -495,6 +530,92 @@ export const useCreatorToken = () => {
     } catch (error) {
       console.error('Failed to get creator data:', error);
       return null;
+    }
+  };
+
+  // Get buy price
+  const getBuyPrice = async (uuid: string): Promise<number> => {
+    const currentContract = getContract();
+    if (!currentContract) {
+      throw new Error('Contract not connected');
+    }
+
+    try {
+      const exists = await currentContract.doesUuidExist(uuid);
+      if (!exists) {
+        console.log(`Creator ${uuid} does not exist, returning 0 buy price`);
+        return 0;
+      }
+
+      const price = await currentContract.getBuyPriceByUuid(uuid);
+      return parseFloat(ethers.formatUnits(price, 6)); // Convert from wei to USDC
+    } catch (error) {
+      console.error('Failed to get buy price:', error);
+      return 0;
+    }
+  };
+
+  // Get sell price
+  const getSellPrice = async (uuid: string): Promise<number> => {
+    const currentContract = getContract();
+    if (!currentContract) {
+      throw new Error('Contract not connected');
+    }
+
+    try {
+      const exists = await currentContract.doesUuidExist(uuid);
+      if (!exists) {
+        console.log(`Creator ${uuid} does not exist, returning 0 sell price`);
+        return 0;
+      }
+
+      const price = await currentContract.getSellPriceByUuid(uuid);
+      return parseFloat(ethers.formatUnits(price, 6)); // Convert from wei to USDC
+    } catch (error) {
+      console.error('Failed to get sell price:', error);
+      return 0;
+    }
+  };
+
+  // Get freebie sell price
+  const getFreebieSellPrice = async (uuid: string): Promise<number> => {
+    const currentContract = getContract();
+    if (!currentContract) {
+      throw new Error('Contract not connected');
+    }
+
+    try {
+      const exists = await currentContract.doesUuidExist(uuid);
+      if (!exists) {
+        console.log(`Creator ${uuid} does not exist, returning 0 freebie sell price`);
+        return 0;
+      }
+
+      const price = await currentContract.getFreebieSellPriceByUuid(uuid);
+      return parseFloat(ethers.formatUnits(price, 6)); // Convert from wei to USDC
+    } catch (error) {
+      console.error('Failed to get freebie sell price:', error);
+      return 0;
+    }
+  };
+
+  // Distribute fees
+  const distributeFees = async (uuid: string): Promise<string> => {
+    const currentContract = getContract();
+    if (!currentContract || !signer) {
+      throw new Error('Contract not connected');
+    }
+
+    setLoading(true);
+    try {
+      const tx = await currentContract.distributeFeesByUuid(uuid);
+      await tx.wait();
+      return tx.hash;
+    } catch (error) {
+      console.error('Failed to distribute fees:', error);
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -512,12 +633,16 @@ export const useCreatorToken = () => {
     sellCreatorTokens,
     getCurrentPrice,
     getActualPrice,
+    getBuyPrice,
+    getSellPrice,
+    getFreebieSellPrice,
     getCreatorStats,
     getUserPortfolio,
     getRemainingFreebies,
     canClaimFreebie,
     checkCreatorExists,
-    getCreatorData
+    getCreatorData,
+    distributeFees
   };
 };
 

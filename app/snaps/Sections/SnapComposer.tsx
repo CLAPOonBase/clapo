@@ -162,6 +162,20 @@ export function SnapComposer() {
       return
     }
     
+    // Check wallet connection for token creation
+    if (!isConnected) {
+      const shouldConnect = confirm('Wallet not connected. Connect wallet to enable token trading for your posts?')
+      if (shouldConnect) {
+        try {
+          await connectWallet()
+          // Continue with post creation after wallet connection
+        } catch (error) {
+          console.error('Failed to connect wallet:', error)
+          alert('Failed to connect wallet. Post will be created without token trading.')
+        }
+      }
+    }
+    
     console.log('🔍 Submit Debug:', {
       session,
       sessionDbUser: session?.dbUser,

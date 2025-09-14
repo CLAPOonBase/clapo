@@ -43,6 +43,7 @@ export default function CreatorTokenTrading({
     getUserPortfolio, 
     getRemainingFreebies,
     canClaimFreebie,
+    checkCreatorExists,
     isConnected,
     loading,
     connectWallet,
@@ -56,16 +57,38 @@ export default function CreatorTokenTrading({
 
   // Load creator token data
   useEffect(() => {
-    if (isOpen && creatorUuid) {
-      loadCreatorTokenData();
+    if (isOpen && creatorUuid && isConnected) {
+      // Add a small delay to ensure the contract is fully initialized
+      const timer = setTimeout(() => {
+        loadCreatorTokenData();
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [isOpen, creatorUuid]);
+  }, [isOpen, creatorUuid, isConnected]);
 
-  const loadCreatorTokenData = async () => {
+  const loadCreatorTokenData = async (retryCount = 0) => {
+    if (!isConnected) {
+      setError('Please connect your wallet to view token data');
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     
     try {
+      // First check if creator exists (this function works)
+      console.log('🔍 Checking if creator exists first...');
+      const exists = await checkCreatorExists(creatorUuid);
+      console.log('🔍 Creator exists:', exists);
+      
+      if (!exists) {
+        setError('Creator token does not exist');
+        return;
+      }
+      
+      console.log('🔍 Loading creator token data...');
       const [price, actualPriceValue, creatorStats, freebies, canClaim] = await Promise.all([
         getCurrentPrice(creatorUuid),
         getActualPrice(creatorUuid),
@@ -97,8 +120,16 @@ export default function CreatorTokenTrading({
         setPortfolio(userPortfolio);
       }
     } catch (err) {
-      setError('Failed to load creator token data');
       console.error('Error loading creator token data:', err);
+      
+      // Retry once if it's a contract connection error
+      if (retryCount === 0 && err instanceof Error && err.message.includes('Contract not connected')) {
+        console.log('Retrying loadCreatorTokenData...');
+        setTimeout(() => loadCreatorTokenData(1), 2000);
+        return;
+      }
+      
+      setError('Failed to load creator token data');
     } finally {
       setIsLoading(false);
     }
@@ -193,8 +224,8 @@ export default function CreatorTokenTrading({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-600/20 rounded-lg">
-              <User className="w-5 h-5 text-purple-400" />
+            <div className="p-2 bg-blue-600/20 rounded-lg">
+              <TrendingUp className="w-5 h-5 text-blue-400" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-white">Creator Token Trading</h2>
@@ -293,7 +324,7 @@ export default function CreatorTokenTrading({
               <h3 className="text-sm font-medium text-gray-400 mb-3">Your Portfolio</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-gray-500">Tokens Owned</p>
+                  <p className="text-xs text-gray-500">Shares Owned</p>
                   <p className="text-lg font-semibold text-white">{portfolio.balance}</p>
                 </div>
                 <div>
@@ -318,11 +349,11 @@ export default function CreatorTokenTrading({
               onClick={() => setActiveTab('buy')}
               className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'buy'
-                  ? 'bg-purple-600 text-white'
+                  ? 'bg-blue-600 text-white'
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              Buy Tokens
+              Buy Shares
             </button>
             <button
               onClick={() => setActiveTab('sell')}
@@ -332,7 +363,7 @@ export default function CreatorTokenTrading({
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              Sell Tokens
+              Sell Shares
             </button>
           </div>
 
@@ -350,20 +381,20 @@ export default function CreatorTokenTrading({
                      value={userCanClaimFreebie && remainingFreebies > 0 ? 1 : amount}
                      onChange={(e) => setAmount(parseInt(e.target.value) || 1)}
                      disabled={userCanClaimFreebie && remainingFreebies > 0}
-                     className={`w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                     className={`w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                        userCanClaimFreebie && remainingFreebies > 0 ? 'opacity-50 cursor-not-allowed' : ''
                      }`}
                    />
                    {userCanClaimFreebie && remainingFreebies > 0 && (
                      <p className="text-xs text-green-400 mt-1">
-                       You can only claim 1 free token
+                       You can only claim 1 free share
                      </p>
                    )}
                  </div>
                 
                  <div className="bg-gray-800/50 rounded-lg p-4">
                    <div className="flex justify-between items-center mb-2">
-                     <span className="text-sm text-gray-400">Price per token</span>
+                     <span className="text-sm text-gray-400">Price per share</span>
                      <span className="text-sm font-medium text-white">
                        {userCanClaimFreebie && remainingFreebies > 0 ? 'FREE' : formatPrice(currentPrice)}
                      </span>
@@ -390,13 +421,13 @@ export default function CreatorTokenTrading({
                       ? 'bg-green-600 hover:bg-green-700 text-white'
                       : !userCanClaimFreebie && remainingFreebies > 0
                       ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                      : 'bg-purple-600 hover:bg-purple-700 text-white'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
                   } ${loading || !isConnected ? 'disabled:bg-black disabled:cursor-not-allowed' : ''}`}
                 >
                   {loading ? 'Processing...' : 
-                   userCanClaimFreebie && remainingFreebies > 0 ? 'Claim Free Token' :
+                   userCanClaimFreebie && remainingFreebies > 0 ? 'Claim Free Share' :
                    !userCanClaimFreebie && remainingFreebies > 0 ? 'Already Claimed Freebie' :
-                   'Buy Tokens'}
+                   'Buy Shares'}
                 </button>
               </div>
             ) : (
@@ -415,14 +446,14 @@ export default function CreatorTokenTrading({
                   />
                   {portfolio && (
                     <p className="text-xs text-gray-500 mt-1">
-                      Max: {portfolio.balance} tokens
+                      Max: {portfolio.balance} shares
                     </p>
                   )}
                 </div>
                 
                  <div className="bg-gray-800/50 rounded-lg p-4">
                    <div className="flex justify-between items-center mb-2">
-                     <span className="text-sm text-gray-400">Price per token</span>
+                     <span className="text-sm text-gray-400">Price per share</span>
                      <span className="text-sm font-medium text-white">{formatPrice(actualPrice)}</span>
                    </div>
                    <div className="flex justify-between items-center">
@@ -442,9 +473,9 @@ export default function CreatorTokenTrading({
                       : 'bg-red-600 hover:bg-red-700 text-white'
                   } ${loading || !isConnected || !portfolio || portfolio.balance < amount ? 'disabled:bg-black disabled:cursor-not-allowed' : ''}`}
                 >
-                  {loading ? 'Processing...' : 
-                   remainingFreebies > 0 ? 'Cannot sell until all freebies claimed' :
-                   'Sell Tokens'}
+                   {loading ? 'Processing...' : 
+                    remainingFreebies > 0 ? 'Cannot sell until all freebies claimed' :
+                    'Sell Shares'}
                 </button>
               </div>
             )}

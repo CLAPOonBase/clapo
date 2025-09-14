@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
+import { useWalletContext } from '@/context/WalletContext';
 
 // Contract ABI for Post Token with UUID support
 const CONTRACT_ABI = [
@@ -71,88 +72,43 @@ export interface UserPortfolio {
 }
 
 export const usePostToken = () => {
+  const { provider, signer, address, isConnecting, connect, disconnect } = useWalletContext();
   const [contract, setContract] = useState<ethers.Contract | null>(null);
-  const [signer, setSigner] = useState<ethers.Signer | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [address, setAddress] = useState<string | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
+  
+  // Derive isConnected from global wallet context
+  const isConnected = !!signer && !!address;
 
-  // Check if wallet is already connected
+  // Update contract when wallet connection changes
   useEffect(() => {
-    const checkConnection = async () => {
-      if (typeof window !== 'undefined' && window.ethereum) {
-        try {
-          console.log('Checking wallet connection...');
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          const accounts = await provider.listAccounts();
-          console.log('Available accounts:', accounts.length);
-          
-          if (accounts.length > 0) {
-            const signer = await provider.getSigner();
-            const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-            const address = await signer.getAddress();
-            
-            console.log('Wallet connected:', address);
-            console.log('Contract address:', CONTRACT_ADDRESS);
-            
-            setContract(contract);
-            setSigner(signer);
-            setAddress(address);
-            setIsConnected(true);
-          } else {
-            console.log('No accounts found');
-            setIsConnected(false);
-          }
-        } catch (error) {
-          console.error('Failed to check wallet connection:', error);
-          setIsConnected(false);
-        }
-      } else {
-        console.log('window.ethereum not available');
-        setIsConnected(false);
-      }
-    };
-
-    checkConnection();
-  }, []);
-
-  // Connect wallet
-  const connectWallet = async () => {
-    if (typeof window === 'undefined' || !window.ethereum) {
-      throw new Error('MetaMask not found! Please install MetaMask to use this feature.');
-    }
-
-    setIsConnecting(true);
-    try {
-      console.log('Connecting wallet...');
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      const signer = await provider.getSigner();
+    if (signer && address) {
+      console.log('Setting up Post Token contract with global wallet context');
+      console.log('Wallet connected:', address);
+      console.log('Post Token Contract address:', CONTRACT_ADDRESS);
+      
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-      const address = await signer.getAddress();
-      
-      console.log('Wallet connected successfully:', address);
-      console.log('Contract address:', CONTRACT_ADDRESS);
-      
       setContract(contract);
-      setSigner(signer);
-      setAddress(address);
-      setIsConnected(true);
+    } else {
+      console.log('No wallet connection - clearing contract');
+      setContract(null);
+    }
+  }, [signer, address]);
+
+  // Connect wallet using global wallet context
+  const connectWallet = async () => {
+    try {
+      console.log('Connecting wallet using global wallet context...');
+      await connect();
     } catch (error) {
       console.error('Failed to connect wallet:', error);
       throw error;
-    } finally {
-      setIsConnecting(false);
     }
   };
 
-  // Disconnect wallet
+  // Disconnect wallet using global wallet context
   const disconnectWallet = () => {
     setContract(null);
-    setSigner(null);
-    setAddress(null);
-    setIsConnected(false);
+    disconnect();
   };
 
   // Create post token

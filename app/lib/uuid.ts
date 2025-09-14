@@ -25,11 +25,12 @@ export function generatePostTokenUUID(postId: string | number): string {
 }
 
 /**
- * Generate a UUID for creator tokens
- * @param creatorId - The creator ID
- * @returns A unique UUID for the creator token
+ * Get creator token identifier (just returns the user ID directly)
+ * @param userId - The user ID from backend API
+ * @returns The user ID as-is (no UUID generation, just use the backend user ID)
  */
-export function generateCreatorTokenUUID(creatorId: string | number): string {
-  return generateUUID('creator', creatorId);
+export function generateCreatorTokenUUID(userId: string | number): string {
+  // No UUID generation - just use the user ID directly from backend API response
+  return userId.toString();
 }
 
