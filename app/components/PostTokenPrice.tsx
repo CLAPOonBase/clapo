@@ -55,7 +55,9 @@ export default function PostTokenPrice({ postId, postContent, onTradeClick }: Po
       console.log(`📋 Step 1: Checking if post has a token...`);
       
       // Check if post has a token
-      const exists = await checkPostTokenExists(postId);
+      // Generate the UUID that was used during token creation
+      const tokenUuid = `post-${postId}`;
+      const exists = await checkPostTokenExists(tokenUuid);
       console.log(`✅ Post ${postId} token exists:`, exists);
       setHasToken(exists);
 
@@ -63,15 +65,15 @@ export default function PostTokenPrice({ postId, postContent, onTradeClick }: Po
         console.log(`📊 Step 2: Loading token stats for post: ${postId}`);
         try {
           console.log(`📊 Step 2a: Getting current price...`);
-          const price = await getCurrentPrice(postId);
+          const price = await getCurrentPrice(tokenUuid);
           console.log(`💰 Current price:`, price);
           
           console.log(`📊 Step 2b: Getting post stats...`);
-          const postStats = await getPostStats(postId);
+          const postStats = await getPostStats(tokenUuid);
           console.log(`📈 Post stats:`, postStats);
           
           console.log(`📊 Step 2c: Getting remaining freebies...`);
-          const freebies = await getRemainingFreebies(postId);
+          const freebies = await getRemainingFreebies(tokenUuid);
           console.log(`🎁 Remaining freebies:`, freebies);
 
           console.log(`✅ Token data loaded successfully for post ${postId}:`, { 

@@ -2,23 +2,30 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, TrendingUp, TrendingDown, DollarSign, Users, Gift } from 'lucide-react';
-import { usePostToken, PostTokenStats, UserPortfolio } from '../hooks/usePostToken';
+import { X, TrendingUp, TrendingDown, DollarSign, Users, Gift, User } from 'lucide-react';
+import { useCreatorToken, CreatorTokenStats, CreatorPortfolio } from '../hooks/useCreatorToken';
 import { useSession } from 'next-auth/react';
 import WalletConnectButton from './WalletConnectButton';
 
-interface PostTokenTradingProps {
-  postId: string;
-  postContent: string;
+interface CreatorTokenTradingProps {
+  creatorUuid: string;
+  creatorName: string;
+  creatorImageUrl?: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function PostTokenTrading({ postId, postContent, isOpen, onClose }: PostTokenTradingProps) {
+export default function CreatorTokenTrading({ 
+  creatorUuid, 
+  creatorName, 
+  creatorImageUrl, 
+  isOpen, 
+  onClose 
+}: CreatorTokenTradingProps) {
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
   const [amount, setAmount] = useState(1);
-  const [stats, setStats] = useState<PostTokenStats | null>(null);
-  const [portfolio, setPortfolio] = useState<UserPortfolio | null>(null);
+  const [stats, setStats] = useState<CreatorTokenStats | null>(null);
+  const [portfolio, setPortfolio] = useState<CreatorPortfolio | null>(null);
   const [currentPrice, setCurrentPrice] = useState(0);
   const [remainingFreebies, setRemainingFreebies] = useState(0);
   const [userCanClaimFreebie, setUserCanClaimFreebie] = useState(false);
@@ -28,11 +35,11 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
   const [success, setSuccess] = useState<string | null>(null);
 
   const { 
-    buyShares, 
-    sellShares, 
+    buyCreatorTokens, 
+    sellCreatorTokens, 
     getCurrentPrice, 
     getActualPrice,
-    getPostStats, 
+    getCreatorStats, 
     getUserPortfolio, 
     getRemainingFreebies,
     canClaimFreebie,
@@ -42,59 +49,56 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
     isConnecting,
     address,
     disconnectWallet
-  } = usePostToken();
+  } = useCreatorToken();
 
   const { data: session } = useSession();
   const userAddress = address; // Use wallet address instead of session address
 
-  // Load post token data
+  // Load creator token data
   useEffect(() => {
-    if (isOpen && postId) {
-      loadPostTokenData();
+    if (isOpen && creatorUuid) {
+      loadCreatorTokenData();
     }
-  }, [isOpen, postId]);
+  }, [isOpen, creatorUuid]);
 
-  const loadPostTokenData = async () => {
+  const loadCreatorTokenData = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Generate the UUID that was used during token creation
-      const tokenUuid = `post-${postId}`;
-      
-      const [price, actualPriceValue, postStats, freebies, canClaim] = await Promise.all([
-        getCurrentPrice(tokenUuid),
-        getActualPrice(tokenUuid),
-        getPostStats(tokenUuid),
-        getRemainingFreebies(tokenUuid),
-        canClaimFreebie(tokenUuid, userAddress || '')
+      const [price, actualPriceValue, creatorStats, freebies, canClaim] = await Promise.all([
+        getCurrentPrice(creatorUuid),
+        getActualPrice(creatorUuid),
+        getCreatorStats(creatorUuid),
+        getRemainingFreebies(creatorUuid),
+        canClaimFreebie(creatorUuid, userAddress || '')
       ]);
 
       setCurrentPrice(price);
       setActualPrice(actualPriceValue);
-      setStats(postStats);
+      setStats(creatorStats);
       setRemainingFreebies(freebies);
       setUserCanClaimFreebie(canClaim);
       
       // Debug logging
-      console.log('PostTokenTrading Debug:', {
-        postId,
+      console.log('CreatorTokenTrading Debug:', {
+        creatorUuid,
         price,
         actualPriceValue,
         freebies,
         canClaim,
         userAddress,
-        stats: postStats
+        stats: creatorStats
       });
 
       // Load user portfolio if connected
       if (userAddress) {
-        const userPortfolio = await getUserPortfolio(tokenUuid, userAddress);
+        const userPortfolio = await getUserPortfolio(creatorUuid, userAddress);
         setPortfolio(userPortfolio);
       }
     } catch (err) {
-      setError('Failed to load post token data');
-      console.error('Error loading post token data:', err);
+      setError('Failed to load creator token data');
+      console.error('Error loading creator token data:', err);
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +106,7 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
 
   const handleBuy = async () => {
     if (!isConnected) {
-      setError('Please connect your wallet to buy shares');
+      setError('Please connect your wallet to buy creator tokens');
       return;
     }
 
@@ -111,12 +115,11 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
     setSuccess(null);
 
     try {
-      const tokenUuid = `post-${postId}`;
-      await buyShares(tokenUuid);
-      setSuccess('Successfully bought shares!');
-      await loadPostTokenData(); // Refresh data
+      await buyCreatorTokens(creatorUuid);
+      setSuccess('Successfully bought creator tokens!');
+      await loadCreatorTokenData(); // Refresh data
     } catch (err: any) {
-      setError(err.message || 'Failed to buy shares');
+      setError(err.message || 'Failed to buy creator tokens');
     } finally {
       setIsLoading(false);
     }
@@ -124,12 +127,12 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
 
   const handleSell = async () => {
     if (!isConnected) {
-      setError('Please connect your wallet to sell shares');
+      setError('Please connect your wallet to sell creator tokens');
       return;
     }
 
     if (!portfolio || portfolio.balance < amount) {
-      setError('Insufficient shares to sell');
+      setError('Insufficient tokens to sell');
       return;
     }
 
@@ -138,12 +141,11 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
     setSuccess(null);
 
     try {
-      const tokenUuid = `post-${postId}`;
-      await sellShares(tokenUuid, amount);
-      setSuccess('Successfully sold shares!');
-      await loadPostTokenData(); // Refresh data
+      await sellCreatorTokens(creatorUuid, amount);
+      setSuccess('Successfully sold creator tokens!');
+      await loadCreatorTokenData(); // Refresh data
     } catch (err: any) {
-      setError(err.message || 'Failed to sell shares');
+      setError(err.message || 'Failed to sell creator tokens');
     } finally {
       setIsLoading(false);
     }
@@ -191,12 +193,12 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600/20 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-blue-400" />
+            <div className="p-2 bg-purple-600/20 rounded-lg">
+              <User className="w-5 h-5 text-purple-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Post Token Trading</h2>
-              <p className="text-sm text-gray-400 truncate max-w-[200px]">{postContent}</p>
+              <h2 className="text-lg font-semibold text-white">Creator Token Trading</h2>
+              <p className="text-sm text-gray-400 truncate max-w-[200px]">{creatorName}</p>
             </div>
           </div>
           <button
@@ -215,7 +217,7 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-1">Connect Wallet</h3>
-                  <p className="text-sm text-gray-400">Connect your wallet to trade post tokens</p>
+                  <p className="text-sm text-gray-400">Connect your wallet to trade creator tokens</p>
                 </div>
                 <WalletConnectButton
                   onConnect={connectWallet}
@@ -291,7 +293,7 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
               <h3 className="text-sm font-medium text-gray-400 mb-3">Your Portfolio</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-gray-500">Shares Owned</p>
+                  <p className="text-xs text-gray-500">Tokens Owned</p>
                   <p className="text-lg font-semibold text-white">{portfolio.balance}</p>
                 </div>
                 <div>
@@ -316,11 +318,11 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
               onClick={() => setActiveTab('buy')}
               className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'buy'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-purple-600 text-white'
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              Buy Shares
+              Buy Tokens
             </button>
             <button
               onClick={() => setActiveTab('sell')}
@@ -330,7 +332,7 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              Sell Shares
+              Sell Tokens
             </button>
           </div>
 
@@ -348,20 +350,20 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                      value={userCanClaimFreebie && remainingFreebies > 0 ? 1 : amount}
                      onChange={(e) => setAmount(parseInt(e.target.value) || 1)}
                      disabled={userCanClaimFreebie && remainingFreebies > 0}
-                     className={`w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                     className={`w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${
                        userCanClaimFreebie && remainingFreebies > 0 ? 'opacity-50 cursor-not-allowed' : ''
                      }`}
                    />
                    {userCanClaimFreebie && remainingFreebies > 0 && (
                      <p className="text-xs text-green-400 mt-1">
-                       You can only claim 1 free share
+                       You can only claim 1 free token
                      </p>
                    )}
                  </div>
                 
                  <div className="bg-gray-800/50 rounded-lg p-4">
                    <div className="flex justify-between items-center mb-2">
-                     <span className="text-sm text-gray-400">Price per share</span>
+                     <span className="text-sm text-gray-400">Price per token</span>
                      <span className="text-sm font-medium text-white">
                        {userCanClaimFreebie && remainingFreebies > 0 ? 'FREE' : formatPrice(currentPrice)}
                      </span>
@@ -388,13 +390,13 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                       ? 'bg-green-600 hover:bg-green-700 text-white'
                       : !userCanClaimFreebie && remainingFreebies > 0
                       ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-purple-600 hover:bg-purple-700 text-white'
                   } ${loading || !isConnected ? 'disabled:bg-black disabled:cursor-not-allowed' : ''}`}
                 >
                   {loading ? 'Processing...' : 
-                   userCanClaimFreebie && remainingFreebies > 0 ? 'Claim Free Share' :
+                   userCanClaimFreebie && remainingFreebies > 0 ? 'Claim Free Token' :
                    !userCanClaimFreebie && remainingFreebies > 0 ? 'Already Claimed Freebie' :
-                   'Buy Shares'}
+                   'Buy Tokens'}
                 </button>
               </div>
             ) : (
@@ -413,14 +415,14 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                   />
                   {portfolio && (
                     <p className="text-xs text-gray-500 mt-1">
-                      Max: {portfolio.balance} shares
+                      Max: {portfolio.balance} tokens
                     </p>
                   )}
                 </div>
                 
                  <div className="bg-gray-800/50 rounded-lg p-4">
                    <div className="flex justify-between items-center mb-2">
-                     <span className="text-sm text-gray-400">Price per share</span>
+                     <span className="text-sm text-gray-400">Price per token</span>
                      <span className="text-sm font-medium text-white">{formatPrice(actualPrice)}</span>
                    </div>
                    <div className="flex justify-between items-center">
@@ -442,7 +444,7 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                 >
                   {loading ? 'Processing...' : 
                    remainingFreebies > 0 ? 'Cannot sell until all freebies claimed' :
-                   'Sell Shares'}
+                   'Sell Tokens'}
                 </button>
               </div>
             )}
@@ -465,7 +467,7 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
           {!isConnected && (
             <div className="bg-yellow-900/20 border border-yellow-500/50 rounded-lg p-3">
               <p className="text-sm text-yellow-400">
-                Please connect your wallet to trade shares
+                Please connect your wallet to trade creator tokens
               </p>
             </div>
           )}
@@ -476,3 +478,4 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
 
   return createPortal(modalContent, document.body);
 }
+

@@ -3,14 +3,14 @@
 import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 
-// Contract ABI for Post Token with UUID support
-const CONTRACT_ABI = [
-  // Create post with UUID
-  "function createPost(string memory uuid, string memory content, string memory imageUrl, uint256 _freebieCount, uint256 _quadraticDivisor) external returns (string memory)",
+// Contract ABI for Creator Token
+const CREATOR_TOKEN_ABI = [
+  // Create creator with UUID
+  "function createCreator(string memory uuid, string memory name, string memory imageUrl, string memory description, uint256 _freebieCount, uint256 _quadraticDivisor) external returns (string memory)",
   
   // Buy/Sell functions
-  "function buyPostTokensByUuid(string memory uuid) external",
-  "function sellPostTokensByUuid(string memory uuid, uint256 amount) external",
+  "function buyCreatorTokensByUuid(string memory uuid) external",
+  "function sellCreatorTokensByUuid(string memory uuid, uint256 amount) external",
   
   // View functions
   "function getCurrentPriceByUuid(string memory uuid) external view returns (uint256)",
@@ -19,31 +19,28 @@ const CONTRACT_ABI = [
   "function getSellPriceByUuid(string memory uuid) external view returns (uint256)",
   "function getFreebieSellPriceByUuid(string memory uuid) external view returns (uint256)",
   "function canClaimFreebieByUuid(string memory uuid, address user) external view returns (bool)",
-  "function getPostStatsByUuid(string memory uuid) external view returns (uint256 totalBuyers, uint256 payingBuyers, uint256 freebieClaimed, uint256 currentPrice, uint256 highestPrice, uint256 rewardPoolBalance, uint256 creatorFeeBalance, uint256 platformFeeBalance, uint256 liability, bool breakEven, uint256 totalSupply, uint256 circulatingSupply)",
-  "function getUserPostPortfolioByUuid(string memory uuid, address user) external view returns (uint256 balance, uint256 totalBought, uint256 totalSold, uint256 totalFeesPaid, uint256 lastTransactionTime, bool hasFreebieFlag, uint256 transactionCount, uint256 netShares, uint256 currentValue)",
+  "function getCreatorStatsByUuid(string memory uuid) external view returns (uint256 totalBuyers, uint256 payingBuyers, uint256 freebieClaimed, uint256 currentPrice, uint256 highestPrice, uint256 rewardPoolBalance, uint256 creatorFeeBalance, uint256 platformFeeBalance, uint256 liability, bool breakEven)",
+  "function getUserCreatorPortfolioByUuid(string memory uuid, address user) external view returns (uint256 balance, uint256 totalBought, uint256 totalSold, uint256 totalFeesPaid, uint256 lastTransactionTime, bool hasFreebieFlag, uint256 transactionCount, uint256 netShares, uint256 currentValue)",
   "function getRemainingFreebiesByUuid(string memory uuid) external view returns (uint256)",
-  "function getRemainingSupplyByUuid(string memory uuid) external view returns (uint256)",
   "function distributeFeesByUuid(string memory uuid) external",
   
   // UUID utility functions
   "function doesUuidExist(string memory uuid) external view returns (bool)",
   "function getInternalIdFromUuid(string memory uuid) external view returns (uint256)",
   "function getUuidFromInternalId(uint256 internalId) external view returns (string memory)",
-  "function getPostByUuid(string memory uuid) external view returns (tuple(uint256 postId, string uuid, string content, string imageUrl, address creator, uint256 createdAt, bool exists))",
-  
-  // Contract state functions
-  "function paused() external view returns (bool)",
+  "function getCreatorByUuid(string memory uuid) external view returns (tuple(uint256 creatorId, string uuid, string name, string imageUrl, string description, address creatorAddress, uint256 createdAt, bool exists))",
   
   // Events
-  "event PostCreated(uint256 indexed postId, address indexed creator, string content)",
-  "event PostTokensBought(uint256 indexed postId, address indexed buyer, uint256 amount, uint256 price, bool isFreebie, uint256 transactionId)",
-  "event PostTokensSold(uint256 indexed postId, address indexed seller, uint256 amount, uint256 payout, bool isFreebie, uint256 transactionId)"
+  "event CreatorCreated(uint256 indexed creatorId, address indexed creator, string name)",
+  "event CreatorTokensBought(uint256 indexed creatorId, address indexed buyer, uint256 amount, uint256 price, bool isFreebie, uint256 transactionId)",
+  "event CreatorTokensSold(uint256 indexed creatorId, address indexed seller, uint256 amount, uint256 payout, bool isFreebie, uint256 transactionId)"
 ];
 
-const CONTRACT_ADDRESS = "0xAb6E048829A7c7Cc9b9C5f31cb445237F2b2dC7e"; // Post Token contract deployed on Monad testnet
+// Contract addresses from deployment
+const CREATOR_TOKEN_ADDRESS = "0xED2752fD59d1514d905A3f11CbF99CdDFe6d69a8"; // Creator Token contract deployed on Monad testnet
 const MOCK_USDC_ADDRESS = "0x44aAAEeC1A83c30Fe5784Af49E6a38D3709Ee148";
 
-export interface PostTokenStats {
+export interface CreatorTokenStats {
   totalBuyers: number;
   payingBuyers: number;
   freebieClaimed: number;
@@ -54,11 +51,9 @@ export interface PostTokenStats {
   platformFeeBalance: number;
   liability: number;
   breakEven: boolean;
-  totalSupply: number;
-  circulatingSupply: number;
 }
 
-export interface UserPortfolio {
+export interface CreatorPortfolio {
   balance: number;
   totalBought: number;
   totalSold: number;
@@ -70,7 +65,18 @@ export interface UserPortfolio {
   currentValue: number;
 }
 
-export const usePostToken = () => {
+export interface CreatorData {
+  creatorId: number;
+  uuid: string;
+  name: string;
+  imageUrl: string;
+  description: string;
+  creatorAddress: string;
+  createdAt: number;
+  exists: boolean;
+}
+
+export const useCreatorToken = () => {
   const [contract, setContract] = useState<ethers.Contract | null>(null);
   const [signer, setSigner] = useState<ethers.Signer | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -90,11 +96,11 @@ export const usePostToken = () => {
           
           if (accounts.length > 0) {
             const signer = await provider.getSigner();
-            const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+            const contract = new ethers.Contract(CREATOR_TOKEN_ADDRESS, CREATOR_TOKEN_ABI, signer);
             const address = await signer.getAddress();
             
             console.log('Wallet connected:', address);
-            console.log('Contract address:', CONTRACT_ADDRESS);
+            console.log('Creator Token Contract address:', CREATOR_TOKEN_ADDRESS);
             
             setContract(contract);
             setSigner(signer);
@@ -129,11 +135,11 @@ export const usePostToken = () => {
       const provider = new ethers.BrowserProvider(window.ethereum);
       await provider.send("eth_requestAccounts", []);
       const signer = await provider.getSigner();
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+      const contract = new ethers.Contract(CREATOR_TOKEN_ADDRESS, CREATOR_TOKEN_ABI, signer);
       const address = await signer.getAddress();
       
       console.log('Wallet connected successfully:', address);
-      console.log('Contract address:', CONTRACT_ADDRESS);
+      console.log('Creator Token Contract address:', CREATOR_TOKEN_ADDRESS);
       
       setContract(contract);
       setSigner(signer);
@@ -155,21 +161,23 @@ export const usePostToken = () => {
     setIsConnected(false);
   };
 
-  // Create post token
-  const createPostToken = async (
+  // Create creator token
+  const createCreatorToken = async (
     uuid: string,
-    content: string,
+    name: string,
     imageUrl: string,
+    description: string,
     freebieCount: number = 3,
     quadraticDivisor: number = 1
   ) => {
-    console.log('🚀 createPostToken called with:', {
+    console.log('🚀 createCreatorToken called with:', {
       uuid,
-      content: content.substring(0, 50) + '...',
+      name,
       imageUrl,
+      description,
       freebieCount,
       quadraticDivisor,
-      contractAddress: CONTRACT_ADDRESS,
+      contractAddress: CREATOR_TOKEN_ADDRESS,
       hasContract: !!contract,
       hasSigner: !!signer,
       userAddress: address
@@ -182,40 +190,17 @@ export const usePostToken = () => {
 
     setLoading(true);
     try {
-      console.log('📝 Calling contract.createPost...');
+      console.log('📝 Calling contract.createCreator...');
       console.log('Contract method details:', {
-        method: 'createPost',
-        params: [uuid, content, imageUrl, freebieCount, quadraticDivisor],
-        contractAddress: CONTRACT_ADDRESS,
-        userAddress: address
+        method: 'createCreator',
+        params: [uuid, name, imageUrl, description, freebieCount, quadraticDivisor]
       });
 
-      // First check if the contract is paused
-      try {
-        const isPaused = await contract.paused();
-        console.log('Contract paused status:', isPaused);
-        if (isPaused) {
-          throw new Error('Contract is currently paused');
-        }
-      } catch (pauseError) {
-        console.log('Could not check pause status:', pauseError);
-      }
-
-      // Check if UUID already exists
-      try {
-        const exists = await contract.doesUuidExist(uuid);
-        console.log('UUID exists check:', exists);
-        if (exists) {
-          throw new Error('Post with this UUID already exists');
-        }
-      } catch (existsError) {
-        console.log('Could not check UUID existence:', existsError);
-      }
-
-      const tx = await contract.createPost(
+      const tx = await contract.createCreator(
         uuid,
-        content,
+        name,
         imageUrl,
+        description,
         freebieCount,
         quadraticDivisor
       );
@@ -239,70 +224,51 @@ export const usePostToken = () => {
 
       return tx.hash;
     } catch (error) {
-      console.error('❌ Failed to create post token:', error);
+      console.error('❌ Failed to create creator token:', error);
       console.error('Error details:', {
         message: error.message,
         code: error.code,
         reason: error.reason,
-        data: error.data,
-        stack: error.stack
+        data: error.data
       });
-      
-      // Try to parse the error message for better user feedback
-      let userMessage = 'Failed to create post token';
-      
-      if (error.message?.includes('Post with this UUID already exists')) {
-        userMessage = 'A token already exists for this post. Please try again.';
-      } else if (error.message?.includes('Contract is currently paused')) {
-        userMessage = 'Token creation is temporarily disabled. Please try again later.';
-      } else if (error.message?.includes('execution reverted')) {
-        userMessage = 'Transaction failed. Please check your wallet and try again.';
-      } else if (error.message?.includes('Internal JSON-RPC error')) {
-        userMessage = 'Network error. Please check your connection and try again.';
-      } else if (error.message?.includes('insufficient funds')) {
-        userMessage = 'Insufficient funds for gas fees. Please add ETH to your wallet.';
-      }
-      
-      const enhancedError = new Error(userMessage);
-      enhancedError.originalError = error;
-      throw enhancedError;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Buy shares
-  const buyShares = async (uuid: string) => {
-    if (!contract || !signer) {
-      throw new Error('Contract not connected');
-    }
-
-    setLoading(true);
-    try {
-      const tx = await contract.buyPostTokensByUuid(uuid);
-      await tx.wait();
-      return tx.hash;
-    } catch (error) {
-      console.error('Failed to buy shares:', error);
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  // Sell shares
-  const sellShares = async (uuid: string, amount: number) => {
+  // Buy creator tokens
+  const buyCreatorTokens = async (uuid: string) => {
     if (!contract || !signer) {
       throw new Error('Contract not connected');
     }
 
     setLoading(true);
     try {
-      const tx = await contract.sellPostTokensByUuid(uuid, amount);
+      const tx = await contract.buyCreatorTokensByUuid(uuid);
       await tx.wait();
       return tx.hash;
     } catch (error) {
-      console.error('Failed to sell shares:', error);
+      console.error('Failed to buy creator tokens:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Sell creator tokens
+  const sellCreatorTokens = async (uuid: string, amount: number) => {
+    if (!contract || !signer) {
+      throw new Error('Contract not connected');
+    }
+
+    setLoading(true);
+    try {
+      const tx = await contract.sellCreatorTokensByUuid(uuid, amount);
+      await tx.wait();
+      return tx.hash;
+    } catch (error) {
+      console.error('Failed to sell creator tokens:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -316,10 +282,9 @@ export const usePostToken = () => {
     }
 
     try {
-      // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
-        console.log(`Post ${uuid} does not exist, returning 0 price`);
+        console.log(`Creator ${uuid} does not exist, returning 0 price`);
         return 0;
       }
 
@@ -331,21 +296,41 @@ export const usePostToken = () => {
     }
   };
 
-  // Get post stats
-  const getPostStats = async (uuid: string): Promise<PostTokenStats | null> => {
+  // Get actual price
+  const getActualPrice = async (uuid: string): Promise<number> => {
     if (!contract) {
       throw new Error('Contract not connected');
     }
 
     try {
-      // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
-        console.log(`Post ${uuid} does not exist, returning null stats`);
+        console.log(`Creator ${uuid} does not exist, returning 0 actual price`);
+        return 0;
+      }
+
+      const price = await contract.getActualPriceByUuid(uuid);
+      return parseFloat(ethers.formatUnits(price, 6)); // USDC has 6 decimals
+    } catch (error) {
+      console.error('Failed to get actual price:', error);
+      return 0;
+    }
+  };
+
+  // Get creator stats
+  const getCreatorStats = async (uuid: string): Promise<CreatorTokenStats | null> => {
+    if (!contract) {
+      throw new Error('Contract not connected');
+    }
+
+    try {
+      const exists = await contract.doesUuidExist(uuid);
+      if (!exists) {
+        console.log(`Creator ${uuid} does not exist, returning null stats`);
         return null;
       }
 
-      const stats = await contract.getPostStatsByUuid(uuid);
+      const stats = await contract.getCreatorStatsByUuid(uuid);
       return {
         totalBuyers: Number(stats.totalBuyers),
         payingBuyers: Number(stats.payingBuyers),
@@ -356,24 +341,22 @@ export const usePostToken = () => {
         creatorFeeBalance: parseFloat(ethers.formatUnits(stats.creatorFeeBalance, 6)),
         platformFeeBalance: parseFloat(ethers.formatUnits(stats.platformFeeBalance, 6)),
         liability: parseFloat(ethers.formatUnits(stats.liability, 6)),
-        breakEven: stats.breakEven,
-        totalSupply: Number(stats.totalSupply),
-        circulatingSupply: Number(stats.circulatingSupply)
+        breakEven: stats.breakEven
       };
     } catch (error) {
-      console.error('Failed to get post stats:', error);
+      console.error('Failed to get creator stats:', error);
       return null;
     }
   };
 
   // Get user portfolio
-  const getUserPortfolio = async (uuid: string, userAddress: string): Promise<UserPortfolio | null> => {
+  const getUserPortfolio = async (uuid: string, userAddress: string): Promise<CreatorPortfolio | null> => {
     if (!contract) {
       throw new Error('Contract not connected');
     }
 
     try {
-      const portfolio = await contract.getUserPostPortfolioByUuid(uuid, userAddress);
+      const portfolio = await contract.getUserCreatorPortfolioByUuid(uuid, userAddress);
       return {
         balance: Number(portfolio.balance),
         totalBought: Number(portfolio.totalBought),
@@ -398,10 +381,9 @@ export const usePostToken = () => {
     }
 
     try {
-      // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
-        console.log(`Post ${uuid} does not exist, returning 0 freebies`);
+        console.log(`Creator ${uuid} does not exist, returning 0 freebies`);
         return 0;
       }
 
@@ -409,28 +391,6 @@ export const usePostToken = () => {
       return Number(freebies);
     } catch (error) {
       console.error('Failed to get remaining freebies:', error);
-      return 0;
-    }
-  };
-
-  // Get actual price (ignores freebie availability)
-  const getActualPrice = async (uuid: string): Promise<number> => {
-    if (!contract) {
-      throw new Error('Contract not connected');
-    }
-
-    try {
-      // First check if post exists
-      const exists = await contract.doesUuidExist(uuid);
-      if (!exists) {
-        console.log(`Post ${uuid} does not exist, returning 0 actual price`);
-        return 0;
-      }
-
-      const price = await contract.getActualPriceByUuid(uuid);
-      return Number(ethers.formatUnits(price, 6)); // USDC has 6 decimals
-    } catch (error) {
-      console.error('Failed to get actual price:', error);
       return 0;
     }
   };
@@ -448,16 +408,15 @@ export const usePostToken = () => {
     }
 
     try {
-      // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
-        console.log(`Post ${uuid} does not exist, returning false for freebie eligibility`);
+        console.log(`Creator ${uuid} does not exist, returning false for freebie eligibility`);
         return false;
       }
 
-      console.log(`Checking freebie eligibility for user ${userAddress} on post ${uuid}`);
+      console.log(`Checking freebie eligibility for user ${userAddress} on creator ${uuid}`);
       const canClaim = await contract.canClaimFreebieByUuid(uuid, userAddress);
-      console.log(`User ${userAddress} can claim freebie on post ${uuid}:`, canClaim);
+      console.log(`User ${userAddress} can claim freebie on creator ${uuid}:`, canClaim);
       return canClaim;
     } catch (error) {
       console.error('Failed to check freebie eligibility:', error);
@@ -472,67 +431,31 @@ export const usePostToken = () => {
     }
   };
 
-  // Check contract state and connectivity
-  const checkContractState = async (): Promise<{
-    isConnected: boolean;
-    isPaused: boolean;
-    contractAddress: string;
-    userAddress: string;
-  }> => {
-    if (!contract || !address) {
-      return {
-        isConnected: false,
-        isPaused: false,
-        contractAddress: CONTRACT_ADDRESS,
-        userAddress: address || 'Not connected'
-      };
-    }
-
-    try {
-      const isPaused = await contract.paused();
-      return {
-        isConnected: true,
-        isPaused,
-        contractAddress: CONTRACT_ADDRESS,
-        userAddress: address
-      };
-    } catch (error) {
-      console.error('Failed to check contract state:', error);
-      return {
-        isConnected: false,
-        isPaused: false,
-        contractAddress: CONTRACT_ADDRESS,
-        userAddress: address || 'Not connected'
-      };
-    }
-  };
-
-  // Check if post token exists
-  const checkPostTokenExists = async (uuid: string): Promise<boolean> => {
-    console.log(`🔍 checkPostTokenExists called for post: ${uuid}`);
+  // Check if creator exists
+  const checkCreatorExists = async (uuid: string): Promise<boolean> => {
+    console.log(`🔍 checkCreatorExists called for creator: ${uuid}`);
     console.log(`Contract status:`, { 
       hasContract: !!contract, 
-      contractAddress: CONTRACT_ADDRESS,
+      contractAddress: CREATOR_TOKEN_ADDRESS,
       hasSigner: !!signer,
       userAddress: address
     });
     
     if (!contract) {
-      console.log('❌ No contract available for checking post existence');
+      console.log('❌ No contract available for checking creator existence');
       return false;
     }
 
     try {
       console.log(`📞 Calling contract.doesUuidExist(${uuid})...`);
-      // Use the safe function that doesn't revert
       const exists = await contract.doesUuidExist(uuid);
-      console.log(`✅ Contract response - Post ${uuid} exists:`, exists);
+      console.log(`✅ Contract response - Creator ${uuid} exists:`, exists);
       return exists;
     } catch (error) {
-      console.error('❌ Failed to check if post token exists:', error);
+      console.error('❌ Failed to check if creator exists:', error);
       console.error('Error details:', {
         uuid,
-        contractAddress: CONTRACT_ADDRESS,
+        contractAddress: CREATOR_TOKEN_ADDRESS,
         error: error,
         errorMessage: error?.message,
         errorCode: error?.code,
@@ -540,8 +463,38 @@ export const usePostToken = () => {
         errorData: error?.data
       });
       
-      // If the call fails, assume the post doesn't exist
+      // If the call fails, assume the creator doesn't exist
       return false;
+    }
+  };
+
+  // Get creator data
+  const getCreatorData = async (uuid: string): Promise<CreatorData | null> => {
+    if (!contract) {
+      throw new Error('Contract not connected');
+    }
+
+    try {
+      const exists = await contract.doesUuidExist(uuid);
+      if (!exists) {
+        console.log(`Creator ${uuid} does not exist, returning null data`);
+        return null;
+      }
+
+      const creator = await contract.getCreatorByUuid(uuid);
+      return {
+        creatorId: Number(creator.creatorId),
+        uuid: creator.uuid,
+        name: creator.name,
+        imageUrl: creator.imageUrl,
+        description: creator.description,
+        creatorAddress: creator.creatorAddress,
+        createdAt: Number(creator.createdAt),
+        exists: creator.exists
+      };
+    } catch (error) {
+      console.error('Failed to get creator data:', error);
+      return null;
     }
   };
 
@@ -554,16 +507,17 @@ export const usePostToken = () => {
     isConnecting,
     connectWallet,
     disconnectWallet,
-    createPostToken,
-    buyShares,
-    sellShares,
+    createCreatorToken,
+    buyCreatorTokens,
+    sellCreatorTokens,
     getCurrentPrice,
     getActualPrice,
-    getPostStats,
+    getCreatorStats,
     getUserPortfolio,
     getRemainingFreebies,
     canClaimFreebie,
-    checkPostTokenExists,
-    checkContractState
+    checkCreatorExists,
+    getCreatorData
   };
 };
+
