@@ -380,7 +380,7 @@ const [currentPage, setCurrentPage] = useState<
 
   if (isLoading) {
     return (
-      <div className="flex-col max-w-3xl border md:flex-row text-white flex mx-auto">
+      <div className="flex-col max-w-3xl md:flex-row text-white flex mx-auto">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
         <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-black p-4">
           <div className="animate-pulse">
@@ -411,9 +411,9 @@ const [currentPage, setCurrentPage] = useState<
   }
 
   return (
-    <div className="flex-col md:flex-row max-w-3xl border-x-2 border-gray-700/70 text-white flex mx-auto">
+    <div className="flex-col md:flex-row max-w-3xl border-gray-700/70 text-white flex mx-auto">
       <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-      <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-black p-4">
+      <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-black py-4">
         {/* Back Button */}
         <div className="mb-6">
           <button
@@ -424,124 +424,121 @@ const [currentPage, setCurrentPage] = useState<
             <span>Back</span>
           </button>
         </div>
-        <div className='bg-black rounded-2xl p-6 shadow-custom'>
-          <div>
-            <Image src='https://pbs.twimg.com/profile_banners/1296970423851077632/1693025431/600x200' alt={''} className='h-40 w-full object-cover rounded-2xl' width={1000} height={1000}/>
-          </div>
-             <div className="flex items-center justify-end py-2 text-secondary space-x-6 text-sm text-dark-400 mb-4">
-                <div className="flex items-center space-x-1">
-                  <Calendar className="w-4 h-4" />
-                  <span>Joined {formatDate(userProfile.created_at)}</span>
-                </div>
-              </div>
-        </div>
 
-   <div className='flex justify-between'>
-         {/* Profile Header */}
-        <div className="p-6 -mt-20 border-dark-700 bg-black">
-          <div className="flex flex-col items-start space-x-4">
-                    <div className='flex w-full items-center mb-4'>
-                            <Image
-                src={userProfile.avatar_url || '/4.png'}
-                alt={userProfile.username}
-                width={80}
-                height={80}
-                className="w-20 h-20 rounded-full"
-              />
-                          <div className="flex justify-center items-center px-2">
-<div className='flex items-center justify-center space-x-3 mb-3'>
-  {!isOwnProfile && (
-    <>
-      <button
-        onClick={handleFollowToggle}
-        disabled={isCheckingFollowStatus}
-        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-          isCheckingFollowStatus
-            ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
-            : isFollowing
-            ? 'bg-red-600 text-white hover:bg-red-700'
-            : 'bg-blue-600 text-white hover:bg-blue-700'
-        }`}
-      >
-        {isCheckingFollowStatus ? 'Checking...' : isFollowing ? 'Unfollow' : 'Follow'}
-      </button>
+<div className='border-2 border-gray-700/70 rounded-3xl'>
+  <div className="border-b border-gray-700/70 p-4 py-6 overflow-hidden">
+  {/* Profile Header */}
+  <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 ">
+    {/* Left Section - Profile Info */}
+    <div className="flex items-center gap-6">
+      {/* Avatar */}
+      <div className="relative">
+        <Image
+          src={userProfile.avatar_url || '/4.png'}
+          alt={userProfile.username}
+          width={96}
+          height={96}
+          className="w-16 h-16 rounded-full ring-4 ring-blue-500/30 shadow-xl"
+        />
+        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-2 border-black rounded-full"></div>
+      </div>
 
-      <button
-        onClick={() => {
-          const profileLink = `${window.location.origin}/user/${userProfile.username}`;
-          navigator.clipboard.writeText(profileLink);
-          alert('Profile link copied!');
-        }}
-        className="px-4 py-2 rounded-full text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
-      >
-        Share
-      </button>
-    </>
-  )}
+      {/* User Info */}
+      <div className="flex flex-col">
+        <h1 className="text-white text-sm font-bold mb-2 tracking-tight">
+          {userProfile.username}
+        </h1>
+        {userProfile.bio && (
+          <p className="text-gray-300 text-sm leading-relaxed max-w-md">
+            {userProfile.bio}
+          </p>
+        )}
+      </div>
+    </div>
+
+    {/* Right Section - Action Buttons */}
+    <div className="flex items-center gap-3">
+      {!isOwnProfile && (
+        <>
+          <button
+            onClick={handleFollowToggle}
+            disabled={isCheckingFollowStatus}
+            className={`px-2 py-1 rounded-full text-xs font-semibold transition-all duration-200 transform hover:scale-105 ${
+              isCheckingFollowStatus
+                ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                : isFollowing
+                ? 'bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white shadow-lg shadow-custom'
+                : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-lg'
+            }`}
+          >
+            {isCheckingFollowStatus ? 'Checking...' : isFollowing ? 'Unfollow' : 'Follow'}
+          </button>
+
+         
+        </>
+      )}
+    </div>
+      <div className="grid grid-cols-3 gap-8 ">
+    {/* Posts */}
+    <div className="text-center group cursor-pointer">
+      <div className="text-white font-bold text-sm mb-1 group-hover:text-blue-400 transition-colors">
+        {userProfile.total_posts}
+      </div>
+      <div className="text-gray-400 text-sm font-medium uppercase tracking-wider">
+        Posts
+      </div>
+    </div>
+
+    {/* Followers */}
+    <div 
+      className={`text-center group transition-all duration-200 ${
+        isLoadingFollowers 
+          ? 'cursor-not-allowed opacity-50' 
+          : 'cursor-pointer hover:scale-105'
+      }`} 
+      onClick={!isLoadingFollowers ? loadFollowersList : undefined}
+    >
+      <div className="text-white font-bold text-sm mb-1 group-hover:text-blue-400 transition-colors">
+        {isLoadingFollowers ? (
+          <div className="animate-pulse">...</div>
+        ) : (
+          userProfile.followers_count
+        )}
+      </div>
+      <div className="text-gray-400 text-sm font-medium uppercase tracking-wider">
+        Followers
+      </div>
+    </div>
+
+    {/* Following */}
+    <div 
+      className={`text-center group transition-all duration-200 ${
+        isLoadingFollowing 
+          ? 'cursor-not-allowed opacity-50' 
+          : 'cursor-pointer hover:scale-105'
+      }`} 
+      onClick={!isLoadingFollowing ? loadFollowingList : undefined}
+    >
+      <div className="text-white font-bold text-sm mb-1 group-hover:text-blue-400 transition-colors">
+        {isLoadingFollowing ? (
+          <div className="animate-pulse">...</div>
+        ) : (
+          userProfile.following_count
+        )}
+      </div>
+      <div className="text-gray-400 text-sm font-medium uppercase tracking-wider">
+        Following
+      </div>
+    </div>
+  </div>
+  </div>
+
+  {/* Stats Section */}
+
 </div>
-
-          
-              
-                    </div>
-          
-
-              {/* Stats Grid */}
-
-
-              {/* Additional Stats */}
-              {/* <div className="grid grid-cols-3 gap-4 text-xs text-dark-400">
-                <div className="text-center">
-                  <span>Comments: {userProfile.total_comments_made}</span>
-                </div>
-                <div className="text-center">
-                  <span>Retweets: {userProfile.total_retweets_made}</span>
-                </div>
-                <div className="text-center">
-                  <span>Bookmarks: {userProfile.total_bookmarks_made}</span>
-                </div>
-              </div> */}
-            </div>
-            <div className="">
-
-                              <h3 className="text-white text-xl font-bold">
-                  {userProfile.username}
-                </h3>
-                    {userProfile.bio && (
-                <p className="text-dark-300 text-sm mb-4">
-                  {userProfile.bio}
-                </p>
-              )}
-            </div>
-            
-
-          </div>
-        </div>
-                      <div className="flex items-center space-x-8 mb-4 px-6">
-                <div className="text-center">
-                  <div className="text-white font-semibold text-lg">{userProfile.total_posts}</div>
-                  <div className="text-dark-400 text-xs">Posts</div>
-                </div>
-                <div className={`text-center transition-colors ${isLoadingFollowers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-blue-400'}`} onClick={!isLoadingFollowers ? loadFollowersList : undefined}>
-                  <div className="text-white font-semibold text-lg">
-                    {isLoadingFollowers ? '...' : userProfile.followers_count}
-                  </div>
-                  <div className="text-dark-400 text-xs">Followers</div>
-                </div>
-                <div className={`text-center transition-colors ${isLoadingFollowing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-blue-400'}`} onClick={!isLoadingFollowing ? loadFollowingList : undefined}>
-                  <div className="text-white font-semibold text-lg">
-                    {isLoadingFollowing ? '...' : userProfile.following_count}
-                  </div>
-                  <div className="text-dark-400 text-xs">Following</div>
-                </div>
-                {/* <div className="text-center">
-                  <div className="text-white font-semibold text-lg">{userProfile.total_likes_given}</div>
-                  <div className="text-dark-400 text-xs">Likes</div>
-                </div> */}
-              </div>
-   </div>
-    <div className="w-full">
-      <div className="bg-black rounded-2xl w-full p-0 shadow-2xl border border-gray-700/70 overflow-hidden">
-        <div className="flex h-24">
+    <div className="w-full p-4">
+      <div className="bg-black rounded-2xl w-full p-0 shadow-custom-purple overflow-hidden">
+        <div className="flex h-24 ">
           {/* Share Price Section */}
           <div className="flex bg-black/50 backdrop-blur-sm p-4 w-full items-center justify-between border-r border-gray-700/70">
             <div>
@@ -574,6 +571,7 @@ const [currentPage, setCurrentPage] = useState<
         </div>
       </div>
     </div>
+</div>
 
         {/* Tabs */}
         <div className="border-b border-dark-700 mb-6">
@@ -581,7 +579,6 @@ const [currentPage, setCurrentPage] = useState<
             {[
               { id: 'posts', label: 'Posts', icon: Grid },
               { id: 'activity', label: 'Activity', icon: MessageCircle },
-              { id: 'followers', label: 'Followers', icon: Users }
             ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -605,7 +602,7 @@ const [currentPage, setCurrentPage] = useState<
             <div className="space-y-4">
               {userProfile?.posts?.length > 0 ? (
                 userProfile.posts.map((post) => (
-                  <div key={post.id} className="bg-dark-700 rounded-lg p-4">
+                  <div key={post.id} className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl">
                     <div className="flex items-start space-x-3">
                       <Image
                         src={userProfile.avatar_url || '/4.png'}
@@ -743,7 +740,7 @@ const [currentPage, setCurrentPage] = useState<
             <div className="space-y-4">
               {userProfile?.recent_activity?.length > 0 ? (
                 userProfile.recent_activity.map((activity, index) => (
-                  <div key={index} className="bg-dark-700 rounded-lg p-4">
+                  <div key={index} className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl">
                     <div className="flex items-start space-x-3">
                       <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
                         {activity.activity_type === 'like' && <Heart className="w-5 h-5 text-white" />}
@@ -899,46 +896,6 @@ const [currentPage, setCurrentPage] = useState<
         </div>
       </div>
       
-      {/* Followers List Modal */}
-      {showFollowersList && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowFollowersList(false)}>
-          <div className="bg-black rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white text-lg font-semibold">Followers</h3>
-              <button
-                onClick={() => setShowFollowersList(false)}
-                className="text-dark-400 hover:text-white transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            {isLoadingFollowers ? (
-              <div className="text-center py-4 text-dark-400">Loading...</div>
-            ) : followersList.length > 0 ? (
-              <div className="space-y-3">
-                {followersList.map((follower: any) => (
-                  <div key={follower.follower_id} className="flex items-center space-x-3 p-3 bg-dark-700 rounded-lg">
-                    <Image
-                      src={follower.avatar_url || '/4.png'}
-                      alt={follower.username || 'User'}
-                      width={40}
-                      height={40}
-                      className="w-10 h-10 rounded-full"
-                    />
-                    <div className="flex-1">
-                      <div className="text-white font-medium">{follower.username || 'Unknown User'}</div>
-                      <div className="text-dark-400 text-sm">{follower.email || ''}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-4 text-dark-400">No followers yet</div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Following List Modal */}
       {showFollowingList && (

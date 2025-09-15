@@ -2,7 +2,7 @@
 // @ts-nocheck
 'use client'
 import React, { useState, useEffect, useRef } from 'react'
-import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume2, Paperclip, Smile, Send, ExternalLink } from 'lucide-react'
+import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume2, Paperclip, Smile, Send, ExternalLink, Blocks, Triangle } from 'lucide-react'
 import { Post, ApiPost } from '@/app/types'
 import { useApi } from '../../Context/ApiProvider'
 import { useSession } from 'next-auth/react'
@@ -472,7 +472,8 @@ const handleImageClick = (e: React.MouseEvent) => {
             </div>
           </div>
 
-          <div className="space-y-4">
+      <div className=" ml-12">
+            <div className="space-y-4">
             <p className="text-secondary text-base leading-relaxed whitespace-pre-wrap break-words">
               {displayedText}
             </p>
@@ -548,7 +549,7 @@ const handleImageClick = (e: React.MouseEvent) => {
                 className={`flex items-center space-x-2 text-gray-500 hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.liked ? 'text-red-500' : ''}`}
               >
                 <Heart className={`w-5 h-5 transition-all duration-200 ${userEngagement.liked ? 'fill-red-500 scale-110' : ''}`} />
-                <span className="text-sm font-medium">{localEngagement.likes} Likes</span>
+                <span className="text-sm font-medium">{localEngagement.likes} </span>
               </button>
 
               <button 
@@ -556,7 +557,7 @@ const handleImageClick = (e: React.MouseEvent) => {
                 className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors"
               >
                 <MessageCircle className="w-5 h-5" />
-                <span className="text-sm font-medium">{localEngagement.comments} Comments</span>
+                <span className="text-sm font-medium">{localEngagement.comments} </span>
               </button>
 
               <button 
@@ -568,17 +569,21 @@ const handleImageClick = (e: React.MouseEvent) => {
                 className={`flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.retweeted ? 'text-green-500' : ''}`}
               >
                 <Repeat2 className={`w-5 h-5 transition-all duration-200 ${userEngagement.retweeted ? 'fill-green-500 scale-110' : ''}`} />
-                <span className="text-sm font-medium">{localEngagement.retweets} Share</span>
+                <span className="text-sm font-medium">{localEngagement.retweets}</span>
               </button>
             </div>
     <div className='flex items-center space-x-6'>
-      <div>
-        <PostTokenPrice 
+     
+        {/* <PostTokenPrice 
           postId={postId}
           postContent={postContent}
           onTradeClick={() => setShowTokenTrading(true)}
-        />
-      </div>
+        /> */}
+  <div className='flex items-center space-x-2 cursor-pointer' onClick={() => setShowTokenTrading(true)}>
+    <Triangle className={`w-5 h-5 text-green-500 transition-all duration-200 ${userEngagement.bookmarked ? 'fill-purple-500 scale-110' : ''}`} />
+              <span className="text-sm hidden text-green-500 md:block font-medium">$ 27.01 </span>
+     
+  </div>
             <button 
               onClick={e => { 
                 e.stopPropagation()
@@ -588,7 +593,7 @@ const handleImageClick = (e: React.MouseEvent) => {
               className={`flex items-center space-x-2 text-gray-500 hover:text-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.bookmarked ? 'text-purple-500' : ''}`}
             >
               <Bookmark className={`w-5 h-5 transition-all duration-200 ${userEngagement.bookmarked ? 'fill-purple-500 scale-110' : ''}`} />
-              <span className="text-sm hidden md:block font-medium">{localEngagement.bookmarks} Saved</span>
+              <span className="text-sm hidden md:block font-medium">{localEngagement.bookmarks} </span>
             </button>
     </div>
           </div>
@@ -658,10 +663,10 @@ const handleImageClick = (e: React.MouseEvent) => {
             )}
           </AnimatePresence>
 
-          <form onSubmit={handleCommentSubmit} className="flex items-center space-x-3 pt-4 ">
+          <form onSubmit={handleCommentSubmit} className="flex items-center space-x-3 ">
             <div className="relative w-10 h-10 flex-shrink-0">
               {profile?.avatar_url ? (
-                <img src={profile?.avatar_url} alt="Your avatar" className="w-full h-full rounded-full object-cover" />
+                <img src={profile?.avatar_url} alt="Your avatar" className="w-full h-full rounded-full border border-gray-700/70 object-cover" />
               ) : (
                 <div className="w-full h-full bg-indigo-500 rounded-full flex items-center justify-center text-sm font-semibold text-white">
                   {session?.dbUser?.username?.substring(0, 2)?.toUpperCase() || 'U'}
@@ -669,14 +674,14 @@ const handleImageClick = (e: React.MouseEvent) => {
               )}
             </div>
             
-            <div className="flex-1 relative">
+            <div className="flex-1 relative ">
               <input
                 type="text"
                 placeholder="Write your comment.."
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 disabled={isLoading.comment || !currentUserId}
-                className="w-full py-3 px-4 bg-black rounded-full text-secondary placeholder:text-secondary placeholder-dark-800 focus:outline-none focus:ring-2 focus:bg-black transition-all disabled:opacity-50"
+                className="w-full py-3 px-4 bg-gray-700/70 rounded-full text-secondary placeholder:text-secondary placeholder-dark-800 focus:outline-none focus:ring-2 focus:bg-black transition-all disabled:opacity-50"
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
@@ -705,6 +710,7 @@ const handleImageClick = (e: React.MouseEvent) => {
               </button>
             </div>
           </form>
+      </div>
         </div>
       </div>
 

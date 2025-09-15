@@ -1,111 +1,101 @@
 "use client";
-import { useEffect, useState } from "react";
-import Hero from "./components/Hero";
-import PodiumComponent from "./components/Podium";
-import { motion } from 'framer-motion';
-import Leaderboard from "./components/Leaderboard";
-import { Row } from "./types";
-import RewardPoolsPage from "./components/LeaderboardBox";
-import Footer from "./components/Footer";
+import { JSX, useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import SocialFeedPage from "./snaps/page";
+import {
+  Home,
+  Bell,
+  Activity,
+  MessageCircle,
+  User,
+  Blocks,
+} from "lucide-react";
+import { FloatingDock } from "./Experiment/FloatingDoc";
 
-export default function Home() {
-  const [mockRows, setMockRows] = useState<Row[]>([]);
-  const [hasMounted, setHasMounted] = useState(false); 
+interface Row {
+  rank: number;
+  name: string;
+  username: string;
+  totalMindshare: string;
+  clapoMindshare: string;
+  clapoChange: string;
+  clapoChangeColor: string;
+  seiMindshare: string;
+  seiChange: string;
+  seiChangeColor: string;
+  bg: string;
+  avatar: string;
+}
 
-  useEffect(() => {
-    setHasMounted(true);
+type PageKey =
+  | "home"
+  | "notifications"
+  | "activity"
+  | "messages"
+  | "profile"
+  | "share";
 
-    const topThree = [
-      {
-        rank: 1,
-        name: "Eman",
-        username: "@MUARSHB",
-        totalMindshare: "98.35",
-        clapoMindshare: "87.22",
-        clapoChange: "↗ +12.30%",
-        clapoChangeColor: "text-[#1FC77E]",
-        seiMindshare: "4.93%",
-        seiChange: "+1.45",
-        seiChangeColor: "text-[#1FC77E]",
-        bg: "bg-[#10151A]",
-        avatar: "https://robohash.org/ben.png?size=500x500",
-      },
-      {
-        rank: 2,
-        name: "Kostas",
-        username: "@JEFFDFENG",
-        totalMindshare: "95.11",
-        clapoMindshare: "79.03",
-        clapoChange: "↗ +8.76%",
-        clapoChangeColor: "text-[#1FC77E]",
-        seiMindshare: "3.91%",
-        seiChange: "+0.88",
-        seiChangeColor: "text-[#1FC77E]",
-        bg: "bg-[#181C20]",
-        avatar: "https://robohash.org/jeff.png?size=500x500",
-      },
-      {
-        rank: 3,
-        name: "Evan",
-        username: "@JAYENDRA_JOG",
-        totalMindshare: "91.77",
-        clapoMindshare: "75.89",
-        clapoChange: "↗ +7.34%",
-        clapoChangeColor: "text-[#1FC77E]",
-        seiMindshare: "3.43%",
-        seiChange: "+0.52",
-        seiChangeColor: "text-[#1FC77E]",
-        bg: "bg-[#10151A]",
-        avatar: "https://robohash.org/jay.png?size=500x500",
-      },
-    ];
+interface NavItem {
+  label: string;
+  value: PageKey;
+  icon: JSX.Element;
+  activeIcon: JSX.Element;
+  showOnMobile?: boolean;
+  showOnDesktop?: boolean;
+}
 
-    const rest = [...Array(97)].map((_, i) => {
-      const index = i + 4;
-      return {
-        rank: index,
-        name: `USER${index}`,
-        username: `@user${index}`,
-        totalMindshare: (Math.random() * 100).toFixed(2),
-        clapoMindshare: (Math.random() * 100).toFixed(2),
-        clapoChange: i % 2 === 0 ? "↘ -16.70%" : "↗ +16.70%",
-        clapoChangeColor: i % 2 === 0 ? "text-[#FF4C4C]" : "text-[#1FC77E]",
-        seiMindshare: `${(Math.random() * 5).toFixed(2)}%`,
-        seiChange:
-          i % 2 === 0
-            ? `+${(Math.random() * 2).toFixed(2)}`
-            : `-${(Math.random() * 2).toFixed(2)}`,
-        seiChangeColor: i % 2 === 0 ? "text-[#1FC77E]" : "text-[#FF4C4C]",
-        bg: i % 2 === 0 ? "bg-[#10151A]" : "bg-[#181C20]",
-        avatar: `https://robohash.org/user${index}.png?size=50x50`,
-      };
-    });
-
-    setMockRows([...topThree, ...rest]);
-  }, []);
-
-  const leaderboard = [
+export default function HomePage() {
+  const navItems: NavItem[] = [
     {
-      name: "Eman",
-      username: "@MUARSHB",
-      avatar: "https://robohash.org/ben.png?size=500x500",
+      label: "Home",
+      value: "home",
+      icon: <Home className="w-6 h-6" />,
+      activeIcon: <Home className="w-6 h-6" fill="currentColor" />,
+      showOnMobile: true,
+      showOnDesktop: true,
     },
     {
-      name: "Kostas",
-      username: "@JEFFDFENG",
-      avatar: "https://robohash.org/jeff.png?size=500x500",
+      label: "Notifications",
+      value: "notifications",
+      icon: <Bell className="w-6 h-6" />,
+      activeIcon: <Bell className="w-6 h-6" fill="currentColor" />,
+      showOnMobile: true,
+      showOnDesktop: true,
     },
     {
-      name: "Evan",
-      username: "@JAYENDRA_JOG",
-      avatar: "https://robohash.org/jay.png?size=500x500",
+      label: "Activity",
+      value: "activity",
+      icon: <Activity className="w-6 h-6" />,
+      activeIcon: <Activity className="w-6 h-6" fill="currentColor" />,
+      showOnDesktop: true,
+    },
+    {
+      label: "Messages",
+      value: "messages",
+      icon: <MessageCircle className="w-6 h-6" />,
+      activeIcon: <MessageCircle className="w-6 h-6" fill="currentColor" />,
+      showOnMobile: true,
+    },
+    {
+      label: "Profile",
+      value: "profile",
+      icon: <User className="w-6 h-6" />,
+      activeIcon: <User className="w-6 h-6" fill="currentColor" />,
+      showOnDesktop: true,
+    },
+    {
+      label: "Share",
+      value: "share",
+      icon: <Blocks className="w-6 h-6" />,
+      activeIcon: <Blocks className="w-6 h-6" fill="currentColor" />,
+      showOnDesktop: true,
     },
   ];
 
   return (
-<div>
-  <SocialFeedPage/>
-</div>
+    <div>
+      {/* <FloatingDock items={navItems} defaultActive="home" /> */}
+      <SocialFeedPage />
+    </div>
   );
 }
