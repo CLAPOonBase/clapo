@@ -81,7 +81,7 @@ export const ChatHeader = ({
             <span>Min. Share <span>10</span></span>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+        <div className="flex flex-col items-center justify-center py-8 pt-72 text-slate-400">
           <MessageCircle className="w-16 h-16 mb-4 opacity-30" />
           <p className="text-lg font-medium mb-2">
             {activeTab === 'dms'

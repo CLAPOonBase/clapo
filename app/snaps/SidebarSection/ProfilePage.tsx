@@ -340,23 +340,23 @@ export function ProfilePage({ user, posts }: Props) {
       {/* Stats Grid */}
       <div className="px-6 pb-6">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="bg-dark-700 rounded-lg p-4 text-center hover:bg-dark-600 transition-colors">
+          <div className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl text-center hover:bg-dark-600 transition-colors">
             <div className="text-2xl font-bold text-white mb-1">{profile.total_posts || 0}</div>
             <div className="text-sm text-gray-400 font-medium">Posts</div>
           </div>
-          <div className="bg-dark-700 rounded-lg p-4 text-center hover:bg-dark-600 transition-colors">
+          <div className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl text-center hover:bg-dark-600 transition-colors">
             <div className="text-2xl font-bold text-red-400 mb-1">{profile.total_likes_given || 0}</div>
             <div className="text-sm text-gray-400 font-medium">Likes</div>
           </div>
-          <div className="bg-dark-700 rounded-lg p-4 text-center hover:bg-dark-600 transition-colors">
+          <div className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl text-center hover:bg-dark-600 transition-colors">
             <div className="text-2xl font-bold text-blue-400 mb-1">{profile.total_comments_made || 0}</div>
             <div className="text-sm text-gray-400 font-medium">Comments</div>
           </div>
-          <div className="bg-dark-700 rounded-lg p-4 text-center hover:bg-dark-600 transition-colors">
+          <div className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl text-center hover:bg-dark-600 transition-colors">
             <div className="text-2xl font-bold text-green-400 mb-1">{profile.total_retweets_made || 0}</div>
             <div className="text-sm text-gray-400 font-medium">Retweets</div>
           </div>
-          <div className="bg-dark-700 rounded-lg p-4 text-center hover:bg-dark-600 transition-colors">
+          <div className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl text-center hover:bg-dark-600 transition-colors">
             <div className="text-2xl font-bold text-purple-400 mb-1">{profile.total_bookmarks_made || 0}</div>
             <div className="text-sm text-gray-400 font-medium">Bookmarks</div>
           </div>

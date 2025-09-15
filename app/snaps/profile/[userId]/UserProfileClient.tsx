@@ -374,7 +374,7 @@ const [currentPage, setCurrentPage] = useState<
 
   if (isLoading) {
     return (
-      <div className="flex-col max-w-3xl border md:flex-row text-white flex mx-auto">
+      <div className="flex-col max-w-3xl md:flex-row text-white flex mx-auto">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
         <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-black p-4">
           <div className="animate-pulse">
@@ -405,9 +405,12 @@ const [currentPage, setCurrentPage] = useState<
   }
 
   return (
-    <div className="flex-col md:flex-row max-w-3xl border-x-2 border-gray-700/70 text-white flex mx-auto">
+    <div className="flex-col md:flex-row max-w-3xl border-gray-700/70 text-white flex mx-auto">
       <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-      <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-black p-4">
+
+      <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-black py-4">
+        {/* Back Button */}
+
         <div className="mb-6">
           <button
             onClick={handleBackNavigation}
@@ -417,17 +420,7 @@ const [currentPage, setCurrentPage] = useState<
             <span>Back</span>
           </button>
         </div>
-        <div className='bg-black rounded-2xl p-6 shadow-custom'>
-          <div>
-            <Image src='https://pbs.twimg.com/profile_banners/1296970423851077632/1693025431/600x200' alt={''} className='h-40 w-full object-cover rounded-2xl' width={1000} height={1000}/>
-          </div>
-             <div className="flex items-center justify-end py-2 text-secondary space-x-6 text-sm text-dark-400 mb-4">
-                <div className="flex items-center space-x-1">
-                  <Calendar className="w-4 h-4" />
-                  <span>Joined {formatDate(userProfile.created_at)}</span>
-                </div>
-              </div>
-        </div>
+
 
    <div className='flex justify-between'>
         <div className="p-6 -mt-20 border-dark-700 bg-black">
@@ -472,10 +465,19 @@ const [currentPage, setCurrentPage] = useState<
   )}
 </div>
 
-          
-              
-                    </div>
-          
+
+      {/* User Info */}
+      <div className="flex flex-col">
+        <h1 className="text-white text-sm font-bold mb-2 tracking-tight">
+          {userProfile.username}
+        </h1>
+        {userProfile.bio && (
+          <p className="text-gray-300 text-sm leading-relaxed max-w-md">
+            {userProfile.bio}
+          </p>
+        )}
+      </div>
+    </div>
 
             </div>
             <div className="">
@@ -550,13 +552,13 @@ const [currentPage, setCurrentPage] = useState<
         </div>
       </div>
     </div>
+</div>
 
         <div className="border-b border-dark-700 mb-6">
           <div className="flex">
             {[
               { id: 'posts', label: 'Posts', icon: Grid },
               { id: 'activity', label: 'Activity', icon: MessageCircle },
-              { id: 'followers', label: 'Followers', icon: Users }
             ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -579,7 +581,7 @@ const [currentPage, setCurrentPage] = useState<
             <div className="space-y-4">
               {userProfile?.posts?.length > 0 ? (
                 userProfile.posts.map((post) => (
-                  <div key={post.id} className="bg-dark-700 rounded-lg p-4">
+                  <div key={post.id} className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl">
                     <div className="flex items-start space-x-3">
                       <Image
                         src={userProfile.avatar_url || '/4.png'}
@@ -717,7 +719,7 @@ const [currentPage, setCurrentPage] = useState<
             <div className="space-y-4">
               {userProfile?.recent_activity?.length > 0 ? (
                 userProfile.recent_activity.map((activity, index) => (
-                  <div key={index} className="bg-dark-700 rounded-lg p-4">
+                  <div key={index} className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl">
                     <div className="flex items-start space-x-3">
                       <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
                         {activity.activity_type === 'like' && <Heart className="w-5 h-5 text-white" />}
@@ -869,46 +871,6 @@ const [currentPage, setCurrentPage] = useState<
         </div>
       </div>
       
-      {showFollowersList && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowFollowersList(false)}>
-          <div className="bg-black rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white text-lg font-semibold">Followers</h3>
-              <button
-                onClick={() => setShowFollowersList(false)}
-                className="text-dark-400 hover:text-white transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            {isLoadingFollowers ? (
-              <div className="text-center py-4 text-dark-400">Loading...</div>
-            ) : followersList.length > 0 ? (
-              <div className="space-y-3">
-                {followersList.map((follower: any) => (
-                  <div key={follower.follower_id} className="flex items-center space-x-3 p-3 bg-dark-700 rounded-lg">
-                    <Image
-                      src={follower.avatar_url || '/4.png'}
-                      alt={follower.username || 'User'}
-                      width={40}
-                      height={40}
-                      className="w-10 h-10 rounded-full"
-                    />
-                    <div className="flex-1">
-                      <div className="text-white font-medium">{follower.username || 'Unknown User'}</div>
-                      <div className="text-dark-400 text-sm">{follower.email || ''}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-4 text-dark-400">No followers yet</div>
-            )}
-          </div>
-        </div>
-      )}
-
       {showFollowingList && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowFollowingList(false)}>
           <div className="bg-black rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
