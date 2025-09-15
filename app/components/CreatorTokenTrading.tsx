@@ -193,8 +193,8 @@ export default function CreatorTokenTrading({
   if (!isOpen) return null;
 
   const modalContent = (
-    <div 
-      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4"
+<div 
+      className="fixed inset-0 bg-black/80 flex items-center justify-center p-4"
       style={{ 
         position: 'fixed', 
         top: 0, 
@@ -213,7 +213,7 @@ export default function CreatorTokenTrading({
       }}
     >
       <div 
-        className="bg-gray-900 rounded-2xl border border-gray-700 max-w-md w-full max-h-[90vh] overflow-y-auto"
+        className="bg-black/90 backdrop-blur-sm rounded-2xl  max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border-2 border-gray-700/70 "
         style={{ 
           position: 'relative', 
           zIndex: 1000000,
@@ -222,19 +222,19 @@ export default function CreatorTokenTrading({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b-2 border-gray-700/70">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600/20 rounded-lg">
+            <div className="p-2 bg-blue-600/20 rounded-xl border border-blue-500/30">
               <TrendingUp className="w-5 h-5 text-blue-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Creator Token Trading</h2>
-              <p className="text-sm text-gray-400 truncate max-w-[200px]">{creatorName}</p>
+              <h2 className="text-white text-xl font-bold tracking-tight">Creator Token Trading</h2>
+              <p className="text-gray-400 text-sm truncate max-w-[200px]">{creatorName}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-800/50 rounded-xl transition-colors border border-gray-700/50"
           >
             <X className="w-5 h-5 text-gray-400" />
           </button>
@@ -244,11 +244,11 @@ export default function CreatorTokenTrading({
         <div className="p-6 space-y-6">
           {/* Wallet Connection */}
           {!isConnected && (
-            <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+            <div className="bg-black/50 backdrop-blur-sm rounded-2xl p-4  shadow-2xl shadow-custom-purple">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-1">Connect Wallet</h3>
-                  <p className="text-sm text-gray-400">Connect your wallet to trade creator tokens</p>
+                  <h3 className="text-white text-lg font-bold tracking-tight mb-1">Connect Wallet</h3>
+                  <p className="text-gray-400 text-sm">Connect your wallet to trade creator tokens</p>
                 </div>
                 <WalletConnectButton
                   onConnect={connectWallet}
@@ -262,15 +262,15 @@ export default function CreatorTokenTrading({
 
           {/* Connected Wallet Info */}
           {isConnected && address && (
-            <div className="bg-green-900/20 rounded-lg p-4 border border-green-500/30">
+            <div className="bg-green-900/20 backdrop-blur-sm rounded-2xl p-4 border-2 border-green-500/30 shadow-2xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-green-400 mb-1">Wallet Connected</h3>
-                  <p className="text-sm text-gray-400">{`${address.slice(0, 6)}...${address.slice(-4)}`}</p>
+                  <h3 className="text-green-400 text-lg font-bold tracking-tight mb-1">Wallet Connected</h3>
+                  <p className="text-gray-400 text-sm">{`${address.slice(0, 6)}...${address.slice(-4)}`}</p>
                 </div>
                 <button
                   onClick={disconnectWallet}
-                  className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                  className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors font-medium border border-red-500/30"
                 >
                   Disconnect
                 </button>
@@ -281,99 +281,102 @@ export default function CreatorTokenTrading({
           {/* Stats Overview */}
           {stats && (
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-800/50 rounded-lg p-4">
+              <div className="bg-black/50 backdrop-blur-sm rounded-2xl p-4 ">
                 <div className="flex items-center gap-2 mb-2">
                   <DollarSign className="w-4 h-4 text-green-400" />
-                  <span className="text-sm text-gray-400">Current Price</span>
+                  <span className="text-gray-400 text-sm font-medium">Current Price</span>
                 </div>
-                <p className="text-xl font-semibold text-white">{formatPrice(currentPrice)}</p>
+                <p className="text-white text-xl font-bold tracking-tight">{formatPrice(currentPrice)}</p>
                 {remainingFreebies > 0 && actualPrice > 0 && (
-                  <p className="text-xs text-gray-500">Actual: {formatPrice(actualPrice)}</p>
+                  <p className="text-gray-500 text-xs">Actual: {formatPrice(actualPrice)}</p>
                 )}
               </div>
               
-              <div className="bg-gray-800/50 rounded-lg p-4">
+              <div className="bg-black/50 backdrop-blur-sm rounded-2xl p-4 ">
                 <div className="flex items-center gap-2 mb-2">
                   <Users className="w-4 h-4 text-blue-400" />
-                  <span className="text-sm text-gray-400">Total Buyers</span>
+                  <span className="text-gray-400 text-sm font-medium">Total Buyers</span>
                 </div>
-                <p className="text-xl font-semibold text-white">{formatNumber(stats.totalBuyers)}</p>
+                <p className="text-white text-xl font-bold tracking-tight">{formatNumber(stats.totalBuyers)}</p>
               </div>
               
-              <div className="bg-gray-800/50 rounded-lg p-4">
+              <div className="bg-black/50 backdrop-blur-sm rounded-2xl p-4 ">
                 <div className="flex items-center gap-2 mb-2">
                   <Gift className="w-4 h-4 text-purple-400" />
-                  <span className="text-sm text-gray-400">Freebies Left</span>
+                  <span className="text-gray-400 text-sm font-medium">Freebies Left</span>
                 </div>
-                <p className="text-xl font-semibold text-white">{formatNumber(remainingFreebies)}</p>
+                <p className="text-white text-xl font-bold tracking-tight">{formatNumber(remainingFreebies)}</p>
               </div>
               
-              <div className="bg-gray-800/50 rounded-lg p-4">
+              <div className="bg-black/50 backdrop-blur-sm rounded-2xl p-4 ">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-orange-400" />
-                  <span className="text-sm text-gray-400">Highest Price</span>
+                  <span className="text-gray-400 text-sm font-medium">Highest Price</span>
                 </div>
-                <p className="text-xl font-semibold text-white">{formatPrice(stats.highestPrice)}</p>
+                <p className="text-white text-xl font-bold tracking-tight">{formatPrice(stats.highestPrice)}</p>
               </div>
             </div>
           )}
 
           {/* User Portfolio */}
           {portfolio && (
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-400 mb-3">Your Portfolio</h3>
+            <div className="bg-black/50 backdrop-blur-sm rounded-2xl p-4 ">
+              <h3 className="text-gray-400 text-sm font-bold tracking-wide mb-3">YOUR PORTFOLIO</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-gray-500">Shares Owned</p>
-                  <p className="text-lg font-semibold text-white">{portfolio.balance}</p>
+                  <p className="text-gray-500 text-xs">Shares Owned</p>
+                  <p className="text-white text-lg font-bold tracking-tight">{portfolio.balance}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Current Value</p>
-                  <p className="text-lg font-semibold text-white">{formatPrice(portfolio.currentValue)}</p>
+                  <p className="text-gray-500 text-xs">Current Value</p>
+                  <p className="text-white text-lg font-bold tracking-tight">{formatPrice(portfolio.currentValue)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Total Bought</p>
-                  <p className="text-sm text-gray-300">{portfolio.totalBought}</p>
+                  <p className="text-gray-500 text-xs">Total Bought</p>
+                  <p className="text-gray-300 text-sm">{portfolio.totalBought}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Total Sold</p>
-                  <p className="text-sm text-gray-300">{portfolio.totalSold}</p>
+                  <p className="text-gray-500 text-xs">Total Sold</p>
+                  <p className="text-gray-300 text-sm">{portfolio.totalSold}</p>
                 </div>
               </div>
             </div>
           )}
 
           {/* Trading Tabs */}
-          <div className="flex bg-gray-800/50 rounded-lg p-1">
+      <div className='bg-gray-700/70 p-1 rounded-full'>
+          <div className="flex bg-black backdrop-blur-sm rounded-full p-1 ">
             <button
               onClick={() => setActiveTab('buy')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-2 px-4 rounded-full text-sm font-bold tracking-tight transition-colors ${
                 activeTab === 'buy'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
               }`}
             >
               Buy Shares
             </button>
             <button
               onClick={() => setActiveTab('sell')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-2 px-4 rounded-full text-sm font-bold tracking-tight transition-colors ${
                 activeTab === 'sell'
-                  ? 'bg-red-600 text-white'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'bg-red-600 text-white shadow-lg'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
               }`}
             >
               Sell Shares
             </button>
           </div>
 
+      </div>
+
           {/* Trading Form */}
           <div className="space-y-4">
             {activeTab === 'buy' ? (
               <div className="space-y-4">
                  <div>
-                   <label className="block text-sm font-medium text-gray-400 mb-2">
-                     Amount to Buy
+                   <label className="block text-gray-400 text-sm font-bold tracking-wide mb-2">
+                     AMOUNT TO BUY
                    </label>
                    <input
                      type="number"
@@ -381,33 +384,33 @@ export default function CreatorTokenTrading({
                      value={userCanClaimFreebie && remainingFreebies > 0 ? 1 : amount}
                      onChange={(e) => setAmount(parseInt(e.target.value) || 1)}
                      disabled={userCanClaimFreebie && remainingFreebies > 0}
-                     className={`w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                     className={`w-full px-4 py-3 bg-black/50 border border-gray-700 backdrop-blur-sm  rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium ${
                        userCanClaimFreebie && remainingFreebies > 0 ? 'opacity-50 cursor-not-allowed' : ''
                      }`}
                    />
                    {userCanClaimFreebie && remainingFreebies > 0 && (
-                     <p className="text-xs text-green-400 mt-1">
+                     <p className="text-green-400 text-xs mt-1 font-medium">
                        You can only claim 1 free share
                      </p>
                    )}
                  </div>
                 
-                 <div className="bg-gray-800/50 rounded-lg p-4">
+                 <div className="bg-black/50 backdrop-blur-sm rounded-2xl p-4 ">
                    <div className="flex justify-between items-center mb-2">
-                     <span className="text-sm text-gray-400">Price per share</span>
-                     <span className="text-sm font-medium text-white">
+                     <span className="text-gray-400 text-sm">Price per share</span>
+                     <span className="text-white text-sm font-bold">
                        {userCanClaimFreebie && remainingFreebies > 0 ? 'FREE' : formatPrice(currentPrice)}
                      </span>
                    </div>
                    {userCanClaimFreebie && remainingFreebies > 0 && actualPrice > 0 && (
                      <div className="flex justify-between items-center mb-2">
-                       <span className="text-xs text-gray-500">Actual price</span>
-                       <span className="text-xs text-gray-500">{formatPrice(actualPrice)}</span>
+                       <span className="text-gray-500 text-xs">Actual price</span>
+                       <span className="text-gray-500 text-xs">{formatPrice(actualPrice)}</span>
                      </div>
                    )}
                    <div className="flex justify-between items-center">
-                     <span className="text-sm text-gray-400">Total cost</span>
-                     <span className="text-lg font-semibold text-white">
+                     <span className="text-gray-400 text-sm">Total cost</span>
+                     <span className="text-white text-lg font-bold tracking-tight">
                        {userCanClaimFreebie && remainingFreebies > 0 ? 'FREE' : formatPrice(currentPrice * amount)}
                      </span>
                    </div>
@@ -416,13 +419,13 @@ export default function CreatorTokenTrading({
                 <button
                   onClick={handleBuy}
                   disabled={loading || !isConnected || (!userCanClaimFreebie && remainingFreebies > 0)}
-                  className={`w-full py-3 font-semibold rounded-lg transition-colors ${
+                  className={`w-full py-3 font-bold tracking-tight rounded-2xl transition-colors border-2 ${
                     userCanClaimFreebie && remainingFreebies > 0
-                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      ? 'bg-green-600 hover:bg-green-700 text-white border-green-500/30'
                       : !userCanClaimFreebie && remainingFreebies > 0
-                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  } ${loading || !isConnected ? 'disabled:bg-black disabled:cursor-not-allowed' : ''}`}
+                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed border-gray-700/50'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white border-blue-500/30'
+                  } ${loading || !isConnected ? 'disabled:bg-black disabled:cursor-not-allowed disabled:border-gray-700/50' : ''}`}
                 >
                   {loading ? 'Processing...' : 
                    userCanClaimFreebie && remainingFreebies > 0 ? 'Claim Free Share' :
@@ -433,8 +436,8 @@ export default function CreatorTokenTrading({
             ) : (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    Amount to Sell
+                  <label className="block text-gray-400 text-sm font-bold tracking-wide mb-2">
+                    AMOUNT TO SELL
                   </label>
                   <input
                     type="number"
@@ -442,23 +445,23 @@ export default function CreatorTokenTrading({
                     max={portfolio?.balance || 0}
                     value={amount}
                     onChange={(e) => setAmount(parseInt(e.target.value) || 1)}
-                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-3 bg-black/50 border-2 border-gray-700 backdrop-blur-sm  rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 font-medium"
                   />
                   {portfolio && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-gray-500 text-xs mt-1 font-medium">
                       Max: {portfolio.balance} shares
                     </p>
                   )}
                 </div>
                 
-                 <div className="bg-gray-800/50 rounded-lg p-4">
+                 <div className="bg-black/50 backdrop-blur-sm rounded-2xl p-4 ">
                    <div className="flex justify-between items-center mb-2">
-                     <span className="text-sm text-gray-400">Price per share</span>
-                     <span className="text-sm font-medium text-white">{formatPrice(actualPrice)}</span>
+                     <span className="text-gray-400 text-sm">Price per share</span>
+                     <span className="text-white text-sm font-bold">{formatPrice(actualPrice)}</span>
                    </div>
                    <div className="flex justify-between items-center">
-                     <span className="text-sm text-gray-400">You'll receive</span>
-                     <span className="text-lg font-semibold text-white">
+                     <span className="text-gray-400 text-sm">You'll receive</span>
+                     <span className="text-white text-lg font-bold tracking-tight">
                        {formatPrice(actualPrice * amount * 0.75)} {/* Assuming 25% fees */}
                      </span>
                    </div>
@@ -467,11 +470,11 @@ export default function CreatorTokenTrading({
                 <button
                   onClick={handleSell}
                   disabled={loading || !isConnected || !portfolio || portfolio.balance < amount || remainingFreebies > 0}
-                  className={`w-full py-3 font-semibold rounded-lg transition-colors ${
+                  className={`w-full py-3 font-bold tracking-tight rounded-2xl transition-colors border-2 ${
                     remainingFreebies > 0
-                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                      : 'bg-red-600 hover:bg-red-700 text-white'
-                  } ${loading || !isConnected || !portfolio || portfolio.balance < amount ? 'disabled:bg-black disabled:cursor-not-allowed' : ''}`}
+                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed border-gray-700/50'
+                      : 'bg-red-600 hover:bg-red-700 text-white border-red-500/30'
+                  } ${loading || !isConnected || !portfolio || portfolio.balance < amount ? 'disabled:bg-black disabled:cursor-not-allowed disabled:border-gray-700/50' : ''}`}
                 >
                    {loading ? 'Processing...' : 
                     remainingFreebies > 0 ? 'Cannot sell until all freebies claimed' :
@@ -483,21 +486,21 @@ export default function CreatorTokenTrading({
 
           {/* Messages */}
           {error && (
-            <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-3">
-              <p className="text-sm text-red-400">{error}</p>
+            <div className="bg-red-900/20 backdrop-blur-sm border-2 border-red-500/30 rounded-2xl p-3">
+              <p className="text-red-400 text-sm font-medium">{error}</p>
             </div>
           )}
 
           {success && (
-            <div className="bg-green-900/20 border border-green-500/50 rounded-lg p-3">
-              <p className="text-sm text-green-400">{success}</p>
+            <div className="bg-green-900/20 backdrop-blur-sm border-2 border-green-500/30 rounded-2xl p-3">
+              <p className="text-green-400 text-sm font-medium">{success}</p>
             </div>
           )}
 
           {/* Connection Status */}
           {!isConnected && (
-            <div className="bg-yellow-900/20 border border-yellow-500/50 rounded-lg p-3">
-              <p className="text-sm text-yellow-400">
+            <div className="bg-yellow-900/20 backdrop-blur-sm border-2 border-yellow-500/30 rounded-2xl p-3">
+              <p className="text-yellow-400 text-sm font-medium">
                 Please connect your wallet to trade creator tokens
               </p>
             </div>
