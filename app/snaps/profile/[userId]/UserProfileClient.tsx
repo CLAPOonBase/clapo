@@ -7,6 +7,10 @@ import { useSession } from 'next-auth/react'
 import { useApi } from '@/app/Context/ApiProvider'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../Sections/Sidebar'
+import { CreatorTokenDisplay } from '@/app/components/CreatorTokenDisplay'
+import { useCreatorToken } from '@/app/hooks/useCreatorToken'
+import { generateCreatorTokenUUID } from '@/app/lib/uuid'
+import CreatorTokenTrading from '@/app/components/CreatorTokenTrading'
 // import UserActivityFeed from '../../Sections/ActivityFeed'
 // import { DMSection } from '@/app/components/DMSection'
 // import { CommunitySection } from '@/app/components/CommunitySection'
@@ -91,20 +95,20 @@ const [currentPage, setCurrentPage] = useState<
   const [messageThreads, setMessageThreads] = useState<any[]>([])
   const [communities, setCommunities] = useState<any[]>([])
   
+  const [creatorTokenExists, setCreatorTokenExists] = useState(true)
+  const [checkingTokenExists, setCheckingTokenExists] = useState(false)
+  const [creatorTokenUserId, setCreatorTokenUserId] = useState<string | null>(null)
+  const [showTradingModal, setShowTradingModal] = useState(false)
+  
   const { data: session, status } = useSession()
   const { getUserProfile, getUserFollowers, getUserFollowing, followUser, unfollowUser } = useApi()
+  const { checkCreatorExists, isConnected, address } = useCreatorToken()
   const router = useRouter()
   
   const currentUserId = session?.dbUser?.id
   const isOwnProfile = currentUserId === userId
   const isSessionLoading = status === 'loading'
 
-  console.log('🔍 Session status:', status)
-  console.log('🔍 Session data:', session)
-  console.log('🔍 Current user ID:', currentUserId)
-  console.log('🔍 Target user ID:', userId)
-  console.log('🔍 Is own profile:', isOwnProfile)
-  console.log('🔍 Is session loading:', isSessionLoading)
 
   useEffect(() => {
     if (userId) {
@@ -114,20 +118,45 @@ const [currentPage, setCurrentPage] = useState<
 
   useEffect(() => {
     if (!isOwnProfile && currentUserId && userProfile && session?.dbUser && !isSessionLoading) {
-      console.log('🔍 useEffect triggered - calling checkFollowStatus')
-      console.log('🔍 isOwnProfile:', isOwnProfile)
-      console.log('🔍 currentUserId:', currentUserId)
-      console.log('🔍 userProfile:', userProfile)
-      console.log('🔍 session loaded:', !!session?.dbUser)
-      console.log('🔍 session loading:', isSessionLoading)
       checkFollowStatus()
     }
   }, [currentUserId, isOwnProfile, userProfile, session?.dbUser, isSessionLoading])
 
-  // Load mock data for messages and communities
+  useEffect(() => {
+    if (userId) {
+      setCreatorTokenUserId(userId)
+      checkTokenExists()
+    }
+  }, [userId])
+
+  const checkTokenExists = async () => {
+    if (!userId) return
+    
+    try {
+      setCheckingTokenExists(true)
+      const tokenUuid = generateCreatorTokenUUID(userId)
+      
+      setCreatorTokenExists(true)
+      setCreatorTokenUserId(userId)
+      
+      try {
+        const exists = await checkCreatorExists(tokenUuid)
+        if (!exists) {
+          // Keep optimistic state
+        }
+      } catch (error) {
+        // Keep optimistic state
+      }
+      
+    } catch (error) {
+      // Keep optimistic state
+    } finally {
+      setCheckingTokenExists(false)
+    }
+  }
+
   useEffect(() => {
     if (activeTab === 'followers') {
-      // Load followers and following data when the followers tab is selected
       if (followersList.length === 0) {
         loadFollowersList()
       }
@@ -135,7 +164,7 @@ const [currentPage, setCurrentPage] = useState<
         loadFollowingList()
       }
     }
-  }, [activeTab])
+  }, [activeTab, followersList.length, followingList.length])
 
   const loadUserProfile = async () => {
     if (!userId || isLoading) return
@@ -144,14 +173,9 @@ const [currentPage, setCurrentPage] = useState<
     try {
       const profileResponse = await getUserProfile(userId)
       
-      console.log('🔍 Profile response:', profileResponse)
-      
-      // The API returns { message: string, profile: UserProfile }
       if (profileResponse && profileResponse.profile) {
-        console.log('🔍 Setting user profile:', profileResponse.profile)
         setUserProfile(profileResponse.profile)
       } else {
-        console.error('Invalid profile response structure:', profileResponse)
         router.push('/snaps')
       }
     } catch (error) {
@@ -163,7 +187,6 @@ const [currentPage, setCurrentPage] = useState<
   }
 
   const loadMessageThreads = async () => {
-    // Mock data - replace with real API call
     const mockThreads = [
       {
         id: '1',
@@ -182,7 +205,6 @@ const [currentPage, setCurrentPage] = useState<
   }
 
   const loadCommunities = async () => {
-    // Mock data - replace with real API call
     const mockCommunities = [
       {
         id: '1',
@@ -204,39 +226,24 @@ const [currentPage, setCurrentPage] = useState<
 
   const checkFollowStatus = async () => {
     if (!currentUserId || isOwnProfile || isCheckingFollowStatus || !userProfile) {
-      console.log('🔍 checkFollowStatus early return:', {
-        currentUserId: !!currentUserId,
-        isOwnProfile,
-        isCheckingFollowStatus,
-        userProfile: !!userProfile
-      })
       return
     }
     
     setIsCheckingFollowStatus(true)
     try {
-      // Check if current user is in the followers list of the target user
       const followersResponse = await getUserFollowers(userId, 100, 0)
       
-      console.log('🔍 Checking follow status for user:', userId)
-      console.log('🔍 Current user ID:', currentUserId)
-      console.log('🔍 Followers response:', followersResponse)
-      
       if (!followersResponse || !followersResponse.followers) {
-        console.error('🔍 Invalid followers response:', followersResponse)
         setIsFollowing(false)
         return
       }
       
       const isCurrentlyFollowing = followersResponse.followers.some(
         (follower: any) => {
-          // The API returns follower_id, not id
-          console.log('🔍 Checking follower:', follower, 'follower_id:', follower.follower_id, 'currentUserId:', currentUserId)
           return follower.follower_id === currentUserId
         }
       )
       
-      console.log('🔍 Is currently following:', isCurrentlyFollowing)
       setIsFollowing(isCurrentlyFollowing || false)
     } catch (error) {
       console.error('Failed to check follow status:', error)
@@ -315,21 +322,17 @@ const [currentPage, setCurrentPage] = useState<
 
   const handleStartChat = (user: any) => {
     // Handle starting a new chat
-    console.log('Starting chat with:', user)
   }
 
   const handleJoinCommunity = (communityId: string) => {
     // Handle joining a community
-    console.log('Joining community:', communityId)
   }
 
   const handleViewUserProfile = (userId: string) => {
-    // Navigate to the user's profile
     router.push(`/snaps/profile/${userId}`)
   }
 
   const handleBackNavigation = () => {
-    // Check if we have stored navigation state
     const storedState = sessionStorage.getItem('profileNavigationState')
     
     if (storedState) {
@@ -337,29 +340,22 @@ const [currentPage, setCurrentPage] = useState<
         const navigationState = JSON.parse(storedState)
         const timeDiff = Date.now() - navigationState.timestamp
         
-        // Only use stored state if it's recent (within 5 minutes)
         if (timeDiff < 5 * 60 * 1000) {
-          // Clear the stored state
           sessionStorage.removeItem('profileNavigationState')
           
-          // Navigate back to the stored location
           if (navigationState.pathname === '/snaps') {
-            // Extract the page from searchParams (e.g., "page=notifications" -> "notifications")
             const pageMatch = navigationState.searchParams.match(/page=([^&]+)/)
             if (pageMatch) {
               const page = pageMatch[1]
               
-              // Store the target page in sessionStorage for the snaps page to pick up
               sessionStorage.setItem('targetPage', page)
               sessionStorage.setItem('targetScrollY', navigationState.scrollY.toString())
               
-              // Navigate to snaps
               router.push('/snaps')
               return
             }
           }
           
-          // Fallback to stored pathname
           router.push(navigationState.pathname)
           setTimeout(() => {
             if (navigationState.scrollY > 0) {
@@ -369,12 +365,10 @@ const [currentPage, setCurrentPage] = useState<
           return
         }
       } catch (error) {
-        console.error('Failed to parse navigation state:', error)
         sessionStorage.removeItem('profileNavigationState')
       }
     }
     
-    // Fallback to browser back navigation
     router.back()
   }
 
@@ -413,8 +407,10 @@ const [currentPage, setCurrentPage] = useState<
   return (
     <div className="flex-col md:flex-row max-w-3xl border-gray-700/70 text-white flex mx-auto">
       <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+
       <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky  bg-black py-4">
         {/* Back Button */}
+
         <div className="mb-6">
           <button
             onClick={handleBackNavigation}
@@ -425,23 +421,50 @@ const [currentPage, setCurrentPage] = useState<
           </button>
         </div>
 
-<div className='border-2 border-gray-700/70 rounded-3xl'>
-  <div className="border-b border-gray-700/70 p-4 py-6 overflow-hidden">
-  {/* Profile Header */}
-  <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 ">
-    {/* Left Section - Profile Info */}
-    <div className="flex items-center gap-6">
-      {/* Avatar */}
-      <div className="relative">
-        <Image
-          src={userProfile.avatar_url || '/4.png'}
-          alt={userProfile.username}
-          width={96}
-          height={96}
-          className="w-16 h-16 rounded-full ring-4 ring-blue-500/30 shadow-xl"
-        />
-        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-2 border-black rounded-full"></div>
-      </div>
+
+   <div className='flex justify-between'>
+        <div className="p-6 -mt-20 border-dark-700 bg-black">
+          <div className="flex flex-col items-start space-x-4">
+                    <div className='flex w-full items-center mb-4'>
+                            <Image
+                src={userProfile.avatar_url || '/4.png'}
+                alt={userProfile.username}
+                width={80}
+                height={80}
+                className="w-20 h-20 rounded-full"
+              />
+                          <div className="flex justify-center items-center px-2">
+<div className='flex items-center justify-center space-x-3 mb-3'>
+  {!isOwnProfile && (
+    <>
+      <button
+        onClick={handleFollowToggle}
+        disabled={isCheckingFollowStatus}
+        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+          isCheckingFollowStatus
+            ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+            : isFollowing
+            ? 'bg-red-600 text-white hover:bg-red-700'
+            : 'bg-blue-600 text-white hover:bg-blue-700'
+        }`}
+      >
+        {isCheckingFollowStatus ? 'Checking...' : isFollowing ? 'Unfollow' : 'Follow'}
+      </button>
+
+      <button
+        onClick={() => {
+          const profileLink = `${window.location.origin}/user/${userProfile.username}`;
+          navigator.clipboard.writeText(profileLink);
+          alert('Profile link copied!');
+        }}
+        className="px-4 py-2 rounded-full text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
+      >
+        Share
+      </button>
+    </>
+  )}
+</div>
+
 
       {/* User Info */}
       <div className="flex flex-col">
@@ -456,116 +479,74 @@ const [currentPage, setCurrentPage] = useState<
       </div>
     </div>
 
-    {/* Right Section - Action Buttons */}
-    <div className="flex items-center gap-3">
-      {!isOwnProfile && (
-        <>
-          <button
-            onClick={handleFollowToggle}
-            disabled={isCheckingFollowStatus}
-            className={`px-2 py-1 rounded-full text-xs font-semibold transition-all duration-200 transform hover:scale-105 ${
-              isCheckingFollowStatus
-                ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
-                : isFollowing
-                ? 'bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white shadow-lg shadow-custom'
-                : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-lg'
-            }`}
-          >
-            {isCheckingFollowStatus ? 'Checking...' : isFollowing ? 'Unfollow' : 'Follow'}
-          </button>
+            </div>
+            <div className="">
 
-         
-        </>
-      )}
-    </div>
-      <div className="grid grid-cols-3 gap-8 ">
-    {/* Posts */}
-    <div className="text-center group cursor-pointer">
-      <div className="text-white font-bold text-sm mb-1 group-hover:text-blue-400 transition-colors">
-        {userProfile.total_posts}
-      </div>
-      <div className="text-gray-400 text-sm font-medium uppercase tracking-wider">
-        Posts
-      </div>
-    </div>
+                              <h3 className="text-white text-xl font-bold">
+                  {userProfile.username}
+                </h3>
+                    {userProfile.bio && (
+                <p className="text-dark-300 text-sm mb-4">
+                  {userProfile.bio}
+                </p>
+              )}
+            </div>
+            
 
-    {/* Followers */}
-    <div 
-      className={`text-center group transition-all duration-200 ${
-        isLoadingFollowers 
-          ? 'cursor-not-allowed opacity-50' 
-          : 'cursor-pointer hover:scale-105'
-      }`} 
-      onClick={!isLoadingFollowers ? loadFollowersList : undefined}
-    >
-      <div className="text-white font-bold text-sm mb-1 group-hover:text-blue-400 transition-colors">
-        {isLoadingFollowers ? (
-          <div className="animate-pulse">...</div>
-        ) : (
-          userProfile.followers_count
-        )}
-      </div>
-      <div className="text-gray-400 text-sm font-medium uppercase tracking-wider">
-        Followers
-      </div>
-    </div>
-
-    {/* Following */}
-    <div 
-      className={`text-center group transition-all duration-200 ${
-        isLoadingFollowing 
-          ? 'cursor-not-allowed opacity-50' 
-          : 'cursor-pointer hover:scale-105'
-      }`} 
-      onClick={!isLoadingFollowing ? loadFollowingList : undefined}
-    >
-      <div className="text-white font-bold text-sm mb-1 group-hover:text-blue-400 transition-colors">
-        {isLoadingFollowing ? (
-          <div className="animate-pulse">...</div>
-        ) : (
-          userProfile.following_count
-        )}
-      </div>
-      <div className="text-gray-400 text-sm font-medium uppercase tracking-wider">
-        Following
-      </div>
-    </div>
-  </div>
-  </div>
-
-  {/* Stats Section */}
-
-</div>
-    <div className="w-full p-4">
-      <div className="bg-black rounded-2xl w-full p-0 shadow-custom-purple overflow-hidden">
-        <div className="flex h-24 ">
-          {/* Share Price Section */}
-          <div className="flex bg-black/50 backdrop-blur-sm p-4 w-full items-center justify-between border-r border-gray-700/70">
-            <div>
-              <h3 className="text-white text-sm font-bold tracking-wide mb-1">SHARE PRICE</h3>
-              <div className="flex items-center gap-1">
-                <span className="text-green-400 text-lg font-bold">$2910</span>
-                <TrendingUp className="text-green-400 w-4 h-4" />
+          </div>
+        </div>
+                      <div className="flex items-center space-x-8 mb-4 px-6">
+                <div className="text-center">
+                  <div className="text-white font-semibold text-lg">{userProfile.total_posts}</div>
+                  <div className="text-dark-400 text-xs">Posts</div>
+                </div>
+                <div className={`text-center transition-colors ${isLoadingFollowers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-blue-400'}`} onClick={!isLoadingFollowers ? loadFollowersList : undefined}>
+                  <div className="text-white font-semibold text-lg">
+                    {isLoadingFollowers ? '...' : userProfile.followers_count}
+                  </div>
+                  <div className="text-dark-400 text-xs">Followers</div>
+                </div>
+                <div className={`text-center transition-colors ${isLoadingFollowing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-blue-400'}`} onClick={!isLoadingFollowing ? loadFollowingList : undefined}>
+                  <div className="text-white font-semibold text-lg">
+                    {isLoadingFollowing ? '...' : userProfile.following_count}
+                  </div>
+                  <div className="text-dark-400 text-xs">Following</div>
+                </div>
+              </div>
+   </div>
+    <div className="w-full">
+      <div className="bg-black rounded-2xl w-full p-0 shadow-2xl border border-gray-700/70 overflow-hidden">
+        <div className="flex flex-col lg:flex-row">
+          {userProfile && (
+            <div className="flex-1 bg-black/50 backdrop-blur-sm p-4 border-b lg:border-b-0 lg:border-r border-gray-700/70">
+              <div className="flex flex-col items-center justify-center h-full space-y-4">
+                <div className="text-center">
+                  <h3 className="text-white text-lg font-bold mb-2">Creator Token</h3>
+                  <p className="text-gray-400 text-sm">@{userProfile.username}</p>
+                </div>
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowTradingModal(true)}
+                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+                  >
+                    Buy Token
+                  </button>
+                  <button
+                    onClick={() => setShowTradingModal(true)}
+                    className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+                  >
+                    Sell Token
+                  </button>
+                </div>
               </div>
             </div>
-            <div className="flex">
-              <button className="bg-green-500 rounded-l-md hover:bg-green-600 text-white font-bold py-1 px-2 text-xs transition-colors duration-200 shadow-lg">
-                BUY
-              </button>
-              <button className="bg-red-500 rounded-r-md hover:bg-red-600 text-white font-bold py-1 px-2 text-xs transition-colors duration-200 shadow-lg">
-                SELL
-              </button>
-            </div>
-          </div>
-          
-          {/* Pool Rewards Section */}
-          <div className="flex w-full bg-black/50 backdrop-blur-sm p-4 items-center">
+          )}
+          <div className="flex w-full lg:w-auto bg-black/50 backdrop-blur-sm p-4 items-center justify-center">
             <div>
               <h3 className="text-white text-sm font-bold tracking-wide mb-1">POOL REWARDS</h3>
-              <div className="flex items-center gap-1">
-                <span className="text-green-400 text-lg font-bold">$13.6K</span>
-                <TrendingUp className="text-green-400 w-4 h-4" />
-              </div>
+              <div className="text-2xl font-bold text-white">$0</div>
+              <div className="text-xs text-gray-400">Total Pool</div>
             </div>
           </div>
         </div>
@@ -573,7 +554,6 @@ const [currentPage, setCurrentPage] = useState<
     </div>
 </div>
 
-        {/* Tabs */}
         <div className="border-b border-dark-700 mb-6">
           <div className="flex">
             {[
@@ -596,7 +576,6 @@ const [currentPage, setCurrentPage] = useState<
           </div>
         </div>
 
-        {/* Tab Content */}
         <div className="">
           {activeTab === 'posts' && (
             <div className="space-y-4">
@@ -772,7 +751,6 @@ const [currentPage, setCurrentPage] = useState<
 
           {activeTab === 'followers' && (
             <div className="space-y-6">
-              {/* Followers Section */}
               <div className="bg-dark-700 rounded-lg p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-white text-lg font-semibold">Followers ({userProfile.followers_count})</h3>
@@ -789,7 +767,6 @@ const [currentPage, setCurrentPage] = useState<
                   <div className="text-center py-8 text-dark-400">Loading followers...</div>
                 ) : (
                   <div className="space-y-3">
-                    {/* Show first 5 followers as preview */}
                     {followersList.slice(0, 5).map((follower: any) => (
                       <div key={follower.follower_id} className="flex items-center space-x-3 p-3 bg-dark-600 rounded-lg">
                         <Image
@@ -832,7 +809,6 @@ const [currentPage, setCurrentPage] = useState<
                 )}
               </div>
 
-              {/* Following Section */}
               <div className="bg-dark-700 rounded-lg p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-white text-lg font-semibold">Following ({userProfile.following_count})</h3>
@@ -849,7 +825,6 @@ const [currentPage, setCurrentPage] = useState<
                   <div className="text-center py-8 text-dark-400">Loading following...</div>
                 ) : (
                   <div className="space-y-3">
-                    {/* Show first 5 following as preview */}
                     {followingList.slice(0, 5).map((following: any) => (
                       <div key={following.following_id} className="flex items-center space-x-3 p-3 bg-dark-600 rounded-lg">
                         <Image
@@ -896,8 +871,6 @@ const [currentPage, setCurrentPage] = useState<
         </div>
       </div>
       
-
-      {/* Following List Modal */}
       {showFollowingList && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowFollowingList(false)}>
           <div className="bg-black rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -938,6 +911,15 @@ const [currentPage, setCurrentPage] = useState<
         </div>
       )}
       
+      {showTradingModal && userProfile && (
+        <CreatorTokenTrading
+          creatorUuid={userId}
+          creatorName={userProfile.username}
+          creatorImageUrl={userProfile.avatar_url}
+          isOpen={showTradingModal}
+          onClose={() => setShowTradingModal(false)}
+        />
+      )}
 
     </div>
   )

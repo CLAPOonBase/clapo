@@ -2,35 +2,46 @@
 
 import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
+import { useWalletContext } from '@/context/WalletContext';
 
-// Contract ABI - you'll need to get this from your deployed contract
+// Contract ABI for Post Token with UUID support
 const CONTRACT_ABI = [
-  // Create post with custom ID
-  "function createPostWithId(string memory customPostId, string memory content, string memory imageUrl, uint256 _priceStart, uint256 _priceIncrement, uint256 _freebieCount) external returns (string memory)",
+  // Create post with UUID
+  "function createPost(string memory uuid, string memory content, string memory imageUrl, uint256 _freebieCount, uint256 _quadraticDivisor) external returns (string memory)",
   
   // Buy/Sell functions
-  "function buyPostSharesByCustomId(string memory customPostId) external",
-  "function sellPostSharesByCustomId(string memory customPostId, uint256 amount) external",
+  "function buyPostTokensByUuid(string memory uuid) external",
+  "function sellPostTokensByUuid(string memory uuid, uint256 amount) external",
   
   // View functions
-  "function getCurrentPriceByCustomId(string memory customPostId) external view returns (uint256)",
-  "function getActualPriceByCustomId(string memory customPostId) external view returns (uint256)",
-  "function canClaimFreebieByCustomId(string memory customPostId, address user) external view returns (bool)",
-  "function getPostStatsByCustomId(string memory customPostId) external view returns (uint256 totalBuyers, uint256 payingBuyers, uint256 freebieClaimed, uint256 currentPrice, uint256 highestPrice, uint256 rewardPoolBalance, uint256 creatorFeeBalance, uint256 platformFeeBalance, uint256 liability, bool breakEven)",
-  "function getUserPostPortfolioByCustomId(string memory customPostId, address user) external view returns (uint256 balance, uint256 totalBought, uint256 totalSold, uint256 totalFeesPaid, uint256 lastTransactionTime, bool hasFreebieFlag, uint256 transactionCount, uint256 netShares, uint256 currentValue)",
-  "function getRemainingFreebiesByCustomId(string memory customPostId) external view returns (uint256)",
-  "function getFreebieSellPriceByCustomId(string memory customPostId) external view returns (uint256)",
+  "function getCurrentPriceByUuid(string memory uuid) external view returns (uint256)",
+  "function getActualPriceByUuid(string memory uuid) external view returns (uint256)",
+  "function getBuyPriceByUuid(string memory uuid) external view returns (uint256)",
+  "function getSellPriceByUuid(string memory uuid) external view returns (uint256)",
+  "function getFreebieSellPriceByUuid(string memory uuid) external view returns (uint256)",
+  "function canClaimFreebieByUuid(string memory uuid, address user) external view returns (bool)",
+  "function getPostStatsByUuid(string memory uuid) external view returns (uint256 totalBuyers, uint256 payingBuyers, uint256 freebieClaimed, uint256 currentPrice, uint256 highestPrice, uint256 rewardPoolBalance, uint256 creatorFeeBalance, uint256 platformFeeBalance, uint256 liability, bool breakEven, uint256 totalSupply, uint256 circulatingSupply)",
+  "function getUserPostPortfolioByUuid(string memory uuid, address user) external view returns (uint256 balance, uint256 totalBought, uint256 totalSold, uint256 totalFeesPaid, uint256 lastTransactionTime, bool hasFreebieFlag, uint256 transactionCount, uint256 netShares, uint256 currentValue)",
+  "function getRemainingFreebiesByUuid(string memory uuid) external view returns (uint256)",
+  "function getRemainingSupplyByUuid(string memory uuid) external view returns (uint256)",
+  "function distributeFeesByUuid(string memory uuid) external",
   
-  // Check if post exists
-  "function doesCustomPostExist(string memory customPostId) external view returns (bool)",
+  // UUID utility functions
+  "function doesUuidExist(string memory uuid) external view returns (bool)",
+  "function getInternalIdFromUuid(string memory uuid) external view returns (uint256)",
+  "function getUuidFromInternalId(uint256 internalId) external view returns (string memory)",
+  "function getPostByUuid(string memory uuid) external view returns (tuple(uint256 postId, string uuid, string content, string imageUrl, address creator, uint256 createdAt, bool exists))",
+  
+  // Contract state functions
+  "function paused() external view returns (bool)",
   
   // Events
   "event PostCreated(uint256 indexed postId, address indexed creator, string content)",
-  "event SharesBought(uint256 indexed postId, address indexed buyer, uint256 amount, uint256 price, bool isFreebie, uint256 transactionId)",
-  "event SharesSold(uint256 indexed postId, address indexed seller, uint256 amount, uint256 payout, bool isFreebie, uint256 transactionId)"
+  "event PostTokensBought(uint256 indexed postId, address indexed buyer, uint256 amount, uint256 price, bool isFreebie, uint256 transactionId)",
+  "event PostTokensSold(uint256 indexed postId, address indexed seller, uint256 amount, uint256 payout, bool isFreebie, uint256 transactionId)"
 ];
 
-const CONTRACT_ADDRESS = "0x23Ef1aE7fBF47977c1f40d6E6C98FB4371d87850"; // New contract with proper freebie sell pricing
+const CONTRACT_ADDRESS = "0xAb6E048829A7c7Cc9b9C5f31cb445237F2b2dC7e"; // Post Token contract deployed on Monad testnet
 const MOCK_USDC_ADDRESS = "0x44aAAEeC1A83c30Fe5784Af49E6a38D3709Ee148";
 
 export interface PostTokenStats {
@@ -44,6 +55,8 @@ export interface PostTokenStats {
   platformFeeBalance: number;
   liability: number;
   breakEven: boolean;
+  totalSupply: number;
+  circulatingSupply: number;
 }
 
 export interface UserPortfolio {
@@ -59,106 +72,59 @@ export interface UserPortfolio {
 }
 
 export const usePostToken = () => {
+  const { provider, signer, address, isConnecting, connect, disconnect } = useWalletContext();
   const [contract, setContract] = useState<ethers.Contract | null>(null);
-  const [signer, setSigner] = useState<ethers.Signer | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [address, setAddress] = useState<string | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
+  
+  // Derive isConnected from global wallet context
+  const isConnected = !!signer && !!address;
 
-  // Check if wallet is already connected
+  // Update contract when wallet connection changes
   useEffect(() => {
-    const checkConnection = async () => {
-      if (typeof window !== 'undefined' && window.ethereum) {
-        try {
-          console.log('Checking wallet connection...');
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          const accounts = await provider.listAccounts();
-          console.log('Available accounts:', accounts.length);
-          
-          if (accounts.length > 0) {
-            const signer = await provider.getSigner();
-            const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-            const address = await signer.getAddress();
-            
-            console.log('Wallet connected:', address);
-            console.log('Contract address:', CONTRACT_ADDRESS);
-            
-            setContract(contract);
-            setSigner(signer);
-            setAddress(address);
-            setIsConnected(true);
-          } else {
-            console.log('No accounts found');
-            setIsConnected(false);
-          }
-        } catch (error) {
-          console.error('Failed to check wallet connection:', error);
-          setIsConnected(false);
-        }
-      } else {
-        console.log('window.ethereum not available');
-        setIsConnected(false);
-      }
-    };
-
-    checkConnection();
-  }, []);
-
-  // Connect wallet
-  const connectWallet = async () => {
-    if (typeof window === 'undefined' || !window.ethereum) {
-      throw new Error('MetaMask not found! Please install MetaMask to use this feature.');
-    }
-
-    setIsConnecting(true);
-    try {
-      console.log('Connecting wallet...');
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      const signer = await provider.getSigner();
+    if (signer && address) {
+      console.log('Setting up Post Token contract with global wallet context');
+      console.log('Wallet connected:', address);
+      console.log('Post Token Contract address:', CONTRACT_ADDRESS);
+      
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-      const address = await signer.getAddress();
-      
-      console.log('Wallet connected successfully:', address);
-      console.log('Contract address:', CONTRACT_ADDRESS);
-      
       setContract(contract);
-      setSigner(signer);
-      setAddress(address);
-      setIsConnected(true);
+    } else {
+      console.log('No wallet connection - clearing contract');
+      setContract(null);
+    }
+  }, [signer, address]);
+
+  // Connect wallet using global wallet context
+  const connectWallet = async () => {
+    try {
+      console.log('Connecting wallet using global wallet context...');
+      await connect();
     } catch (error) {
       console.error('Failed to connect wallet:', error);
       throw error;
-    } finally {
-      setIsConnecting(false);
     }
   };
 
-  // Disconnect wallet
+  // Disconnect wallet using global wallet context
   const disconnectWallet = () => {
     setContract(null);
-    setSigner(null);
-    setAddress(null);
-    setIsConnected(false);
+    disconnect();
   };
 
   // Create post token
   const createPostToken = async (
-    customPostId: string,
+    uuid: string,
     content: string,
     imageUrl: string,
-    priceStart: string = "0.01", // $0.01 USDC
-    priceIncrement: string = "0.01", // $0.01 USDC
-    freebieCount: number = 100
+    freebieCount: number = 3,
+    quadraticDivisor: number = 1
   ) => {
     console.log('🚀 createPostToken called with:', {
-      customPostId,
+      uuid,
       content: content.substring(0, 50) + '...',
       imageUrl,
-      priceStart,
-      priceIncrement,
       freebieCount,
+      quadraticDivisor,
       contractAddress: CONTRACT_ADDRESS,
       hasContract: !!contract,
       hasSigner: !!signer,
@@ -172,30 +138,42 @@ export const usePostToken = () => {
 
     setLoading(true);
     try {
-      console.log('💰 Converting prices to Wei...');
-      const priceStartWei = ethers.parseUnits(priceStart, 6); // USDC has 6 decimals
-      const priceIncrementWei = ethers.parseUnits(priceIncrement, 6);
-      
-      console.log('📊 Price conversion results:', {
-        priceStart,
-        priceStartWei: priceStartWei.toString(),
-        priceIncrement,
-        priceIncrementWei: priceIncrementWei.toString()
-      });
-
-      console.log('📝 Calling contract.createPostWithId...');
+      console.log('📝 Calling contract.createPost...');
       console.log('Contract method details:', {
-        method: 'createPostWithId',
-        params: [customPostId, content, imageUrl, priceStartWei, priceIncrementWei, freebieCount]
+        method: 'createPost',
+        params: [uuid, content, imageUrl, freebieCount, quadraticDivisor],
+        contractAddress: CONTRACT_ADDRESS,
+        userAddress: address
       });
 
-      const tx = await contract.createPostWithId(
-        customPostId,
+      // First check if the contract is paused
+      try {
+        const isPaused = await contract.paused();
+        console.log('Contract paused status:', isPaused);
+        if (isPaused) {
+          throw new Error('Contract is currently paused');
+        }
+      } catch (pauseError) {
+        console.log('Could not check pause status:', pauseError);
+      }
+
+      // Check if UUID already exists
+      try {
+        const exists = await contract.doesUuidExist(uuid);
+        console.log('UUID exists check:', exists);
+        if (exists) {
+          throw new Error('Post with this UUID already exists');
+        }
+      } catch (existsError) {
+        console.log('Could not check UUID existence:', existsError);
+      }
+
+      const tx = await contract.createPost(
+        uuid,
         content,
         imageUrl,
-        priceStartWei,
-        priceIncrementWei,
-        freebieCount
+        freebieCount,
+        quadraticDivisor
       );
 
       console.log('✅ Transaction sent:', {
@@ -222,23 +200,42 @@ export const usePostToken = () => {
         message: error.message,
         code: error.code,
         reason: error.reason,
-        data: error.data
+        data: error.data,
+        stack: error.stack
       });
-      throw error;
+      
+      // Try to parse the error message for better user feedback
+      let userMessage = 'Failed to create post token';
+      
+      if (error.message?.includes('Post with this UUID already exists')) {
+        userMessage = 'A token already exists for this post. Please try again.';
+      } else if (error.message?.includes('Contract is currently paused')) {
+        userMessage = 'Token creation is temporarily disabled. Please try again later.';
+      } else if (error.message?.includes('execution reverted')) {
+        userMessage = 'Transaction failed. Please check your wallet and try again.';
+      } else if (error.message?.includes('Internal JSON-RPC error')) {
+        userMessage = 'Network error. Please check your connection and try again.';
+      } else if (error.message?.includes('insufficient funds')) {
+        userMessage = 'Insufficient funds for gas fees. Please add ETH to your wallet.';
+      }
+      
+      const enhancedError = new Error(userMessage) as Error & { originalError: any };
+      enhancedError.originalError = error;
+      throw enhancedError;
     } finally {
       setLoading(false);
     }
   };
 
   // Buy shares
-  const buyShares = async (customPostId: string) => {
+  const buyShares = async (uuid: string) => {
     if (!contract || !signer) {
       throw new Error('Contract not connected');
     }
 
     setLoading(true);
     try {
-      const tx = await contract.buyPostSharesByCustomId(customPostId);
+      const tx = await contract.buyPostTokensByUuid(uuid);
       await tx.wait();
       return tx.hash;
     } catch (error) {
@@ -250,14 +247,14 @@ export const usePostToken = () => {
   };
 
   // Sell shares
-  const sellShares = async (customPostId: string, amount: number) => {
+  const sellShares = async (uuid: string, amount: number) => {
     if (!contract || !signer) {
       throw new Error('Contract not connected');
     }
 
     setLoading(true);
     try {
-      const tx = await contract.sellPostSharesByCustomId(customPostId, amount);
+      const tx = await contract.sellPostTokensByUuid(uuid, amount);
       await tx.wait();
       return tx.hash;
     } catch (error) {
@@ -269,20 +266,20 @@ export const usePostToken = () => {
   };
 
   // Get current price
-  const getCurrentPrice = async (customPostId: string): Promise<number> => {
+  const getCurrentPrice = async (uuid: string): Promise<number> => {
     if (!contract) {
       throw new Error('Contract not connected');
     }
 
     try {
       // First check if post exists
-      const exists = await contract.doesCustomPostExist(customPostId);
+      const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
-        console.log(`Post ${customPostId} does not exist, returning 0 price`);
+        console.log(`Post ${uuid} does not exist, returning 0 price`);
         return 0;
       }
 
-      const price = await contract.getCurrentPriceByCustomId(customPostId);
+      const price = await contract.getCurrentPriceByUuid(uuid);
       return parseFloat(ethers.formatUnits(price, 6)); // Convert from wei to USDC
     } catch (error) {
       console.error('Failed to get current price:', error);
@@ -291,20 +288,20 @@ export const usePostToken = () => {
   };
 
   // Get post stats
-  const getPostStats = async (customPostId: string): Promise<PostTokenStats | null> => {
+  const getPostStats = async (uuid: string): Promise<PostTokenStats | null> => {
     if (!contract) {
       throw new Error('Contract not connected');
     }
 
     try {
       // First check if post exists
-      const exists = await contract.doesCustomPostExist(customPostId);
+      const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
-        console.log(`Post ${customPostId} does not exist, returning null stats`);
+        console.log(`Post ${uuid} does not exist, returning null stats`);
         return null;
       }
 
-      const stats = await contract.getPostStatsByCustomId(customPostId);
+      const stats = await contract.getPostStatsByUuid(uuid);
       return {
         totalBuyers: Number(stats.totalBuyers),
         payingBuyers: Number(stats.payingBuyers),
@@ -315,7 +312,9 @@ export const usePostToken = () => {
         creatorFeeBalance: parseFloat(ethers.formatUnits(stats.creatorFeeBalance, 6)),
         platformFeeBalance: parseFloat(ethers.formatUnits(stats.platformFeeBalance, 6)),
         liability: parseFloat(ethers.formatUnits(stats.liability, 6)),
-        breakEven: stats.breakEven
+        breakEven: stats.breakEven,
+        totalSupply: Number(stats.totalSupply),
+        circulatingSupply: Number(stats.circulatingSupply)
       };
     } catch (error) {
       console.error('Failed to get post stats:', error);
@@ -324,13 +323,13 @@ export const usePostToken = () => {
   };
 
   // Get user portfolio
-  const getUserPortfolio = async (customPostId: string, userAddress: string): Promise<UserPortfolio | null> => {
+  const getUserPortfolio = async (uuid: string, userAddress: string): Promise<UserPortfolio | null> => {
     if (!contract) {
       throw new Error('Contract not connected');
     }
 
     try {
-      const portfolio = await contract.getUserPostPortfolioByCustomId(customPostId, userAddress);
+      const portfolio = await contract.getUserPostPortfolioByUuid(uuid, userAddress);
       return {
         balance: Number(portfolio.balance),
         totalBought: Number(portfolio.totalBought),
@@ -349,20 +348,20 @@ export const usePostToken = () => {
   };
 
   // Get remaining freebies
-  const getRemainingFreebies = async (customPostId: string): Promise<number> => {
+  const getRemainingFreebies = async (uuid: string): Promise<number> => {
     if (!contract) {
       throw new Error('Contract not connected');
     }
 
     try {
       // First check if post exists
-      const exists = await contract.doesCustomPostExist(customPostId);
+      const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
-        console.log(`Post ${customPostId} does not exist, returning 0 freebies`);
+        console.log(`Post ${uuid} does not exist, returning 0 freebies`);
         return 0;
       }
 
-      const freebies = await contract.getRemainingFreebiesByCustomId(customPostId);
+      const freebies = await contract.getRemainingFreebiesByUuid(uuid);
       return Number(freebies);
     } catch (error) {
       console.error('Failed to get remaining freebies:', error);
@@ -371,20 +370,20 @@ export const usePostToken = () => {
   };
 
   // Get actual price (ignores freebie availability)
-  const getActualPrice = async (customPostId: string): Promise<number> => {
+  const getActualPrice = async (uuid: string): Promise<number> => {
     if (!contract) {
       throw new Error('Contract not connected');
     }
 
     try {
       // First check if post exists
-      const exists = await contract.doesCustomPostExist(customPostId);
+      const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
-        console.log(`Post ${customPostId} does not exist, returning 0 actual price`);
+        console.log(`Post ${uuid} does not exist, returning 0 actual price`);
         return 0;
       }
 
-      const price = await contract.getActualPriceByCustomId(customPostId);
+      const price = await contract.getActualPriceByUuid(uuid);
       return Number(ethers.formatUnits(price, 6)); // USDC has 6 decimals
     } catch (error) {
       console.error('Failed to get actual price:', error);
@@ -393,7 +392,7 @@ export const usePostToken = () => {
   };
 
   // Check if user can claim freebie
-  const canClaimFreebie = async (customPostId: string, userAddress: string): Promise<boolean> => {
+  const canClaimFreebie = async (uuid: string, userAddress: string): Promise<boolean> => {
     if (!contract) {
       console.log('No contract available for checking freebie eligibility');
       return false;
@@ -406,20 +405,20 @@ export const usePostToken = () => {
 
     try {
       // First check if post exists
-      const exists = await contract.doesCustomPostExist(customPostId);
+      const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
-        console.log(`Post ${customPostId} does not exist, returning false for freebie eligibility`);
+        console.log(`Post ${uuid} does not exist, returning false for freebie eligibility`);
         return false;
       }
 
-      console.log(`Checking freebie eligibility for user ${userAddress} on post ${customPostId}`);
-      const canClaim = await contract.canClaimFreebieByCustomId(customPostId, userAddress);
-      console.log(`User ${userAddress} can claim freebie on post ${customPostId}:`, canClaim);
+      console.log(`Checking freebie eligibility for user ${userAddress} on post ${uuid}`);
+      const canClaim = await contract.canClaimFreebieByUuid(uuid, userAddress);
+      console.log(`User ${userAddress} can claim freebie on post ${uuid}:`, canClaim);
       return canClaim;
     } catch (error) {
       console.error('Failed to check freebie eligibility:', error);
       console.log('Error details:', {
-        customPostId,
+        uuid,
         userAddress,
         error: error,
         errorMessage: error?.message,
@@ -429,9 +428,44 @@ export const usePostToken = () => {
     }
   };
 
+  // Check contract state and connectivity
+  const checkContractState = async (): Promise<{
+    isConnected: boolean;
+    isPaused: boolean;
+    contractAddress: string;
+    userAddress: string;
+  }> => {
+    if (!contract || !address) {
+      return {
+        isConnected: false,
+        isPaused: false,
+        contractAddress: CONTRACT_ADDRESS,
+        userAddress: address || 'Not connected'
+      };
+    }
+
+    try {
+      const isPaused = await contract.paused();
+      return {
+        isConnected: true,
+        isPaused,
+        contractAddress: CONTRACT_ADDRESS,
+        userAddress: address
+      };
+    } catch (error) {
+      console.error('Failed to check contract state:', error);
+      return {
+        isConnected: false,
+        isPaused: false,
+        contractAddress: CONTRACT_ADDRESS,
+        userAddress: address || 'Not connected'
+      };
+    }
+  };
+
   // Check if post token exists
-  const checkPostTokenExists = async (customPostId: string): Promise<boolean> => {
-    console.log(`🔍 checkPostTokenExists called for post: ${customPostId}`);
+  const checkPostTokenExists = async (uuid: string): Promise<boolean> => {
+    console.log(`🔍 checkPostTokenExists called for post: ${uuid}`);
     console.log(`Contract status:`, { 
       hasContract: !!contract, 
       contractAddress: CONTRACT_ADDRESS,
@@ -445,15 +479,15 @@ export const usePostToken = () => {
     }
 
     try {
-      console.log(`📞 Calling contract.doesCustomPostExist(${customPostId})...`);
+      console.log(`📞 Calling contract.doesUuidExist(${uuid})...`);
       // Use the safe function that doesn't revert
-      const exists = await contract.doesCustomPostExist(customPostId);
-      console.log(`✅ Contract response - Post ${customPostId} exists:`, exists);
+      const exists = await contract.doesUuidExist(uuid);
+      console.log(`✅ Contract response - Post ${uuid} exists:`, exists);
       return exists;
     } catch (error) {
       console.error('❌ Failed to check if post token exists:', error);
       console.error('Error details:', {
-        postId: customPostId,
+        uuid,
         contractAddress: CONTRACT_ADDRESS,
         error: error,
         errorMessage: error?.message,
@@ -485,6 +519,7 @@ export const usePostToken = () => {
     getUserPortfolio,
     getRemainingFreebies,
     canClaimFreebie,
-    checkPostTokenExists
+    checkPostTokenExists,
+    checkContractState
   };
 };

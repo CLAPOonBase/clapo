@@ -16,6 +16,7 @@ import MediaUpload, { MediaUploadHandle } from '@/app/components/MediaUpload'
 import { useSession } from 'next-auth/react'
 import { useApi } from '@/app/Context/ApiProvider'
 import { usePostToken } from '@/app/hooks/usePostToken'
+import { generatePostTokenUUID } from '@/app/lib/uuid'
 
 // Toast Component
 const Toast = ({ 
@@ -62,10 +63,9 @@ export function SnapComposer() {
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   
-  // Token creation parameters
-  const [tokenPrice, setTokenPrice] = useState('0.01')
-  const [tokenIncrement, setTokenIncrement] = useState('0.01')
-  const [freebieCount, setFreebieCount] = useState(100)
+  // Token creation parameters (quadratic pricing system)
+  const [freebieCount, setFreebieCount] = useState(100) // Number of free tokens
+  const [quadraticDivisor, setQuadraticDivisor] = useState(1) // Price curve steepness (1 = steep, higher = flatter)
   
   const { createPost, fetchPosts } = useApi();
   const { createPostToken, isConnected, connectWallet, isConnecting, address } = usePostToken();
@@ -125,6 +125,11 @@ export function SnapComposer() {
     setShowToast(true)
   }
 
+  const showErrorToast = (message: string) => {
+    setToastMessage(message)
+    setShowToast(true)
+  }
+
   const handleCloseToast = () => {
     setShowToast(false)
   }
@@ -160,6 +165,20 @@ export function SnapComposer() {
     if (!hasContent && !mediaUrl) {
       alert('Please add some content or media before posting')
       return
+    }
+    
+    // Check wallet connection for token creation
+    if (!isConnected) {
+      const shouldConnect = confirm('Wallet not connected. Connect wallet to enable token trading for your posts?')
+      if (shouldConnect) {
+        try {
+          await connectWallet()
+          // Continue with post creation after wallet connection
+        } catch (error) {
+          console.error('Failed to connect wallet:', error)
+          alert('Failed to connect wallet. Post will be created without token trading.')
+        }
+      }
     }
     
     console.log('🔍 Submit Debug:', {
@@ -204,13 +223,15 @@ export function SnapComposer() {
           const postId = response?.post?.id
           console.log('Post ID for token creation:', postId)
           if (postId) {
+            // Generate a unique UUID for the token
+            const tokenUuid = generatePostTokenUUID(postId)
+            console.log('Generated token UUID:', tokenUuid)
             const tokenTxHash = await createPostToken(
-              postId,
+              tokenUuid,
               content.trim(),
               mediaUrl || '',
-              tokenPrice,
-              tokenIncrement,
-              freebieCount
+              freebieCount,
+              quadraticDivisor
             )
             console.log('✅ Post token created successfully, TX:', tokenTxHash)
             showSuccessToast(`Snap posted and token created! TX: ${tokenTxHash.slice(0, 10)}...`)
@@ -220,7 +241,17 @@ export function SnapComposer() {
           }
         } catch (tokenError) {
           console.error('Failed to create post token:', tokenError)
-          showSuccessToast('Snap posted successfully, but token creation failed')
+          let errorMessage = 'Snap posted successfully, but token creation failed'
+          
+          if (tokenError.message?.includes('Post with this UUID already exists')) {
+            errorMessage = 'Snap posted successfully, but token already exists for this post'
+          } else if (tokenError.message?.includes('Insufficient')) {
+            errorMessage = 'Snap posted successfully, but insufficient USDC for token creation'
+          } else if (tokenError.message?.includes('reverted')) {
+            errorMessage = 'Snap posted successfully, but token creation transaction failed'
+          }
+          
+          showErrorToast(errorMessage)
         }
       } else {
         showSuccessToast('Snap posted successfully! (Connect wallet to enable token trading)')
@@ -409,35 +440,7 @@ export function SnapComposer() {
               <div className="text-sm font-medium text-white">Token Parameters</div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {/* Starting Price */}
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">Starting Price (USDC)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  value={tokenPrice}
-                  onChange={(e) => setTokenPrice(e.target.value)}
-                  className="w-full px-3 py-2 bg-black border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0.01"
-                />
-              </div>
-              
-              {/* Price Increment */}
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">Price Increment (USDC)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  value={tokenIncrement}
-                  onChange={(e) => setTokenIncrement(e.target.value)}
-                  className="w-full px-3 py-2 bg-black border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0.01"
-                />
-              </div>
-              
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Freebie Count */}
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Free Shares</label>
@@ -451,10 +454,24 @@ export function SnapComposer() {
                   placeholder="100"
                 />
               </div>
+              
+              {/* Quadratic Divisor */}
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Price Curve Steepness</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={quadraticDivisor}
+                  onChange={(e) => setQuadraticDivisor(parseInt(e.target.value) || 1)}
+                  className="w-full px-3 py-2 bg-black border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="1"
+                />
+              </div>
             </div>
             
             <div className="mt-2 text-xs text-gray-500">
-              Price starts at ${tokenPrice} and increases by ${tokenIncrement} per paid buyer. {freebieCount} free shares available.
+              Uses quadratic pricing: Price = (Tokens Held)² / {quadraticDivisor}. {freebieCount} free shares available. Lower divisor = steeper price curve.
             </div>
           </div>
         )}
