@@ -10,7 +10,7 @@ import {
   User,
   Blocks,
 } from "lucide-react";
-import { FloatingDock } from "./Experiment/FloatingDoc";
+
 
 interface Row {
   rank: number;

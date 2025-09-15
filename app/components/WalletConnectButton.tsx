@@ -70,7 +70,7 @@ export default function WalletConnectButton({
     <button
       onClick={onConnect}
       disabled={isConnecting}
-      className={`flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white rounded-lg transition-colors ${sizeClasses[size]} ${className}`}
+      className={`flex items-center rounded-full gap-2 shadow-custom-purple hover:bg-blue-700 disabled:bg-blue-600/50 text-nowrap bg-[#6E54FF] text-white transition-colors ${sizeClasses[size]} ${className}`}
     >
       {isConnecting ? (
         <Loader2 className={`${iconSizes[size]} animate-spin`} />

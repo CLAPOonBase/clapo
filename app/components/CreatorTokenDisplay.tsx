@@ -169,78 +169,78 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
   // This allows the component to load data in the background
 
   return (
-    <div className="bg-dark-700 rounded-lg p-4 space-y-4">
+   <div className="bg-black/90 backdrop-blur-sm border-2 border-gray-700/70 rounded-2xl p-6 space-y-6 shadow-2xl">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <img
             src={avatarUrl || "https://robohash.org/default.png"}
             alt={username}
-            className="w-10 h-10 rounded-full object-cover"
+            className="w-12 h-12 rounded-full object-cover border-2 border-gray-700/50"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.src = "https://robohash.org/default.png";
             }}
           />
           <div>
-            <h3 className="text-white font-semibold">{username}'s Token</h3>
-            <p className="text-gray-400 text-sm">Creator Token</p>
+            <h3 className="text-white font-bold tracking-tight text-lg">{username}'s Token</h3>
+            <p className="text-gray-400 text-sm font-medium">Creator Token</p>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-lg font-bold text-white">${(currentPrice / 1000000).toFixed(2)}</div>
-          <div className="text-xs text-gray-400">Current Price</div>
+          <div className="text-xl font-bold text-white tracking-tight">${(currentPrice / 1000000).toFixed(2)}</div>
+          <div className="text-xs text-gray-400 font-medium">Current Price</div>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-dark-800 rounded-lg p-3 text-center">
-          <Users className="w-5 h-5 text-blue-400 mx-auto mb-1" />
-          <div className="text-white font-semibold">{creatorStats?.totalBuyers || 0}</div>
-          <div className="text-xs text-gray-400">Total Buyers</div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-black/50 backdrop-blur-sm border-2 border-gray-700/70 rounded-2xl p-4 text-center">
+          <Users className="w-5 h-5 text-blue-400 mx-auto mb-2" />
+          <div className="text-white font-bold text-lg tracking-tight">{creatorStats?.totalBuyers || 0}</div>
+          <div className="text-xs text-gray-400 font-medium">Total Buyers</div>
         </div>
-        <div className="bg-dark-800 rounded-lg p-3 text-center">
-          <Gift className="w-5 h-5 text-green-400 mx-auto mb-1" />
-          <div className="text-white font-semibold">{remainingFreebies}</div>
-          <div className="text-xs text-gray-400">Free Shares</div>
+        <div className="bg-black/50 backdrop-blur-sm border-2 border-gray-700/70 rounded-2xl p-4 text-center">
+          <Gift className="w-5 h-5 text-green-400 mx-auto mb-2" />
+          <div className="text-white font-bold text-lg tracking-tight">{remainingFreebies}</div>
+          <div className="text-xs text-gray-400 font-medium">Free Shares</div>
         </div>
       </div>
 
       {/* User Portfolio (if connected) */}
       {isConnected && userPortfolio && (
-        <div className="bg-dark-800 rounded-lg p-3">
-          <div className="text-sm text-gray-400 mb-2">Your Portfolio</div>
-          <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="bg-black/50 backdrop-blur-sm border-2 border-gray-700/70 rounded-2xl p-4">
+          <div className="text-gray-400 text-sm font-bold tracking-wide mb-3">YOUR PORTFOLIO</div>
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-gray-400">Balance:</span>
-              <span className="text-white ml-2">{userPortfolio.balance || 0}</span>
+              <span className="text-gray-400 font-medium">Balance:</span>
+              <span className="text-white ml-2 font-bold">{userPortfolio.balance || 0}</span>
             </div>
             <div>
-              <span className="text-gray-400">Value:</span>
-              <span className="text-white ml-2">${((userPortfolio.currentValue || 0) / 1000000).toFixed(2)}</span>
+              <span className="text-gray-400 font-medium">Value:</span>
+              <span className="text-white ml-2 font-bold">${((userPortfolio.currentValue || 0) / 1000000).toFixed(2)}</span>
             </div>
           </div>
         </div>
       )}
 
       {/* Trading Buttons */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         {!isConnected ? (
           <button
             onClick={connectWallet}
             disabled={isConnecting}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white py-3 px-4 rounded-2xl font-bold tracking-tight transition-colors border-2 border-blue-500/30 disabled:border-gray-500/30"
           >
             {isConnecting ? 'Connecting...' : 'Connect Wallet to Trade'}
           </button>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             {canClaim && remainingFreebies > 0 ? (
               <button
                 onClick={handleClaimFreebie}
                 disabled={trading}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-1"
+                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white py-3 px-3 rounded-2xl font-bold tracking-tight transition-colors border-2 border-green-500/30 disabled:border-gray-500/30 flex items-center justify-center space-x-2"
               >
                 <Gift className="w-4 h-4" />
                 <span>{trading ? 'Claiming...' : 'Claim Free'}</span>
@@ -249,7 +249,7 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
               <button
                 onClick={handleBuy}
                 disabled={trading}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-1"
+                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white py-3 px-3 rounded-2xl font-bold tracking-tight transition-colors border-2 border-green-500/30 disabled:border-gray-500/30 flex items-center justify-center space-x-2"
               >
                 <ArrowUpRight className="w-4 h-4" />
                 <span>{trading ? 'Buying...' : 'Buy'}</span>
@@ -260,7 +260,7 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
               <button
                 onClick={handleSell}
                 disabled={trading}
-                className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-1"
+                className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white py-3 px-3 rounded-2xl font-bold tracking-tight transition-colors border-2 border-red-500/30 disabled:border-gray-500/30 flex items-center justify-center space-x-2"
               >
                 <ArrowDownRight className="w-4 h-4" />
                 <span>{trading ? 'Selling...' : 'Sell'}</span>
@@ -271,9 +271,13 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
       </div>
 
       {/* Price Info */}
-      <div className="text-xs text-gray-500 bg-dark-800 p-2 rounded">
-        <p>Quadratic pricing: Price increases with each purchase</p>
-        <p>Early buyers get better prices</p>
+      <div className="bg-black/50 backdrop-blur-sm border-2 border-gray-700/70 rounded-2xl p-4">
+        <p className="text-gray-400 text-xs font-medium mb-1">
+          Quadratic pricing: Price increases with each purchase
+        </p>
+        <p className="text-gray-400 text-xs font-medium">
+          Early buyers get better prices
+        </p>
       </div>
     </div>
   )
