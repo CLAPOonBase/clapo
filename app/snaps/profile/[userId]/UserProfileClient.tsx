@@ -417,7 +417,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
 
 <div className="border-2 border-gray-700/70 rounded-xl">
   <div className="p-4 border-b-2 border-gray-700/70">
-    <div className="flex items-start space-x-4">
+    <div className="flex w-full items-start space-x-4">
       <Image
         src={userProfile.avatar_url || '/4.png'}
         alt={userProfile.username}

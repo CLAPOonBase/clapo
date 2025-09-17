@@ -209,25 +209,7 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* Wallet Connection */}
-          {!isConnected && (
-            <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-1">Connect Wallet</h3>
-                  <p className="text-sm text-gray-400">Connect your wallet to trade post tokens</p>
-                </div>
-                <WalletConnectButton
-                  onConnect={connectWallet}
-                  isConnecting={isConnecting}
-                  isConnected={false}
-                  size="md"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Connected Wallet Info */}
+          {/* Connected Wallet Info - Only show when connected */}
           {isConnected && address && (
             <div className="bg-green-900/20 rounded-lg p-4 border border-green-500/30">
               <div className="flex items-center justify-between">
@@ -285,8 +267,8 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
             </div>
           )}
 
-          {/* User Portfolio */}
-          {portfolio && (
+          {/* User Portfolio - Only show when connected */}
+          {isConnected && portfolio && (
             <div className="bg-gray-800/50 rounded-lg p-4">
               <h3 className="text-sm font-medium text-gray-400 mb-3">Your Portfolio</h3>
               <div className="grid grid-cols-2 gap-4">
@@ -380,22 +362,33 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                    </div>
                  </div>
 
-                <button
-                  onClick={handleBuy}
-                  disabled={loading || !isConnected || (!userCanClaimFreebie && remainingFreebies > 0)}
-                  className={`w-full py-3 font-semibold rounded-lg transition-colors ${
-                    userCanClaimFreebie && remainingFreebies > 0
-                      ? 'bg-green-600 hover:bg-green-700 text-white'
-                      : !userCanClaimFreebie && remainingFreebies > 0
-                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  } ${loading || !isConnected ? 'disabled:bg-black disabled:cursor-not-allowed' : ''}`}
-                >
-                  {loading ? 'Processing...' : 
-                   userCanClaimFreebie && remainingFreebies > 0 ? 'Claim Free Share' :
-                   !userCanClaimFreebie && remainingFreebies > 0 ? 'Already Claimed Freebie' :
-                   'Buy Shares'}
-                </button>
+                {/* Buy Button - Show Connect Wallet if not connected */}
+                {!isConnected ? (
+                  <WalletConnectButton
+                    onConnect={connectWallet}
+                    isConnecting={isConnecting}
+                    isConnected={false}
+                    size="lg"
+                    className="w-full py-3 font-semibold rounded-lg"
+                  />
+                ) : (
+                  <button
+                    onClick={handleBuy}
+                    disabled={loading || (!userCanClaimFreebie && remainingFreebies > 0)}
+                    className={`w-full py-3 font-semibold rounded-lg transition-colors ${
+                      userCanClaimFreebie && remainingFreebies > 0
+                        ? 'bg-green-600 hover:bg-green-700 text-white'
+                        : !userCanClaimFreebie && remainingFreebies > 0
+                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    } ${loading ? 'disabled:bg-black disabled:cursor-not-allowed' : ''}`}
+                  >
+                    {loading ? 'Processing...' : 
+                     userCanClaimFreebie && remainingFreebies > 0 ? 'Claim Free Share' :
+                     !userCanClaimFreebie && remainingFreebies > 0 ? 'Already Claimed Freebie' :
+                     'Buy Shares'}
+                  </button>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
@@ -431,19 +424,30 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                    </div>
                  </div>
 
-                <button
-                  onClick={handleSell}
-                  disabled={loading || !isConnected || !portfolio || portfolio.balance < amount || remainingFreebies > 0}
-                  className={`w-full py-3 font-semibold rounded-lg transition-colors ${
-                    remainingFreebies > 0
-                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                      : 'bg-red-600 hover:bg-red-700 text-white'
-                  } ${loading || !isConnected || !portfolio || portfolio.balance < amount ? 'disabled:bg-black disabled:cursor-not-allowed' : ''}`}
-                >
-                  {loading ? 'Processing...' : 
-                   remainingFreebies > 0 ? 'Cannot sell until all freebies claimed' :
-                   'Sell Shares'}
-                </button>
+                {/* Sell Button - Show Connect Wallet if not connected */}
+                {!isConnected ? (
+                  <WalletConnectButton
+                    onConnect={connectWallet}
+                    isConnecting={isConnecting}
+                    isConnected={false}
+                    size="lg"
+                    className="w-full py-3 font-semibold rounded-lg"
+                  />
+                ) : (
+                  <button
+                    onClick={handleSell}
+                    disabled={loading || !portfolio || portfolio.balance < amount || remainingFreebies > 0}
+                    className={`w-full py-3 font-semibold rounded-lg transition-colors ${
+                      remainingFreebies > 0
+                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        : 'bg-red-600 hover:bg-red-700 text-white'
+                    } ${loading || !portfolio || portfolio.balance < amount ? 'disabled:bg-black disabled:cursor-not-allowed' : ''}`}
+                  >
+                    {loading ? 'Processing...' : 
+                     remainingFreebies > 0 ? 'Cannot sell until all freebies claimed' :
+                     'Sell Shares'}
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -458,15 +462,6 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
           {success && (
             <div className="bg-green-900/20 border border-green-500/50 rounded-lg p-3">
               <p className="text-sm text-green-400">{success}</p>
-            </div>
-          )}
-
-          {/* Connection Status */}
-          {!isConnected && (
-            <div className="bg-yellow-900/20 border border-yellow-500/50 rounded-lg p-3">
-              <p className="text-sm text-yellow-400">
-                Please connect your wallet to trade shares
-              </p>
             </div>
           )}
         </div>

@@ -39,6 +39,7 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   const [comments, setComments] = useState<any[]>([])
   const [showTokenTrading, setShowTokenTrading] = useState(false)
   const hasInitialized = useRef(false)
+  
 
   const { likePost, unlikePost, retweetPost, bookmarkPost, unbookmarkPost, viewPost, addComment, getPostComments, state } = useApi()
   const { data: session } = useSession()
@@ -192,7 +193,6 @@ const handleImageClick = (e: React.MouseEvent) => {
         const newCount = currentCount + 1
         setLocalEngagement(prev => ({ ...prev, likes: newCount }))
         setUserEngagement(prev => ({ ...prev, liked: true }))
-        setToast({ message: 'Post liked', type: 'like' })
         
         await likePost(postId, currentUserId)
         
@@ -204,7 +204,6 @@ const handleImageClick = (e: React.MouseEvent) => {
       }
     } catch (error) {
       console.error('Failed to handle like:', error)
-      setToast({ message: 'Failed to update like. Please try again.', type: 'error' })
       
       const currentLiked = userEngagement.liked
       const currentCount = localEngagement.likes
@@ -232,8 +231,6 @@ const handleImageClick = (e: React.MouseEvent) => {
       const newCount = currentCount + 1
       setLocalEngagement(prev => ({ ...prev, retweets: newCount }))
       setUserEngagement(prev => ({ ...prev, retweeted: true }))
-      setToast({ message: 'Post retweeted', type: 'retweet' })
-      
       await retweetPost(postId, currentUserId)
       
       if (state.engagement?.retweetedPosts) {
@@ -243,7 +240,6 @@ const handleImageClick = (e: React.MouseEvent) => {
       onRetweet?.(isApiPost ? postId : parseInt(postId))
     } catch (error) {
       console.error('Failed to retweet:', error)
-      setToast({ message: 'Failed to retweet. Please try again.', type: 'error' })
       
       const currentCount = localEngagement.retweets
       setLocalEngagement(prev => ({ ...prev, retweets: Math.max(0, currentCount - 1) }))
@@ -266,7 +262,6 @@ const handleImageClick = (e: React.MouseEvent) => {
         const newCount = Math.max(0, currentCount - 1)
         setLocalEngagement(prev => ({ ...prev, bookmarks: newCount }))
         setUserEngagement(prev => ({ ...prev, bookmarked: false }))
-        setToast({ message: 'Bookmark removed', type: 'unbookmark' })
         
         await unbookmarkPost(postId, currentUserId)
         
@@ -279,7 +274,6 @@ const handleImageClick = (e: React.MouseEvent) => {
         const newCount = currentCount + 1
         setLocalEngagement(prev => ({ ...prev, bookmarks: newCount }))
         setUserEngagement(prev => ({ ...prev, bookmarked: true }))
-        setToast({ message: 'Post bookmarked', type: 'bookmark' })
         
         await bookmarkPost(postId, currentUserId)
         
@@ -291,7 +285,6 @@ const handleImageClick = (e: React.MouseEvent) => {
       }
     } catch (error) {
       console.error('Failed to handle bookmark:', error)
-      setToast({ message: 'Failed to update bookmark. Please try again.', type: 'error' })
       
       const currentBookmarked = userEngagement.bookmarked
       const currentCount = localEngagement.bookmarks
@@ -346,7 +339,6 @@ const handleImageClick = (e: React.MouseEvent) => {
       setLocalEngagement(prev => ({ ...prev, comments: newCommentCount }))
       setCommentText('')
       setToast({ message: 'Comment added', type: 'success' })
-
       if (!showInlineComments) {
         setShowInlineComments(true)
       }
@@ -663,6 +655,9 @@ const handleImageClick = (e: React.MouseEvent) => {
             )}
           </AnimatePresence>
 
+        
+      </div>
+        </div>
           <form onSubmit={handleCommentSubmit} className="flex items-center space-x-3 ">
             <div className="relative w-10 h-10 flex-shrink-0">
               {profile?.avatar_url ? (
@@ -674,27 +669,28 @@ const handleImageClick = (e: React.MouseEvent) => {
               )}
             </div>
             
-            <div className="flex-1 relative ">
+            <div className="flex gap-2 w-full relative py-2 my-2 rounded-full bg-gray-700/20 ">
               <input
                 type="text"
                 placeholder="Write your comment.."
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 disabled={isLoading.comment || !currentUserId}
-                className="w-full py-3 px-4 bg-gray-700/70 rounded-full text-secondary placeholder:text-secondary placeholder-dark-800 focus:outline-none focus:ring-2 focus:bg-black transition-all disabled:opacity-50"
+                className="w-full px-4 rounded-full bg-transparent text-secondary placeholder:text-secondary focus:outline-none focus:ring-none  transition-all disabled:opacity-50"
                 onClick={(e) => e.stopPropagation()}
               />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <button 
+                <button 
                 type="button"
-                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                className="px-2 text-gray-400 hover:text-gray-600 transition-colors"
                 onClick={(e) => e.stopPropagation()}
                 disabled={!currentUserId}
               >
-                <Smile className="w-5 h-5" />
+                <Smile className="w-8 h-8" />
               </button>
+            </div>
+
+            <div className="flex items-center space-x-2">
+            
 
               <button 
                 type="submit"
@@ -711,8 +707,7 @@ const handleImageClick = (e: React.MouseEvent) => {
             </div>
           </form>
       </div>
-        </div>
-      </div>
+      
 
       {/* Fixed Image Modal */}
       <AnimatePresence>
