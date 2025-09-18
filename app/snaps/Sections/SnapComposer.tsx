@@ -11,6 +11,7 @@ import {
   SendHorizonal,
   X,
   CheckCircle,
+  Wallet,
 } from 'lucide-react'
 import MediaUpload, { MediaUploadHandle } from '@/app/components/MediaUpload'
 import { useSession } from 'next-auth/react'
@@ -169,15 +170,12 @@ export function SnapComposer() {
     
     // Check wallet connection for token creation
     if (!isConnected) {
-      const shouldConnect = confirm('Wallet not connected. Connect wallet to enable token trading for your posts?')
-      if (shouldConnect) {
-        try {
-          await connectWallet()
-          // Continue with post creation after wallet connection
-        } catch (error) {
-          console.error('Failed to connect wallet:', error)
-          alert('Failed to connect wallet. Post will be created without token trading.')
-        }
+      try {
+        await connectWallet()
+        // Continue with post creation after wallet connection
+      } catch (error) {
+        console.error('Failed to connect wallet:', error)
+        alert('Failed to connect wallet. Post will be created without token trading.')
       }
     }
     
@@ -343,6 +341,34 @@ export function SnapComposer() {
   const isOverLimit = charCount > 200
   const hasContent = content.trim().length > 0
   const canSubmit = (hasContent || mediaUrl) && !isSubmitting && !isOverLimit
+  const canClickButton = (hasContent || mediaUrl) && !isSubmitting && !isOverLimit
+
+  // Get button text and styling based on state
+  const getSnapButtonContent = () => {
+    if (isSubmitting) {
+      return {
+        text: isConnected ? 'Posting...' : 'Posting...',
+        icon: <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />,
+        className: 'bg-blue-600/80 text-white cursor-not-allowed'
+      }
+    }
+    
+    if (!isConnected) {
+      return {
+        text: 'Connect & Snap',
+        icon: <Wallet className="w-4 h-4" />,
+        className: 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-blue-500/25'
+      }
+    }
+    
+    return {
+      text: 'Snap',
+      icon: <SendHorizonal className="w-4 h-4" />,
+      className: 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-500/25'
+    }
+  }
+
+  const snapButton = getSnapButtonContent()
 
   return (
     <>
@@ -368,7 +394,7 @@ export function SnapComposer() {
          </div>
         <div className="relative w-full">
           <TextareaAutosize
-            minRows={1}
+            minRows={2}
             maxRows={8}
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -399,82 +425,8 @@ export function SnapComposer() {
         {/* Media Preview */}
         {renderMediaPreview()}
 
-        {/* Wallet Connection Status */}
-        <div className="mt-4 p-3 rounded-lg border border-gray-700/50 bg-gray-800/30">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${isConnected ? 'bg-green-600/20' : 'bg-gray-600/20'}`}>
-                <CheckCircle className={`w-4 h-4 ${isConnected ? 'text-green-400' : 'text-gray-400'}`} />
-              </div>
-              <div>
-                <div className="text-sm font-medium text-white">
-                  {isConnected ? 'Wallet Connected' : 'Wallet Not Connected'}
-                </div>
-                <div className="text-xs text-gray-400">
-                  {isConnected 
-                    ? `Connected: ${address?.slice(0, 6)}...${address?.slice(-4)}` 
-                    : 'Connect wallet to enable token creation'
-                  }
-                </div>
-              </div>
-            </div>
-            {!isConnected && (
-              <button
-                onClick={connectWallet}
-                disabled={isConnecting}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white text-sm rounded-lg transition-colors"
-              >
-                {isConnecting ? 'Connecting...' : 'Connect Wallet'}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Token Parameters */}
-        {isConnected && (
-          <div className="mt-4 p-3 rounded-lg border border-gray-700/50 bg-gray-800/30">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-1.5 bg-blue-600/20 rounded-lg">
-                <CheckCircle className="w-4 h-4 text-blue-400" />
-              </div>
-              <div className="text-sm font-medium text-white">Token Parameters</div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Freebie Count */}
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">Free Shares</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="1000"
-                  value={freebieCount}
-                  onChange={(e) => setFreebieCount(parseInt(e.target.value) || 100)}
-                  className="w-full px-3 py-2 bg-black border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="100"
-                />
-              </div>
-              
-              {/* Quadratic Divisor */}
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">Price Curve Steepness</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={quadraticDivisor}
-                  onChange={(e) => setQuadraticDivisor(parseInt(e.target.value) || 1)}
-                  className="w-full px-3 py-2 bg-black border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="1"
-                />
-              </div>
-            </div>
-            
-            <div className="mt-2 text-xs text-gray-500">
-              Uses quadratic pricing: Price = (Tokens Held)² / {quadraticDivisor}. {freebieCount} free shares available. Lower divisor = steeper price curve.
-            </div>
-          </div>
-        )}
+        {/* Token Parameters - Only show when wallet is connected */}
+   
 
         {/* Divider */}
         <div className="border-t border-dark-700/50 pt-4">
@@ -499,29 +451,25 @@ export function SnapComposer() {
               ))}
             </div>
 
-            {/* Submit Button */}
+            {/* Submit Button - Now handles wallet connection */}
             <button
               onClick={() => {
                 console.log('🔍 Submit button clicked!')
-                console.log('🔍 Button state:', { canSubmit, content, mediaUrl, isSubmitting, isOverLimit })
+                console.log('🔍 Button state:', { canClickButton, content, mediaUrl, isSubmitting, isOverLimit })
                 handleSubmit()
               }}
-              disabled={!canSubmit}
+              disabled={!canClickButton}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
-                canSubmit
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-500/25'
+                canClickButton
+                  ? snapButton.className
                   : isOverLimit
                     ? 'bg-red-600/50 text-red-300 cursor-not-allowed'
                     : 'bg-dark-700 text-dark-400 cursor-not-allowed'
               }`}
               title={isOverLimit ? 'Message exceeds 200 character limit' : ''}
             >
-              {isSubmitting ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <SendHorizonal className="w-4 h-4" />
-              )}
-              <span>{isSubmitting ? 'Posting...' : 'Snap'}</span>
+              {snapButton.icon}
+              <span>{snapButton.text}</span>
             </button>
           </div>
         </div>
