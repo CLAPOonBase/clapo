@@ -528,13 +528,7 @@ const [currentPage, setCurrentPage] = useState<
                     onClick={() => setShowTradingModal(true)}
                     className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
                   >
-                    Buy Token
-                  </button>
-                  <button
-                    onClick={() => setShowTradingModal(true)}
-                    className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
-                  >
-                    Sell Token
+                    Trade Token
                   </button>
                 </div>
               </div>

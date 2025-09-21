@@ -1,9 +1,12 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { TrendingUp, Users, DollarSign, Gift, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { TrendingUp, Users, DollarSign, Gift, ArrowUpRight, ArrowDownRight, Key } from 'lucide-react'
 import { useCreatorToken } from '@/app/hooks/useCreatorToken'
+import { useAccessTokens } from '@/app/hooks/useAccessTokens'
 import { generateCreatorTokenUUID } from '@/app/lib/uuid'
+import { AccessTokenClaim } from './AccessTokenClaim'
+import { AccessTokenManager } from './AccessTokenManager'
 
 interface CreatorTokenDisplayProps {
   userId: string
@@ -29,6 +32,8 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
     address
   } = useCreatorToken()
 
+  const { hasUserUsedAccessToken } = useAccessTokens()
+
   const [tokenExists, setTokenExists] = useState(true) // Start with true since we know it exists
   const [currentPrice, setCurrentPrice] = useState(0)
   const [creatorStats, setCreatorStats] = useState<any>(null)
@@ -37,6 +42,8 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
   const [canClaim, setCanClaim] = useState(true) // Default to true
   const [loading, setLoading] = useState(false) // Start with false since we know token exists
   const [trading, setTrading] = useState(false)
+  const [hasUsedAccessToken, setHasUsedAccessToken] = useState(false)
+  const [showAccessTokenClaim, setShowAccessTokenClaim] = useState(false)
 
   const tokenUuid = generateCreatorTokenUUID(userId)
   
@@ -52,12 +59,13 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
         setTokenExists(exists)
 
         if (exists) {
-          const [price, stats, freebies, portfolio, claimStatus] = await Promise.all([
+          const [price, stats, freebies, portfolio, claimStatus, accessTokenUsed] = await Promise.all([
             getCurrentPrice(tokenUuid),
             getCreatorStats(tokenUuid),
             getRemainingFreebies(tokenUuid),
             getUserPortfolio(tokenUuid, address),
-            canClaimFreebie(tokenUuid, address)
+            canClaimFreebie(tokenUuid, address),
+            hasUserUsedAccessToken(tokenUuid)
           ])
 
           setCurrentPrice(price)
@@ -65,6 +73,7 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
           setRemainingFreebies(freebies)
           setUserPortfolio(portfolio)
           setCanClaim(claimStatus)
+          setHasUsedAccessToken(accessTokenUsed)
         }
       } catch (error) {
         console.error('Failed to load creator token data:', error)
@@ -81,12 +90,13 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
     if (!isConnected || !tokenUuid || !address) return
     
     try {
-      const [price, stats, freebies, portfolio, claimStatus] = await Promise.all([
+      const [price, stats, freebies, portfolio, claimStatus, accessTokenUsed] = await Promise.all([
         getCurrentPrice(tokenUuid),
         getCreatorStats(tokenUuid),
         getRemainingFreebies(tokenUuid),
         getUserPortfolio(tokenUuid, address),
-        canClaimFreebie(tokenUuid, address)
+        canClaimFreebie(tokenUuid, address),
+        hasUserUsedAccessToken(tokenUuid)
       ])
 
       setCurrentPrice(price)
@@ -94,6 +104,7 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
       setRemainingFreebies(freebies)
       setUserPortfolio(portfolio)
       setCanClaim(claimStatus)
+      setHasUsedAccessToken(accessTokenUsed)
     } catch (error) {
       console.error('Failed to refresh data:', error)
     }
@@ -235,35 +246,36 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
             {isConnecting ? 'Connecting...' : 'Connect Wallet to Trade'}
           </button>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
-            {canClaim && remainingFreebies > 0 ? (
+          <div className="space-y-2">
+            {/* Primary Buy/Claim Button - Prioritizes Access Token Claim */}
+            {!hasUsedAccessToken && !isOwnProfile && remainingFreebies > 0 ? (
               <button
-                onClick={handleClaimFreebie}
-                disabled={trading}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-1"
+                onClick={() => setShowAccessTokenClaim(!showAccessTokenClaim)}
+                className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-1"
               >
-                <Gift className="w-4 h-4" />
-                <span>{trading ? 'Claiming...' : 'Claim Free'}</span>
+                <Key className="w-4 h-4" />
+                <span>Enter Access Token Given by Creator</span>
               </button>
             ) : (
               <button
                 onClick={handleBuy}
                 disabled={trading}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-1"
+                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-1"
               >
                 <ArrowUpRight className="w-4 h-4" />
-                <span>{trading ? 'Buying...' : 'Buy'}</span>
+                <span>{trading ? 'Buying...' : 'Buy Shares'}</span>
               </button>
             )}
             
+            {/* Sell Button */}
             {userPortfolio?.balance > 0 && (
               <button
                 onClick={handleSell}
                 disabled={trading}
-                className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-1"
+                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-1"
               >
                 <ArrowDownRight className="w-4 h-4" />
-                <span>{trading ? 'Selling...' : 'Sell'}</span>
+                <span>{trading ? 'Selling...' : 'Sell Shares'}</span>
               </button>
             )}
           </div>
@@ -275,6 +287,28 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
         <p>Quadratic pricing: Price increases with each purchase</p>
         <p>Early buyers get better prices</p>
       </div>
+
+      {/* Access Token Claim Component */}
+      {showAccessTokenClaim && !isOwnProfile && (
+        <div className="mt-4">
+          <AccessTokenClaim
+            userId={userId}
+            username={username}
+            avatarUrl={avatarUrl}
+          />
+        </div>
+      )}
+
+      {/* Access Token Manager for Own Profile */}
+      {isOwnProfile && (
+        <div className="mt-4">
+          <AccessTokenManager
+            userId={userId}
+            username={username}
+            isOwnProfile={isOwnProfile}
+          />
+        </div>
+      )}
     </div>
   )
 }
