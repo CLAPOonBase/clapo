@@ -19,45 +19,48 @@ export const TabNavigation = ({
   setShowCreateCommunityModal,
 }: TabNavigationProps) => {
   return (
-    <div className="w-full">
+    <div className="w-72">
       {/* Main Tabs - Fixed container */}
-      <div className="relative flex justify-between items-center py-2 rounded-2xl mb-3">
-        {[
-          { key: "dms", label: "Personal", icon: <MessageCircle className="w-4 h-4" /> },
-          { key: "communities", label: "Communities", icon: <Users className="w-4 h-4" /> },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key as "dms" | "communities")}
-            className={`flex items-center w-full justify-center py-2 gap-2 font-medium relative z-10 ${
-              activeTab === tab.key ? "text-white" : "text-secondary"
-            }`}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
+      <div className="bg-gray-700/70 p-1 rounded-full my-3">
+        <div className="bg-black m-1 p-1 rounded-full">
+          <div className="relative flex justify-between items-center p-1 rounded-2xl">
+            {[
+              { key: "dms", label: "Personal", icon: <MessageCircle className="w-4 h-4" /> },
+              { key: "communities", label: "Communities", icon: <Users className="w-4 h-4" /> },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as "dms" | "communities")}
+                className={`flex items-center w-full justify-center py-2 px-4 gap-2 font-medium relative z-10 ${
+                  activeTab === tab.key ? "text-white" : "text-secondary"
+                }`}
+              >
+                {/* {tab.icon} */}
+                {tab.label}
+              </button>
+            ))}
 
-        {/* Animated background highlight */}
-        <motion.div
-          className="left-0 absolute h-[30px] rounded-full"
-          style={{
-            boxShadow:
-              "0px 1px 0.5px 0px rgba(255,255,255,0.5) inset, 0px 1px 2px 0px rgba(110,84,255,0.5), 0px 0px 0px 1px #6E54FF",
-            backgroundColor: "#6E54FF",
-          }}
-          initial={false}
-          animate={{
-            left: activeTab === "dms" ? "5%" : "60%",
-            width: "40%",
-          }}
-          
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-        />
+            {/* Animated background highlight */}
+            <motion.div
+              className="absolute top-1 bottom-1 rounded-full"
+              style={{
+                boxShadow:
+                  "0px 1px 0.5px 0px rgba(255,255,255,0.5) inset, 0px 1px 2px 0px rgba(110,84,255,0.5), 0px 0px 0px 1px #6E54FF",
+                backgroundColor: "#6E54FF",
+              }}
+              initial={false}
+              animate={{
+                left: activeTab === "dms" ? "4px" : "calc(50% - 2px)",
+                right: activeTab === "dms" ? "calc(50% + 2px)" : "4px",
+              }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Sub Navigation - Fixed height container to prevent layout shift */}
-      <div className=" flex items-center">
+      <div className="flex items-center">
         {activeTab === "communities" && (
           <motion.div 
             className="flex justify-start gap-2 items-center w-full"

@@ -275,8 +275,8 @@ export function ProfilePage({ user, posts }: Props) {
                 Checking...
               </div>
             ) : creatorTokenExists ? (
-              <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg px-6 py-2 text-sm font-semibold flex items-center">
-                <span>✅ Creator Token Active</span>
+              <div className="bg-gradient-to-r  from-green-500 to-green-600 text-white rounded-full shadow-custom px-6 py-2 text-sm font-semibold flex items-center">
+                <span>Creator Token Active</span>
               </div>
             ) : !isConnected ? (
               <button 
@@ -297,7 +297,7 @@ export function ProfilePage({ user, posts }: Props) {
             
             <button 
               onClick={() => setShowUpdateModal(true)}
-              className="bg-dark-700 hover:bg-dark-600 text-white  -gray-600 rounded-lg px-6 py-2 text-sm font-semibold transition-all duration-200"
+              className="bg-dark-700 hover:bg-dark-600 text-white  -gray-600 rounded-full shadow-custom px-6 py-2 text-sm font-semibold transition-all duration-200"
             >
               Edit Profile
             </button>
@@ -340,23 +340,23 @@ export function ProfilePage({ user, posts }: Props) {
       {/* Stats Grid */}
       <div className="px-6 pb-6">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="bg-dark-700 rounded-lg p-4 text-center hover:bg-dark-600 transition-colors">
+          <div className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl text-center hover:bg-dark-600 transition-colors">
             <div className="text-2xl font-bold text-white mb-1">{profile.total_posts || 0}</div>
             <div className="text-sm text-gray-400 font-medium">Posts</div>
           </div>
-          <div className="bg-dark-700 rounded-lg p-4 text-center hover:bg-dark-600 transition-colors">
+          <div className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl text-center hover:bg-dark-600 transition-colors">
             <div className="text-2xl font-bold text-red-400 mb-1">{profile.total_likes_given || 0}</div>
             <div className="text-sm text-gray-400 font-medium">Likes</div>
           </div>
-          <div className="bg-dark-700 rounded-lg p-4 text-center hover:bg-dark-600 transition-colors">
+          <div className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl text-center hover:bg-dark-600 transition-colors">
             <div className="text-2xl font-bold text-blue-400 mb-1">{profile.total_comments_made || 0}</div>
             <div className="text-sm text-gray-400 font-medium">Comments</div>
           </div>
-          <div className="bg-dark-700 rounded-lg p-4 text-center hover:bg-dark-600 transition-colors">
+          <div className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl text-center hover:bg-dark-600 transition-colors">
             <div className="text-2xl font-bold text-green-400 mb-1">{profile.total_retweets_made || 0}</div>
             <div className="text-sm text-gray-400 font-medium">Retweets</div>
           </div>
-          <div className="bg-dark-700 rounded-lg p-4 text-center hover:bg-dark-600 transition-colors">
+          <div className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl text-center hover:bg-dark-600 transition-colors">
             <div className="text-2xl font-bold text-purple-400 mb-1">{profile.total_bookmarks_made || 0}</div>
             <div className="text-sm text-gray-400 font-medium">Bookmarks</div>
           </div>
@@ -400,7 +400,7 @@ export function ProfilePage({ user, posts }: Props) {
             {profile.posts && profile.posts.length > 0 ? (
               <div className="space-y-4">
                 {profile.posts.map((post: any) => (
-                  <div key={post.id} className="bg-dark-700/50 rounded-lg p-4  -gray-700/50 hover:bg-dark-700 transition-all duration-200">
+                  <div key={post.id} className="rounded-2xl p-4 border-2 border-gray-700/70 hover:bg-dark-700 transition-all duration-200">
                     <div className="flex items-start space-x-4">
                       <img
                         src={profile.avatar_url || "https://robohash.org/default.png"}
@@ -524,7 +524,7 @@ export function ProfilePage({ user, posts }: Props) {
             {profile.recent_activity && profile.recent_activity.length > 0 ? (
               <div className="space-y-4">
                 {profile.recent_activity.map((activity: any, index: number) => (
-                  <div key={index} className="bg-dark-700/50 rounded-lg p-4  -gray-700/50 hover:bg-dark-700 transition-all duration-200">
+                  <div key={index} className=" rounded-2xl border p-4  border-gray-700/70 hover:bg-dark-700 transition-all duration-200">
                     <div className="flex items-start space-x-4">
                       <div className="w-12 h-12 rounded-full bg-dark-600  -gray-600 flex items-center justify-center flex-shrink-0">
                         {getActivityIcon(activity.activity_type)}
@@ -772,28 +772,34 @@ export function ProfilePage({ user, posts }: Props) {
       )}
 
       {/* Create Creator Token Modal */}
-      {showCreateTokenModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowCreateTokenModal(false)}>
-          <div className="bg-black rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white text-lg font-semibold">Create Creator Token</h3>
+{showCreateTokenModal && (
+        <div 
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50" 
+          onClick={() => setShowCreateTokenModal(false)}
+        >
+          <div 
+            className="bg-black/90 backdrop-blur-sm rounded-2xl border-2 border-gray-700/70 p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto shadow-2xl" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-gray-700/70">
+              <h3 className="text-white text-xl font-bold tracking-tight">Create Creator Token</h3>
               <button
                 onClick={() => setShowCreateTokenModal(false)}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="p-2 hover:bg-gray-800/50 rounded-xl transition-colors border border-gray-700/50"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 text-gray-400" />
               </button>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Token Name */}
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Token Name *</label>
+                <label className="block text-gray-400 text-sm font-bold tracking-wide mb-2">TOKEN NAME *</label>
                 <input
                   type="text"
                   value={tokenName}
                   onChange={(e) => setTokenName(e.target.value)}
-                  className="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 bg-black/50 backdrop-blur-sm border-2 border-gray-700/70 rounded-2xl text-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter token name"
                   maxLength={50}
                 />
@@ -801,11 +807,11 @@ export function ProfilePage({ user, posts }: Props) {
 
               {/* Token Description */}
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Description *</label>
+                <label className="block text-gray-400 text-sm font-bold tracking-wide mb-2">DESCRIPTION *</label>
                 <textarea
                   value={tokenDescription}
                   onChange={(e) => setTokenDescription(e.target.value)}
-                  className="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 bg-black/50 backdrop-blur-sm border-2 border-gray-700/70 rounded-2xl text-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                   placeholder="Describe your creator token"
                   rows={3}
                   maxLength={200}
@@ -813,54 +819,58 @@ export function ProfilePage({ user, posts }: Props) {
               </div>
 
               {/* Token Parameters */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 {/* Freebie Count */}
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Free Shares</label>
+                  <label className="block text-gray-400 text-sm font-bold tracking-wide mb-2">FREE SHARES</label>
                   <input
                     type="number"
                     min="1"
                     max="1000"
                     value={freebieCount}
                     onChange={(e) => setFreebieCount(parseInt(e.target.value) || 100)}
-                    className="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 bg-black/50 backdrop-blur-sm border-2 border-gray-700/70 rounded-2xl text-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="100"
                   />
                 </div>
                 
                 {/* Quadratic Divisor */}
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Price Curve</label>
+                  <label className="block text-gray-400 text-sm font-bold tracking-wide mb-2">PRICE CURVE</label>
                   <input
                     type="number"
                     min="1"
                     max="100"
                     value={quadraticDivisor}
                     onChange={(e) => setQuadraticDivisor(parseInt(e.target.value) || 1)}
-                    className="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 bg-black/50 backdrop-blur-sm border-2 border-gray-700/70 rounded-2xl text-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="1"
                   />
                 </div>
               </div>
 
               {/* Info Text */}
-              <div className="text-xs text-gray-500 bg-dark-800 p-3 rounded-lg">
-                <p>Uses quadratic pricing: Price = (Tokens Held)² / {quadraticDivisor}</p>
-                <p>{freebieCount} free shares available. Lower divisor = steeper price curve.</p>
+              <div className="bg-black/50 backdrop-blur-sm border-2 border-gray-700/70 rounded-2xl p-4">
+                <p className="text-gray-400 text-xs font-medium mb-1">
+                  Uses quadratic pricing: Price = (Tokens Held)² / {quadraticDivisor}
+                </p>
+                <p className="text-gray-400 text-xs font-medium">
+                  {freebieCount} free shares available. Lower divisor = steeper price curve.
+                </p>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-4 pt-4">
                 <button
                   onClick={() => setShowCreateTokenModal(false)}
-                  className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  className="flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-2xl font-bold tracking-tight transition-colors border-2 border-gray-500/30"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCreateCreatorToken}
                   disabled={isCreatingToken || !tokenName.trim() || !tokenDescription.trim()}
-                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+                  className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-2xl font-bold tracking-tight transition-colors border-2 border-blue-500/30 disabled:border-gray-500/30"
                 >
                   {isCreatingToken ? 'Creating...' : isConnected ? 'Create Token' : 'Connect Wallet'}
                 </button>

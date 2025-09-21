@@ -303,7 +303,7 @@ export function UserProfileModal({
             <div className="space-y-4">
               {userProfile?.posts?.length > 0 ? (
                 userProfile.posts.map((post) => (
-                  <div key={post.id} className="bg-dark-700 rounded-lg p-4">
+                  <div key={post.id} className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl">
                     <div className="flex items-start space-x-3">
                       <Image
                         src={userProfile.avatar_url || '/4.png'}
@@ -441,7 +441,7 @@ export function UserProfileModal({
             <div className="space-y-4">
               {userProfile?.recent_activity?.length > 0 ? (
                 userProfile.recent_activity.map((activity, index) => (
-                  <div key={index} className="bg-dark-700 rounded-lg p-4">
+                  <div key={index} className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl">
                     <div className="flex items-start space-x-3">
                       <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
                         {activity.activity_type === 'like' && <Heart className="w-5 h-5 text-white" />}

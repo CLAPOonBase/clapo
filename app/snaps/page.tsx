@@ -217,11 +217,11 @@ function SocialFeedPageContent() {
   const renderContent = () => {
     switch (currentPage) {
       case "explore":
-        return <div className="w-full max-w-3xl mx-auto">
+        return <div className="w-full max-w-3xl lg:ml-80">
           <ExplorePage/>
         </div>
       case "notifications":
-        return <div className="w-full max-w-3xl mx-auto"> <NotificationPage/></div>
+        return <div className="w-full max-w-3xl lg:ml-80"> <NotificationPage/></div>
       case "likes":
         return allPosts.length > 0 ? (
           <SnapCard
@@ -254,34 +254,34 @@ function SocialFeedPageContent() {
           </div>
         );
       case "bookmarks":
-        return <div className="w-full max-w-3xl mx-auto">
+        return <div className="w-full max-w-3xl lg:ml-80">
           <BookmarkPage />
         </div>;
       case "activity":
-        return <div className="w-full max-w-3xl mx-auto">
+        return <div className="w-full max-w-3xl lg:ml-80">
           <ActivityPage />{" "}
         </div>;
       case "profile":
-        return <div className="w-full max-w-3xl mx-auto">
+        return <div className="w-full max-w-3xl lg:ml-80">
           <ProfilePage user={mockUsers[0]} posts={[]} />{" "}
         </div>;
       case "search":
-        return <div className="w-full max-w-3xl mx-auto">
+        return <div className="w-full max-w-3xl lg:ml-80">
           <SearchPage />
         </div>;
       case "share":
-        return <div className="w-full max-w-3xl mx-auto">
+        return <div className="w-full max-w-3xl lg:ml-80">
           <SharePage />
         </div>;
       case "messages":
         return (
-          <div className="w-full pl-20">
+          <div className="w-full lg:pl-20">
             <MessagePage />
           </div>
         );
       case "home":
       default:
-        return <div className="max-w-3xl mr-44 mx-auto">
+        return <div className="max-w-2xl lg:ml-80 px-2 sm:px-0">
              <>
             <Stories />
             <SnapComposer />
@@ -289,13 +289,13 @@ function SocialFeedPageContent() {
       <div>
         <div
           style={{ zIndex: 999 }}
-          className="flex justify-around bg-black m-1 p-1 items-center sticky rounded-full relative"
+          className="flex justify-around bg-black m-1 p-1 items-center rounded-full relative"
         >
           {["FOR YOU", "FOLLOWING"].map((tab) => (
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
-              className={`p-2 mb-2 font-semibold w-full relative z-10 ${
+              className={`p-2 mb-2 font-semibold w-full relative z-10 text-xs sm:text-sm ${
                 activeTab === tab ? "text-white" : "text-gray-400"
               }`}
             >
@@ -310,8 +310,8 @@ function SocialFeedPageContent() {
               boxShadow:
                 "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
               backgroundColor: "#6E54FF",
-              top: '7px', // Account for p-1 on parent
-              margin: '0 6px', // Account for the p-1 spacing
+
+              margin: '6px 6px', // Account for the p-1 spacing
             }}
             initial={false}
             animate={{
@@ -466,16 +466,18 @@ function SocialFeedPageContent() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
       >
-        <div className="flex-col md:flex-row mx-auto text-white flex">
-          <Sidebar 
+        <div className="flex-col md:flex-row lg:ml-52 text-white flex">
+         <div className="hidden lg:block">
+           <Sidebar 
             currentPage={currentPage} 
             setCurrentPage={setCurrentPage}
             onNavigateToOpinio={handleNavigateToOpinio}
             onNavigateToSnaps={handleNavigateToSnaps}
           />
-          <div className="flex-1 ml-4 mr-6 rounded-md">
+         </div>
+          <div className="flex-1 ml-0 md:ml-4 mr-2 md:mr-6 rounded-md px-2">
             <div className="bg-[#1A1A1A] rounded-2xl border border-gray-800 overflow-hidden">
-              <div className="flex flex-col lg:flex-row min-h-[550px]">
+              <div className="flex flex-col lg:flex-row min-h-[400px] sm:min-h-[550px]">
                 {/* Left Side - Hero Image */}
                 <div
                   className="lg:w-full relative px-4 py-2 text-white 
@@ -492,21 +494,21 @@ function SocialFeedPageContent() {
                   </div>
 
                   {/* Content on Image */}
-                  <div className="relative z-20 flex flex-col justify-center items-center p-8 lg:p-12 text-center h-full">
-                    <div className="mb-6">
+                  <div className="relative z-20 flex flex-col justify-center items-center p-4 sm:p-8 lg:p-12 text-center h-full">
+                    <div className="mb-4 sm:mb-6">
                       <Image
                         src="/connect_log.png"
                         alt="Clapo Illustration"
                         width={300}
                         height={300}
-                        className="w-auto h-48 lg:h-64 object-contain"
+                        className="w-auto h-32 sm:h-48 lg:h-64 object-contain"
                       />
                     </div>
-                    <div className="text-center lg:text-left mb-8">
-                      <h1 className="text-2xl lg:text-3xl font-bold text-white mb-4">
+                    <div className="text-center lg:text-left mb-6 sm:mb-8">
+                      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-3 sm:mb-4">
                         Get Started
                       </h1>
-                      <p className="text-gray-400 text-base leading-relaxed">
+                      <p className="text-gray-400 text-sm sm:text-base leading-relaxed px-2">
                         Sign in to start posting, engaging with others, and
                         exploring the Web3 social experience.
                       </p>
@@ -528,8 +530,8 @@ function SocialFeedPageContent() {
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
       <div className="flex text-white mx-auto">
-        {/* Left Sidebar - Fixed width */}
-        <div className="">
+        {/* Left Sidebar - Fixed width on desktop, hidden on mobile */}
+        <div className="hidden lg:block">
           <Sidebar 
             currentPage={currentPage} 
             setCurrentPage={setCurrentPage}
@@ -538,15 +540,25 @@ function SocialFeedPageContent() {
           />
         </div>
 
-        {/* Main Content - Flexible center */}
-        <div className="flex-1 p-4">
+        {/* Mobile Sidebar - Only visible on mobile */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
+          <Sidebar 
+            currentPage={currentPage} 
+            setCurrentPage={setCurrentPage}
+            onNavigateToOpinio={handleNavigateToOpinio}
+            onNavigateToSnaps={handleNavigateToSnaps}
+          />
+        </div>
+
+        {/* Main Content - Flexible center with mobile padding */}
+        <div className="flex-1 pt-20 md:pt-0 px-2 sm:px-4 pb-20 lg:pb-4">
           <div className="">{renderContent()}</div>
         </div>
 
         {/* Right Sidebar - Only visible at 2xl breakpoint */}
         {currentPage !== "messages" && session?.dbUser && (
           <div
-            className="hidden 2xl:block w-96  h-screen  sticky top-0"
+            className="hidden md:block lg:block xl:block 2xl:block w-80 h-screen sticky top-0"
             style={{ zIndex: 999 }}
           >
             <div className="p-6">
