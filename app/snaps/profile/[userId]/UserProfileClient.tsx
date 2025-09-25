@@ -64,6 +64,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
     | "explore"
     | "notifications"
     | "likes"
+    |"wallet"
     | "activity"
     | "profile"
     | "messages"
