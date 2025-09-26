@@ -38,7 +38,7 @@ const navItems: {
   },
     { 
     label: "Explore", 
-    value: "home", 
+    value: "explore", 
     icon: <Telescope className="w-6 h-6" />, 
     activeIcon: <Telescope className="w-6 h-6" fill="currentColor" />,
     showOnMobile: true, 
