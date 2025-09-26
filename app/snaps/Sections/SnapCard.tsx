@@ -60,7 +60,31 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   const [profile, setProfile] = useState<any | null>(null)
 const [loading, setLoading] = useState(false)
   const { getUserProfile, getUserFollowers, getUserFollowing, followUser, unfollowUser } = useApi()
+const [commentDropdownOpen, setCommentDropdownOpen] = useState(false)
 
+// Replace the toggleInlineComments function
+const toggleCommentDropdown = async (e: React.MouseEvent) => {
+  e.stopPropagation()
+  
+  const willOpen = !commentDropdownOpen
+  setCommentDropdownOpen(willOpen)
+  
+  if (willOpen && comments.length === 0 && isApiPost) {
+    try {
+      if (getPostComments) {
+        const fetchedComments = await getPostComments(postId)
+        setComments(fetchedComments || [])
+      }
+    } catch (error) {
+      console.error('Failed to load comments:', error)
+    }
+  }
+  
+  // Close inline comments if open
+  if (showInlineComments) {
+    setShowInlineComments(false)
+  }
+}
 useEffect(() => {
   const fetchProfile = async () => {
     if (session?.dbUser?.id) {
@@ -434,18 +458,20 @@ const handleImageClick = (e: React.MouseEvent) => {
         </div>
 
         {/* Username */}
-        <div className="flex items-center space-x-2">
-     <div className="flex flex-col min-w-0">
-           <span className="font-semibold text-white text-lg truncate hover:text-blue-500 transition-colors group-hover:underline">
-            {postAuthor}
-          </span>
-              {/* Handle */}
-    <span className="text-secondary text-sm">{postHandle}</span>
-     </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <ExternalLink className="w-4 h-4 text-blue-500" />
-          </div>
-        </div>
+      <div className="flex items-center gap-2 sm:gap-3">
+  <div className="flex min-w-0 items-center flex-wrap gap-x-1 text-sm sm:text-base">
+    <span className="font-semibold text-white truncate hover:text-blue-500 transition-colors group-hover:underline">
+      {postAuthor}
+    </span>
+    <span className="text-gray-400">•</span>
+    <span className="text-secondary truncate">{postHandle}</span>
+  </div>
+
+  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+    <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
+  </div>
+</div>
+
       </div>
     </UserProfileHover>
 
@@ -544,13 +570,17 @@ const handleImageClick = (e: React.MouseEvent) => {
                 <span className="text-sm font-medium">{localEngagement.likes} </span>
               </button>
 
-              <button 
-                onClick={toggleInlineComments}
-                className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors"
-              >
-                <MessageCircle className="w-5 h-5" />
-                <span className="text-sm font-medium">{localEngagement.comments} </span>
-              </button>
+             <button 
+  onClick={toggleCommentDropdown}
+  className={`flex items-center space-x-2 transition-colors ${
+    commentDropdownOpen 
+      ? 'text-blue-500' 
+      : 'text-gray-500 hover:text-blue-500'
+  }`}
+>
+  <MessageCircle className="w-5 h-5" />
+  <span className="text-sm font-medium">{localEngagement.comments}</span>
+</button>
 
               <button 
                 onClick={e => { 
@@ -590,122 +620,129 @@ const handleImageClick = (e: React.MouseEvent) => {
     </div>
           </div>
 
-          <AnimatePresence>
-            {showInlineComments && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-4 pt-4"
-              >
-                {comments.length > 0 && (
-                  <div className="space-y-3">
-                    {comments.slice(0, visibleCount).map((comment) => (
-                      <div key={comment.id} className="flex space-x-3">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden">
-                          {comment.avatar_url ? (
-                            <img
-                              src={comment.avatar_url}
-                              alt={comment.username}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gray-300 flex items-center justify-center text-xs font-semibold text-gray-600">
-                              {comment.username?.substring(0, 2)?.toUpperCase() || "U"}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="bg-dark-700/70 rounded-2xl px-3 py-2">
-                            <div className="flex items-center space-x-2 mb-1">
-                              <span className="font-semibold text-sm text-white">
-                                {comment.username}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {formatCommentTime(comment.created_at)}
-                              </span>
-                            </div>
-                            <p className="text-sm text-secondary">{comment.content}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+     <AnimatePresence>
+  {commentDropdownOpen && (
+    <motion.div
+      initial={{ opacity: 0, height: 0, scale: 0.95 }}
+      animate={{ opacity: 1, height: "auto", scale: 1 }}
+      exit={{ opacity: 0, height: 0, scale: 0.95 }}
+      transition={{ duration: 0.2 }}
+      className="  rounded-2xl  overflow-hidden"
+    >
+     
 
-                    {visibleCount < comments.length && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setVisibleCount((prev) => prev + 8)
-                        }}
-                        className="text-sm text-blue-500 hover:underline pl-11"
-                      >
-                        Show more comments
-                      </button>
-                    )}
+      {/* Comments List */}
+      <div className="max-h-64 overflow-y-auto py-4 space-y-3">
+        {comments.length > 0 ? (
+          comments.slice(0, visibleCount).map((comment) => (
+            <div key={comment.id} className="flex space-x-3">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden">
+                {comment.avatar_url ? (
+                  <img
+                    src={comment.avatar_url}
+                    alt={comment.username}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-300 flex items-center justify-center text-xs font-semibold text-gray-600">
+                    {comment.username?.substring(0, 2)?.toUpperCase() || "U"}
                   </div>
                 )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="bg-dark-700/70 rounded-2xl px-3 py-2">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <span className="font-semibold text-sm text-white">
+                      {comment.username}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {formatCommentTime(comment.created_at)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-secondary">{comment.content}</p>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="text-gray-500 text-sm text-center py-4">
+            No comments yet. Be the first to comment!
+          </p>
+        )}
 
-                {comments.length === 0 && (
-                  <p className="text-gray-500 text-sm text-center py-4">
-                    No comments yet. Be the first to comment!
-                  </p>
-                )}
-              </motion.div>
+        {visibleCount < comments.length && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setVisibleCount((prev) => prev + 8)
+            }}
+            className="text-sm text-blue-500 hover:underline w-full text-center py-2"
+          >
+            Load more comments
+          </button>
+        )}
+      </div>
+
+      {/* Comment Input - INSIDE the dropdown */}
+      <div className="py-4">
+        <form onSubmit={handleCommentSubmit} className="flex items-center space-x-3">
+          <div className="relative w-8 h-8 flex-shrink-0">
+            {profile?.avatar_url ? (
+              <img 
+                src={profile?.avatar_url} 
+                alt="Your avatar" 
+                className="w-full h-full rounded-full border border-gray-700/70 object-cover" 
+              />
+            ) : (
+              <div className="w-full h-full bg-indigo-500 rounded-full flex items-center justify-center text-xs font-semibold text-white">
+                {session?.dbUser?.username?.substring(0, 2)?.toUpperCase() || 'U'}
+              </div>
             )}
-          </AnimatePresence>
+          </div>
+          
+          <div className="flex gap-2 flex-1 relative rounded-full bg-gray-700/20">
+            <input
+              type="text"
+              placeholder="Write your comment.."
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              disabled={isLoading.comment || !currentUserId}
+              className="w-full px-4 py-2 rounded-full bg-transparent text-secondary placeholder:text-secondary focus:outline-none focus:ring-0 transition-all disabled:opacity-50"
+              onClick={(e) => e.stopPropagation()}
+              autoFocus
+            />
+            <button 
+              type="button"
+              className="px-2 text-gray-400 hover:text-gray-300 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+              disabled={!currentUserId}
+            >
+              <Smile className="w-5 h-5" />
+            </button>
+          </div>
+
+          <button 
+            type="submit"
+            disabled={!commentText.trim() || isLoading.comment || !currentUserId}
+            className="p-2 bg-primary text-white rounded-full hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {isLoading.comment ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+          </button>
+        </form>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
         
       </div>
         </div>
-          <form onSubmit={handleCommentSubmit} className="flex items-center space-x-3 ">
-            <div className="relative w-10 h-10 flex-shrink-0">
-              {profile?.avatar_url ? (
-                <img src={profile?.avatar_url} alt="Your avatar" className="w-full h-full rounded-full border border-gray-700/70 object-cover" />
-              ) : (
-                <div className="w-full h-full bg-indigo-500 rounded-full flex items-center justify-center text-sm font-semibold text-white">
-                  {session?.dbUser?.username?.substring(0, 2)?.toUpperCase() || 'U'}
-                </div>
-              )}
-            </div>
-            
-            <div className="flex gap-2 w-full relative py-2 my-2 rounded-full bg-gray-700/20 ">
-              <input
-                type="text"
-                placeholder="Write your comment.."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                disabled={isLoading.comment || !currentUserId}
-                className="w-full px-4 rounded-full bg-transparent text-secondary placeholder:text-secondary focus:outline-none focus:ring-none  transition-all disabled:opacity-50"
-                onClick={(e) => e.stopPropagation()}
-              />
-                <button 
-                type="button"
-                className="px-2 text-gray-400 hover:text-gray-600 transition-colors"
-                onClick={(e) => e.stopPropagation()}
-                disabled={!currentUserId}
-              >
-                <Smile className="w-8 h-8" />
-              </button>
-            </div>
-
-            <div className="flex items-center space-x-2">
-            
-
-              <button 
-                type="submit"
-                disabled={!commentText.trim() || isLoading.comment || !currentUserId}
-                className="p-2 bg-primary text-white rounded-full hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {isLoading.comment ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Send className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-          </form>
+  
       </div>
       
 

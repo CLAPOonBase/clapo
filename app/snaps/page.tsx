@@ -284,14 +284,14 @@ function SocialFeedPageContent() {
         return <div className="max-w-2xl lg:ml-80 px-2 sm:px-0">
              <>
             <Stories />
-            <SnapComposer />
+            {/* <SnapComposer /> */}
    <div className="bg-gray-700/70 rounded-full mt-2 p-1">
       <div>
         <div
           style={{ zIndex: 999 }}
           className="flex justify-around bg-black m-1 p-1 items-center rounded-full relative"
         >
-          {["FOR YOU", "FOLLOWING"].map((tab) => (
+          {["FOR YOU", "FOLLOWING","COMMUNITY"].map((tab) => (
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
@@ -303,23 +303,28 @@ function SocialFeedPageContent() {
             </button>
           ))}
 
-          <motion.div
-            className="absolute rounded-full"
-            style={{
-              height: '40px', // Match button height including padding
-              boxShadow:
-                "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
-              backgroundColor: "#6E54FF",
+    <motion.div
+  className="absolute rounded-full"
+  style={{
+    height: "40px",
+    boxShadow:
+      "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
+    backgroundColor: "#6E54FF",
+    margin: "6px",
+  }}
+  initial={false}
+  animate={{
+    left:
+      activeTab === "FOR YOU"
+        ? "0%"
+        : activeTab === "FOLLOWING"
+        ? "calc(33% + 0px)"
+        : "calc(66% + 0px)",
+    width: "calc(33% - 6px)",
+  }}
+  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+/>
 
-              margin: '6px 6px', // Account for the p-1 spacing
-            }}
-            initial={false}
-            animate={{
-              left: activeTab === "FOR YOU" ? "0%" : "calc(50% - 6px)",
-              width: "calc(50% - 6px)", // Subtract margin to fit properly
-            }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          />
         </div>
       </div>
     </div>
@@ -467,7 +472,7 @@ function SocialFeedPageContent() {
         transition={{ duration: 0.6, ease: "easeOut" }}
       >
         <div className="flex-col md:flex-row lg:ml-52 text-white flex">
-         <div className="hidden lg:block">
+         <div className=" lg:block">
            <Sidebar 
             currentPage={currentPage} 
             setCurrentPage={setCurrentPage}
@@ -475,7 +480,7 @@ function SocialFeedPageContent() {
             onNavigateToSnaps={handleNavigateToSnaps}
           />
          </div>
-          <div className="flex-1 ml-0 md:ml-4 mr-2 md:mr-6 rounded-md px-2">
+          <div className="flex-1 ml-0 md:ml-4 mr-2 md:mr-6 rounded-md px-2 mt-20 md:mt-0">
             <div className="bg-[#1A1A1A] rounded-2xl border border-gray-800 overflow-hidden">
               <div className="flex flex-col lg:flex-row min-h-[400px] sm:min-h-[550px]">
                 {/* Left Side - Hero Image */}

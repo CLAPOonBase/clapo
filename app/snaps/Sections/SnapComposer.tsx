@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
 import Image from 'next/image'
+import { motion } from 'framer-motion'
 import {
   Image as ImageIcon,
   Video,
@@ -57,7 +58,7 @@ const Toast = ({
   )
 }
 
-export function SnapComposer() {
+export function SnapComposer({ close }: { close: () => void }) {
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [mediaUrl, setMediaUrl] = useState<string | undefined>()
@@ -103,7 +104,6 @@ export function SnapComposer() {
 
   const mediaUploadRef = useRef<MediaUploadHandle>(null)
   const userId = session?.dbUser?.id
-
 
   React.useEffect(() => {
     console.log('🔍 Session changed:', {
@@ -255,13 +255,16 @@ export function SnapComposer() {
         showSuccessToast('Snap posted successfully! (Connect wallet to enable token trading)')
       }
 
-      // Reset form immediately after successful post creation
+      // Reset form and close dialog after successful post creation
       setContent('')
       setMediaUrl(undefined)
       setUploadedMedia(null)
       
       // Reset loading state immediately
       setIsSubmitting(false)
+      
+      // Close the dialog
+      close()
       
       // Fetch posts in background (don't wait for it)
       fetchPosts(userId).catch(error => {
@@ -379,101 +382,123 @@ export function SnapComposer() {
         onClose={handleCloseToast}
       />
       
-      <div className="w-full border-2 border-gray-700/70 shadow-custom backdrop-blur-sm rounded-xl p-2 shadow-xl">
-        {/* Text Input */}
-         <div className='flex'>
-         <div className='rounded-full h-12 w-12'>
-       <Image
-        src={profile?.avatar_url && profile.avatar_url.trim() !== "" ? profile.avatar_url : "/4.png"}
-        alt="profile avatar"
-        width={1000}
-        height={1000}
-        className="w-12 h-12 rounded-full"
-      />
+      {/* Dialog Container */}
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="bg-black rounded-2xl shadow-2xl w-full max-w-2xl border border-gray-800 overflow-hidden relative"
+      >
+        {/* Close Button */}
+        <button 
+          onClick={close} 
+          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-lg z-10"
+        >
+          <X size={24} />
+        </button>
 
-         </div>
-        <div className="relative w-full">
-          <TextareaAutosize
-            minRows={2}
-            maxRows={8}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="What's happening?"
-            className="w-full resize-none bg-transparent p-2 rounded-md text-white placeholder-dark-400 text-base leading-relaxed focus:outline-none"
-          />
-          <div className={`absolute bottom-2 right-2 text-xs font-medium px-2 py-1 rounded ${
-            isOverLimit 
-              ? 'text-red-400 bg-red-900/20' 
-              : charCount > 180 
-                ? 'text-amber-400 bg-amber-900/20'
-                : 'text-dark-400 bg-black/50'
-          }`}>
-            {charCount}/200
-          </div>
+        {/* Dialog Header */}
+        <div className="px-6 py-4 border-b border-gray-800">
+          <h2 className="text-xl font-bold text-white">Create a Snap</h2>
+          <p className="text-gray-400 text-sm mt-1">Share what's happening</p>
         </div>
-       </div>
 
-        {/* Hidden Media Upload Component */}
-        <MediaUpload
-          ref={mediaUploadRef}
-          onMediaUploaded={handleMediaUpload}
-          onMediaRemoved={handleRemoveMedia}
-          userId={userId || ''}
-          className="hidden"
-        />
-
-        {/* Media Preview */}
-        {renderMediaPreview()}
-
-        {/* Token Parameters - Only show when wallet is connected */}
-   
-
-        {/* Divider */}
-        <div className="border-t border-dark-700/50 pt-4">
-          <div className="flex items-center justify-between">
-            {/* Media Actions */}
-            <div className="flex items-center gap-4">
-              {actions.map(({ icon: Icon, label, color, type }) => (
-                <button
-                  key={label}
-                  onClick={() => mediaUploadRef.current?.openFileDialog(type)}
-                  disabled={isSubmitting}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-black/50 transition-all duration-200 ${color} ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                  }`}
-                  title={label}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="text-sm font-medium hidden md:inline">
-                    {label}
-                  </span>
-                </button>
-              ))}
+        {/* Dialog Content */}
+        <div className="p-6">
+          <div className="border-2 border-gray-700/70 shadow-custom backdrop-blur-sm rounded-xl p-4">
+            {/* Text Input */}
+            <div className='flex gap-3 mb-4'>
+              <div className='rounded-full h-12 w-12 flex-shrink-0'>
+                <Image
+                  src={profile?.avatar_url && profile.avatar_url.trim() !== "" ? profile.avatar_url : "/4.png"}
+                  alt="profile avatar"
+                  width={48}
+                  height={48}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+              </div>
+              <div className="relative w-full">
+                <TextareaAutosize
+                  minRows={3}
+                  maxRows={8}
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="What's happening?"
+                  className="w-full resize-none bg-transparent p-3 rounded-md text-white placeholder-gray-400 text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                />
+                <div className={`absolute bottom-2 right-2 text-xs font-medium px-2 py-1 rounded ${
+                  isOverLimit 
+                    ? 'text-red-400 bg-red-900/20' 
+                    : charCount > 180 
+                      ? 'text-amber-400 bg-amber-900/20'
+                      : 'text-gray-400 bg-black/50'
+                }`}>
+                  {charCount}/200
+                </div>
+              </div>
             </div>
 
-            {/* Submit Button - Now handles wallet connection */}
-            <button
-              onClick={() => {
-                console.log('🔍 Submit button clicked!')
-                console.log('🔍 Button state:', { canClickButton, content, mediaUrl, isSubmitting, isOverLimit })
-                handleSubmit()
-              }}
-              disabled={!canClickButton}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
-                canClickButton
-                  ? snapButton.className
-                  : isOverLimit
-                    ? 'bg-red-600/50 text-red-300 cursor-not-allowed'
-                    : 'bg-dark-700 text-dark-400 cursor-not-allowed'
-              }`}
-              title={isOverLimit ? 'Message exceeds 200 character limit' : ''}
-            >
-              {snapButton.icon}
-              <span>{snapButton.text}</span>
-            </button>
+            {/* Hidden Media Upload Component */}
+            <MediaUpload
+              ref={mediaUploadRef}
+              onMediaUploaded={handleMediaUpload}
+              onMediaRemoved={handleRemoveMedia}
+              userId={userId || ''}
+              className="hidden"
+            />
+
+            {/* Media Preview */}
+            {renderMediaPreview()}
+
+            {/* Actions Bar */}
+            <div className="border-t border-gray-700/50 pt-4 mt-4">
+              <div className="flex items-center justify-between">
+                {/* Media Actions */}
+                <div className="flex items-center gap-2">
+                  {actions.map(({ icon: Icon, label, color, type }) => (
+                    <button
+                      key={label}
+                      onClick={() => mediaUploadRef.current?.openFileDialog(type)}
+                      disabled={isSubmitting}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-800/50 transition-all duration-200 ${color} ${
+                        isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                      }`}
+                      title={label}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="text-sm font-medium hidden sm:inline">
+                        {label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  onClick={() => {
+                    console.log('🔍 Submit button clicked!')
+                    console.log('🔍 Button state:', { canClickButton, content, mediaUrl, isSubmitting, isOverLimit })
+                    handleSubmit()
+                  }}
+                  disabled={!canClickButton}
+                  className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                    canClickButton
+                      ? snapButton.className
+                      : isOverLimit
+                        ? 'bg-red-600/50 text-red-300 cursor-not-allowed'
+                        : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  }`}
+                  title={isOverLimit ? 'Message exceeds 200 character limit' : ''}
+                >
+                  {snapButton.icon}
+                  <span>{snapButton.text}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </>
   )
 }
