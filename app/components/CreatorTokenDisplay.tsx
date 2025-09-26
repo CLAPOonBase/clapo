@@ -37,7 +37,7 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
   const [tokenExists, setTokenExists] = useState(true) // Start with true since we know it exists
   const [currentPrice, setCurrentPrice] = useState(0)
   const [creatorStats, setCreatorStats] = useState<any>(null)
-  const [remainingFreebies, setRemainingFreebies] = useState(100) // Default freebies
+  const [remainingFreebies, setRemainingFreebies] = useState(1) // Default freebies
   const [userPortfolio, setUserPortfolio] = useState<any>(null)
   const [canClaim, setCanClaim] = useState(true) // Default to true
   const [loading, setLoading] = useState(false) // Start with false since we know token exists

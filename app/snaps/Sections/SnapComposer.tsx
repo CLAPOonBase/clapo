@@ -65,7 +65,7 @@ export function SnapComposer() {
   const [toastMessage, setToastMessage] = useState('')
   
   // Token creation parameters (quadratic pricing system)
-  const [freebieCount, setFreebieCount] = useState(100) // Number of free tokens
+  const [freebieCount, setFreebieCount] = useState(1) // Number of free tokens
   const [quadraticDivisor, setQuadraticDivisor] = useState(1) // Price curve steepness (1 = steep, higher = flatter)
   
   const { createPost, fetchPosts } = useApi();

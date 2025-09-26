@@ -30,7 +30,7 @@ export function ProfilePage({ user, posts }: Props) {
   // Creator token creation state
   const [tokenName, setTokenName] = useState('')
   const [tokenDescription, setTokenDescription] = useState('')
-  const [freebieCount, setFreebieCount] = useState(100)
+  const [freebieCount, setFreebieCount] = useState(1)
   const [quadraticDivisor, setQuadraticDivisor] = useState(1)
   const [isCreatingToken, setIsCreatingToken] = useState(false)
   
@@ -828,9 +828,9 @@ export function ProfilePage({ user, posts }: Props) {
                     min="1"
                     max="1000"
                     value={freebieCount}
-                    onChange={(e) => setFreebieCount(parseInt(e.target.value) || 100)}
+                    onChange={(e) => setFreebieCount(parseInt(e.target.value) || 1)}
                     className="w-full px-4 py-3 bg-black/50 backdrop-blur-sm border-2 border-gray-700/70 rounded-2xl text-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="100"
+                    placeholder="1"
                   />
                 </div>
                 
