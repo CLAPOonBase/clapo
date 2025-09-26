@@ -44,6 +44,16 @@ const CONTRACT_ABI = [
 const CONTRACT_ADDRESS = "0xAb6E048829A7c7Cc9b9C5f31cb445237F2b2dC7e"; // Post Token contract deployed on Monad testnet
 const MOCK_USDC_ADDRESS = "0x44aAAEeC1A83c30Fe5784Af49E6a38D3709Ee148";
 
+// ERC20 ABI for USDC approval
+const ERC20_ABI = [
+  "function approve(address spender, uint256 amount) external returns (bool)",
+  "function allowance(address owner, address spender) external view returns (uint256)",
+  "function balanceOf(address account) external view returns (uint256)",
+  "function decimals() external view returns (uint8)",
+  "function symbol() external view returns (string)",
+  "function name() external view returns (string)"
+];
+
 export interface PostTokenStats {
   totalBuyers: number;
   payingBuyers: number;
@@ -227,6 +237,67 @@ export const usePostToken = () => {
     }
   };
 
+  // Check USDC balance
+  const checkUSDCBalance = async (): Promise<number> => {
+    if (!signer || !address) {
+      throw new Error('Wallet not connected');
+    }
+
+    try {
+      const usdcContract = new ethers.Contract(MOCK_USDC_ADDRESS, ERC20_ABI, signer);
+      const balance = await usdcContract.balanceOf(address);
+      return parseFloat(ethers.formatUnits(balance, 6));
+    } catch (error) {
+      console.error('Failed to check USDC balance:', error);
+      return 0;
+    }
+  };
+
+  // Check and approve USDC allowance
+  const checkAndApproveUSDC = async (requiredAmount: number): Promise<void> => {
+    if (!signer || !address) {
+      throw new Error('Wallet not connected');
+    }
+
+    try {
+      // First check USDC balance
+      const balance = await checkUSDCBalance();
+      if (balance < requiredAmount) {
+        throw new Error(`Insufficient USDC balance. You have ${balance.toFixed(2)} USDC but need ${requiredAmount.toFixed(2)} USDC.`);
+      }
+
+      // Create USDC contract instance
+      const usdcContract = new ethers.Contract(MOCK_USDC_ADDRESS, ERC20_ABI, signer);
+      
+      // Check current allowance
+      const currentAllowance = await usdcContract.allowance(address, CONTRACT_ADDRESS);
+      const requiredAllowance = ethers.parseUnits(requiredAmount.toString(), 6); // USDC has 6 decimals
+      
+      console.log('USDC Allowance Check:', {
+        currentAllowance: ethers.formatUnits(currentAllowance, 6),
+        requiredAllowance: ethers.formatUnits(requiredAllowance, 6),
+        needsApproval: currentAllowance < requiredAllowance
+      });
+
+      // If allowance is insufficient, approve
+      if (currentAllowance < requiredAllowance) {
+        console.log('Approving USDC allowance...');
+        const approveTx = await usdcContract.approve(CONTRACT_ADDRESS, requiredAllowance);
+        console.log('USDC approval transaction sent:', approveTx.hash);
+        await approveTx.wait();
+        console.log('USDC approval confirmed');
+      } else {
+        console.log('Sufficient USDC allowance already exists');
+      }
+    } catch (error) {
+      console.error('Failed to approve USDC:', error);
+      if (error.message?.includes('Insufficient USDC balance')) {
+        throw error;
+      }
+      throw new Error('Failed to approve USDC allowance. Please try again.');
+    }
+  };
+
   // Buy shares
   const buyShares = async (uuid: string) => {
     if (!contract || !signer) {
@@ -235,6 +306,14 @@ export const usePostToken = () => {
 
     setLoading(true);
     try {
+      // First, get the current price to determine required USDC amount
+      const currentPrice = await getCurrentPrice(uuid);
+      console.log('Current price for buying shares:', currentPrice);
+      
+      // Check and approve USDC allowance
+      await checkAndApproveUSDC(currentPrice);
+      
+      // Now proceed with the purchase
       const tx = await contract.buyPostTokensByUuid(uuid);
       await tx.wait();
       return tx.hash;
@@ -520,6 +599,8 @@ export const usePostToken = () => {
     getRemainingFreebies,
     canClaimFreebie,
     checkPostTokenExists,
-    checkContractState
+    checkContractState,
+    checkUSDCBalance,
+    checkAndApproveUSDC
   };
 };
