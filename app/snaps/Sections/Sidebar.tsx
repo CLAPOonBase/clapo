@@ -1,5 +1,5 @@
 "use client";
-import { Home, Bell, User, MessageCircle, Activity, Blocks, TrendingUp, Menu, X, Telescope, Wallet } from "lucide-react";
+import { Home, Bell, User, MessageCircle, Activity, Blocks, TrendingUp, Menu, X, Telescope, Wallet, Lock } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -427,26 +427,28 @@ export default function Sidebar({
                 
                 </div>
                 
-            <div className="space-y-2">
+            <div aria-disabled className="space-y-2">
   {bottomNavItems.map((item) => (
     <button 
+    disabled={isLoggedIn}
       key={item.name}
-      onClick={() => {
-        if (item.name === "Opinio") {
-          handleOpinioClick();
-        } else if (item.name === "Claps") {
-          handleSnapsClick();
-        }
-      }}
+      // onClick={() => {
+      //   if (item.name === "Opinio") {
+      //     handleOpinioClick();
+      //   } else if (item.name === "Claps") {
+      //     handleSnapsClick();
+      //   }
+      // }}
       className="w-full flex items-center gap-3 px-4 rounded-lg bg-gray-700/30 border border-gray-600/40 hover:bg-gray-700/50 transition-colors"
     >
       <Image
         src={item.img}
         alt={item.name}
-        width={24}
-        height={24}
+        width={1000}
+        height={1000}
         className="object-contain w-full h-8 py-1 rounded-md"
       />
+      <Lock className="text-dark-700/80"/>
       {/* <span className="text-gray-300 font-medium text-sm">{item.name}</span> */}
     </button>
   ))}

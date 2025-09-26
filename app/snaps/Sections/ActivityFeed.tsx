@@ -151,15 +151,15 @@ export default function UserActivityFeed({ username, activity }: UserActivityFee
               className="w-8 h-8 rounded-full mr-3 flex-shrink-0"
             />
             <div className="flex-1">
-              <div className="text-xs font-medium text-white mb-1">
+              <div className="text-sm font-medium text-white mb-1">
                 {activityItem.user}
               </div>
-              <div className="text-xs text-gray-300 mb-1">
+              <div className="text-sm lowercase text-gray-300 mb-1">
                 {getActivityText(activityItem)}
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center lowercase">
                 {getActivityIcon(activityItem.activity_type)}
-                <div className="text-xs font-semibold text-green-400 ml-2">
+                <div className="text-sm  font-semibold text-green-400 ml-2">
                   FOR ${activityItem.price.toFixed(2)}
                 </div>
               </div>
