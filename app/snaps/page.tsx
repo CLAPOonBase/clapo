@@ -472,7 +472,7 @@ function SocialFeedPageContent() {
         transition={{ duration: 0.6, ease: "easeOut" }}
       >
         <div className="flex-col md:flex-row lg:ml-52 text-white flex">
-         <div className="hidden lg:block">
+         <div className=" lg:block">
            <Sidebar 
             currentPage={currentPage} 
             setCurrentPage={setCurrentPage}
@@ -480,7 +480,7 @@ function SocialFeedPageContent() {
             onNavigateToSnaps={handleNavigateToSnaps}
           />
          </div>
-          <div className="flex-1 ml-0 md:ml-4 mr-2 md:mr-6 rounded-md px-2">
+          <div className="flex-1 ml-0 md:ml-4 mr-2 md:mr-6 rounded-md px-2 mt-20 md:mt-0">
             <div className="bg-[#1A1A1A] rounded-2xl border border-gray-800 overflow-hidden">
               <div className="flex flex-col lg:flex-row min-h-[400px] sm:min-h-[550px]">
                 {/* Left Side - Hero Image */}
