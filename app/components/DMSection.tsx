@@ -267,14 +267,14 @@ export const DMSection = ({
     <div className="h-full flex flex-col">
       {/* Search Bar */}
       <div className="mb-4 flex-shrink-0">
-        <div className="relative">
+        <div className="relative  p-2">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
           <input
             type="text"
             placeholder="Search chats or users..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-10 py-3 bg-slate-700/50 text-white rounded-xl border border-slate-600/50 focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+            className="w-full pl-12 md:pr-10 py-3 bg-slate-700/50 text-white rounded-xl border border-slate-600/50 focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
           />
           {searchQuery && (
             <button

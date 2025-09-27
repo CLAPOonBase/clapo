@@ -217,11 +217,11 @@ function SocialFeedPageContent() {
   const renderContent = () => {
     switch (currentPage) {
       case "explore":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full max-w-3xl mt-6 lg:ml-80">
           <ExplorePage/>
         </div>
       case "notifications":
-        return <div className="w-full max-w-3xl lg:ml-80"> <NotificationPage/></div>
+        return <div className="w-full max-w-3xl mt-6 lg:ml-80"> <NotificationPage/></div>
       case "likes":
         return allPosts.length > 0 ? (
           <SnapCard
@@ -254,23 +254,23 @@ function SocialFeedPageContent() {
           </div>
         );
       case "bookmarks":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full max-w-3xl mt-6 lg:ml-80">
           <BookmarkPage />
         </div>;
       case "activity":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full max-w-3xl mt-6 lg:ml-80">
           <ActivityPage />{" "}
         </div>;
       case "profile":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full max-w-3xl lg:ml-80 mt-6">
           <ProfilePage user={mockUsers[0]} posts={[]} />{" "}
         </div>;
       case "search":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full max-w-3xl lg:ml-80 mt-6">
           <SearchPage />
         </div>;
       case "share":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full max-w-3xl lg:ml-80 mt-6">
           <SharePage />
         </div>;
       case "messages":
@@ -295,7 +295,7 @@ function SocialFeedPageContent() {
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
-              className={`p-2 mb-2 font-semibold w-full relative z-10 text-xs sm:text-sm ${
+              className={`p-2 my-1 font-semibold w-full relative z-10 text-xs sm:text-sm ${
                 activeTab === tab ? "text-white" : "text-gray-400"
               }`}
             >

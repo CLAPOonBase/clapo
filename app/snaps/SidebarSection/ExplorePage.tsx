@@ -22,7 +22,7 @@ export function ExplorePage() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className="text-white space-y-4"
+      className="text-white space-y-4 border-2 border-gray-700/70 p-4 rounded-2xl"
     >
         <div className="flex justify-between items-center bg-black text-sm rounded-md">
             <Search className="text-secondary pl-2"/>
