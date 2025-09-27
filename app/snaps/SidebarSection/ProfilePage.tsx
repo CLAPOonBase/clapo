@@ -296,40 +296,7 @@ export function ProfilePage({ user, posts }: Props) {
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center space-x-3">
-                    {checkingTokenExists ? (
-                      <div className="bg-gray-600 text-white rounded-lg px-6 py-2 text-sm font-semibold flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Checking...
-                      </div>
-                    ) : creatorTokenExists ? (
-                      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full shadow-lg px-6 py-2 text-sm font-semibold flex items-center">
-                        <span>Creator Token Active</span>
-                      </div>
-                    ) : !isConnected ? (
-                      <button 
-                        onClick={connectWallet}
-                        disabled={isConnecting}
-                        className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg disabled:opacity-50"
-                      >
-                        {isConnecting ? 'Connecting...' : 'Connect Wallet'}
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={() => setShowCreateTokenModal(true)}
-                        className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg px-6 py-2 text-sm font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg"
-                      >
-                        Create Creator Token
-                      </button>
-                    )}
-                    
-                    <button 
-                      onClick={() => setShowUpdateModal(true)}
-                      className="bg-gray-700 hover:bg-gray-600 text-white border border-gray-600 rounded-lg px-6 py-2 text-sm font-semibold transition-all duration-200"
-                    >
-                      Edit Profile
-                    </button>
-                  </div>
+
                 </div>
               </div>
 
@@ -375,21 +342,40 @@ export function ProfilePage({ user, posts }: Props) {
                         <h3 className="text-white text-lg font-bold mb-2">Creator Token</h3>
                         <p className="text-gray-400 text-sm">@{profile.username}</p>
                       </div>
-                      
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => setShowTradingModal(true)}
-                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-l-full font-medium text-xs sm:text-sm transition-colors"
-                        >
-                          Buy Token
-                        </button>
-                        <button
-                          onClick={() => setShowTradingModal(true)}
-                          className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-r-full font-medium text-xs sm:text-sm transition-colors"
-                        >
-                          Sell Token
-                        </button>
+                         <div className="flex items-center space-x-3">
+                    {checkingTokenExists ? (
+                      <div className="bg-gray-600 text-white rounded-lg px-6 py-2 text-sm font-semibold flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Checking...
                       </div>
+                    ) : creatorTokenExists ? (
+                      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-l-full shadow-lg px-6 py-2 text-sm font-semibold flex items-center">
+                        <span>Creator Token Active</span>
+                      </div>
+                    ) : !isConnected ? (
+                      <button 
+                        onClick={connectWallet}
+                        disabled={isConnecting}
+                        className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-l-full px-4 py-2 text-sm font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg disabled:opacity-50"
+                      >
+                        {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => setShowCreateTokenModal(true)}
+                        className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-r-full px-4 py-2 text-sm font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg"
+                      >
+                        Create Creator Token
+                      </button>
+                    )}
+                    
+                    <button 
+                      onClick={() => setShowUpdateModal(true)}
+                      className="bg-gray-700 hover:bg-gray-600 text-white border border-gray-600 rounded-r-full px-6 py-2 text-sm font-semibold transition-all duration-200"
+                    >
+                      Edit Profile
+                    </button>
+                  </div>
                     </div>
                   </div>
                 )}
@@ -429,7 +415,17 @@ export function ProfilePage({ user, posts }: Props) {
             ))}
           </div>
         </div>
-
+         {creatorTokenExists && creatorTokenUserId && (
+        <div className="pb-6">
+          <CreatorTokenDisplay 
+            userId={creatorTokenUserId}
+            username={profile.username}
+            avatarUrl={profile.avatar_url}
+            isOwnProfile={true}
+            forceShow={true}
+          />
+        </div>
+      )}
         {/* Tab Content */}
         <div className="">
           {activeTab === "Posts" && (
@@ -714,6 +710,7 @@ export function ProfilePage({ user, posts }: Props) {
             </div>
           )}
         </div>
+          
       </div>
 
       {/* Update Profile Modal */}
@@ -922,6 +919,7 @@ export function ProfilePage({ user, posts }: Props) {
           </div>
         </div>
       )}
+      
 
       {/* Creator Token Trading Modal */}
       {showTradingModal && profile && (
