@@ -413,73 +413,60 @@ const handleImageClick = (e: React.MouseEvent) => {
   return (
     <>
       <div 
-        className="shadow-custom border-2 border-gray-700 rounded-3xl mt-6 p-6 mb-6 shadow-sm hover:shadow-md transition-all duration-200" 
+        className="shadow-custom border-2 border-gray-700 rounded-3xl mt-4 p-4 shadow-sm hover:shadow-md transition-all duration-200" 
         onClick={handleView}
       >
-        <div className="flex flex-col space-y-4">
-          <div className='flex space-x-3'>
-            {/* <div className="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden">
-              {postAvatar ? (
-                <img src={postAvatar} alt={postAuthor} className="w-full h-full object-cover bg-gray-200"
-                  onError={e => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${postAuthor}` }} />
-              ) : (
-                <div className="w-full h-full bg-indigo-500 flex items-center justify-center text-sm font-semibold text-white">
-                  {postAuthor?.substring(0, 2)?.toUpperCase() || 'U'}
-                </div>
-              )}
-            </div> */}
-
+        <div className="flex flex-col ">
+          {/* Header Section */}
+          <div className='flex items-center space-x-3'>
             <div className="flex flex-1 min-w-0 items-center justify-between">
-<div className="flex flex-1 min-w-0 items-center justify-between">
-  <div className="flex flex-col min-w-0">
-    <UserProfileHover
-      userId={isApiPost ? post.user_id.toString() : post.id.toString()}
-      username={postAuthor}
-      avatarUrl={postAvatar}
-      position="bottom"
-    >
-      <div className="flex items-center space-x-2 group cursor-pointer">
-        {/* Avatar */}
-        <div className="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden">
-          {postAvatar ? (
-            <img
-              src={postAvatar}
-              alt={postAuthor}
-              className="w-full h-full object-cover bg-gray-200"
-              onError={e => {
-                e.currentTarget.src = `https://ui-avatars.com/api/?name=${postAuthor}`
-              }}
-            />
-          ) : (
-            <div className="w-full h-full bg-indigo-500 flex items-center justify-center text-sm font-semibold text-white">
-              {postAuthor?.substring(0, 2)?.toUpperCase() || 'U'}
-            </div>
-          )}
-        </div>
+              <div className="flex flex-1 min-w-0 items-center justify-between">
+                <div className="flex flex-col min-w-0">
+                  <UserProfileHover
+                    userId={isApiPost ? post.user_id.toString() : post.id.toString()}
+                    username={postAuthor}
+                    avatarUrl={postAvatar}
+                    position="bottom"
+                  >
+                    <div className="flex items-center space-x-2 group cursor-pointer">
+                      {/* Avatar */}
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full overflow-hidden">
+                        {postAvatar ? (
+                          <img
+                            src={postAvatar}
+                            alt={postAuthor}
+                            className="w-full h-full object-cover bg-gray-200"
+                            onError={e => {
+                              e.currentTarget.src = `https://ui-avatars.com/api/?name=${postAuthor}`
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-indigo-500 flex items-center justify-center text-sm font-semibold text-white">
+                            {postAuthor?.substring(0, 2)?.toUpperCase() || 'U'}
+                          </div>
+                        )}
+                      </div>
 
-        {/* Username */}
-      <div className="flex items-center gap-2 sm:gap-3">
-  <div className="flex min-w-0 items-center flex-wrap gap-x-1 text-sm sm:text-base">
-    <span className="font-semibold text-white truncate hover:text-blue-500 transition-colors group-hover:underline">
-      {postAuthor}
-    </span>
-    <span className="text-gray-400">•</span>
-    <span className="text-secondary truncate">{postHandle}</span>
-  </div>
+                      {/* Username */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex min-w-0 items-center flex-wrap gap-x-1 text-sm">
+                          <span className="font-semibold text-white truncate hover:text-blue-500 transition-colors group-hover:underline">
+                            {postAuthor}
+                          </span>
+                          <span className="text-gray-400">•</span>
+                          <span className="text-secondary truncate">{postHandle}</span>
+                        </div>
 
-  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-    <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
-  </div>
-</div>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <ExternalLink className="w-4 h-4 text-blue-500" />
+                        </div>
+                      </div>
+                    </div>
+                  </UserProfileHover>
+                </div>
+              </div>
 
-      </div>
-    </UserProfileHover>
-
-
-  </div>
-</div>
-
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
                 {post._isNewlyCreated && (
                   <span className="px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-full animate-pulse">
                     NEW
@@ -490,259 +477,245 @@ const handleImageClick = (e: React.MouseEvent) => {
             </div>
           </div>
 
-      <div className=" ml-12">
-            <div className="space-y-4">
-            <p className="text-secondary text-base leading-relaxed whitespace-pre-wrap break-words">
-              {displayedText}
-            </p>
-            
-            {isLong && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setExpanded(prev => !prev)
-                }}
-                className="text-blue-500 hover:text-blue-400 hover:underline text-sm font-medium transition-colors"
-              >
-                {expanded ? "Show less" : "Show more"}
-              </button>
-            )}
+          {/* Content Section */}
+          <div className="ml-12">
+            <div className="">
+              <p className="text-white text-base leading-relaxed whitespace-pre-wrap break-words">
+                {displayedText}
+              </p>
+              
+              {isLong && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setExpanded(prev => !prev)
+                  }}
+                  className="text-blue-500 hover:text-blue-400 hover:underline text-sm font-medium transition-colors mt-1"
+                >
+                  {expanded ? "Show less" : "Show more"}
+                </button>
+              )}
 
-
-            {postImage && (
-<div className="overflow-hidden">
-  {/\.(jpg|jpeg|png|gif|webp)$/i.test(postImage) ? (
-    <div className="relative group inline-block">
-      <img 
-        src={postImage} 
-        alt="Post content" 
-        className="rounded-2xl max-h-96 w-auto object-cover cursor-pointer hover:opacity-95 transition-opacity duration-200"
-        // onClick={handleImageClick}
-      />
-      {/* <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 rounded-2xl flex items-center justify-center pointer-events-none">
-        <div className="bg-black bg-opacity-70 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <Eye className="w-6 h-6 text-white" />
-        </div>
-      </div> */}
-    </div>
-  ) : /\.(mp4|webm|ogg|mov)$/i.test(postImage) ? (
-    <video 
-      src={postImage} 
-      autoPlay 
-      muted 
-      loop 
-      playsInline
-      controls
-      className="w-auto max-h-96 bg-black rounded-lg"
-      onClick={(e) => e.stopPropagation()}
-    />
-  ) : /\.(mp3|wav|ogg|m4a)$/i.test(postImage) ? (
-    <div className="bg-black p-4 flex items-center space-x-3 rounded-lg">
-      <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-        <Volume2 className="w-5 h-5 text-indigo-600" />
-      </div>
-      <audio src={postImage} controls className="flex-1" />
-    </div>
-  ) : (
-    <div className="bg-black p-4 text-center rounded-lg">
-      <p className="text-gray-400 text-sm mb-2">Media file</p>
-      <a href={postImage} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 text-sm font-medium">
-        View media
-      </a>
-    </div>
-  )}
-</div>
-
-            )}
-          </div>
-
-          <div className="flex items-center justify-between py-4 ">
-            <div className="flex items-center space-x-6">
-              <button 
-                onClick={e => { 
-                  e.stopPropagation()
-                  handleLike()
-                }}
-                disabled={isLoading.like || !currentUserId}
-                className={`flex items-center space-x-2 text-gray-500 hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.liked ? 'text-red-500' : ''}`}
-              >
-                <Heart className={`w-5 h-5 transition-all duration-200 ${userEngagement.liked ? 'fill-red-500 scale-110' : ''}`} />
-                <span className="text-sm font-medium">{localEngagement.likes} </span>
-              </button>
-
-             <button 
-  onClick={toggleCommentDropdown}
-  className={`flex items-center space-x-2 transition-colors ${
-    commentDropdownOpen 
-      ? 'text-blue-500' 
-      : 'text-gray-500 hover:text-blue-500'
-  }`}
->
-  <MessageCircle className="w-5 h-5" />
-  <span className="text-sm font-medium">{localEngagement.comments}</span>
-</button>
-
-              <button 
-                onClick={e => { 
-                  e.stopPropagation()
-                  handleRetweet()
-                }}
-                disabled={isLoading.retweet || !currentUserId || userEngagement.retweeted}
-                className={`flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.retweeted ? 'text-green-500' : ''}`}
-              >
-                <Repeat2 className={`w-5 h-5 transition-all duration-200 ${userEngagement.retweeted ? 'fill-green-500 scale-110' : ''}`} />
-                <span className="text-sm font-medium">{localEngagement.retweets}</span>
-              </button>
-            </div>
-    <div className='flex items-center space-x-6'>
-     
-        {/* <PostTokenPrice 
-          postId={postId}
-          postContent={postContent}
-          onTradeClick={() => setShowTokenTrading(true)}
-        /> */}
-  <div className='flex items-center space-x-2 cursor-pointer' onClick={() => setShowTokenTrading(true)}>
-    <Triangle className={`w-5 h-5 text-green-500 transition-all duration-200 ${userEngagement.bookmarked ? 'fill-purple-500 scale-110' : ''}`} />
-              <span className="text-sm hidden text-green-500 md:block font-medium">$ 27.01 </span>
-     
-  </div>
-            <button 
-              onClick={e => { 
-                e.stopPropagation()
-                handleBookmark()
-              }}
-              disabled={isLoading.bookmark || !currentUserId}
-              className={`flex items-center space-x-2 text-gray-500 hover:text-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.bookmarked ? 'text-purple-500' : ''}`}
-            >
-              <Bookmark className={`w-5 h-5 transition-all duration-200 ${userEngagement.bookmarked ? 'fill-purple-500 scale-110' : ''}`} />
-              <span className="text-sm hidden md:block font-medium">{localEngagement.bookmarks} </span>
-            </button>
-    </div>
-          </div>
-
-     <AnimatePresence>
-  {commentDropdownOpen && (
-    <motion.div
-      initial={{ opacity: 0, height: 0, scale: 0.95 }}
-      animate={{ opacity: 1, height: "auto", scale: 1 }}
-      exit={{ opacity: 0, height: 0, scale: 0.95 }}
-      transition={{ duration: 0.2 }}
-      className="  rounded-2xl  overflow-hidden"
-    >
-     
-
-      {/* Comments List */}
-      <div className="max-h-64 overflow-y-auto py-4 space-y-3">
-        {comments.length > 0 ? (
-          comments.slice(0, visibleCount).map((comment) => (
-            <div key={comment.id} className="flex space-x-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden">
-                {comment.avatar_url ? (
-                  <img
-                    src={comment.avatar_url}
-                    alt={comment.username}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-300 flex items-center justify-center text-xs font-semibold text-gray-600">
-                    {comment.username?.substring(0, 2)?.toUpperCase() || "U"}
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="bg-dark-700/70 rounded-2xl px-3 py-2">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <span className="font-semibold text-sm text-white">
-                      {comment.username}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {formatCommentTime(comment.created_at)}
-                    </span>
-                  </div>
-                  <p className="text-sm text-secondary">{comment.content}</p>
+              {/* Media Section */}
+              {postImage && (
+                <div className="overflow-hidden mt-1">
+                  {/\.(jpg|jpeg|png|gif|webp)$/i.test(postImage) ? (
+                    <div className="relative group inline-block">
+                      <img 
+                        src={postImage} 
+                        alt="Post content" 
+                        className="rounded-2xl max-h-80 w-auto object-cover cursor-pointer hover:opacity-95 transition-opacity duration-200"
+                      />
+                    </div>
+                  ) : /\.(mp4|webm|ogg|mov)$/i.test(postImage) ? (
+                    <video 
+                      src={postImage} 
+                      autoPlay 
+                      muted 
+                      loop 
+                      playsInline
+                      controls
+                      className="w-auto max-h-80 bg-black rounded-lg"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : /\.(mp3|wav|ogg|m4a)$/i.test(postImage) ? (
+                    <div className="bg-black p-3 flex items-center space-x-3 rounded-lg">
+                      <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <Volume2 className="w-4 h-4 text-indigo-600" />
+                      </div>
+                      <audio src={postImage} controls className="flex-1" />
+                    </div>
+                  ) : (
+                    <div className="bg-black p-3 text-center rounded-lg">
+                      <p className="text-gray-400 text-sm mb-2">Media file</p>
+                      <a href={postImage} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 text-sm font-medium">
+                        View media
+                      </a>
+                    </div>
+                  )}
                 </div>
+              )}
+            </div>
+
+            {/* Engagement Actions */}
+            <div className="flex items-center justify-between pt-3">
+              <div className="flex items-center space-x-4">
+                <button 
+                  onClick={e => { 
+                    e.stopPropagation()
+                    handleLike()
+                  }}
+                  disabled={isLoading.like || !currentUserId}
+                  className={`flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.liked ? 'text-red-500' : ''}`}
+                >
+                  <Heart className={`w-5 h-5 transition-all duration-200 ${userEngagement.liked ? 'fill-red-500 scale-110' : ''}`} />
+                  <span className="text-sm font-medium">{localEngagement.likes}</span>
+                </button>
+
+                <button 
+                  onClick={toggleCommentDropdown}
+                  className={`flex items-center space-x-1 transition-colors ${
+                    commentDropdownOpen 
+                      ? 'text-blue-500' 
+                      : 'text-gray-500 hover:text-blue-500'
+                  }`}
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span className="text-sm font-medium">{localEngagement.comments}</span>
+                </button>
+
+                <button 
+                  onClick={e => { 
+                    e.stopPropagation()
+                    handleRetweet()
+                  }}
+                  disabled={isLoading.retweet || !currentUserId || userEngagement.retweeted}
+                  className={`flex items-center space-x-1 text-gray-500 hover:text-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.retweeted ? 'text-green-500' : ''}`}
+                >
+                  <Repeat2 className={`w-5 h-5 transition-all duration-200 ${userEngagement.retweeted ? 'fill-green-500 scale-110' : ''}`} />
+                  <span className="text-sm font-medium">{localEngagement.retweets}</span>
+                </button>
+              </div>
+
+              <div className='flex items-center space-x-4'>
+                <div className='flex items-center space-x-1 cursor-pointer' onClick={() => setShowTokenTrading(true)}>
+                  <Triangle className={`w-5 h-5 text-green-500 transition-all duration-200`} />
+                  <span className="text-sm hidden text-green-500 sm:block font-medium">$27.01</span>
+                </div>
+
+                <button 
+                  onClick={e => { 
+                    e.stopPropagation()
+                    handleBookmark()
+                  }}
+                  disabled={isLoading.bookmark || !currentUserId}
+                  className={`flex items-center space-x-1 text-gray-500 hover:text-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.bookmarked ? 'text-purple-500' : ''}`}
+                >
+                  <Bookmark className={`w-5 h-5 transition-all duration-200 ${userEngagement.bookmarked ? 'fill-purple-500 scale-110' : ''}`} />
+                  <span className="text-sm hidden sm:block font-medium">{localEngagement.bookmarks}</span>
+                </button>
               </div>
             </div>
-          ))
-        ) : (
-          <p className="text-gray-500 text-sm text-center py-4">
-            No comments yet. Be the first to comment!
-          </p>
-        )}
 
-        {visibleCount < comments.length && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setVisibleCount((prev) => prev + 8)
-            }}
-            className="text-sm text-blue-500 hover:underline w-full text-center py-2"
-          >
-            Load more comments
-          </button>
-        )}
-      </div>
+            {/* Comments Dropdown */}
+            <AnimatePresence>
+              {commentDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, height: "auto", scale: 1 }}
+                  exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className="rounded-2xl overflow-hidden mt-3"
+                >
+                  {/* Comments List */}
+                  <div className="max-h-56 overflow-y-auto py-3 space-y-2">
+                    {comments.length > 0 ? (
+                      comments.slice(0, visibleCount).map((comment) => (
+                        <div key={comment.id} className="flex space-x-2">
+                          <div className="flex-shrink-0 w-7 h-7 rounded-full overflow-hidden">
+                            {comment.avatar_url ? (
+                              <img
+                                src={comment.avatar_url}
+                                alt={comment.username}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gray-300 flex items-center justify-center text-xs font-semibold text-gray-600">
+                                {comment.username?.substring(0, 2)?.toUpperCase() || "U"}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="bg-dark-700/70 rounded-xl px-3 py-2">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <span className="font-semibold text-sm text-white">
+                                  {comment.username}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {formatCommentTime(comment.created_at)}
+                                </span>
+                              </div>
+                              <p className="text-sm text-secondary">{comment.content}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-500 text-sm text-center py-3">
+                        No comments yet. Be the first to comment!
+                      </p>
+                    )}
 
-      {/* Comment Input - INSIDE the dropdown */}
-      <div className="py-4">
-        <form onSubmit={handleCommentSubmit} className="flex items-center space-x-3">
-          <div className="relative w-8 h-8 flex-shrink-0">
-            {profile?.avatar_url ? (
-              <img 
-                src={profile?.avatar_url} 
-                alt="Your avatar" 
-                className="w-full h-full rounded-full border border-gray-700/70 object-cover" 
-              />
-            ) : (
-              <div className="w-full h-full bg-indigo-500 rounded-full flex items-center justify-center text-xs font-semibold text-white">
-                {session?.dbUser?.username?.substring(0, 2)?.toUpperCase() || 'U'}
-              </div>
-            )}
+                    {visibleCount < comments.length && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setVisibleCount((prev) => prev + 8)
+                        }}
+                        className="text-sm text-blue-500 hover:underline w-full text-center py-2"
+                      >
+                        Load more comments
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Comment Input */}
+                  <div className="pt-3 border-t border-gray-700/50">
+                    <form onSubmit={handleCommentSubmit} className="flex items-center space-x-2">
+                      <div className="relative w-7 h-7 flex-shrink-0">
+                        {profile?.avatar_url ? (
+                          <img 
+                            src={profile?.avatar_url} 
+                            alt="Your avatar" 
+                            className="w-full h-full rounded-full border border-gray-700/70 object-cover" 
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-indigo-500 rounded-full flex items-center justify-center text-xs font-semibold text-white">
+                            {session?.dbUser?.username?.substring(0, 2)?.toUpperCase() || 'U'}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex gap-2 flex-1 relative rounded-full bg-gray-700/20">
+                        <input
+                          type="text"
+                          placeholder="Write your comment.."
+                          value={commentText}
+                          onChange={(e) => setCommentText(e.target.value)}
+                          disabled={isLoading.comment || !currentUserId}
+                          className="w-full px-3 py-2 rounded-full bg-transparent text-secondary placeholder:text-secondary focus:outline-none focus:ring-0 transition-all disabled:opacity-50"
+                          onClick={(e) => e.stopPropagation()}
+                          autoFocus
+                        />
+                        <button 
+                          type="button"
+                          className="px-2 text-gray-400 hover:text-gray-300 transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                          disabled={!currentUserId}
+                        >
+                          <Smile className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <button 
+                        type="submit"
+                        disabled={!commentText.trim() || isLoading.comment || !currentUserId}
+                        className="p-2 bg-primary text-white rounded-full hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {isLoading.comment ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
+                      </button>
+                    </form>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-          
-          <div className="flex gap-2 flex-1 relative rounded-full bg-gray-700/20">
-            <input
-              type="text"
-              placeholder="Write your comment.."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              disabled={isLoading.comment || !currentUserId}
-              className="w-full px-4 py-2 rounded-full bg-transparent text-secondary placeholder:text-secondary focus:outline-none focus:ring-0 transition-all disabled:opacity-50"
-              onClick={(e) => e.stopPropagation()}
-              autoFocus
-            />
-            <button 
-              type="button"
-              className="px-2 text-gray-400 hover:text-gray-300 transition-colors"
-              onClick={(e) => e.stopPropagation()}
-              disabled={!currentUserId}
-            >
-              <Smile className="w-5 h-5" />
-            </button>
-          </div>
-
-          <button 
-            type="submit"
-            disabled={!commentText.trim() || isLoading.comment || !currentUserId}
-            className="p-2 bg-primary text-white rounded-full hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {isLoading.comment ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-          </button>
-        </form>
-      </div>
-    </motion.div>
-  )}
-</AnimatePresence>
-
-        
-      </div>
         </div>
-  
       </div>
       
 
@@ -786,7 +759,7 @@ const handleImageClick = (e: React.MouseEvent) => {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="mt-4"
+            className="mt-3"
           >
             <CommentSection
               post={post}
