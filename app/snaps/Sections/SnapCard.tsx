@@ -430,7 +430,7 @@ const handleImageClick = (e: React.MouseEvent) => {
                   >
                     <div className="flex items-center space-x-2 group cursor-pointer">
                       {/* Avatar */}
-                      <div className="flex-shrink-0 w-10 h-10 rounded-full overflow-hidden">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden">
                         {postAvatar ? (
                           <img
                             src={postAvatar}

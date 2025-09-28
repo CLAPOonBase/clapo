@@ -20,82 +20,6 @@ type SidebarProps = {
   onNavigateToSnaps?: () => void;
 };
 
-const navItems: {
-  label: string;
-  value: PageKey;
-  icon: React.ReactNode;
-  activeIcon: React.ReactNode;
-  showOnMobile?: boolean;
-  showOnDesktop?: boolean;
-}[] = [
-  { 
-    label: "Home", 
-    value: "home", 
-    icon: <Home className="w-6 h-6" />, 
-    activeIcon: <Home className="w-6 h-6" fill="currentColor" />,
-    showOnMobile: true, 
-    showOnDesktop: true 
-  },
-    { 
-    label: "Explore", 
-    value: "explore", 
-    icon: <Telescope className="w-6 h-6" />, 
-    activeIcon: <Telescope className="w-6 h-6" fill="currentColor" />,
-    showOnMobile: true, 
-    showOnDesktop: true 
-  },
-    { 
-    label: "Creator Share", 
-    value: "share", 
-    icon: <Blocks className="w-6 h-6" />, 
-    activeIcon: <Blocks className="w-6 h-6" fill="currentColor" />,
-    showOnMobile: true,
-    showOnDesktop: true 
-  },
-  { 
-    label: "Messages", 
-    value: "messages", 
-    icon: <MessageCircle className="w-6 h-6" />, 
-    activeIcon: <MessageCircle className="w-6 h-6" fill="currentColor" />,
-    showOnMobile: true,
-    showOnDesktop: true 
-  },
-  { 
-    label: "Notifications", 
-    value: "notifications", 
-    icon: <Bell className="w-6 h-6" />, 
-    activeIcon: <Bell className="w-6 h-6" fill="currentColor" />,
-    showOnMobile: true, 
-    showOnDesktop: true 
-  },
-  // { 
-  //   label: "Activity", 
-  //   value: "activity", 
-  //   icon: <Activity className="w-6 h-6" />, 
-  //   activeIcon: <Activity className="w-6 h-6" fill="currentColor" />,
-  //   showOnMobile: true,
-  //   showOnDesktop: true 
-  // },
-  
-  { 
-    label: "Profile", 
-    value: "profile", 
-    icon: <User className="w-6 h-6" />, 
-    activeIcon: <User className="w-6 h-6" fill="currentColor" />,
-    showOnMobile: true,
-    showOnDesktop: true 
-  },
-    { 
-    label: "Wallet", 
-    value: "wallet", 
-    icon: <Wallet className="w-6 h-6" />, 
-    activeIcon: <Wallet className="w-6 h-6" fill="currentColor" />,
-    showOnMobile: true,
-    showOnDesktop: true 
-  },
-
-];
-
 interface ExtendedSession {
   user?: {
     name?: string;
@@ -128,6 +52,101 @@ export default function Sidebar({
   const router = useRouter();
   const { connect, disconnect, address } = useWalletContext();
   const { data: session } = useSession() as { data: ExtendedSession | null };
+
+  // Create a custom profile icon component that uses avatar if available
+  const ProfileIcon = ({ isActive, className }: { isActive?: boolean; className?: string }) => {
+    if (session?.dbUser?.avatar_url) {
+      return (
+        <Image 
+          src={session.dbUser.avatar_url} 
+          alt="Profile" 
+          width={24} 
+          height={24} 
+          className={`rounded-full ${className || "w-6 h-6"} object-cover border border-gray-600/40`}
+        />
+      );
+    }
+    return isActive ? 
+      <User className={className || "w-6 h-6"} fill="currentColor" /> : 
+      <User className={className || "w-6 h-6"} />;
+  };
+
+  const navItems: {
+    label: string;
+    value: PageKey;
+    icon: React.ReactNode;
+    activeIcon: React.ReactNode;
+    showOnMobile?: boolean;
+    showOnDesktop?: boolean;
+  }[] = [
+    { 
+      label: "Home", 
+      value: "home", 
+      icon: <Home className="w-6 h-6" />, 
+      activeIcon: <Home className="w-6 h-6" fill="currentColor" />,
+      showOnMobile: true, 
+      showOnDesktop: true 
+    },
+      { 
+      label: "Explore", 
+      value: "explore", 
+      icon: <Telescope className="w-6 h-6" />, 
+      activeIcon: <Telescope className="w-6 h-6" fill="currentColor" />,
+      showOnMobile: true, 
+      showOnDesktop: true 
+    },
+      { 
+      label: "Creator Shares", 
+      value: "share", 
+      icon: <Blocks className="w-6 h-6" />, 
+      activeIcon: <Blocks className="w-6 h-6" fill="currentColor" />,
+      showOnMobile: true,
+      showOnDesktop: true 
+    },
+    { 
+      label: "Messages", 
+      value: "messages", 
+      icon: <MessageCircle className="w-6 h-6" />, 
+      activeIcon: <MessageCircle className="w-6 h-6" fill="currentColor" />,
+      showOnMobile: true,
+      showOnDesktop: true 
+    },
+    { 
+      label: "Notifications", 
+      value: "notifications", 
+      icon: <Bell className="w-6 h-6" />, 
+      activeIcon: <Bell className="w-6 h-6" fill="currentColor" />,
+      showOnMobile: true, 
+      showOnDesktop: true 
+    },
+    // { 
+    //   label: "Activity", 
+    //   value: "activity", 
+    //   icon: <Activity className="w-6 h-6" />, 
+    //   activeIcon: <Activity className="w-6 h-6" fill="currentColor" />,
+    //   showOnMobile: true,
+    //   showOnDesktop: true 
+    // },
+    
+
+      { 
+      label: "Wallet", 
+      value: "wallet", 
+      icon: <Wallet className="w-6 h-6" />, 
+      activeIcon: <Wallet className="w-6 h-6" fill="currentColor" />,
+      showOnMobile: true,
+      showOnDesktop: true 
+    },
+      { 
+      label: "Profile", 
+      value: "profile", 
+      icon: <ProfileIcon isActive={false} />, 
+      activeIcon: <ProfileIcon isActive={true} />,
+      showOnMobile: true,
+      showOnDesktop: true 
+    },
+
+  ];
 
   const bottomNavItems = [
   { name: "Opinio", path: "/opinio", img: "/opinio-nav.png" },
@@ -298,9 +317,9 @@ export default function Sidebar({
                       onClick={() => openDialog("x")}
                       className="inline-flex items-center justify-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 gap-[6px] min-w-[105px] transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)] bg-[hsla(220,10%,12%,1)] text-white shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000] hover:bg-[hsla(220,10%,18%,1)] px-3 py-2 text-xs rounded-full leading-[24px] font-bold w-full whitespace-nowrap"
                     >
-                    <Image src={session.dbUser?.avatar_url} alt={""} width={1000} height={1000} className="rounded-full h-8 w-8 bg-black border border-gray-700/70"/>
+                    <Image src={session?.dbUser?.avatar_url || "/default-avatar.png"} alt={""} width={1000} height={1000} className="rounded-full h-8 w-8 bg-black border border-gray-700/70"/>
 
-                      {isLoggedIn ? session.dbUser?.username || "CONNECTED" : "CONNECT X"}
+                      {isLoggedIn ? session?.dbUser?.username || "CONNECTED" : "CONNECT X"}
                     </button>
                  
                   </div>
@@ -428,8 +447,8 @@ export default function Sidebar({
                     onClick={() => openDialog("x")}
                     className="inline-flex items-center justify-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 gap-[6px] min-w-[105px] transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)] bg-[hsla(220,10%,12%,1)] text-white shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000] hover:bg-[hsla(220,10%,18%,1)] px-3 py-1.5 text-xs rounded-full leading-[24px] font-bold w-full sm:w-auto whitespace-nowrap"
                   >
-                    <Image src={session.dbUser?.avatar_url} alt={""} width={1000} height={1000} className="rounded-full h-8 w-8 bg-black border border-gray-700/70"/>
-                    {isLoggedIn ? session.dbUser?.username || "CONNECTED" : "CONNECT X"}
+                    <Image src={session?.dbUser?.avatar_url || "/default-avatar.png"} alt={""} width={1000} height={1000} className="rounded-full h-8 w-8 bg-black border border-gray-700/70"/>
+                    {isLoggedIn ? session?.dbUser?.username || "CONNECTED" : "CONNECT X"}
                   </button>
                 
                 </div>
