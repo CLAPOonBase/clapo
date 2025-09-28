@@ -270,7 +270,7 @@ function SocialFeedPageContent() {
           <SearchPage />
         </div>;
       case "share":
-        return <div className="w-full max-w-3xl lg:ml-80 mt-6">
+        return <div className="w-full lg:pl-60 mt-6">
           <SharePage />
         </div>;
       case "messages":
@@ -561,7 +561,7 @@ function SocialFeedPageContent() {
         </div>
 
         {/* Right Sidebar - Only visible at 2xl breakpoint */}
-        {currentPage !== "messages" && session?.dbUser && (
+        {currentPage !== "messages" , currentPage !== "share" && session?.dbUser && (
           <div
             className="hidden md:block lg:block xl:block 2xl:block w-80 h-screen sticky top-0"
             style={{ zIndex: 999 }}
