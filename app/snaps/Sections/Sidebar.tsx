@@ -442,16 +442,22 @@ export default function Sidebar({
                 className="space-y-3"
               >
                 {/* Desktop Buttons (only lg and up) */}
-                <div className="hidden lg:flex flex-col gap-2 items-center">
-                  <button
-                    onClick={() => openDialog("x")}
-                    className="inline-flex items-center justify-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 gap-[6px] min-w-[105px] transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)] bg-[hsla(220,10%,12%,1)] text-white shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000] hover:bg-[hsla(220,10%,18%,1)] px-3 py-1.5 text-xs rounded-full leading-[24px] font-bold w-full sm:w-auto whitespace-nowrap"
-                  >
-                    <Image src={session?.dbUser?.avatar_url || "/default-avatar.png"} alt={""} width={1000} height={1000} className="rounded-full h-8 w-8 bg-black border border-gray-700/70"/>
-                    {isLoggedIn ? session?.dbUser?.username || "CONNECTED" : "CONNECT X"}
-                  </button>
-                
-                </div>
+            <div className="hidden lg:flex flex-col gap-2 items-center">
+  <button
+    onClick={() => openDialog("x")}
+    className="inline-flex items-center justify-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 gap-[6px] min-w-[105px] transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)] bg-[hsla(220,10%,12%,1)] text-white shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000] hover:bg-[hsla(220,10%,18%,1)] px-3 py-1.5 text-xs rounded-full leading-[24px] font-bold w-full sm:w-auto whitespace-nowrap"
+  >
+    <Image
+      src={session?.dbUser?.avatar_url || "https://pbs.twimg.com/profile_images/1955359038532653056/OSHY3ewP_400x400.jpg"}
+      alt=""
+      width={1000}
+      height={1000}
+      className="rounded-full h-8 w-8 bg-black border border-gray-700/70"
+    />
+    {isLoggedIn ? session?.dbUser?.username || "CONNECTED" : "CONNECT X"}
+  </button>
+</div>
+
                 
             <div aria-disabled className="space-y-2">
   {bottomNavItems.map((item) => (
