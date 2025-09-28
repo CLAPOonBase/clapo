@@ -561,7 +561,7 @@ function SocialFeedPageContent() {
         </div>
 
         {/* Right Sidebar - Only visible at 2xl breakpoint */}
-        {currentPage !== "messages" , currentPage !== "share" && session?.dbUser && (
+        {currentPage !== "messages" && currentPage !== "share" && session?.dbUser && (
           <div
             className="hidden md:block lg:block xl:block 2xl:block w-80 h-screen sticky top-0"
             style={{ zIndex: 999 }}

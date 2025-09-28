@@ -443,7 +443,7 @@ export default function CreatorTradingPlatform() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {mockPosts.map((post, i) => (
-                    <div key={post.id} className="bg-gray-800 rounded-xl overflow-hidden hover:bg-gray-750 transition-colors cursor-pointer">
+                    <div key={post.id} className="bg-black rounded-xl overflow-hidden hover:bg-gray-750 transition-colors cursor-pointer">
                       <div className="aspect-video bg-gradient-to-br from-purple-500 to-pink-500 relative">
                         {i === 0 && (
                           <div className="absolute inset-0 flex items-center justify-center">
@@ -502,7 +502,7 @@ export default function CreatorTradingPlatform() {
                 <div className="flex space-x-3">
                   <button 
                     onClick={() => setConnectWallet(!connectWallet)}
-                    className="flex-1 text-sm bg-gray-800 hover:bg-gray-700 py-1 px-2 rounded-xl text-center transition-colors"
+                    className="flex-1 text-sm bg-black hover:bg-black py-1 px-2 rounded-xl text-center transition-colors"
                   >
                     CONNECT X
                   </button>
@@ -514,7 +514,7 @@ export default function CreatorTradingPlatform() {
 
               {/* Community Chat */}
               <div className="p-2 overflow-hidden flex flex-col justify-center items-start border-2 border-gray-700/70 rounded-2xl mb-4">
-                                  <span className="bg-dark-700 rounded-full px-2 mt-2">
+                                  <span className="bg-black rounded-full px-2 mt-2">
                                  Community Chat
                                   </span>
                                   <div className="flex items-center space-x-3 my-2">
@@ -612,7 +612,7 @@ export default function CreatorTradingPlatform() {
 
   // Main Explore View (List)
   return (
-    <div className="min-h-[700px] p-4 bg-[#0D1117] text-white rounded-2xl">
+    <div className="min-h-[700px] p-4 bg-black text-white rounded-2xl">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
