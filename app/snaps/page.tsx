@@ -285,7 +285,7 @@ function SocialFeedPageContent() {
              <>
             <Stories />
             {/* <SnapComposer /> */}
-   <div className="bg-gray-700/70 rounded-full mt-2 p-1">
+   <div className="bg-gray-700/70 rounded-full mb-4 p-1 ">
       <div>
         <div
           style={{ zIndex: 999 }}
@@ -331,7 +331,7 @@ function SocialFeedPageContent() {
             <div className="mt-2 pt-2 rounded-2xl">
             
 
-              <div className="">
+              <div className="mt-2">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeTab}

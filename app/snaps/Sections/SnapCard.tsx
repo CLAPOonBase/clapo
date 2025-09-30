@@ -2,7 +2,7 @@
 // @ts-nocheck
 'use client'
 import React, { useState, useEffect, useRef } from 'react'
-import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume2, Paperclip, Smile, Send, ExternalLink, Blocks, Triangle } from 'lucide-react'
+import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume2, Paperclip, Smile, Send, ExternalLink, Blocks, Triangle, Repeat } from 'lucide-react'
 import { Post, ApiPost } from '@/app/types'
 import { useApi } from '../../Context/ApiProvider'
 import { useSession } from 'next-auth/react'
@@ -413,7 +413,7 @@ const handleImageClick = (e: React.MouseEvent) => {
   return (
     <>
       <div 
-        className="shadow-custom border-2 border-gray-700 rounded-3xl mt-4 p-4 shadow-sm hover:shadow-md transition-all duration-200" 
+        className="shadow-custom border-2 border-gray-700/70 rounded-xl mt-4 p-4 shadow-sm hover:shadow-md transition-all duration-200" 
         onClick={handleView}
       >
         <div className="flex flex-col ">
@@ -572,7 +572,7 @@ const handleImageClick = (e: React.MouseEvent) => {
                   disabled={isLoading.retweet || !currentUserId || userEngagement.retweeted}
                   className={`flex items-center space-x-1 text-gray-500 hover:text-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.retweeted ? 'text-green-500' : ''}`}
                 >
-                  <Repeat2 className={`w-5 h-5 transition-all duration-200 ${userEngagement.retweeted ? 'fill-green-500 scale-110' : ''}`} />
+                  <Repeat className={`w-5 h-5 transition-all duration-200 rotate-90 ${userEngagement.retweeted ? 'text-green-500' : ''}`} />
                   <span className="text-sm font-medium">{localEngagement.retweets}</span>
                 </button>
               </div>

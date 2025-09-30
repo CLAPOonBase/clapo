@@ -1,5 +1,5 @@
 "use client";
-import { Home, Bell, User, MessageCircle, Activity, Blocks, TrendingUp, Menu, X, Telescope, Wallet, Lock } from "lucide-react";
+import { Home, Bell, User, MessageCircle, Activity, Blocks, TrendingUp, Menu, X, Telescope, Wallet, Lock, Settings, LogOut } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -150,7 +150,7 @@ export default function Sidebar({
 
   const bottomNavItems = [
   { name: "Opinio", path: "/opinio", img: "/opinio-nav.png" },
-  { name: "Claps", path: "/", img: "/snaps-nav.png" },
+  { name: "Claps", path: "/", img: "/navlogo.png" },
 ];
 
 
@@ -441,8 +441,11 @@ export default function Sidebar({
                 transition={{ delay: 0.1 }}
                 className="space-y-3"
               >
+
+                <span className="flex items-center justify-between gap-2"> <span className="text-gray-500">Explore</span>
+                 <span><LogOut  onClick={() => openDialog("x")} className="text-gray-400 h-4"/></span></span>
                 {/* Desktop Buttons (only lg and up) */}
-            <div className="hidden lg:flex flex-col gap-2 items-center">
+            {/* <div className="hidden lg:flex flex-col gap-2 items-center">
   <button
     onClick={() => openDialog("x")}
     className="inline-flex items-center justify-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 gap-[6px] min-w-[105px] transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)] bg-[hsla(220,10%,12%,1)] text-white shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000] hover:bg-[hsla(220,10%,18%,1)] px-3 py-1.5 text-xs rounded-full leading-[24px] font-bold w-full sm:w-auto whitespace-nowrap"
@@ -456,10 +459,11 @@ export default function Sidebar({
     />
     {isLoggedIn ? session?.dbUser?.username || "CONNECTED" : "CONNECT X"}
   </button>
-</div>
+</div> */}
 
                 
             <div aria-disabled className="space-y-2">
+             
   {bottomNavItems.map((item) => (
     <button 
     disabled={isLoggedIn}
@@ -471,14 +475,14 @@ export default function Sidebar({
       //     handleSnapsClick();
       //   }
       // }}
-      className="w-full flex items-center gap-3 px-4 rounded-lg bg-gray-700/30 border border-gray-600/40 hover:bg-gray-700/50 transition-colors"
+      className="w-full flex items-center gap-3 px-2 py-1 rounded-2xl bg-gray-700/30 border-2 border-[#6e54ff] hover:bg-gray-700/50 transition-colors"
     >
       <Image
         src={item.img}
         alt={item.name}
         width={1000}
         height={1000}
-        className="object-contain w-full h-8 py-1 rounded-md"
+        className="object-contain w-full h-10 py-2 rounded-md"
       />
       <Lock className="text-dark-700/80"/>
       {/* <span className="text-gray-300 font-medium text-sm">{item.name}</span> */}
