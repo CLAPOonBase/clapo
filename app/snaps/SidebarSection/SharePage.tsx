@@ -1,7 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
-import { Circle, Star, TrendingUp, Users, Volume2 } from 'lucide-react';
+import { 
+  Circle, 
+  Star, 
+  TrendingUp, 
+  Users, 
+  Volume2, 
+  ArrowLeft,
+  Check,
+  Crown,
+  MessageCircle,
+  Zap,
+  Lock,
+  Award,
+  BarChart3,
+  Wallet,
+  Twitter,
+  MessageCircleIcon,
+  Heart,
+  Share,
+  Bookmark,
+  Triangle
+} from 'lucide-react';
 
 // Types
 interface Creator {
@@ -177,8 +198,8 @@ const mockPosts: Post[] = [
   {
     id: '1',
     author: 'Riley_Seay',
-    content: 'Just dropped some fire content! 🔥',
-    image: '/api/placeholder/300/200',
+    content: 'Just dropped some fire content!',
+    image: 'https://images.unsplash.com/photo-1611605698335-8b1569810432?w=300&h=200&fit=crop',
     timestamp: '2h',
     likes: 234,
     comments: 45
@@ -187,7 +208,7 @@ const mockPosts: Post[] = [
     id: '2',
     author: 'Alexander_H',
     content: 'Working on something special...',
-    image: '/api/placeholder/300/200',
+    image: 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=300&h=200&fit=crop',
     timestamp: '4h',
     likes: 189,
     comments: 23
@@ -196,7 +217,7 @@ const mockPosts: Post[] = [
     id: '3',
     author: 'Nightcap',
     content: 'Behind the scenes of today\'s shoot',
-    image: '/api/placeholder/300/200',
+    image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=300&h=200&fit=crop',
     timestamp: '6h',
     likes: 456,
     comments: 78
@@ -252,7 +273,6 @@ export default function CreatorTradingPlatform() {
   };
 
   const handleCommunityClick = (community: Community) => {
-    // Convert community to creator-like object for display
     const communityAsCreator: Creator = {
       id: community.id,
       name: community.name,
@@ -275,7 +295,7 @@ export default function CreatorTradingPlatform() {
 
   const renderMyShares = () => (
     <div className="space-y-4">
-      <div className="bg-black rounded-xl p-4 border border-gray-600/50">
+      <div className="bg-black rounded-xl p-4 border-2 border-gray-700/70">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-white">Portfolio Summary</h3>
           <div className="text-right">
@@ -314,7 +334,7 @@ export default function CreatorTradingPlatform() {
             key={share.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-black rounded-xl p-4 border border-gray-600/50 hover:border-gray-500/50 transition-all duration-200 cursor-pointer"
+            className="bg-black rounded-xl p-4 border-2 border-gray-700/70 hover:border-gray-600/50 transition-all duration-200 cursor-pointer"
             onClick={() => {
               const creator = mockCreators.find(c => c.handle === `@${share.symbol}`);
               if (creator) handleCreatorClick(creator);
@@ -368,17 +388,17 @@ export default function CreatorTradingPlatform() {
             onClick={handleBack}
             className="text-gray-400 hover:text-white transition-colors flex items-center space-x-2 mb-6"
           >
-            <span>←</span>
+            <ArrowLeft className="w-4 h-4" />
             <span>Back to Explore</span>
           </button>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             {/* Left Column - Creator Profile & Activity */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-2">
               
               {/* Creator Profile Card */}
-              <div className="bg-black rounded-2xl p-6 border border-gray-800">
+              <div className="bg-black rounded-2xl p-6 border-2 border-gray-700/70">
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center space-x-4">
                     <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 p-0.5">
@@ -393,7 +413,7 @@ export default function CreatorTradingPlatform() {
                         <h1 className="text-xl font-bold text-white">{selectedCreator.name}</h1>
                         {selectedCreator.isVerified && (
                           <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs">✓</span>
+                            <Check className="w-3 h-3 text-white" />
                           </div>
                         )}
                       </div>
@@ -410,20 +430,23 @@ export default function CreatorTradingPlatform() {
                 </div>
 
                 {/* Live Activity Tracker */}
-                <div className="bg-black rounded-xl p-4 border-2 border-[#3A07F4]">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-blue-400 font-semibold text-sm">LIVE ACTIVITY TRACKER</h3>
+                <div className=" rounded-xl border border-[#6E54FF]">
+                  <div className="flex items-center justify-between pb-2 p-2 border-b border-gray-700/70">
+                    <div className="flex items-center space-x-2">
+                     
+                      <h3 className="text-white italic font-semibold text-sm">LIVE ACTIVITY TRACKER</h3>
+                    </div>
                     <div className="text-gray-400 text-xs">
                       Bob just bought a share of {selectedCreator.name} • +{Math.floor(Math.random() * 50) + 10} Holders in 24 hours
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    {/* <Circle className="rounded-full"/> */}
-                    <span className="text-gray-400 text-xs">TOP HOLDERS</span>
+                  <div className="flex items-center justify-between p-2">
+                    
+                    <span className="text-gray-400 text-xs flex gap-2 items-center"> <div className="w-3 h-3 text-green-400 border border-[#6E54FF] rounded-full  fill-green-400" ></div> TOP HOLDERS</span>
                     <div className="flex items-center space-x-1">
                       {mockActivity.slice(0, 5).map((activity, i) => (
-                        <div key={activity.id} className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 border-2 border-gray-900" style={{ marginLeft: i > 0 ? '-8px' : '0' }}>
+                        <div key={activity.id} className="w-8 h-8 rounded-full bg-gradient-to-br border-2 border-gray-900" style={{ marginLeft: i > 0 ? '-8px' : '0' }}>
                           <img src={activity.avatar} alt="" className="w-full h-full rounded-full object-cover" />
                         </div>
                       ))}
@@ -431,47 +454,57 @@ export default function CreatorTradingPlatform() {
                   </div>
                 </div>
               </div>
-
+  <h2 className="text-xl px-2 font-bold text-white">CONTENT PREVIEW</h2>
               {/* Content Preview */}
-              <div className="bg-black rounded-2xl p-6 border border-gray-800">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold">CONTENT PREVIEW</h2>
-                  <button className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-full text-sm font-medium transition-colors">
+              <div className="bg-black rounded-2xl px-4 py-2  border-2 border-gray-700/70">
+                <div className="flex items-center justify-between -mt-8 mb-6">
+                <span></span>
+                  <button style={{
+          height: "30px",
+          boxShadow:
+            "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
+          backgroundColor: "#6E54FF",
+          margin: "6px",
+        }} className="bg-purple-600 hover:bg-purple-700 px-4 rounded-full text-sm font-medium transition-colors">
                     MOST COLLECTED POST
                   </button>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {mockPosts.map((post, i) => (
-                    <div key={post.id} className="bg-black rounded-xl overflow-hidden hover:bg-gray-750 transition-colors cursor-pointer">
-                      <div className="aspect-video bg-gradient-to-br from-purple-500 to-pink-500 relative">
-                        {i === 0 && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-16 h-16 bg-orange-500 rounded-lg flex items-center justify-center">
-                              <span className="text-2xl">🐻</span>
-                            </div>
-                          </div>
-                        )}
-                        {i === 1 && (
-                          <div className="absolute inset-0 bg-white flex items-center justify-center">
-                            <div className="text-black text-4xl">📱</div>
-                          </div>
-                        )}
-                        {i === 2 && (
-                          <div className="absolute inset-0 bg-amber-600 flex items-center justify-center">
-                            <div className="text-2xl">🎭</div>
-                          </div>
-                        )}
+                  {mockPosts.map((post) => (
+                    <div key={post.id} className="bg-gray-800/30 rounded-xl overflow-hidden hover:bg-gray-700/30 transition-colors cursor-pointer border-2 border-gray-700/70">
+                      <div className="aspect-video relative overflow-hidden">
+                        <img 
+                          src={post.image} 
+                          alt={post.content}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                       <div className="p-3">
-                        <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center justify-between text-xs">
                           <span className="text-gray-400">@{post.author}</span>
                           <span className="text-gray-400">{post.timestamp}</span>
                         </div>
+                        <p className="text-white text-sm mt-2">{post.content}</p>
                         <div className="flex items-center justify-between mt-2">
-                          <div className="flex items-center space-x-3 text-gray-400 text-sm">
-                            <span>❤️ {post.likes}</span>
-                            <span>💬 {post.comments}</span>
+                          <div className="flex items-center space-x-1 text-gray-400 text-xs">
+                            <span className="flex items-center space-x-1">
+                              <Heart className="w-3 h-3" />
+                              <span>{post.comments}</span>
+                            </span>
+                            <span className="flex items-center space-x-1 text-xs">
+                       
+                              <MessageCircleIcon className="w-3 h-3" />
+                              <span>{post.likes}</span>
+                               <Share className="w-3 h-3" />
+                              <span>{post.comments * 2}</span>
+                            </span>
+                          </div>
+                          <div className='text-gray-400 text-xs space-x-1 flex items-center '>
+                             <Bookmark className="w-3 h-3" />
+                              <span>{post.comments * 2}</span>
+                              <Triangle className="w-3 h-3 text-green-400" />
+                              <span className='text-green-600'>{post.comments * 0.5}</span>
                           </div>
                         </div>
                       </div>
@@ -481,78 +514,95 @@ export default function CreatorTradingPlatform() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex space-x-4">
-                <button className="flex-1 bg-green-600 hover:bg-green-700 py-4 rounded-2xl font-bold text-lg transition-colors">
-                  BUY CREATOR SHARE
-                </button>
-                <button className="bg-purple-600 hover:bg-purple-700 px-8 py-4 rounded-2xl font-bold text-lg transition-colors">
-                  SELL
-                </button>
-                <button className="bg-purple-600 hover:bg-purple-700 px-8 py-4 rounded-2xl font-bold text-lg transition-colors">
-                  COLLECT POST
-                </button>
-              </div>
+          <div className="flex space-x-4 w-full">
+  <button 
+    className="inline-flex w-full items-center justify-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 gap-[6px] transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)] bg-[hsla(220,10%,12%,1)] text-white shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000] hover:bg-[hsla(220,10%,18%,1)] px-8 py-2 text-sm rounded-2xl leading-[24px] font-bold whitespace-nowrap"
+    style={{ height: "30px", margin: "6px" }}
+  >
+    BUY CREATOR SHARE
+  </button>
+  
+  <button 
+    className="inline-flex items-center justify-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 transition-colors px-8 py-2 text-sm rounded-2xl font-bold whitespace-nowrap"
+    style={{
+      height: "30px",
+      boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
+      backgroundColor: "#6E54FF",
+      margin: "6px",
+    }}
+  >
+    SELL
+  </button>
+  
+  <button 
+    className="inline-flex items-center justify-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 transition-colors px-8 py-2 text-sm rounded-2xl font-bold whitespace-nowrap"
+    style={{
+      height: "30px",
+      boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
+      backgroundColor: "#6E54FF",
+      margin: "6px",
+    }}
+  >
+    COLLECT POST
+  </button>
+</div>
             </div>
 
             {/* Right Column - Sidebar */}
             <div className="space-y-6">
               
-              {/* Wallet Connection */}
-              <div className="bg-black rounded-2xl p-4 border border-gray-800">
-                <div className="flex space-x-3">
-                  <button 
-                    onClick={() => setConnectWallet(!connectWallet)}
-                    className="flex-1 text-sm bg-black hover:bg-black py-1 px-2 rounded-xl text-center transition-colors"
-                  >
-                    CONNECT X
-                  </button>
-                  <button className="flex-1 text-sm bg-purple-600 hover:bg-purple-700 py-1 px-2 rounded-xl text-center transition-colors">
-                    CONNECT WALLET
+          
+
+              {/* Community Chat */}
+              <div className="bg-black rounded-2xl p-4 border-2 border-gray-700/70">
+                <div className="flex items-center space-x-2 mb-4">
+                  <MessageCircle className="w-4 h-4 text-purple-400" />
+                  <span className="font-semibold text-white">Community Chat</span>
+                </div>
+                <div className="flex justify-between items-center space-x-3">
+              <div className='flex items-center space-x-3'>
+                    <div className="w-8 h-8 rounded-full border border-gray-700/70 to-pink-500 flex items-center justify-center">
+                    <span className="text-xs font-bold text-white">{selectedCreator.name.charAt(0)}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-sm text-white">{selectedCreator.name}</span>
+                    <p className="text-gray-400 text-xs">Top Shareholder</p>
+                  </div>
+              </div>
+                  <button style={{
+          height: "30px",
+          boxShadow:
+            "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
+          backgroundColor: "#6E54FF",
+          margin: "6px",
+        }} className="ml-auto bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded-full text-xs transition-colors">
+                    GET ACCESS
                   </button>
                 </div>
               </div>
 
-              {/* Community Chat */}
-              <div className="p-2 overflow-hidden flex flex-col justify-center items-start border-2 border-gray-700/70 rounded-2xl mb-4">
-                                  <span className="bg-black rounded-full px-2 mt-2">
-                                 Community Chat
-                                  </span>
-                                  <div className="flex items-center space-x-3 my-2">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                    <span className="text-xs font-bold">{selectedCreator.name.charAt(0)}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-sm">{selectedCreator.name}</span>
-                    <p className="text-gray-400 text-xs">Top Shareholder</p>
-                  </div>
-                  <button className="ml-auto bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded-full text-xs transition-colors">
-                    GET ACCESS
-                  </button>
-                </div>
-                                </div>
-
               {/* Holder Perks */}
-              <div className="bg-black rounded-2xl p-6 border border-gray-800">
-                <h3 className="font-bold mb-4">HOLDER PERKS</h3>
+              <div className="bg-black rounded-2xl p-6 border-2 border-gray-700/70">
+                <h3 className="font-bold mb-4 text-white">HOLDER PERKS</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <span className="text-orange-400">👏</span>
-                      <span className="text-sm">WEIGHTED CLAPS</span>
+                      <Zap className="w-4 h-4 text-orange-400" />
+                      <span className="text-sm text-gray-300">WEIGHTED CLAPS</span>
                     </div>
                     <Star className="w-4 h-4 text-yellow-400 fill-current" />
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <span className="text-purple-400">💬</span>
-                      <span className="text-sm">PRIVATE CHATROOM ACCESS</span>
+                      <MessageCircle className="w-4 h-4 text-purple-400" />
+                      <span className="text-sm text-gray-300">PRIVATE CHATROOM ACCESS</span>
                     </div>
                     <Star className="w-4 h-4 text-yellow-400 fill-current" />
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <span className="text-blue-400">🚀</span>
-                      <span className="text-sm">EARLY ACCESS TO CAMPAIGNS</span>
+                      <Lock className="w-4 h-4 text-blue-400" />
+                      <span className="text-sm text-gray-300">EARLY ACCESS TO CAMPAIGNS</span>
                     </div>
                     <Star className="w-4 h-4 text-yellow-400 fill-current" />
                   </div>
@@ -560,8 +610,11 @@ export default function CreatorTradingPlatform() {
               </div>
 
               {/* Market Data */}
-              <div className="bg-black rounded-2xl p-6 border border-gray-800">
-                <h3 className="font-bold mb-4">MARKET DATA</h3>
+              <div className="bg-black rounded-2xl p-6 border-2 border-gray-700/70">
+                <div className="flex items-center space-x-2 mb-4">
+                  <BarChart3 className="w-4 h-4 text-green-400" />
+                  <h3 className="font-bold text-white">MARKET DATA</h3>
+                </div>
                 
                 {/* Chart */}
                 <div className="h-32 mb-4">
@@ -588,9 +641,10 @@ export default function CreatorTradingPlatform() {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-400 text-sm">SNAP PRICE</span>
+                    <span className="text-white font-mono">${selectedCreator.price}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400 text-sm">MARKET PRICE</span>
+                    <span className="text-gray-400 text-sm">MARKET CAP</span>
                     <span className="text-green-400 font-mono">${formatNumber(selectedCreator.marketCap)}</span>
                   </div>
                   <div className="flex justify-between">
@@ -619,34 +673,52 @@ export default function CreatorTradingPlatform() {
           <h1 className="text-white text-2xl font-bold mb-6">Explore</h1>
           
           {/* Tabs */}
-          <div className="relative flex w-full rounded-lg p-1 bg-black">
-            {["creators", "communities", "myshares"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab as "creators" | "communities" | "myshares")}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium relative z-10 transition-colors ${
-                  activeTab === tab
-                    ? "text-white"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                {tab === "creators" ? "Creators" : tab === "communities" ? "Communities" : "My Shares"}
-              </button>
-            ))}
-            <motion.div
-              className="absolute h-[40px] rounded-full"
-              style={{
-                boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
-                backgroundColor: "#6E54FF",
-              }}
-              initial={false}
-              animate={{
-                left: activeTab === "creators" ? "0%" : activeTab === "communities" ? "33.33%" : "66.66%",
-                width: "33.33%",
-              }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            />
-          </div>
+   <div className="bg-gray-700/70 rounded-full mt-2 p-1">
+  <div>
+<div className="flex justify-around bg-black m-1 p-1 items-center rounded-full relative">
+  {["Creators", "Communities", "My Shares"].map((tab) => {
+    const tabValue =
+      tab === "Creators"
+        ? "creators"
+        : tab === "Communities"
+        ? "communities"
+        : "myshares";
+    return (
+      <button
+        key={tab}
+        onClick={() => setActiveTab(tabValue)}
+        className={`flex-1 text-center p-2 font-semibold text-xs sm:text-sm relative z-10 ${
+          activeTab === tabValue ? "text-white" : "text-gray-400"
+        }`}
+      >
+        {tab}
+      </button>
+    );
+  })}
+
+  <motion.div
+    className="absolute top-1 bottom-1 rounded-full bg-[#6E54FF]"
+    style={{
+      boxShadow:
+        "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
+    }}
+    initial={false}
+    animate={{
+      left:
+        activeTab === "creators"
+          ? "4px"
+          : activeTab === "communities"
+          ? "33.3333%"
+          : "66.6666%",
+      width: "33.3333%",
+    }}
+    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+  />
+</div>
+
+  </div>
+</div>
+
         </div>
 
         {/* Content */}
@@ -661,8 +733,8 @@ export default function CreatorTradingPlatform() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-black ${
-                      i % 2 === 0 ? "bg-[#10151A]/80" : "bg-[#1A1F25]/60"
+                    className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-black border-2 border-gray-700/70 ${
+                      i % 2 === 0 ? "bg-gray-900/30" : "bg-gray-900/10"
                     }`}
                     onClick={() => handleCreatorClick(creator)}
                   >
@@ -676,8 +748,8 @@ export default function CreatorTradingPlatform() {
                           />
                         </div>
                         {creator.isVerified && (
-                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-[#0D1117] flex items-center justify-center">
-                            <span className="text-white text-xs">✓</span>
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-gray-900 flex items-center justify-center">
+                            <Check className="w-2 h-2 text-white" />
                           </div>
                         )}
                       </div>
@@ -686,13 +758,17 @@ export default function CreatorTradingPlatform() {
                           <span className="text-white font-semibold">{creator.name}</span>
                         </div>
                         <div className="text-gray-400 text-sm">{creator.handle}</div>
-                        <div className="text-gray-400 text-xs">{creator.holders} holders</div>
+                        <div className="text-gray-400 text-xs flex items-center space-x-1">
+                          <Users className="w-3 h-3" />
+                          <span>{creator.holders} holders</span>
+                        </div>
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-white font-bold text-lg">${creator.price.toFixed(3)}</div>
-                      <div className={`text-sm ${creator.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {creator.change >= 0 ? '+' : ''}{creator.change.toFixed(2)}%
+                      <div className={`text-sm flex items-center justify-end space-x-1 ${creator.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        <TrendingUp className={`w-3 h-3 ${creator.change < 0 ? 'rotate-180' : ''}`} />
+                        <span>{creator.change >= 0 ? '+' : ''}{creator.change.toFixed(2)}%</span>
                       </div>
                       <div className="text-gray-400 text-xs">
                         {formatNumber(creator.marketCap)} cap
@@ -706,8 +782,8 @@ export default function CreatorTradingPlatform() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-black ${
-                      i % 2 === 0 ? "bg-[#10151A]/80" : "bg-[#1A1F25]/60"
+                    className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-black border-2 border-gray-700/70 ${
+                      i % 2 === 0 ? "bg-gray-900/30" : "bg-gray-900/10"
                     }`}
                     onClick={() => handleCommunityClick(community)}
                   >
@@ -721,8 +797,9 @@ export default function CreatorTradingPlatform() {
                       </div>
                       <div>
                         <div className="text-white font-semibold">{community.name}</div>
-                        <div className="text-gray-400 text-sm">
-                          {formatNumber(community.memberCount)} members
+                        <div className="text-gray-400 text-sm flex items-center space-x-1">
+                          <Users className="w-3 h-3" />
+                          <span>{formatNumber(community.memberCount)} members</span>
                         </div>
                       </div>
                     </div>
