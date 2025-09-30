@@ -217,11 +217,11 @@ function SocialFeedPageContent() {
   const renderContent = () => {
     switch (currentPage) {
       case "explore":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full max-w-3xl mt-6 lg:ml-80">
           <ExplorePage/>
         </div>
       case "notifications":
-        return <div className="w-full max-w-3xl lg:ml-80"> <NotificationPage/></div>
+        return <div className="w-full max-w-3xl mt-6 lg:ml-80"> <NotificationPage/></div>
       case "likes":
         return allPosts.length > 0 ? (
           <SnapCard
@@ -254,23 +254,23 @@ function SocialFeedPageContent() {
           </div>
         );
       case "bookmarks":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full max-w-3xl mt-6 lg:ml-80">
           <BookmarkPage />
         </div>;
       case "activity":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full max-w-3xl mt-6 lg:ml-80">
           <ActivityPage />{" "}
         </div>;
       case "profile":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full max-w-3xl lg:ml-80 mt-6">
           <ProfilePage user={mockUsers[0]} posts={[]} />{" "}
         </div>;
       case "search":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full max-w-3xl lg:ml-80 mt-6">
           <SearchPage />
         </div>;
       case "share":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full lg:pl-60 mt-6">
           <SharePage />
         </div>;
       case "messages":
@@ -285,7 +285,7 @@ function SocialFeedPageContent() {
              <>
             <Stories />
             {/* <SnapComposer /> */}
-   <div className="bg-gray-700/70 rounded-full mt-2 p-1">
+   <div className="bg-gray-700/70 rounded-full mb-4 p-1 ">
       <div>
         <div
           style={{ zIndex: 999 }}
@@ -295,7 +295,7 @@ function SocialFeedPageContent() {
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
-              className={`p-2 mb-2 font-semibold w-full relative z-10 text-xs sm:text-sm ${
+              className={`p-2 my-1 font-semibold w-full relative z-10 text-xs sm:text-sm ${
                 activeTab === tab ? "text-white" : "text-gray-400"
               }`}
             >
@@ -331,7 +331,7 @@ function SocialFeedPageContent() {
             <div className="mt-2 pt-2 rounded-2xl">
             
 
-              <div className="">
+              <div className="mt-2">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeTab}
@@ -561,7 +561,7 @@ function SocialFeedPageContent() {
         </div>
 
         {/* Right Sidebar - Only visible at 2xl breakpoint */}
-        {currentPage !== "messages" && session?.dbUser && (
+        {currentPage !== "messages" && currentPage !== "share" && session?.dbUser && (
           <div
             className="hidden md:block lg:block xl:block 2xl:block w-80 h-screen sticky top-0"
             style={{ zIndex: 999 }}

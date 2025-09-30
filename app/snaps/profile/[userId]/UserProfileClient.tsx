@@ -406,7 +406,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
 
       <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky bg-black py-4">
         {/* Back Button */}
-        <div className="mb-6">
+        {/* <div className="mb-6">
           <button
             onClick={handleBackNavigation}
             className="flex items-center space-x-2 text-dark-400 hover:text-white transition-colors"
@@ -414,7 +414,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
             <ArrowLeft className="w-5 h-5" />
             <span>Back</span>
           </button>
-        </div>
+        </div> */}
 
 <div className="border-2 border-gray-700/70 rounded-xl">
   <div className="p-4 border-b-2 border-gray-700/70">
