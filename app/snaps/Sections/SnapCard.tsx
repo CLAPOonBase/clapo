@@ -14,6 +14,7 @@ import CommentInputBar from './CommentInputBar'
 import { UserProfileHover } from '../../components/UserProfileHover'
 import PostTokenPrice from '../../components/PostTokenPrice'
 import PostTokenTrading from '../../components/PostTokenTrading'
+import { usePostTokenPrice } from '@/app/hooks/useGlobalPrice'
 
 type Props = {
   post: Post | ApiPost
@@ -273,6 +274,9 @@ const handleImageClick = (e: React.MouseEvent) => {
     }
   }
 
+    // const isApiPost = 'user_id' in post
+  // const postId = post.id.toString()
+  const { price: postTokenPrice, loading: priceLoading } = usePostTokenPrice(postId)
   const handleBookmark = async () => {
     if (!currentUserId || isLoading.bookmark) return
     
@@ -577,24 +581,29 @@ const handleImageClick = (e: React.MouseEvent) => {
                 </button>
               </div>
 
-              <div className='flex items-center space-x-4'>
-                <div className='flex items-center space-x-1 cursor-pointer' onClick={() => setShowTokenTrading(true)}>
-                  <Triangle className={`w-5 h-5 text-green-500 transition-all duration-200`} />
-                  <span className="text-sm hidden text-green-500 sm:block font-medium">$27.01</span>
+
+<div className='flex items-center space-x-4'>
+  {/* Post Token Price Display */}
+ <div className='flex items-center space-x-1 cursor-pointer' onClick={() => setShowTokenTrading(true)}>
+                  <Triangle className={`w-5 h-5 text-green-500 transition-all duration-200 ${priceLoading ? 'opacity-50' : ''}`} />
+                  <span className={`text-sm text-green-500 font-medium ${priceLoading ? 'opacity-50' : ''}`}>
+                    {priceLoading ? '...' : `$${postTokenPrice.toFixed(2)}`}
+                  </span>
                 </div>
 
-                <button 
-                  onClick={e => { 
-                    e.stopPropagation()
-                    handleBookmark()
-                  }}
-                  disabled={isLoading.bookmark || !currentUserId}
-                  className={`flex items-center space-x-1 text-gray-500 hover:text-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.bookmarked ? 'text-purple-500' : ''}`}
-                >
-                  <Bookmark className={`w-5 h-5 transition-all duration-200 ${userEngagement.bookmarked ? 'fill-purple-500 scale-110' : ''}`} />
-                  <span className="text-sm hidden sm:block font-medium">{localEngagement.bookmarks}</span>
-                </button>
-              </div>
+  <button 
+    onClick={e => { 
+      e.stopPropagation()
+      handleBookmark()
+    }}
+    disabled={isLoading.bookmark || !currentUserId}
+    className={`flex items-center space-x-1 text-gray-500 hover:text-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.bookmarked ? 'text-purple-500' : ''}`}
+  >
+    <Bookmark className={`w-5 h-5 transition-all duration-200 ${userEngagement.bookmarked ? 'fill-purple-500 scale-110' : ''}`} />
+    <span className="text-sm hidden sm:block font-medium">{localEngagement.bookmarks}</span>
+  </button>
+</div>
+
             </div>
 
             {/* Comments Dropdown */}
