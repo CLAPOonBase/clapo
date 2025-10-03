@@ -458,7 +458,7 @@ export default function MessagePage() {
       {/* Desktop Layout */}
       <div  className="hidden md:flex w-full shadow-2xl overflow-hidden">
         {/* Sidebar */}
-        <div  className="w-80 flex flex-col border-r border-gray-700/70 pr-2">
+        <div  className="w-64 flex flex-col border-r border-gray-700/70 pr-2">
           {/* Header */}
           <div className="">
             <TabNavigation 
@@ -501,7 +501,7 @@ export default function MessagePage() {
         {/* Chat Area */}
         <div className="flex w-full">
          <div className="flex w-full h-screen pb-4"> {/* Add padding to the full screen container */}
-  <div className="flex-1 flex flex-col h-full rounded-lg ">
+  <div className="flex-1 flex flex-col h-full border-r-2 border-gray-700/70 mr-2">
     <ChatHeader 
       activeTab={activeTab}
       currentThread={currentThread}
@@ -524,8 +524,8 @@ export default function MessagePage() {
 </div>
 
           {/* Selected Chat Details Sidebar */}
-          <div className=" 2xl:block w-96 border-l-2 border-gray-700/70 sticky top-0" style={{ zIndex: 999 }}>
-            <div className="p-6">
+          <div className="m-2 2xl:block w-96 border-gray-700/70 sticky top-0" style={{ zIndex: 999 }}>
+            <div className="">
               {selectedUserProfile ? (
                 <div className="border-2 border-gray-700/70 rounded-2xl p-6">
                   <div className="text-center mb-6">
