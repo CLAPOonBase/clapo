@@ -60,7 +60,7 @@ export const MessageItem = ({
             <img 
               src={message.sender_avatar || 'https://robohash.org/default.png'} 
               alt="Avatar" 
-              className={`w-10 h-10 rounded-full border-2 transition-all duration-200 shadow-sm ${
+              className={`w-8 h-8 rounded-full border-2 transition-all duration-200 shadow-sm ${
                 isOwnMessage 
                   ? 'border-blue-400/60 group-hover:border-blue-400/80' 
                   : 'border-slate-500/50 group-hover:border-slate-400/70'

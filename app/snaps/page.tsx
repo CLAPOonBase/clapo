@@ -9,7 +9,7 @@ import { SnapComposer } from "./Sections/SnapComposer";
 import SnapCard from "./Sections/SnapCard";
 import Image from "next/image";
 import ActivityFeed from './Sections/ActivityFeed'
-import { ExplorePage } from "./SidebarSection/ExplorePage";
+import  ExplorePage  from "./SidebarSection/ExplorePage";
 import NotificationPage from "./SidebarSection/NotificationPage";
 import BookmarkPage from "./SidebarSection/BookmarkPage";
 import { ProfilePage } from "./SidebarSection/ProfilePage";
