@@ -80,14 +80,14 @@ All backend implementation and deployment tasks
   - `GET /api/snaps/reputation/:userId/history` - Get reputation history
   - `POST /api/snaps/reputation/give` - Give reputation to another user
   - `GET /api/snaps/reputation/leaderboard` - Get leaderboard
-- **Register Routes**: Add to `backend/server.js`:
+- **Register Routes**: Add to `backend/server.js`: 
   ```javascript
   const reputationRoutes = require('./routes/reputation');
   app.use('/api/snaps/reputation', reputationRoutes);
   ```
 - **Testing**: Test each endpoint with Postman/curl
 - **Owner**: Backend Developer
-- **Priority**: HIGH
+- **Priority**: HIGH 
 
 ---
 
