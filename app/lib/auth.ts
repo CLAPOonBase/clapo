@@ -64,7 +64,7 @@ export const authOptions: NextAuthOptions = {
             
             if (searchResponse.users.length === 0) {
               try {
-                const directResponse = await fetch(`http://server.blazeswap.io/api/snaps/users/search?q=${encodeURIComponent(twitterUsername)}&limit=10&offset=0`);
+                const directResponse = await fetch(`https://server.blazeswap.io/api/snaps/users/search?q=${encodeURIComponent(twitterUsername)}&limit=10&offset=0`);
                 const directData = await directResponse.json();
                 
                 if (directData.users && directData.users.length > 0) {

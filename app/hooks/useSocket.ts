@@ -15,7 +15,7 @@ export const useSocket = (
   useEffect(() => {
     if (!session?.dbUser?.id) return;
 
-    const newSocket = io('http://server.blazeswap.io', {
+    const newSocket = io('https://server.blazeswap.io', {
       transports: ['websocket', 'polling'],
       timeout: 10000,
       reconnection: true,
@@ -45,7 +45,7 @@ export const useSocket = (
       if (data.threadId === selectedThread || message.thread_id === selectedThread) {
         try {
           const response = await fetch(
-            `http://server.blazeswap.io/api/snaps/message-threads/${selectedThread}/messages?limit=50&offset=0`
+            `https://server.blazeswap.io/api/snaps/message-threads/${selectedThread}/messages?limit=50&offset=0`
           );
           const data = await response.json();
           if (data.messages && Array.isArray(data.messages)) {
@@ -65,7 +65,7 @@ export const useSocket = (
       if (data.communityId === selectedCommunity || message.community_id === selectedCommunity) {
         try {
           const response = await fetch(
-            `http://server.blazeswap.io/api/snaps/communities/${selectedCommunity}/messages?limit=50&offset=0`
+            `https://server.blazeswap.io/api/snaps/communities/${selectedCommunity}/messages?limit=50&offset=0`
           );
           const data = await response.json();
           if (data.messages && Array.isArray(data.messages)) {

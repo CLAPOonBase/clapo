@@ -33,7 +33,7 @@ export default function MessagePage() {
     if (!session?.dbUser?.id) return
 
     try {
-      const response = await fetch('http://server.blazeswap.io/api/snaps/messages/direct-thread', {
+      const response = await fetch('https://server.blazeswap.io/api/snaps/messages/direct-thread', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

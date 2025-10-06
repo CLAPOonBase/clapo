@@ -1,5 +1,5 @@
 // Token API service for integrating with the backend token APIs
-const TOKEN_API_BASE_URL = process.env.NEXT_PUBLIC_TOKEN_API_URL || 'http://server.blazeswap.io/api'
+const TOKEN_API_BASE_URL = process.env.NEXT_PUBLIC_TOKEN_API_URL || 'https://server.blazeswap.io/api'
 
 export interface PostToken {
   uuid: string

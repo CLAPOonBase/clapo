@@ -53,3 +53,4 @@ export const useActivityFeed = () => {
     refreshActivity,
   };
 };
+
