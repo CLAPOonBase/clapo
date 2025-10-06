@@ -436,7 +436,7 @@ export default function CreatorTokenTrading({
           <div className="flex justify-between items-center mb-6">
             <div className="text-sm">
               <span className="text-gray-400">BALANCE: </span>
-              <span className="text-white">{formatPrice(portfolio?.totalValue || 0)}</span>
+              <span className="text-white">{formatPrice(portfolio?.currentValue || 0)}</span>
             </div>
             <div className="text-sm">
               <span className="text-gray-400">TOTAL FEE: </span>
