@@ -209,30 +209,30 @@ export const DMSection = ({
     return (
       <div
         onClick={() => onSelectThread(thread.id)}
-        className={`w-full px-3 py-2 rounded-2xl cursor-pointer transition-all duration-200 border-2 ${
+        className={`w-full px-2.5 py-1.5 rounded-xl cursor-pointer transition-all duration-200 border ${
           isSelected
             ? 'bg-gray-700/30 border-[#6e54ff] text-white'
             : 'border-transparent text-slate-300 hover:bg-gray-700/20 hover:text-white'
         }`}
       >
         {/* Header Section */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2.5">
           <button
             onClick={(e) => {
               e.stopPropagation();
               if (!thread.isGroup && otherUser?.id) handleUserClick(otherUser.id);
             }}
-            className="relative w-12 h-12 rounded-full overflow-hidden bg-slate-600 hover:opacity-80 transition-opacity flex-shrink-0"
+            className="relative w-9 h-9 rounded-full overflow-hidden bg-slate-600 hover:opacity-80 transition-opacity flex-shrink-0"
           >
             {otherUser?.avatar_url ? (
               <img src={otherUser.avatar_url} alt={otherUser.username || "User"} className="w-full h-full object-cover" />
             ) : (
-              <div className="flex items-center justify-center w-full h-full text-white font-bold text-lg">
+              <div className="flex items-center justify-center w-full h-full text-white font-bold text-sm">
                 {otherUser?.username?.charAt(0)?.toUpperCase() || "U"}
               </div>
             )}
             {/* Online Status Indicator */}
-            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 border-2 border-slate-800 rounded-full"></div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-slate-800 rounded-full"></div>
           </button>
           <div className="flex-1 min-w-0">
             <button
@@ -240,25 +240,25 @@ export const DMSection = ({
                 e.stopPropagation();
                 if (!thread.isGroup && otherUser?.id) handleUserClick(otherUser.id);
               }}
-              className={`text-sm font-medium truncate block text-left transition-colors ${
+              className={`text-xs font-medium truncate block text-left transition-colors ${
                 hasUnread ? "text-white" : ""
               } ${!thread.isGroup && otherUser?.id ? "hover:text-blue-300 hover:underline" : ""}`}
             >
               {thread.isGroup ? thread.name : otherUser?.username || "User"}
             </button>
             {lastMessage && (
-              <div className={`text-sm truncate leading-tight ${
+              <div className={`text-[11px] truncate leading-tight mt-0.5 ${
                 hasUnread ? "text-slate-200 font-medium" : "text-slate-400"
               }`}>
                 {lastMessage.sender_id === session?.dbUser?.id ? "You: " : ""}
-                {truncateMessage(lastMessage.content)}
+                {truncateMessage(lastMessage.content, 30)}
               </div>
             )}
           </div>
         </div>
 
         {/* Footer Section */}
-      
+
       </div>
     );
   };
@@ -268,20 +268,20 @@ export const DMSection = ({
       {/* Search Bar */}
       <div className="mb-2 flex-shrink-0">
         <div className="relative px-2">
-          <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
           <input
             type="text"
             placeholder="Search chats or users..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-10 py-2.5 bg-black text-white rounded-xl border border-gray-600/30 focus:border-purple-500/50 focus:outline-none focus:ring-1 focus:ring-purple-500/20 transition-all duration-200 text-sm"
+            className="w-full pl-10 pr-9 py-2 bg-black text-white rounded-lg border border-gray-600/30 focus:border-purple-500/50 focus:outline-none focus:ring-1 focus:ring-purple-500/20 transition-all duration-200 text-xs"
           />
           {searchQuery && (
             <button
               onClick={clearSearch}
-              className="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
@@ -290,7 +290,7 @@ export const DMSection = ({
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto min-h-0">
         {showSearchResults ? (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {loadingSearch ? (
               <div className="flex flex-col items-center justify-center py-12 text-slate-400">
                 <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mb-3"></div>
@@ -308,16 +308,16 @@ export const DMSection = ({
             )}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-1.5 px-1">
             {!state.messageThreads ? (
               <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-                <MessageCircle className="w-12 h-12 mb-3 opacity-50" />
-                <p className="text-sm">Loading chats...</p>
+                <MessageCircle className="w-10 h-10 mb-3 opacity-50" />
+                <p className="text-xs">Loading chats...</p>
               </div>
             ) : state.messageThreads.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-                <MessageCircle className="w-12 h-12 mb-3 opacity-50" />
-                <p className="text-sm text-center">No chats yet<br />Start a conversation!</p>
+                <MessageCircle className="w-10 h-10 mb-3 opacity-50" />
+                <p className="text-xs text-center">No chats yet<br />Start a conversation!</p>
               </div>
             ) : (
               state.messageThreads

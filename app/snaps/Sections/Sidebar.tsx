@@ -57,17 +57,17 @@ export default function Sidebar({
   const ProfileIcon = ({ isActive, className }: { isActive?: boolean; className?: string }) => {
     if (session?.dbUser?.avatar_url) {
       return (
-        <Image 
-          src={session.dbUser.avatar_url} 
-          alt="Profile" 
-          width={24} 
-          height={24} 
+        <Image
+          src={session.dbUser.avatar_url}
+          alt="Profile"
+          width={24}
+          height={24}
           className={`rounded-full ${className || "w-6 h-6"} object-cover border border-gray-600/40`}
         />
       );
     }
-    return isActive ? 
-      <User className={className || "w-6 h-6"} fill="currentColor" /> : 
+    return isActive ?
+      <User className={`${className || "w-6 h-6"} text-white`} /> :
       <User className={className || "w-6 h-6"} />;
   };
 
@@ -79,71 +79,71 @@ export default function Sidebar({
     showOnMobile?: boolean;
     showOnDesktop?: boolean;
   }[] = [
-    { 
-      label: "Home", 
-      value: "home", 
-      icon: <Home className="w-6 h-6" />, 
-      activeIcon: <Home className="w-6 h-6" fill="currentColor" />,
-      showOnMobile: true, 
-      showOnDesktop: true 
-    },
-      { 
-      label: "Explore", 
-      value: "explore", 
-      icon: <Telescope className="w-6 h-6" />, 
-      activeIcon: <Telescope className="w-6 h-6" fill="currentColor" />,
-      showOnMobile: true, 
-      showOnDesktop: true 
-    },
-      { 
-      label: "Creator Shares", 
-      value: "share", 
-      icon: <Blocks className="w-6 h-6" />, 
-      activeIcon: <Blocks className="w-6 h-6" fill="currentColor" />,
+    {
+      label: "Home",
+      value: "home",
+      icon: <Home className="w-6 h-6" />,
+      activeIcon: <Home className="w-6 h-6 text-white" />,
       showOnMobile: true,
-      showOnDesktop: true 
+      showOnDesktop: true
     },
-    { 
-      label: "Messages", 
-      value: "messages", 
-      icon: <MessageCircle className="w-6 h-6" />, 
-      activeIcon: <MessageCircle className="w-6 h-6" fill="currentColor" />,
+      {
+      label: "Explore",
+      value: "explore",
+      icon: <Telescope className="w-6 h-6" />,
+      activeIcon: <Telescope className="w-6 h-6 text-white" />,
       showOnMobile: true,
-      showOnDesktop: true 
+      showOnDesktop: true
     },
-    { 
-      label: "Notifications", 
-      value: "notifications", 
-      icon: <Bell className="w-6 h-6" />, 
-      activeIcon: <Bell className="w-6 h-6" fill="currentColor" />,
-      showOnMobile: true, 
-      showOnDesktop: true 
+      {
+      label: "Creator Shares",
+      value: "share",
+      icon: <Blocks className="w-6 h-6" />,
+      activeIcon: <Blocks className="w-6 h-6 text-white" />,
+      showOnMobile: true,
+      showOnDesktop: true
     },
-    // { 
-    //   label: "Activity", 
-    //   value: "activity", 
-    //   icon: <Activity className="w-6 h-6" />, 
-    //   activeIcon: <Activity className="w-6 h-6" fill="currentColor" />,
+    {
+      label: "Messages",
+      value: "messages",
+      icon: <MessageCircle className="w-6 h-6" />,
+      activeIcon: <MessageCircle className="w-6 h-6 text-white" />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+    {
+      label: "Notifications",
+      value: "notifications",
+      icon: <Bell className="w-6 h-6" />,
+      activeIcon: <Bell className="w-6 h-6 text-white" />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+    // {
+    //   label: "Activity",
+    //   value: "activity",
+    //   icon: <Activity className="w-6 h-6" />,
+    //   activeIcon: <Activity className="w-6 h-6 text-white" />,
     //   showOnMobile: true,
-    //   showOnDesktop: true 
+    //   showOnDesktop: true
     // },
-    
 
-      { 
-      label: "Wallet", 
-      value: "wallet", 
-      icon: <Wallet className="w-6 h-6" />, 
-      activeIcon: <Wallet className="w-6 h-6" fill="currentColor" />,
+
+      {
+      label: "Wallet",
+      value: "wallet",
+      icon: <Wallet className="w-6 h-6" />,
+      activeIcon: <Wallet className="w-6 h-6 text-white" />,
       showOnMobile: true,
-      showOnDesktop: true 
+      showOnDesktop: true
     },
-      { 
-      label: "Profile", 
-      value: "profile", 
-      icon: <ProfileIcon isActive={false} />, 
+      {
+      label: "Profile",
+      value: "profile",
+      icon: <ProfileIcon isActive={false} />,
       activeIcon: <ProfileIcon isActive={true} />,
       showOnMobile: true,
-      showOnDesktop: true 
+      showOnDesktop: true
     },
 
   ];

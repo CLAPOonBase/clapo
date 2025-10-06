@@ -11,6 +11,7 @@ interface MessageListProps {
     created_at: string;
     sender_username?: string;
     sender_avatar?: string;
+    media_url?: string;
   }>;
   currentUserId: string | null;
 }
@@ -30,7 +31,7 @@ const getMessageGrouping = (
   return {
     isFirstInGroup,
     isLastInGroup,
-    showAvatar: isLastInGroup // ✅ show avatar only on last message
+    showAvatar: isFirstInGroup // Show avatar on first message of group
   };
 };
 
@@ -128,9 +129,9 @@ export const MessageList = ({ messages, currentUserId }: MessageListProps) => {
     <div
       ref={messagesContainerRef}
       onScroll={handleScroll}
-      className="flex-1 overflow-y-auto p-4 relative scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent"
+      className="flex-1 overflow-y-auto py-4 relative scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent"
     >
-      <div className="space-y-0">
+      <div className="space-y-0.5">
         {sortedMessages.map((message, index) => {
           const { isFirstInGroup, isLastInGroup, showAvatar } = getMessageGrouping(sortedMessages, index);
           const prevMessage = sortedMessages[index - 1];

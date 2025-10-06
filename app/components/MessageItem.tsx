@@ -8,6 +8,7 @@ interface MessageItemProps {
     created_at: string;
     sender_username?: string;
     sender_avatar?: string;
+    media_url?: string;
   };
   isOwnMessage: boolean;
   showAvatar?: boolean; // Whether to show avatar and username (first message in group)
@@ -40,82 +41,99 @@ export const MessageItem = ({
   };
 
   return (
-    <div className={`group flex items-start transition-all duration-200 hover:bg-slate-800/20 ${
+    <div className={`group flex items-start transition-all duration-200 ${
       isOwnMessage ? 'flex-row-reverse' : 'flex-row'
     } ${
-      showAvatar 
-        ? 'gap-3 px-3 py-0.5' 
-        : isOwnMessage 
-          ? 'pr-6 pl-3 py-0.5' 
-          : 'pl-6 pr-3 py-0.5'
-    } ${isLastInGroup ? 'mb-1' : 'mb-1'}`}>
-      
-      {/* Avatar - only show when showAvatar is true (last message of group) */}
-      {showAvatar ? (
-        <div className="flex-shrink-0">
+      isOwnMessage ? 'px-4 py-0.5' : 'px-3 py-0.5'
+    } ${isLastInGroup ? 'mb-2' : 'mb-0.5'}`}>
+
+      {/* Avatar - only show for other users on first message */}
+      {!isOwnMessage && isFirstInGroup ? (
+        <div className="flex-shrink-0 mt-4">
           <button
             onClick={() => handleUserClick(message.sender_id)}
             className="hover:opacity-80 transition-opacity cursor-pointer"
           >
-            <img 
-              src={message.sender_avatar || 'https://robohash.org/default.png'} 
-              alt="Avatar" 
-              className={`w-10 h-10 rounded-full border-2 transition-all duration-200 shadow-sm ${
-                isOwnMessage 
-                  ? 'border-blue-400/60 group-hover:border-blue-400/80' 
-                  : 'border-slate-500/50 group-hover:border-slate-400/70'
-              }`}
+            <img
+              src={message.sender_avatar || 'https://robohash.org/default.png'}
+              alt="Avatar"
+              className="w-7 h-7 rounded-full"
             />
           </button>
         </div>
-      ) : (
+      ) : !isOwnMessage ? (
         // Placeholder space to maintain alignment for grouped messages
-        <div className="w-10 flex-shrink-0" />
-      )}
+        <div className="w-7 flex-shrink-0" />
+      ) : null}
 
       {/* Message Content */}
-      <div className={`flex flex-col max-w-[70%] ${
+      <div className={`flex flex-col max-w-[75%] ${
         isOwnMessage ? 'items-end' : 'items-start'
-      } ${showAvatar ? 'gap-1' : 'gap-0.5'}`}>
-        
+      } ${isOwnMessage ? '' : 'ml-2'}`}>
+
         {/* Username - only show on first message of group */}
-        {isFirstInGroup && message.sender_username && (
+        {!isOwnMessage && isFirstInGroup && message.sender_username && (
           <button
             onClick={() => handleUserClick(message.sender_id)}
-            className={`text-sm font-medium transition-colors duration-200 hover:underline cursor-pointer ${
-              isOwnMessage 
-                ? 'text-blue-300 group-hover:text-blue-200' 
-                : 'text-slate-300 group-hover:text-slate-200'
-            }`}>
+            className="text-xs font-medium text-gray-400 hover:text-gray-300 transition-colors duration-200 hover:underline cursor-pointer mb-1"
+          >
             {message.sender_username}
           </button>
         )}
 
         {/* Message Bubble */}
-        <div className={`relative rounded-2xl px-4 py-2 shadow-sm transition-all duration-200 ${
-          isOwnMessage 
-            ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-500 hover:to-blue-600' 
-            : 'bg-slate-800/60 text-slate-100 border border-slate-700/40 hover:bg-slate-800/80 hover:border-slate-600/50'
+        <div className={`relative rounded-3xl transition-all duration-200 ${
+          message.media_url ? 'p-0' : 'px-4 py-2'
         } ${
-          // Adjust corner rounding based on position in group
-          isFirstInGroup && !isLastInGroup
-            ? isOwnMessage ? 'rounded-tr-md rounded-br-md' : 'rounded-tl-md rounded-bl-md'
-            : !isFirstInGroup && !isLastInGroup
-            ? isOwnMessage ? 'rounded-tr-md rounded-br-md' : 'rounded-tl-md rounded-bl-md'
-            : !isFirstInGroup && isLastInGroup
-            ? isOwnMessage ? 'rounded-br-md' : 'rounded-bl-md'
-            : ''
+          isOwnMessage
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-800/80 text-white'
         }`}>
-          <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">
-            {message.content}
-          </p>
-          
+
+          {/* Media Attachment */}
+          {message.media_url && (
+            <div className="rounded-2xl overflow-hidden mb-1">
+              {message.media_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                <img
+                  src={message.media_url}
+                  alt="Shared image"
+                  className="max-w-full max-h-64 object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => window.open(message.media_url, '_blank')}
+                />
+              ) : message.media_url.match(/\.(mp4|webm|ogg|mov)$/i) ? (
+                <video
+                  src={message.media_url}
+                  controls
+                  className="max-w-full max-h-64 object-contain"
+                />
+              ) : (
+                <a
+                  href={message.media_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-2 hover:underline text-blue-300 text-xs"
+                >
+                  View attachment
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Text Content */}
+          {message.content && (
+            <p className={`text-sm leading-relaxed break-words whitespace-pre-wrap ${
+              message.media_url ? 'px-4 py-2' : ''
+            }`}>
+              {message.content}
+            </p>
+          )}
+
         </div>
 
         {/* Timestamp - only show on last message of group */}
         {isLastInGroup && (
-          <span className={`text-xs text-slate-500 group-hover:text-slate-400 transition-colors duration-200 mt-1 ${
-            isOwnMessage ? 'mr-2' : 'ml-2'
+          <span className={`text-[10px] text-gray-500 transition-colors duration-200 mt-1 ${
+            isOwnMessage ? 'mr-1' : 'ml-1'
           }`}>
             {(() => {
               const messageDate = new Date(message.created_at);

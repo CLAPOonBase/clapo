@@ -31,11 +31,11 @@ export const ChatHeader = ({
     return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
   };
   return (
-    <div className="px-6 py-2 border-b border-slate-700/50">
+    <div className="px-5 py-3 border-b border-gray-800/60 bg-black">
       {activeTab === 'dms' && currentThread ? (
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           {/* Avatar */}
-          <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-500">
+          <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-500 ring-2 ring-gray-800 shadow-lg">
             <img
               src={
                 currentThread.isGroup
@@ -45,43 +45,54 @@ export const ChatHeader = ({
               alt="user avatar"
               className="w-full h-full object-cover"
             />
-
+            {/* Online status indicator */}
+            <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-black"></div>
           </div>
 
           {/* Name and type */}
-          <div>
-            <h3 className="text-base font-medium text-white">
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-white mb-0.5">
               {currentThread.isGroup
                 ? currentThread.name
                 : otherUser?.username || 'User'}
             </h3>
-            <p className="text-xs text-slate-400 flex items-center">
-              {currentThread.isGroup ? 'Group Chat' : ''}
+            <p className="text-xs text-gray-400 flex items-center">
+              {currentThread.isGroup ? (
+                <>
+                  <Dot className="w-3 h-3 text-green-400" />
+                  Group Chat
+                </>
+              ) : (
+                <>
+                  <Dot className="w-3 h-3 text-green-400" />
+                  Active now
+                </>
+              )}
             </p>
           </div>
-          
         </div>
       ) : activeTab === 'communities' && currentCommunity ? (
-        <div className="flex items-center space-x-4 justify-between">
-       <div className='flex gap-4 items-center'>
-           <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-            <Hash className="w-7 h-7 text-white" />
+        <div className="flex items-center space-x-3 justify-between">
+       <div className='flex gap-3 items-center'>
+           <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg ring-2 ring-gray-800">
+            <Hash className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-base font-medium text-white">
+            <h3 className="text-sm font-semibold text-white mb-0.5">
               {currentCommunity.name}
             </h3>
-            {/* <p className="text-sm text-slate-400">
-              {currentCommunity.description}
-            </p> */}
-                      <span>Pool: <span>$40000</span></span>
-
+            <p className="text-xs text-gray-400">
+              Pool: <span className="text-blue-400 font-medium">$40000</span>
+            </p>
           </div>
        </div>
-            <span>Min. Share <span>10</span></span>
+            <div className="text-right">
+              <p className="text-xs text-gray-400">Min. Share</p>
+              <p className="text-xs text-purple-400 font-semibold">10</p>
+            </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-8 pt-72 text-slate-400">
+        <div className="flex flex-col items-center justify-center py-8 pt-72 text-gray-400">
           <MessageCircle className="w-16 h-16 mb-4 opacity-30" />
           <p className="text-lg font-medium mb-2">
             {activeTab === 'dms'

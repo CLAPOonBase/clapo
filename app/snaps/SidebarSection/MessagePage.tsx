@@ -81,8 +81,16 @@ export default function MessagePage() {
 
   const currentThread = state.messageThreads?.find(t => t.id === selectedThread);
   const currentCommunity = state.communities?.find(c => c.id === selectedCommunity);
-  const currentMessages = activeTab === 'dms' 
-    ? state.threadMessages[selectedThread || ''] || []
+  const currentMessages = activeTab === 'dms'
+    ? (state.threadMessages[selectedThread || ''] || []).map((msg: any) => ({
+        id: msg.id,
+        sender_id: msg.sender_id ?? msg.senderId ?? '',
+        content: msg.content,
+        created_at: msg.created_at ?? msg.createdAt ?? '',
+        sender_username: msg.sender_username ?? msg.senderUsername,
+        sender_avatar: msg.sender_avatar ?? msg.senderAvatar,
+        media_url: msg.media_url ?? msg.mediaUrl,
+      }))
     : (state.communityMessages[selectedCommunity || ''] || []).map((msg: any) => ({
         id: msg.id,
         sender_id: msg.sender_id ?? msg.senderId ?? '',
@@ -90,17 +98,18 @@ export default function MessagePage() {
         created_at: msg.created_at ?? msg.createdAt ?? '',
         sender_username: msg.sender_username ?? msg.senderUsername,
         sender_avatar: msg.sender_avatar ?? msg.senderAvatar,
+        media_url: msg.media_url ?? msg.mediaUrl,
       }));
 
   // Update selected user profile based on current thread or community
   useEffect(() => {
     if (currentThread && currentThread.participants) {
-      const otherUser = currentThread.participants.find(p => p.id !== session?.dbUser?.id);
+      const otherUser = currentThread.participants.find(p => p.user_id !== session?.dbUser?.id);
       if (otherUser) {
         setSelectedUserProfile({
           username: otherUser.username,
           name: otherUser.name || otherUser.username,
-          avatar: otherUser.avatar || '/api/placeholder/80/80',
+          avatar: otherUser.avatar_url || otherUser.avatar || '/4.png',
           bio: otherUser.bio || 'No bio available',
           status: 'online',
           lastSeen: otherUser.lastSeen || 'Recently',
@@ -112,7 +121,7 @@ export default function MessagePage() {
       setSelectedUserProfile({
         username: currentCommunity.name,
         name: currentCommunity.name,
-        avatar: currentCommunity.creator_avatar || '/api/placeholder/80/80',
+        avatar: currentCommunity.creator_avatar || '/4.png',
         bio: currentCommunity.description || 'No description available',
         status: 'community',
         members: currentCommunity.member_count || 0,
@@ -144,43 +153,52 @@ export default function MessagePage() {
     }
   }, [session?.dbUser?.id, getCommunities, getMessageThreads]);
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, mediaUrl?: string) => {
     if (!session?.dbUser?.id) return;
 
     if (activeTab === 'dms' && selectedThread) {
-      await handleSendDMMessage(content);
+      await handleSendDMMessage(content, mediaUrl);
     } else if (activeTab === 'communities' && selectedCommunity) {
-      await handleSendCommunityMessage(content);
+      await handleSendCommunityMessage(content, mediaUrl);
     }
   };
 
-  const handleSendDMMessage = async (content: string) => {
+  const handleSendDMMessage = async (content: string, mediaUrl?: string) => {
     if (!selectedThread || !socket) return;
+
+    console.log('🔍 handleSendDMMessage called:', { content, mediaUrl, threadId: selectedThread });
 
     try {
       if (isConnected) {
-        (socket as any).emit('send_dm_message', { 
-          userId: session.dbUser.id, 
-          content, 
-          threadId: selectedThread 
+        console.log('📡 Sending via WebSocket');
+        (socket as any).emit('send_dm_message', {
+          userId: session.dbUser.id,
+          content,
+          mediaUrl,
+          threadId: selectedThread
         }, async (response: { success: boolean; message?: string }) => {
+          console.log('📥 WebSocket response:', response);
           if (!response.success) {
+            console.log('⚠️ WebSocket failed, falling back to REST API');
             await sendMessage(selectedThread, {
               senderId: session.dbUser.id,
-              content
+              content,
+              mediaUrl
             });
           }
           await getThreadMessages(selectedThread);
         });
       } else {
+        console.log('🌐 Sending via REST API (no WebSocket)');
         await sendMessage(selectedThread, {
           senderId: session.dbUser.id,
-          content
+          content,
+          mediaUrl
         });
         await getThreadMessages(selectedThread);
       }
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error('❌ Failed to send message:', error);
     }
   };
 
@@ -206,10 +224,10 @@ export default function MessagePage() {
     }
   }
 
-  const handleSendCommunityMessage = async (content: string) => {
+  const handleSendCommunityMessage = async (content: string, mediaUrl?: string) => {
     if (!selectedCommunity || !session?.dbUser?.id) return;
 
-    console.log('🔍 Sending community message:', { content, communityId: selectedCommunity, userId: session.dbUser.id });
+    console.log('🔍 Sending community message:', { content, mediaUrl, communityId: selectedCommunity, userId: session.dbUser.id });
 
     try {
       if (isConnected && socket) {
@@ -217,6 +235,7 @@ export default function MessagePage() {
         (socket as any).emit('send_community_message', {
           userId: session.dbUser.id,
           content,
+          mediaUrl,
           communityId: selectedCommunity
         }, async (response: { success: boolean; message?: string }) => {
           console.log('🔍 WebSocket response:', response);
@@ -224,7 +243,8 @@ export default function MessagePage() {
             console.log('🔍 Falling back to REST API');
             await sendCommunityMessage(selectedCommunity, {
               senderId: session.dbUser.id,
-              content
+              content,
+              mediaUrl
             });
           }
           await fetchCommunityMessages();
@@ -233,7 +253,8 @@ export default function MessagePage() {
         console.log('🔍 Using REST API for message');
         await sendCommunityMessage(selectedCommunity, {
           senderId: session.dbUser.id,
-          content
+          content,
+          mediaUrl
         });
         await fetchCommunityMessages();
       }
@@ -404,7 +425,7 @@ export default function MessagePage() {
       {/* Desktop Layout */}
       <div  className="hidden md:flex w-full shadow-2xl overflow-hidden">
         {/* Sidebar */}
-        <div className="w-80 flex flex-col border-r border-gray-700/50 pr-2">
+        <div className="w-72 flex flex-col border-r border-gray-700/50 pr-2">
           {/* Header */}
           <div className="pt-4">
             <TabNavigation
@@ -421,7 +442,7 @@ export default function MessagePage() {
           {/* Content */}
           <div className="flex-1 overflow-y-auto scrollbar-hide">
             {activeTab === 'dms' ? (
-              <DMSection 
+              <DMSection
                 // dmSection={dmSection}
                 state={state}
                 session={session}
@@ -432,7 +453,7 @@ export default function MessagePage() {
                 onStartChat={handleStartChatWithUser}
               />
             ) : (
-              <CommunitySection 
+              <CommunitySection
                 communitySection={communitySection}
                 state={state}
                 session={session}
@@ -445,23 +466,23 @@ export default function MessagePage() {
         </div>
 
         {/* Chat Area */}
-        <div className="flex w-full">
-         <div className="flex w-full h-screen pb-4"> {/* Add padding to the full screen container */}
-  <div className="flex-1 flex flex-col h-full rounded-lg ">
-    <ChatHeader 
+        <div className="flex w-full pl-4">
+         <div className="flex w-full h-screen pt-4 pb-4"> {/* Added top padding to match sidebar */}
+  <div className="flex-1 flex flex-col h-full bg-black rounded-2xl border border-gray-800/60 overflow-hidden shadow-2xl">
+    <ChatHeader
       activeTab={activeTab}
       currentThread={currentThread}
       currentCommunity={currentCommunity}
       session={session}
     />
 
-    <MessageList 
-      messages={currentMessages} 
-      currentUserId={session?.dbUser?.id} 
+    <MessageList
+      messages={currentMessages}
+      currentUserId={session?.dbUser?.id}
     />
 
-    <div className="px-6 py-4">
-      <MessageInput 
+    <div className="px-5 py-3 bg-black border-t border-gray-800/60">
+      <MessageInput
         onSend={handleSendMessage}
         disabled={!selectedThread && !selectedCommunity}
       />
@@ -470,7 +491,7 @@ export default function MessagePage() {
 </div>
 
           {/* Selected Chat Details Sidebar */}
-          <div className="hidden lg:block w-96 border-l border-gray-700/50 sticky top-0" style={{ zIndex: 999 }}>
+          <div className="hidden lg:block w-[420px] border-l border-gray-700/50 pt-4" style={{ zIndex: 999 }}>
             <div className="p-4">
               {selectedUserProfile ? (
                 <div className="border border-gray-700/50 rounded-2xl p-4">
