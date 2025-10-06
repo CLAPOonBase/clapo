@@ -80,6 +80,7 @@ export interface ProfileResponse {
 }
 
 export interface UpdateProfileRequest {
+  username?: string
   bio?: string
   avatarUrl?: string
 }

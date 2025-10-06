@@ -319,9 +319,9 @@ export default function MessagePage() {
           mobileView === 'chat' ? '-translate-x-full absolute' : 'translate-x-0'
         }`}>
           {/* Header */}
-          <div className="p-4 border-b border-slate-700/50">
+          <div className="p-4 border-b border-slate-700/30">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-[#6E54FF]">
+              <h2 className="text-lg font-semibold text-white">
                 Messages
               </h2>
               <ConnectionStatus isConnected={isConnected} />
@@ -369,12 +369,12 @@ export default function MessagePage() {
           mobileView === 'sidebar' ? 'translate-x-full absolute' : 'translate-x-0'
         }`}>
           {/* Back Button + Chat Header */}
-          <div className="flex items-center p-4 border-b border-slate-700/50">
+          <div className="flex items-center p-4 border-b border-slate-700/30">
             <button
               onClick={handleBackToSidebar}
-              className="mr-3 p-2 hover:bg-slate-700 rounded-lg transition-colors"
+              className="mr-3 p-2 hover:bg-gray-700/30 rounded-lg transition-colors"
             >
-              <ArrowLeft className="w-5 h-5 text-slate-300" />
+              <ArrowLeft className="w-4 h-4 text-gray-400" />
             </button>
             <div className="flex-1">
               <ChatHeader 
@@ -404,10 +404,10 @@ export default function MessagePage() {
       {/* Desktop Layout */}
       <div  className="hidden md:flex w-full shadow-2xl overflow-hidden">
         {/* Sidebar */}
-        <div  className="w-80 flex flex-col border-r border-gray-700/70 pr-2">
+        <div className="w-80 flex flex-col border-r border-gray-700/50 pr-2">
           {/* Header */}
-          <div className="">
-            <TabNavigation 
+          <div className="pt-4">
+            <TabNavigation
               activeTab={activeTab}
               setActiveTab={setActiveTab}
               // dmSection={dmSection}
@@ -419,7 +419,7 @@ export default function MessagePage() {
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto scrollbar-hide scrollbar-thumb-slate-600 scrollbar-track-transparent">
+          <div className="flex-1 overflow-y-auto scrollbar-hide">
             {activeTab === 'dms' ? (
               <DMSection 
                 // dmSection={dmSection}
@@ -470,74 +470,74 @@ export default function MessagePage() {
 </div>
 
           {/* Selected Chat Details Sidebar */}
-          <div className=" 2xl:block w-96 border-l-2 border-gray-700/70 sticky top-0" style={{ zIndex: 999 }}>
-            <div className="p-6">
+          <div className="hidden lg:block w-96 border-l border-gray-700/50 sticky top-0" style={{ zIndex: 999 }}>
+            <div className="p-4">
               {selectedUserProfile ? (
-                <div className="border-2 border-gray-700/70 rounded-2xl p-6">
-                  <div className="text-center mb-6">
-                    <img 
-                      src={selectedUserProfile.avatar} 
+                <div className="border border-gray-700/50 rounded-2xl p-4">
+                  <div className="text-center mb-4">
+                    <img
+                      src={selectedUserProfile.avatar}
                       alt={selectedUserProfile.name}
-                      className="w-24 h-24 rounded-full object-cover mx-auto mb-4"
+                      className="w-16 h-16 rounded-full object-cover mx-auto mb-3"
                     />
-                    <h3 className="text-xl font-bold text-white mb-1">
+                    <h3 className="text-lg font-semibold text-white mb-1">
                       {selectedUserProfile.name}
                     </h3>
-                    <p className="text-sm text-slate-400 mb-2">
+                    <p className="text-xs text-gray-400 mb-2">
                       @{selectedUserProfile.username}
                     </p>
                     
                     {selectedUserProfile.type === 'community' ? (
-                      <div className="space-y-2">
-                        <div className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm inline-block">
+                      <div className="space-y-1.5">
+                        <div className="bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full text-xs inline-block">
                           Community
                         </div>
-                        <p className="text-sm text-green-400">
+                        <p className="text-xs text-green-400">
                           {selectedUserProfile.members} members
                         </p>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-gray-500">
                           Created by @{selectedUserProfile.createdBy}
                         </p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-gray-600">
                           {new Date(selectedUserProfile.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        <div className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-sm inline-block">
+                      <div className="space-y-1.5">
+                        <div className="bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full text-xs inline-block">
                           {selectedUserProfile.status}
                         </div>
                         {selectedUserProfile.mutualFollowers && (
-                          <p className="text-sm text-blue-400">
+                          <p className="text-xs text-blue-400">
                             {selectedUserProfile.mutualFollowers} mutual followers
                           </p>
                         )}
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-gray-500">
                           Last seen: {selectedUserProfile.lastSeen}
                         </p>
                       </div>
                     )}
                   </div>
                   
-                  <div className="border-t border-gray-700/50 pt-4">
-                    <h4 className="text-sm font-semibold text-slate-300 mb-2">
+                  <div className="border-t border-gray-700/30 pt-3">
+                    <h4 className="text-xs font-medium text-gray-300 mb-2">
                       {selectedUserProfile.type === 'community' ? 'Description' : 'Bio'}
                     </h4>
-                    <p className="text-sm text-slate-300 leading-relaxed">
+                    <p className="text-xs text-gray-400 leading-relaxed">
                       {selectedUserProfile.bio}
                     </p>
                   </div>
 
                   {selectedUserProfile.type === 'community' && (
-                    <div className="border-t border-gray-700/50 pt-4 mt-4">
-                      <h4 className="text-sm font-semibold text-slate-300 mb-3">
+                    <div className="border-t border-gray-700/30 pt-3 mt-3">
+                      <h4 className="text-xs font-medium text-gray-300 mb-2">
                         Community Actions
                       </h4>
-                      <div className="space-y-2">
-                        <button className="w-full bg-[#6E54FF] hover:bg-[#5940CC] text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                      <div className="space-y-1.5">
+                        <button className="w-full bg-[#6E54FF] hover:bg-[#5940CC] text-white text-xs py-1.5 px-3 rounded-lg transition-colors">
                           View Members
                         </button>
-                        <button className="w-full bg-slate-700 hover:bg-slate-600 text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                        <button className="w-full bg-gray-700/50 hover:bg-gray-600/50 text-white text-xs py-1.5 px-3 rounded-lg transition-colors">
                           Community Settings
                         </button>
                       </div>
@@ -545,15 +545,15 @@ export default function MessagePage() {
                   )}
 
                   {selectedUserProfile.type === 'user' && (
-                    <div className="border-t border-gray-700/50 pt-4 mt-4">
-                      <h4 className="text-sm font-semibold text-slate-300 mb-3">
+                    <div className="border-t border-gray-700/30 pt-3 mt-3">
+                      <h4 className="text-xs font-medium text-gray-300 mb-2">
                         User Actions
                       </h4>
-                      <div className="space-y-2">
-                        <button className="w-full bg-[#6E54FF] hover:bg-[#5940CC] text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                      <div className="space-y-1.5">
+                        <button className="w-full bg-[#6E54FF] hover:bg-[#5940CC] text-white text-xs py-1.5 px-3 rounded-lg transition-colors">
                           View Profile
                         </button>
-                        <button className="w-full bg-slate-700 hover:bg-slate-600 text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                        <button className="w-full bg-gray-700/50 hover:bg-gray-600/50 text-white text-xs py-1.5 px-3 rounded-lg transition-colors">
                           Block User
                         </button>
                       </div>
@@ -561,12 +561,12 @@ export default function MessagePage() {
                   )}
                 </div>
               ) : (
-                <div className="border-2 border-gray-700/70 rounded-2xl p-6 text-center">
-                  <MessageCircle className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-slate-400 mb-2">
+                <div className="border border-gray-700/50 rounded-2xl p-4 text-center">
+                  <MessageCircle className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                  <h3 className="text-sm font-medium text-gray-400 mb-1">
                     No chat selected
                   </h3>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-xs text-gray-500">
                     Select a conversation to view details
                   </p>
                 </div>

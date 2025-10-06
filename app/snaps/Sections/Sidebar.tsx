@@ -184,7 +184,7 @@ export default function Sidebar({
   const closeDialog = () => setActiveDialog(null);
 
   const shouldCollapse = !alwaysExpanded && collapsibleItems.includes(currentPage);
-  const sidebarWidth = shouldCollapse ? (isHovered ? 220 : 85) : 220;
+  const sidebarWidth = shouldCollapse ? (isHovered ? 240 : 85) : 240;
 
   const isLoggedIn = !!session;
   const isWalletConnected = !!address;
@@ -442,53 +442,35 @@ export default function Sidebar({
                 className="space-y-3"
               >
 
-                <span className="flex items-center justify-between gap-2"> <span className="text-gray-500">Explore</span>
-                 <span><LogOut  onClick={() => openDialog("x")} className="text-gray-400 h-4"/></span></span>
-                {/* Desktop Buttons (only lg and up) */}
-            {/* <div className="hidden lg:flex flex-col gap-2 items-center">
-  <button
-    onClick={() => openDialog("x")}
-    className="inline-flex items-center justify-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 gap-[6px] min-w-[105px] transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)] bg-[hsla(220,10%,12%,1)] text-white shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000] hover:bg-[hsla(220,10%,18%,1)] px-3 py-1.5 text-xs rounded-full leading-[24px] font-bold w-full sm:w-auto whitespace-nowrap"
-  >
-    <Image
-      src={session?.dbUser?.avatar_url || "https://pbs.twimg.com/profile_images/1955359038532653056/OSHY3ewP_400x400.jpg"}
-      alt=""
-      width={1000}
-      height={1000}
-      className="rounded-full h-8 w-8 bg-black border border-gray-700/70"
-    />
-    {isLoggedIn ? session?.dbUser?.username || "CONNECTED" : "CONNECT X"}
-  </button>
-</div> */}
+                <div className="space-y-3">
+                  <h3 className="text-white text-sm font-semibold tracking-wide uppercase">
+                    EXPLORE MORE
+                  </h3>
 
-                
-            <div aria-disabled className="space-y-2">
-             
-  {bottomNavItems.map((item) => (
-    <button 
-    disabled={isLoggedIn}
-      key={item.name}
-      // onClick={() => {
-      //   if (item.name === "Opinio") {
-      //     handleOpinioClick();
-      //   } else if (item.name === "Claps") {
-      //     handleSnapsClick();
-      //   }
-      // }}
-      className="w-full flex items-center gap-3 px-2 py-1 rounded-2xl bg-gray-700/30 border-2 border-[#6e54ff] hover:bg-gray-700/50 transition-colors"
-    >
-      <Image
-        src={item.img}
-        alt={item.name}
-        width={1000}
-        height={1000}
-        className="object-contain w-full h-10 py-2 rounded-md"
-      />
-      <Lock className="text-dark-700/80"/>
-      {/* <span className="text-gray-300 font-medium text-sm">{item.name}</span> */}
-    </button>
-  ))}
-</div>
+                  <div className="space-y-2">
+                    {bottomNavItems.map((item) => (
+                      <button
+                        key={item.name}
+                        onClick={() => {
+                          if (item.name === "Opinio") {
+                            handleOpinioClick();
+                          } else if (item.name === "Claps") {
+                            handleSnapsClick();
+                          }
+                        }}
+                        className="w-full px-4 py-3 rounded-3xl bg-[#1A1A1A] border-2 border-[#6E54FF] hover:bg-[#2A2A2A] transition-all duration-200 flex items-center justify-center"
+                      >
+                        <Image
+                          src={item.img}
+                          alt={item.name}
+                          width={120}
+                          height={40}
+                          className="object-contain h-8 w-auto"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
               </motion.div>
             )}
@@ -504,7 +486,7 @@ export default function Sidebar({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[10000]"
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[10000]"
       onClick={() => setActiveDialog(null)}
     >
       <div onClick={(e) => e.stopPropagation()}>

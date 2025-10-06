@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { motion } from "framer-motion"
 import Image from 'next/image'
 import { User, Post } from "@/app/types"
-import { Ellipsis, Eye, Heart, MessageCircle, Repeat2, Bookmark, ThumbsUp, FileText, X, Grid, Users, Volume2, Share2 } from "lucide-react"
+import { Ellipsis, Eye, Heart, MessageCircle, Repeat2, Bookmark, ThumbsUp, FileText, X, Grid, Users, Volume2, Share2, Triangle } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useApi } from "../../Context/ApiProvider"
 import { UpdateProfileModal } from "@/app/components/UpdateProfileModal"
@@ -269,150 +270,175 @@ export function ProfilePage({ user, posts }: Props) {
       <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky bg-black py-4">
 
         {/* Main Profile Card */}
-        <div className="border-2 border-gray-700/70 rounded-xl">
-          <div className="p-4 border-b-2 border-gray-700/70">
-            <div className="flex w-full items-start space-x-4">
-              <Image
-                src={profile.avatar_url || '/4.png'}
-                alt={profile.username}
-                width={80}
-                height={80}
-                className="w-20 h-20 rounded-full flex-shrink-0"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = '/4.png';
-                }}
-              />
-              
-              <div className="flex-1 min-w-0">
-                <div className="mb-4 flex items-start space-x-6">
-                  <div>
-                    <h1 className="text-white text-xl font-bold mb-2 tracking-tight">
+        <div className="border border-gray-700/50 rounded-2xl">
+          <div className="p-6 border-b border-gray-700/30">
+            {/* Top Row: Avatar and Action Buttons */}
+            <div className="flex items-start justify-between mb-3">
+              {/* Avatar and Bio Section */}
+              <div className="flex flex-col items-start space-y-3">
+                <div className="flex items-start space-x-4">
+                  <Image
+                    src={profile.avatar_url || '/4.png'}
+                    alt={profile.username}
+                    width={80}
+                    height={80}
+                    className="w-16 h-16 rounded-full border-2 border-gray-600"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/4.png';
+                    }}
+                  />
+
+                  {/* Username and Handle */}
+                  <div className="flex flex-col">
+                    <h1 className="text-white text-lg font-bold mb-1">
                       {profile.username}
                     </h1>
-                    {profile.bio && (
-                      <p className="text-gray-300 text-sm leading-relaxed">
-                        {profile.bio}
-                      </p>
-                    )}
+                    <p className="text-gray-400 text-sm mb-2">@{profile.username}</p>
                   </div>
+                </div>
 
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-8 flex-shrink-0">
-                <div className="text-center">
-                  <div className="text-white font-semibold text-lg">{profile.total_posts || 0}</div>
-                  <div className="text-gray-400 text-xs">Posts</div>
-                </div>
-                <div 
-                  className={`text-center transition-colors ${
-                    isLoadingFollowers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-blue-400'
-                  }`} 
-                  onClick={!isLoadingFollowers ? loadFollowersList : undefined}
-                >
-                  <div className="text-white font-semibold text-lg">
-                    {isLoadingFollowers ? '...' : profile.followers_count || 0}
-                  </div>
-                  <div className="text-gray-400 text-xs">Followers</div>
-                </div>
-                <div 
-                  className={`text-center transition-colors ${
-                    isLoadingFollowing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-blue-400'
-                  }`} 
-                  onClick={!isLoadingFollowing ? loadFollowingList : undefined}
-                >
-                  <div className="text-white font-semibold text-lg">
-                    {isLoadingFollowing ? '...' : profile.following_count || 0}
-                  </div>
-                  <div className="text-gray-400 text-xs">Following</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Creator Token Display */}
-          <div className="w-full p-2">
-            <div className="rounded-2xl w-full shadow-2xl shadow-purple-500/20 overflow-hidden">
-              <div className="flex flex-col lg:flex-row">
-                {profile && (
-                  <div className="flex-1 backdrop-blur-sm p-2 border-b lg:border-b-0 lg:border-r border-gray-700/70">
-                    <div className="flex flex-col items-center justify-center h-full space-y-4">
-                      <div className="text-center">
-                        <h3 className="text-white text-lg font-bold mb-2">Creator Token</h3>
-                        <p className="text-gray-400 text-sm">@{profile.username}</p>
-                      </div>
-                         <div className="flex items-center space-x-3">
-                    {checkingTokenExists ? (
-                      <div className="bg-gray-600 text-white rounded-lg px-6 py-2 text-sm font-semibold flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Checking...
-                      </div>
-                    ) : creatorTokenExists ? (
-                      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-l-full shadow-lg px-6 py-2 text-sm font-semibold flex items-center">
-                        <span>Creator Token Active</span>
-                      </div>
-                    ) : !isConnected ? (
-                      <button 
-                        onClick={connectWallet}
-                        disabled={isConnecting}
-                        className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-l-full px-4 py-2 text-sm font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg disabled:opacity-50"
-                      >
-                        {isConnecting ? 'Connecting...' : 'Connect Wallet'}
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={() => setShowCreateTokenModal(true)}
-                        className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-r-full px-4 py-2 text-sm font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg"
-                      >
-                        Create Creator Token
-                      </button>
-                    )}
-                    
-                    <button 
-                      onClick={() => setShowUpdateModal(true)}
-                      className="bg-gray-700 hover:bg-gray-600 text-white border border-gray-600 rounded-r-full px-6 py-2 text-sm font-semibold transition-all duration-200"
-                    >
-                      Edit Profile
-                    </button>
-                  </div>
-                    </div>
+                {/* Bio Section */}
+                {profile.bio && (
+                  <div>
+                    <p className="text-white text-base leading-relaxed">
+                      {profile.bio}
+                    </p>
                   </div>
                 )}
-                
-                <div className="lg:w-80 bg-black/50 backdrop-blur-sm p-6">
-                  <div className="flex flex-col items-center justify-center h-full text-center">
-                    <h3 className="text-white text-sm font-bold tracking-wide mb-2">POOL REWARDS</h3>
-                    <div className="text-2xl font-bold text-white mb-1">$0</div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col items-end space-y-6">
+                <div className="flex items-center space-x-3">
+                  {checkingTokenExists ? (
+                    <div className="bg-gray-600 text-white rounded-lg px-4 py-2 text-sm font-medium flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Checking...
+                    </div>
+                  ) : creatorTokenExists ? (
+                    <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full px-6 py-2 text-sm font-medium flex items-center">
+                      <span>Buy Ticket 📈 0.0823</span>
+                    </div>
+                  ) : !isConnected ? (
+                    <button
+                      onClick={connectWallet}
+                      disabled={isConnecting}
+                      className="text-white rounded-full px-6 py-2 text-sm font-medium transition-all duration-200 disabled:opacity-50"
+                      style={{
+                        backgroundColor: "#6E54FF",
+                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                      }}
+                    >
+                      {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setShowCreateTokenModal(true)}
+                      className="text-white rounded-full px-6 py-2 text-sm font-medium transition-all duration-200"
+                      style={{
+                        backgroundColor: "#6E54FF",
+                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                      }}
+                    >
+                      Create Creator Token
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => setShowUpdateModal(true)}
+                    className="bg-gray-700 hover:bg-gray-600 text-white border border-gray-600 rounded-full px-6 py-2 text-sm font-medium transition-all duration-200"
+                  >
+                    Edit Profile
+                  </button>
+                </div>
+
+                {/* Pool Rewards Section */}
+                <div className="bg-gray-700/30 border-2 border-[#6e54ff] rounded-2xl px-4 py-3 min-w-[200px] hover:bg-gray-700/50 transition-colors mt-4">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <h3 className="text-white text-xs font-medium mb-2">POOL REWARDS</h3>
+                    <div className="text-lg font-semibold text-white mb-1">$0</div>
                     <div className="text-xs text-gray-400">Total Pool</div>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Stats Row */}
+            <div className="flex items-center space-x-8 -mt-8">
+              <div className="flex items-center space-x-2">
+                <span className="text-white font-bold text-lg">{profile.total_posts || 0}</span>
+                <span className="text-gray-400 text-sm">Posts</span>
+              </div>
+              <div
+                className={`flex items-center space-x-2 transition-colors ${
+                  isLoadingFollowers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-blue-400'
+                }`}
+                onClick={!isLoadingFollowers ? loadFollowersList : undefined}
+              >
+                <span className="text-white font-bold text-lg">
+                  {isLoadingFollowers ? '...' : profile.followers_count || 0}
+                </span>
+                <span className="text-gray-400 text-sm">Followers</span>
+              </div>
+              <div
+                className={`flex items-center space-x-2 transition-colors ${
+                  isLoadingFollowing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-blue-400'
+                }`}
+                onClick={!isLoadingFollowing ? loadFollowingList : undefined}
+              >
+                <span className="text-white font-bold text-lg">
+                  {isLoadingFollowing ? '...' : profile.following_count || 0}
+                </span>
+                <span className="text-gray-400 text-sm">Following</span>
+              </div>
+            </div>
           </div>
+
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-700 mb-6 mt-6">
-          <div className="flex">
-            {[
-              { id: 'Posts', label: 'Posts', icon: Grid },
-              { id: 'Activity', label: 'Activity', icon: MessageCircle },
-              { id: 'Followers', label: 'Network', icon: Users },
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as Tab)}
-                className={`flex items-center space-x-2 px-6 py-3 text-sm font-medium transition-colors ${
-                  activeTab === id
-                    ? 'text-blue-400 border-b-2 border-blue-400'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{label}</span>
-              </button>
-            ))}
+        <div className="mb-4 mt-4">
+          <div className="bg-gray-700/50 rounded-full p-0.5">
+            <div className="bg-black m-0.5 p-1 rounded-full relative flex">
+              {[
+                { id: 'Posts', label: 'Posts', icon: Grid },
+                { id: 'Activity', label: 'Activity', icon: MessageCircle },
+                { id: 'Followers', label: 'Network', icon: Users },
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as Tab)}
+                  className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs font-medium transition-all duration-200 rounded-full relative z-10 flex-1 ${
+                    activeTab === id
+                      ? 'text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <Icon className="w-3 h-3" />
+                  <span>{label}</span>
+                </button>
+              ))}
+
+              {/* Animated background */}
+              <motion.div
+                className="absolute rounded-full"
+                style={{
+                  height: "32px",
+                  boxShadow:
+                    "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
+                  backgroundColor: "#6E54FF",
+                  top: "4px",
+                  left: "4px",
+                }}
+                initial={false}
+                animate={{
+                  x: activeTab === "Posts" ? "0%" : activeTab === "Activity" ? "100%" : "200%",
+                  width: "calc(33.333% - 8px)",
+                }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              />
+            </div>
           </div>
         </div>
          {creatorTokenExists && creatorTokenUserId && (
@@ -433,107 +459,156 @@ export function ProfilePage({ user, posts }: Props) {
               {profile.posts && profile.posts.length > 0 ? (
                 <div className="space-y-4">
                   {profile.posts.map((post: any) => (
-                    <div key={post.id} className="bg-black shadow-lg border-2 border-gray-700/70 p-4 rounded-xl">
-                      <div className="flex items-start space-x-3">
-                        <Image
-                          src={profile.avatar_url || "/4.png"}
-                          alt={profile.username}
-                          width={40}
-                          height={40}
-                          className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = "/4.png";
-                          }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="text-white font-semibold">
-                              {profile.username}
-                            </span>
-                            <span className="text-gray-500 text-sm">
-                              {formatDate(post.created_at)}
-                            </span>
-                            {post.is_retweet && (
-                              <div className="flex items-center space-x-1 text-green-400">
-                                <Repeat2 className="w-4 h-4" />
-                                <span className="text-sm font-medium">Retweeted</span>
+                    <div
+                      key={post.id}
+                      className="shadow-custom border-2 border-gray-700/70 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200"
+                    >
+                      <div className="flex flex-col">
+                        {/* Header Section */}
+                        <div className='flex items-center space-x-3'>
+                          <div className="flex flex-1 min-w-0 items-center justify-between">
+                            <div className="flex flex-1 min-w-0 items-center justify-between">
+                              <div className="flex flex-col min-w-0">
+                                <div className="flex items-center space-x-2 group cursor-pointer">
+                                  {/* Avatar */}
+                                  <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden">
+                                    <Image
+                                      src={profile.avatar_url || "/4.png"}
+                                      alt={profile.username}
+                                      width={32}
+                                      height={32}
+                                      className="w-full h-full object-cover bg-gray-200"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = "/4.png";
+                                      }}
+                                    />
+                                  </div>
+
+                                  {/* Username */}
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex min-w-0 items-center flex-wrap gap-x-1 text-sm">
+                                      <span className="font-semibold text-white truncate hover:text-blue-500 transition-colors group-hover:underline">
+                                        {profile.username}
+                                      </span>
+                                      <span className="text-gray-400">•</span>
+                                      <span className="text-secondary truncate">@{profile.username}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                              {post.is_retweet && (
+                                <div className="flex items-center space-x-1 text-green-400">
+                                  <Repeat2 className="w-3 h-3" />
+                                  <span className="text-xs font-medium">Retweeted</span>
+                                </div>
+                              )}
+                              <span className="text-secondary text-sm">{formatDate(post.created_at)}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Content Section */}
+                        <div className="ml-12">
+                          <div className="">
+
+                            <p className="text-white text-base leading-relaxed whitespace-pre-wrap break-words">
+                              {post.content}
+                            </p>
+
+                            {/* Media Section */}
+                            {post.media_url && (
+                              <div className="overflow-hidden mt-1">
+                                {post.media_url.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff|ico)$/i) ? (
+                                  <div className="relative group inline-block">
+                                    <Image
+                                      src={post.media_url}
+                                      alt="Post content"
+                                      width={400}
+                                      height={320}
+                                      className="rounded-2xl max-h-80 w-auto object-cover cursor-pointer hover:opacity-95 transition-opacity duration-200"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement
+                                        target.style.display = 'none'
+                                      }}
+                                    />
+                                  </div>
+                                ) : post.media_url.match(/\.(mp4|webm|ogg|mov|avi|mkv|flv|wmv|m4v|3gp|ts|mts|m2ts)$/i) ? (
+                                  <video
+                                    src={post.media_url}
+                                    autoPlay
+                                    muted
+                                    loop
+                                    playsInline
+                                    controls
+                                    className="w-auto max-h-80 bg-black rounded-lg"
+                                  />
+                                ) : post.media_url.match(/\.(mp3|wav|ogg|m4a|aac|flac|wma|opus|aiff|pcm)$/i) ? (
+                                  <div className="bg-black p-3 flex items-center space-x-3 rounded-lg">
+                                    <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                                      <Volume2 className="w-4 h-4 text-indigo-600" />
+                                    </div>
+                                    <audio src={post.media_url} controls className="flex-1" />
+                                  </div>
+                                ) : (
+                                  <div className="bg-black p-3 text-center rounded-lg">
+                                    <p className="text-gray-400 text-sm mb-2">Media file</p>
+                                    <a
+                                      href={post.media_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-indigo-400 hover:text-indigo-300 text-sm font-medium"
+                                    >
+                                      View media
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          
+                            {/* Original Post Content for Retweets */}
+                            {post.original_post_content && (
+                              <div className="bg-black border border-gray-600 rounded-lg p-4 mt-3">
+                                <p className="text-gray-300 text-sm">
+                                  <span className="text-gray-400 font-medium">Original by @{post.original_post_username}:</span>
+                                  <br />
+                                  <span className="mt-1 block">{post.original_post_content}</span>
+                                </p>
                               </div>
                             )}
                           </div>
-                          
-                          <p className="text-white mb-3 text-sm">{post.content}</p>
-                          
-                          {/* Media content */}
-                          {post.media_url && (
-                            <div className="mb-3">
-                              {post.media_url.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff|ico)$/i) ? (
-                                <Image
-                                  src={post.media_url}
-                                  alt="Post media"
-                                  width={400}
-                                  height={200}
-                                  className="rounded-lg max-w-full"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement
-                                    target.style.display = 'none'
-                                  }}
-                                />
-                              ) : post.media_url.match(/\.(mp4|webm|ogg|mov|avi|mkv|flv|wmv|m4v|3gp|ts|mts|m2ts)$/i) ? (
-                                <video 
-                                  src={post.media_url} 
-                                  controls
-                                  className="w-full max-h-96 bg-black rounded-lg"
-                                />
-                              ) : post.media_url.match(/\.(mp3|wav|ogg|m4a|aac|flac|wma|opus|aiff|pcm)$/i) ? (
-                                <div className="bg-black border border-gray-700 p-4 flex items-center space-x-3 rounded-lg">
-                                  <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                                    <Volume2 className="w-5 h-5 text-indigo-600" />
-                                  </div>
-                                  <audio src={post.media_url} controls className="flex-1" />
-                                </div>
-                              ) : (
-                                <div className="bg-black border border-gray-700 p-4 text-center rounded-lg">
-                                  <p className="text-gray-400 text-sm mb-2">Media file</p>
-                                  <a
-                                    href={post.media_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-400 hover:text-blue-300 text-sm font-medium"
-                                  >
-                                    View media
-                                  </a>
-                                </div>
-                              )}
+
+                          {/* Engagement Actions */}
+                          <div className="flex items-center justify-between pt-3">
+                            <div className="flex items-center space-x-4">
+                              <button className="flex items-center space-x-1 text-gray-500 hover:text-white transition-colors opacity-60">
+                                <Heart className="w-4 h-4" />
+                                <span className="text-xs font-medium">{post.like_count}</span>
+                              </button>
+
+                              <button className="flex items-center space-x-1 text-gray-500 hover:text-white transition-colors opacity-60">
+                                <MessageCircle className="w-4 h-4" />
+                                <span className="text-xs font-medium">{post.comment_count}</span>
+                              </button>
+
+                              <button className="flex items-center space-x-1 text-gray-500 hover:text-white transition-colors opacity-60">
+                                <Repeat2 className="w-4 h-4 rotate-90" />
+                                <span className="text-xs font-medium">{post.retweet_count}</span>
+                              </button>
                             </div>
-                          )}
-                          
-                          {post.original_post_content && (
-                            <div className="bg-black border border-gray-600 rounded-lg p-4 mb-4">
-                              <p className="text-gray-300 text-sm">
-                                <span className="text-gray-400 font-medium">Original by @{post.original_post_username}:</span>
-                                <br />
-                                <span className="mt-1 block">{post.original_post_content}</span>
-                              </p>
-                            </div>
-                          )}
-                          
-                          <div className="flex items-center space-x-6 text-gray-400 text-sm">
-                            <div className="flex items-center space-x-1">
-                              <MessageCircle className="w-4 h-4" />
-                              <span>{post.comment_count}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <Heart className="w-4 h-4" />
-                              <span>{post.like_count}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <Share2 className="w-4 h-4" />
-                              <span>{post.retweet_count}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <Eye className="w-4 h-4" />
-                              <span>{post.view_count}</span>
+
+                            <div className='flex items-center space-x-4'>
+                              <div className='flex items-center space-x-1 cursor-pointer'>
+                                <Triangle className={`w-5 h-5 text-green-500 transition-all duration-200`} />
+                                <span className="text-sm hidden text-green-500 sm:block font-medium">$27.01</span>
+                              </div>
+
+                              <button className="flex items-center space-x-1 text-gray-500 hover:text-white transition-colors opacity-60">
+                                <Bookmark className="w-4 h-4" />
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -554,25 +629,25 @@ export function ProfilePage({ user, posts }: Props) {
           )}
 
           {activeTab === "Activity" && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {profile.recent_activity && profile.recent_activity.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {profile.recent_activity.map((activity: any, index: number) => (
-                    <div key={index} className="bg-black shadow-lg border-2 border-gray-700/70 p-4 rounded-xl">
+                    <div key={index} className="bg-black border border-gray-700/50 p-3 rounded-xl">
                       <div className="flex items-start space-x-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-600 border border-gray-600 flex items-center justify-center flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-gray-600 border border-gray-600 flex items-center justify-center flex-shrink-0">
                           {getActivityIcon(activity.activity_type)}
                         </div>
                         <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="text-white font-semibold capitalize">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="text-white text-sm font-medium capitalize">
                               {getActivityText(activity.activity_type)}
                             </span>
-                            <span className="text-gray-500 text-sm">
+                            <span className="text-gray-500 text-xs">
                               {formatDate(activity.created_at)}
                             </span>
                           </div>
-                          <p className="text-white text-sm">{activity.post_content}</p>
+                          <p className="text-white text-xs">{activity.post_content}</p>
                         </div>
                       </div>
                     </div>
@@ -591,15 +666,15 @@ export function ProfilePage({ user, posts }: Props) {
           )}
 
           {activeTab === "Followers" && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Followers Section */}
-              <div className="bg-black rounded-xl p-4 border-2 border-gray-700/70 shadow-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-white text-lg font-semibold">Followers ({profile.followers_count || 0})</h3>
+              <div className="bg-black rounded-xl p-3 border border-gray-700/50">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-white text-sm font-medium">Followers ({profile.followers_count || 0})</h3>
                   <button
                     onClick={loadFollowersList}
                     disabled={isLoadingFollowers}
-                    className="text-blue-400 hover:text-blue-300 text-sm transition-colors disabled:opacity-50"
+                    className="text-blue-400 hover:text-blue-300 text-xs transition-colors disabled:opacity-50"
                   >
                     {isLoadingFollowers ? 'Loading...' : 'Refresh'}
                   </button>
@@ -608,24 +683,24 @@ export function ProfilePage({ user, posts }: Props) {
                 {isLoadingFollowers ? (
                   <div className="text-center py-8 text-gray-400">Loading followers...</div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {/* Show first 5 followers as preview */}
                     {followersList.slice(0, 5).map((follower: any) => (
-                      <div key={follower.follower_id} className="flex items-center space-x-3 p-3 bg-gray-800 rounded-lg">
+                      <div key={follower.follower_id} className="flex items-center space-x-3 p-2 bg-gray-800/50 rounded-lg">
                         <Image
                           src={follower.avatar_url || "/4.png"}
                           alt={follower.username || 'User'}
-                          width={40}
-                          height={40}
-                          className="w-10 h-10 rounded-full object-cover"
+                          width={32}
+                          height={32}
+                          className="w-8 h-8 rounded-full object-cover"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.src = "/4.png";
                           }}
                         />
                         <div className="flex-1">
-                          <div className="text-white font-medium">{follower.username || 'Unknown User'}</div>
-                          <div className="text-gray-400 text-sm">{follower.email || ''}</div>
+                          <div className="text-white text-sm font-medium">{follower.username || 'Unknown User'}</div>
+                          <div className="text-gray-400 text-xs">{follower.email || ''}</div>
                         </div>
                       </div>
                     ))}
@@ -651,13 +726,13 @@ export function ProfilePage({ user, posts }: Props) {
               </div>
 
               {/* Following Section */}
-              <div className="bg-black rounded-xl p-4 border-2 border-gray-700/70 shadow-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-white text-lg font-semibold">Following ({profile.following_count || 0})</h3>
+              <div className="bg-black rounded-xl p-3 border border-gray-700/50">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-white text-sm font-medium">Following ({profile.following_count || 0})</h3>
                   <button
                     onClick={loadFollowingList}
                     disabled={isLoadingFollowing}
-                    className="text-blue-400 hover:text-blue-300 text-sm transition-colors disabled:opacity-50"
+                    className="text-blue-400 hover:text-blue-300 text-xs transition-colors disabled:opacity-50"
                   >
                     {isLoadingFollowing ? 'Loading...' : 'Refresh'}
                   </button>
@@ -666,24 +741,24 @@ export function ProfilePage({ user, posts }: Props) {
                 {isLoadingFollowing ? (
                   <div className="text-center py-8 text-gray-400">Loading following...</div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {/* Show first 5 following as preview */}
                     {followingList.slice(0, 5).map((following: any) => (
-                      <div key={following.following_id} className="flex items-center space-x-3 p-3 bg-gray-800 rounded-lg">
+                      <div key={following.following_id} className="flex items-center space-x-3 p-2 bg-gray-800/50 rounded-lg">
                         <Image
                           src={following.avatar_url || "/4.png"}
                           alt={following.username || 'User'}
-                          width={40}
-                          height={40}
-                          className="w-10 h-10 rounded-full object-cover"
+                          width={32}
+                          height={32}
+                          className="w-8 h-8 rounded-full object-cover"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.src = "/4.png";
                           }}
                         />
                         <div className="flex-1">
-                          <div className="text-white font-medium">{following.username || 'Unknown User'}</div>
-                          <div className="text-gray-400 text-sm">{following.email || ''}</div>
+                          <div className="text-white text-sm font-medium">{following.username || 'Unknown User'}</div>
+                          <div className="text-gray-400 text-xs">{following.email || ''}</div>
                         </div>
                       </div>
                     ))}

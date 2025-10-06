@@ -89,10 +89,10 @@ export const CommunitySection = ({
   // Unified Community Card Component
   const CommunityCard = ({ community, isJoinSection = false }: { community: any, isJoinSection?: boolean }) => (
     <div
-      className={`group p-4 rounded-xl transition-all duration-200 border w-full ${
+      className={`group p-3 rounded-2xl transition-all duration-200 border-2 w-full ${
         selectedCommunity === community.id && !isJoinSection
-          ? 'bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-500/50 text-white shadow-lg' 
-          : 'bg-slate-700/30 border-slate-600/30 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500/50 hover:text-white'
+          ? 'bg-gray-700/30 border-[#6e54ff] text-white'
+          : 'border-transparent text-slate-300 hover:bg-gray-700/20 hover:text-white'
       } ${!isJoinSection ? 'cursor-pointer' : ''}`}
       onClick={!isJoinSection ? () => handleCommunityClick(community.id) : undefined}
     >
@@ -118,7 +118,7 @@ export const CommunitySection = ({
           <Hash className={`w-6 h-6 text-white ${community.image_url ? 'hidden' : ''}`} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-white truncate">{community.name}</div>
+          <div className="text-sm font-medium text-white truncate">{community.name}</div>
           <div className="text-sm text-slate-400 line-clamp-2 leading-tight">{community.description}</div>
         </div>
       </div>
@@ -276,7 +276,7 @@ export const CommunitySection = ({
                     <div>
                       <button
                         onClick={() => handleUserClick(member.user_id)}
-                        className="font-medium text-white hover:text-blue-300 hover:underline cursor-pointer text-left"
+                        className="text-sm font-medium text-white hover:text-blue-300 hover:underline cursor-pointer text-left"
                       >
                         {member.username}
                       </button>

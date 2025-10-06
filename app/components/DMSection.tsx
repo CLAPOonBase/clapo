@@ -170,7 +170,7 @@ export const DMSection = ({
                 e.stopPropagation();
                 handleUserClick(user.id);
               }}
-              className="font-semibold text-white hover:text-blue-300 transition-colors hover:underline cursor-pointer text-left truncate block"
+              className="text-sm font-medium text-white hover:text-blue-300 transition-colors hover:underline cursor-pointer text-left truncate block"
             >
               {user.username}
             </button>
@@ -209,10 +209,10 @@ export const DMSection = ({
     return (
       <div
         onClick={() => onSelectThread(thread.id)}
-        className={`w-full px-4 py-2 rounded-xl cursor-pointer transition-all duration-200 border ${
+        className={`w-full px-3 py-2 rounded-2xl cursor-pointer transition-all duration-200 border-2 ${
           isSelected
-            ? 'bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-500/50 text-white shadow-lg'
-            : ' border-none text-slate-300 hover:bg-slate-700/50 hover:border-slate-500/50 hover:text-white'
+            ? 'bg-gray-700/30 border-[#6e54ff] text-white'
+            : 'border-transparent text-slate-300 hover:bg-gray-700/20 hover:text-white'
         }`}
       >
         {/* Header Section */}
@@ -240,7 +240,7 @@ export const DMSection = ({
                 e.stopPropagation();
                 if (!thread.isGroup && otherUser?.id) handleUserClick(otherUser.id);
               }}
-              className={`font-semibold truncate block text-left transition-colors ${
+              className={`text-sm font-medium truncate block text-left transition-colors ${
                 hasUnread ? "text-white" : ""
               } ${!thread.isGroup && otherUser?.id ? "hover:text-blue-300 hover:underline" : ""}`}
             >
@@ -266,20 +266,20 @@ export const DMSection = ({
   return (
     <div className="h-full flex flex-col">
       {/* Search Bar */}
-      <div className="mb-4 flex-shrink-0">
-        <div className="relative  p-2">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+      <div className="mb-2 flex-shrink-0">
+        <div className="relative px-2">
+          <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
             placeholder="Search chats or users..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 md:pr-10 py-3 bg-slate-700/50 text-white rounded-xl border border-slate-600/50 focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+            className="w-full pl-12 pr-10 py-2.5 bg-black text-white rounded-xl border border-gray-600/30 focus:border-purple-500/50 focus:outline-none focus:ring-1 focus:ring-purple-500/20 transition-all duration-200 text-sm"
           />
           {searchQuery && (
             <button
               onClick={clearSearch}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+              className="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
             >
               <X className="w-4 h-4" />
             </button>

@@ -23,15 +23,53 @@ const getMessageGrouping = (
   const currentMessage = messages[currentIndex];
   const prevMessage = messages[currentIndex - 1];
   const nextMessage = messages[currentIndex + 1];
-  
+
   const isFirstInGroup = !prevMessage || prevMessage.sender_id !== currentMessage.sender_id;
   const isLastInGroup = !nextMessage || nextMessage.sender_id !== currentMessage.sender_id;
-  
+
   return {
     isFirstInGroup,
     isLastInGroup,
     showAvatar: isLastInGroup // ✅ show avatar only on last message
   };
+};
+
+// Helper function to check if date separator is needed
+const needsDateSeparator = (
+  currentMessage: MessageListProps['messages'][0],
+  prevMessage: MessageListProps['messages'][0] | undefined
+) => {
+  if (!prevMessage) return true;
+
+  const currentDate = new Date(currentMessage.created_at);
+  const prevDate = new Date(prevMessage.created_at);
+
+  return (
+    currentDate.getDate() !== prevDate.getDate() ||
+    currentDate.getMonth() !== prevDate.getMonth() ||
+    currentDate.getFullYear() !== prevDate.getFullYear()
+  );
+};
+
+// Helper function to format date separator
+const formatDateSeparator = (dateString: string) => {
+  const messageDate = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (messageDate.toDateString() === today.toDateString()) {
+    return 'Today';
+  } else if (messageDate.toDateString() === yesterday.toDateString()) {
+    return 'Yesterday';
+  } else {
+    return messageDate.toLocaleDateString([], {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
 };
 
 
@@ -95,16 +133,29 @@ export const MessageList = ({ messages, currentUserId }: MessageListProps) => {
       <div className="space-y-0">
         {sortedMessages.map((message, index) => {
           const { isFirstInGroup, isLastInGroup, showAvatar } = getMessageGrouping(sortedMessages, index);
-          
+          const prevMessage = sortedMessages[index - 1];
+          const showDateSeparator = needsDateSeparator(message, prevMessage);
+
           return (
-            <MessageItem
-              key={message.id}
-              message={message}
-              isOwnMessage={message.sender_id === currentUserId}
-              showAvatar={showAvatar}
-              isFirstInGroup={isFirstInGroup}
-              isLastInGroup={isLastInGroup}
-            />
+            <div key={message.id}>
+              {/* Date Separator */}
+              {showDateSeparator && (
+                <div className="flex items-center justify-center my-4">
+                  <div className="bg-gray-800/60 text-gray-400 text-xs px-3 py-1 rounded-full border border-gray-700/50">
+                    {formatDateSeparator(message.created_at)}
+                  </div>
+                </div>
+              )}
+
+              {/* Message */}
+              <MessageItem
+                message={message}
+                isOwnMessage={message.sender_id === currentUserId}
+                showAvatar={showAvatar}
+                isFirstInGroup={isFirstInGroup}
+                isLastInGroup={isLastInGroup}
+              />
+            </div>
           );
         })}
       </div>

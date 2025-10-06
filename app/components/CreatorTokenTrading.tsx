@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, TrendingUp, TrendingDown, DollarSign, Users, Gift, User, Key } from 'lucide-react';
+import { X, TrendingUp, TrendingDown, DollarSign, Users, Gift, User, Key, Minus, Plus } from 'lucide-react';
 import { useCreatorToken, CreatorTokenStats, CreatorPortfolio } from '../hooks/useCreatorToken';
 import { useAccessTokens } from '../hooks/useAccessTokens';
 import { useSession } from 'next-auth/react';
@@ -357,15 +357,7 @@ export default function CreatorTokenTrading({
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b-2 border-gray-700/70">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600/20 rounded-xl border border-blue-500/30">
-              <TrendingUp className="w-5 h-5 text-blue-400" />
-            </div>
-            <div>
-              <h2 className="text-white text-xl font-bold tracking-tight">Creator Token Trading</h2>
-              <p className="text-gray-400 text-sm truncate max-w-[200px]">{creatorName}</p>
-            </div>
-          </div>
+          <h2 className="text-white text-xl font-bold tracking-tight">Buy Tickets</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-800/50 rounded-xl transition-colors border border-gray-700/50"
@@ -411,6 +403,46 @@ export default function CreatorTokenTrading({
               </div>
             </div>
           )}
+
+          {/* You Own Section */}
+          <div className="mb-4">
+            <div className="text-gray-400 text-sm font-medium">YOU OWN: {portfolio?.balance || 0}</div>
+          </div>
+
+          {/* User Profile Card */}
+          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 mb-6">
+            <div className="flex items-center space-x-3">
+              <img
+                src={creatorImageUrl || '/4.png'}
+                alt={creatorName}
+                className="w-12 h-12 rounded-full border border-gray-600"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/4.png';
+                }}
+              />
+              <div className="flex-1">
+                <div className="text-white font-semibold">@{creatorName}</div>
+                <div className="text-gray-400 text-sm">{stats?.totalBuyers || 0} Followers</div>
+              </div>
+              <div className="text-right">
+                <div className="text-red-400 text-sm">{formatPrice(currentPrice)}</div>
+                <div className="text-green-400 text-sm">0%</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Balance and Fee Info */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="text-sm">
+              <span className="text-gray-400">BALANCE: </span>
+              <span className="text-white">{formatPrice(portfolio?.totalValue || 0)}</span>
+            </div>
+            <div className="text-sm">
+              <span className="text-gray-400">TOTAL FEE: </span>
+              <span className="text-white">10%</span>
+            </div>
+          </div>
 
           {/* Stats Overview */}
           {stats && (
@@ -477,36 +509,50 @@ export default function CreatorTokenTrading({
             </div>
           )}
 
-          {/* Trading Tabs */}
-      <div className='bg-gray-700/70 p-1 rounded-full'>
-          <div className="flex bg-black backdrop-blur-sm rounded-full p-1 ">
+          {/* Quantity Selector */}
+          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => setAmount(Math.max(1, amount - 1))}
+                className="w-12 h-12 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors"
+                disabled={loading}
+              >
+                <Minus className="w-5 h-5 text-white" />
+              </button>
+              <div className="text-white text-2xl font-semibold">{amount.toFixed(2)}</div>
+              <button
+                onClick={() => setAmount(amount + 1)}
+                className="w-12 h-12 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors"
+                disabled={loading}
+              >
+                <Plus className="w-5 h-5 text-white" />
+              </button>
+            </div>
+          </div>
+
+          {/* Buy/Sell Buttons */}
+          <div className="flex space-x-4 mb-6">
             <button
-              onClick={() => setActiveTab('buy')}
-              className={`flex-1 py-2 px-4 rounded-full text-sm font-bold tracking-tight transition-colors ${
-                activeTab === 'buy'
-                  ? 'bg-blue-600 text-white shadow-lg'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
-              }`}
+              onClick={handleBuy}
+              disabled={loading || !isConnected}
+              className="flex-1 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white text-sm font-medium rounded-full py-4 transition-colors flex items-center justify-center space-x-2"
             >
-              Buy Shares
+              <span>Buy</span>
+              <span>{formatPrice(currentPrice)}</span>
             </button>
             <button
-              onClick={() => setActiveTab('sell')}
-              className={`flex-1 py-2 px-4 rounded-full text-sm font-bold tracking-tight transition-colors ${
-                activeTab === 'sell'
-                  ? 'bg-red-600 text-white shadow-lg'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
-              }`}
+              onClick={handleSell}
+              disabled={loading || !isConnected || !portfolio || portfolio.balance < amount}
+              className="flex-1 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 text-white text-sm font-medium rounded-full py-4 transition-colors flex items-center justify-center space-x-2"
             >
-              Sell Shares
+              <span>Sell</span>
+              <span>{formatPrice(actualPrice)}</span>
             </button>
           </div>
 
-      </div>
-
-          {/* Trading Form */}
-          <div className="space-y-4">
-            {activeTab === 'buy' ? (
+          {/* Keep wallet connect functionality */}
+          <div className="hidden">
+            {false ? (
               <div className="space-y-4">
                 {/* Coupon/Access Token Section */}
                 {remainingFreebies > 0 && (

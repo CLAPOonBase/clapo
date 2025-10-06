@@ -117,10 +117,26 @@ export const MessageItem = ({
           <span className={`text-xs text-slate-500 group-hover:text-slate-400 transition-colors duration-200 mt-1 ${
             isOwnMessage ? 'mr-2' : 'ml-2'
           }`}>
-            {new Date(message.created_at).toLocaleTimeString([], { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            })}
+            {(() => {
+              const messageDate = new Date(message.created_at);
+              const today = new Date();
+              const isToday = messageDate.toDateString() === today.toDateString();
+
+              if (isToday) {
+                return messageDate.toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+              } else {
+                return messageDate.toLocaleDateString([], {
+                  month: 'short',
+                  day: 'numeric'
+                }) + ' ' + messageDate.toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+              }
+            })()}
           </span>
         )}
       </div>

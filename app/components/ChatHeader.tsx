@@ -50,7 +50,7 @@ export const ChatHeader = ({
 
           {/* Name and type */}
           <div>
-            <h3 className="text-xl font-bold text-white">
+            <h3 className="text-base font-medium text-white">
               {currentThread.isGroup
                 ? currentThread.name
                 : otherUser?.username || 'User'}
@@ -68,7 +68,7 @@ export const ChatHeader = ({
             <Hash className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-white">
+            <h3 className="text-base font-medium text-white">
               {currentCommunity.name}
             </h3>
             {/* <p className="text-sm text-slate-400">
