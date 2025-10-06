@@ -154,10 +154,17 @@ export default function Sidebar({
 ];
 
 
-  const handleNavClick = (value: PageKey) => {
+const handleNavClick = (value: PageKey) => {
+  if (window.location.pathname !== '/') {
+    router.push('/');
+    setTimeout(() => {
+      setCurrentPage(value);
+    }, 100);
+  } else {
     setCurrentPage(value);
-    setIsMobileSidebarOpen(false); // Close mobile sidebar after navigation
-  };
+  }
+  setIsMobileSidebarOpen(false);
+};
 
   const handleOpinioClick = () => {
     if (onNavigateToOpinio) {

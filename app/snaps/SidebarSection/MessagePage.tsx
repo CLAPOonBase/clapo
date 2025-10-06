@@ -92,21 +92,68 @@ export default function MessagePage() {
         sender_avatar: msg.sender_avatar ?? msg.senderAvatar,
       }));
 
-  // Update selected user profile based on current thread or community
+  // Fixed: Using the same logic from ChatHeader to get the other user
+  const getOtherUser = (thread: any) => {
+    if (!thread || !session?.dbUser?.id) return null;
+    if (thread.isGroup) return null;
+    return thread.participants?.find(
+      (p: any) => p.user_id !== session.dbUser.id
+    );
+  };
+
+  // Fixed: Update selected user profile based on current thread or community
   useEffect(() => {
-    if (currentThread && currentThread.participants) {
-      const otherUser = currentThread.participants.find(p => p.id !== session?.dbUser?.id);
-      if (otherUser) {
+    if (currentThread) {
+      const otherUser = getOtherUser(currentThread);
+      
+      console.log('🔍 Profile Debug:', {
+        currentThread,
+        currentUserId: session?.dbUser?.id,
+        participants: currentThread.participants,
+        foundOtherUser: otherUser,
+        isGroup: currentThread.isGroup
+      });
+
+      if (currentThread.isGroup) {
+        // For group chats, show group info
         setSelectedUserProfile({
-          username: otherUser.username,
-          name: otherUser.name || otherUser.username,
-          avatar: otherUser.avatar || '/api/placeholder/80/80',
+          username: currentThread.name,
+          name: currentThread.name,
+          avatar: 'https://robohash.org/group.png',
+          bio: 'Group chat',
+          status: 'group',
+          members: currentThread.participants?.length || 0,
+          type: 'group'
+        });
+      } else if (otherUser) {
+        // For direct messages, show the other user's profile
+        setSelectedUserProfile({
+          username: otherUser.username || otherUser.user_name,
+          name: otherUser.name || otherUser.username || otherUser.user_name || 'User',
+          avatar: otherUser.avatar_url || otherUser.avatar || 'https://robohash.org/default.png',
           bio: otherUser.bio || 'No bio available',
           status: 'online',
           lastSeen: otherUser.lastSeen || 'Recently',
           mutualFollowers: Math.floor(Math.random() * 20) + 1,
           type: 'user'
         });
+      } else {
+        // Fallback if no other user found
+        const firstParticipant = currentThread.participants?.[0];
+        if (firstParticipant && firstParticipant.user_id !== session?.dbUser?.id) {
+          setSelectedUserProfile({
+            username: firstParticipant.username || firstParticipant.name,
+            name: firstParticipant.name || firstParticipant.username || firstParticipant.name || 'User',
+            avatar: firstParticipant.avatar || firstParticipant.avatar || 'https://robohash.org/default.png',
+            bio: firstParticipant.bio || 'No bio available',
+            status: 'online',
+            lastSeen: 'Recently',
+            mutualFollowers: Math.floor(Math.random() * 20) + 1,
+            type: 'user'
+          });
+        } else {
+          setSelectedUserProfile(null);
+        }
       }
     } else if (currentCommunity) {
       setSelectedUserProfile({
@@ -269,6 +316,13 @@ export default function MessagePage() {
   };
 
   const handleSelectThread = async (threadId: string) => {
+    console.log('🔍 Selecting thread:', threadId);
+    console.log('🔍 All threads:', state.messageThreads);
+    
+    const selectedThreadData = state.messageThreads?.find(t => t.id === threadId);
+    console.log('🔍 Selected thread data:', selectedThreadData);
+    console.log('🔍 Participants:', selectedThreadData?.participants);
+    
     setSelectedThread(threadId);
     await getThreadMessages(threadId);
     // On mobile, show chat view when a thread is selected
@@ -404,7 +458,7 @@ export default function MessagePage() {
       {/* Desktop Layout */}
       <div  className="hidden md:flex w-full shadow-2xl overflow-hidden">
         {/* Sidebar */}
-        <div  className="w-80 flex flex-col border-r border-gray-700/70 pr-2">
+        <div  className="w-64 flex flex-col border-r border-gray-700/70 pr-2">
           {/* Header */}
           <div className="">
             <TabNavigation 
@@ -447,7 +501,7 @@ export default function MessagePage() {
         {/* Chat Area */}
         <div className="flex w-full">
          <div className="flex w-full h-screen pb-4"> {/* Add padding to the full screen container */}
-  <div className="flex-1 flex flex-col h-full rounded-lg ">
+  <div className="flex-1 flex flex-col h-full border-r-2 border-gray-700/70 mr-2">
     <ChatHeader 
       activeTab={activeTab}
       currentThread={currentThread}
@@ -470,8 +524,8 @@ export default function MessagePage() {
 </div>
 
           {/* Selected Chat Details Sidebar */}
-          <div className=" 2xl:block w-96 border-l-2 border-gray-700/70 sticky top-0" style={{ zIndex: 999 }}>
-            <div className="p-6">
+          <div className="m-2 2xl:block w-96 border-gray-700/70 sticky top-0" style={{ zIndex: 999 }}>
+            <div className="">
               {selectedUserProfile ? (
                 <div className="border-2 border-gray-700/70 rounded-2xl p-6">
                   <div className="text-center mb-6">
@@ -502,6 +556,15 @@ export default function MessagePage() {
                           {new Date(selectedUserProfile.createdAt).toLocaleDateString()}
                         </p>
                       </div>
+                    ) : selectedUserProfile.type === 'group' ? (
+                      <div className="space-y-2">
+                        <div className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm inline-block">
+                          Group Chat
+                        </div>
+                        <p className="text-sm text-green-400">
+                          {selectedUserProfile.members} members
+                        </p>
+                      </div>
                     ) : (
                       <div className="space-y-2">
                         <div className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-sm inline-block">
@@ -521,7 +584,8 @@ export default function MessagePage() {
                   
                   <div className="border-t border-gray-700/50 pt-4">
                     <h4 className="text-sm font-semibold text-slate-300 mb-2">
-                      {selectedUserProfile.type === 'community' ? 'Description' : 'Bio'}
+                      {selectedUserProfile.type === 'community' ? 'Description' : 
+                       selectedUserProfile.type === 'group' ? 'Group Info' : 'Bio'}
                     </h4>
                     <p className="text-sm text-slate-300 leading-relaxed">
                       {selectedUserProfile.bio}
@@ -555,6 +619,22 @@ export default function MessagePage() {
                         </button>
                         <button className="w-full bg-slate-700 hover:bg-slate-600 text-white text-sm py-2 px-4 rounded-lg transition-colors">
                           Block User
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedUserProfile.type === 'group' && (
+                    <div className="border-t border-gray-700/50 pt-4 mt-4">
+                      <h4 className="text-sm font-semibold text-slate-300 mb-3">
+                        Group Actions
+                      </h4>
+                      <div className="space-y-2">
+                        <button className="w-full bg-[#6E54FF] hover:bg-[#5940CC] text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                          View Members
+                        </button>
+                        <button className="w-full bg-slate-700 hover:bg-slate-600 text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                          Group Settings
                         </button>
                       </div>
                     </div>

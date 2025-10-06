@@ -19,7 +19,7 @@ export const TabNavigation = ({
   setShowCreateCommunityModal,
 }: TabNavigationProps) => {
   return (
-    <div className="w-72">
+    <div className="w-60">
       {/* Main Tabs - Fixed container */}
       <div className="bg-gray-700/70 p-1 rounded-full my-3">
         <div className="bg-black m-1 p-1 rounded-full">
@@ -31,7 +31,7 @@ export const TabNavigation = ({
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as "dms" | "communities")}
-                className={`flex items-center w-full justify-center py-2 px-4 gap-2 font-medium relative z-10 ${
+                className={`flex items-center w-full justify-center py-2 px-2 gap-2 text-sm font-medium relative z-10 ${
                   activeTab === tab.key ? "text-white" : "text-secondary"
                 }`}
               >

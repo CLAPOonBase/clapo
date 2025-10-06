@@ -9,7 +9,7 @@ import { SnapComposer } from "./Sections/SnapComposer";
 import SnapCard from "./Sections/SnapCard";
 import Image from "next/image";
 import ActivityFeed from './Sections/ActivityFeed'
-import { ExplorePage } from "./SidebarSection/ExplorePage";
+import  ExplorePage  from "./SidebarSection/ExplorePage";
 import NotificationPage from "./SidebarSection/NotificationPage";
 import BookmarkPage from "./SidebarSection/BookmarkPage";
 import { ProfilePage } from "./SidebarSection/ProfilePage";
@@ -217,7 +217,7 @@ function SocialFeedPageContent() {
   const renderContent = () => {
     switch (currentPage) {
       case "explore":
-        return <div className="w-full max-w-3xl mt-6 lg:ml-80">
+        return <div className="w-full lg:pl-60 mt-6">
           <ExplorePage/>
         </div>
       case "notifications":
@@ -561,7 +561,7 @@ function SocialFeedPageContent() {
         </div>
 
         {/* Right Sidebar - Only visible at 2xl breakpoint */}
-        {currentPage !== "messages" && currentPage !== "share" && session?.dbUser && (
+        {currentPage !== "messages" && currentPage !== "share" && currentPage !=="explore" && session?.dbUser && (
           <div
             className="hidden md:block lg:block xl:block 2xl:block w-80 h-screen sticky top-0"
             style={{ zIndex: 999 }}

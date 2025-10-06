@@ -31,11 +31,11 @@ export const ChatHeader = ({
     return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
   };
   return (
-    <div className="px-6 py-2 border-b border-slate-700/50">
+    <div className=" py-2">
       {activeTab === 'dms' && currentThread ? (
-        <div className="flex items-center space-x-4">
+        <div className="flex px-6 py-2 items-center space-x-2 border-b border-slate-700">
           {/* Avatar */}
-          <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-500">
+          <div className="relative w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-500">
             <img
               src={
                 currentThread.isGroup
@@ -50,7 +50,7 @@ export const ChatHeader = ({
 
           {/* Name and type */}
           <div>
-            <h3 className="text-xl font-bold text-white">
+            <h3 className="text-sm font-bold text-white">
               {currentThread.isGroup
                 ? currentThread.name
                 : otherUser?.username || 'User'}
@@ -68,7 +68,7 @@ export const ChatHeader = ({
             <Hash className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-white">
+            <h3 className="text-sm font-bold text-white">
               {currentCommunity.name}
             </h3>
             {/* <p className="text-sm text-slate-400">

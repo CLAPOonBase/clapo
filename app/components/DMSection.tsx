@@ -159,7 +159,7 @@ export const DMSection = ({
             {user.avatar_url ? (
               <img src={user.avatar_url} alt={user.username || 'User'} className="w-full h-full object-cover" />
             ) : (
-              <div className="flex items-center justify-center w-full h-full text-white font-bold text-lg">
+              <div className="flex items-center justify-center w-full h-full text-white font-bold text-sm">
                 {user.username?.charAt(0)?.toUpperCase() || 'U'}
               </div>
             )}
@@ -211,7 +211,7 @@ export const DMSection = ({
         onClick={() => onSelectThread(thread.id)}
         className={`w-full px-4 py-2 rounded-xl cursor-pointer transition-all duration-200 border ${
           isSelected
-            ? 'bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-500/50 text-white shadow-lg'
+            ? 'border-white/20'
             : ' border-none text-slate-300 hover:bg-slate-700/50 hover:border-slate-500/50 hover:text-white'
         }`}
       >
@@ -222,17 +222,17 @@ export const DMSection = ({
               e.stopPropagation();
               if (!thread.isGroup && otherUser?.id) handleUserClick(otherUser.id);
             }}
-            className="relative w-12 h-12 rounded-full overflow-hidden bg-slate-600 hover:opacity-80 transition-opacity flex-shrink-0"
+            className="relative w-8 h-8 rounded-full overflow-hidden bg-slate-600 hover:opacity-80 transition-opacity flex-shrink-0"
           >
             {otherUser?.avatar_url ? (
               <img src={otherUser.avatar_url} alt={otherUser.username || "User"} className="w-full h-full object-cover" />
             ) : (
-              <div className="flex items-center justify-center w-full h-full text-white font-bold text-lg">
+              <div className="flex items-center justify-center w-full h-full text-white font-bold text-sm">
                 {otherUser?.username?.charAt(0)?.toUpperCase() || "U"}
               </div>
             )}
             {/* Online Status Indicator */}
-            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 border-2 border-slate-800 rounded-full"></div>
+            {/* <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 border-2 border-slate-800 rounded-full"></div> */}
           </button>
           <div className="flex-1 min-w-0">
             <button
@@ -240,7 +240,7 @@ export const DMSection = ({
                 e.stopPropagation();
                 if (!thread.isGroup && otherUser?.id) handleUserClick(otherUser.id);
               }}
-              className={`font-semibold truncate block text-left transition-colors ${
+              className={`font-semibold truncate block text-left text-sm transition-colors ${
                 hasUnread ? "text-white" : ""
               } ${!thread.isGroup && otherUser?.id ? "hover:text-blue-300 hover:underline" : ""}`}
             >
@@ -267,14 +267,14 @@ export const DMSection = ({
     <div className="h-full flex flex-col">
       {/* Search Bar */}
       <div className="mb-4 flex-shrink-0">
-        <div className="relative  p-2">
+        <div className="relative  py-2">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
           <input
             type="text"
             placeholder="Search chats or users..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 md:pr-10 py-3 bg-slate-700/50 text-white rounded-xl border border-slate-600/50 focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+            className="w-full pl-12 md:pr-10 py-3 bg-black text-white rounded-xl border border-slate-600/50 focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
           />
           {searchQuery && (
             <button
