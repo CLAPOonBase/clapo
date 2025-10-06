@@ -551,6 +551,7 @@ export interface MessageThread {
   name: string
   createdAt: string
   participants?: Array<{
+    avatar_url: string
     id: string
     user_id: string
     username: string
