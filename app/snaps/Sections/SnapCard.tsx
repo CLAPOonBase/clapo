@@ -15,6 +15,7 @@ import { UserProfileHover } from '../../components/UserProfileHover'
 import PostTokenPrice from '../../components/PostTokenPrice'
 import PostTokenTrading from '../../components/PostTokenTrading'
 import ReputationBadge from '../../components/ReputationBadge'
+import { usePostTokenPrice } from '@/app/hooks/useGlobalPrice'
 
 type Props = {
   post: Post | ApiPost
