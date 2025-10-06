@@ -168,7 +168,8 @@ export const useCreatorToken = () => {
     imageUrl: string,
     description: string,
     freebieCount: number = 3,
-    quadraticDivisor: number = 1
+    quadraticDivisor: number = 1,
+    userId?: string
   ) => {
     console.log('🚀 createCreatorToken called with:', {
       uuid,
@@ -226,6 +227,30 @@ export const useCreatorToken = () => {
         gasUsed: receipt.gasUsed.toString(),
         status: receipt.status
       });
+
+      // Create creator token in backend database
+      try {
+        const { tokenApiService } = await import('@/app/lib/tokenApi');
+        const backendResponse = await tokenApiService.createCreatorToken({
+          uuid: uuid, // Pass the same UUID used for blockchain
+          name: name,
+          image_url: imageUrl,
+          description: description,
+          creator_address: address!,
+          user_id: userId, // Pass user ID for updating creator_token_uuid field
+          freebie_count: freebieCount,
+          quadratic_divisor: quadraticDivisor
+        });
+        
+        if (backendResponse.success) {
+          console.log('✅ Creator token created in backend database:', backendResponse.data?.uuid);
+        } else {
+          console.error('❌ Failed to create creator token in backend:', backendResponse.message);
+        }
+      } catch (apiError) {
+        console.error('❌ Failed to create creator token in backend database:', apiError);
+        // Don't throw here - blockchain transaction succeeded, backend is optional
+      }
 
       return tx.hash;
     } catch (error) {
@@ -304,7 +329,7 @@ export const useCreatorToken = () => {
   };
 
   // Buy creator tokens
-  const buyCreatorTokens = async (uuid: string) => {
+  const buyCreatorTokens = async (uuid: string, buyerUserId?: string) => {
     const currentContract = getContract();
     if (!currentContract || !signer) {
       throw new Error('Contract not connected');
@@ -321,7 +346,66 @@ export const useCreatorToken = () => {
       
       // Now proceed with the purchase
       const tx = await currentContract.buyCreatorTokensByUuid(uuid);
-      await tx.wait();
+      const receipt = await tx.wait();
+      
+      // Check if this was a freebie transaction by looking for FreebieClaimed event
+      let isFreebie = false;
+      let actualPrice = currentPrice;
+      let actualTotalCost = currentPrice;
+      
+      if (receipt.logs) {
+        for (const log of receipt.logs) {
+          try {
+            const parsedLog = currentContract.interface.parseLog(log);
+            if (parsedLog && parsedLog.name === 'FreebieClaimed') {
+              isFreebie = true;
+              actualPrice = 0;
+              actualTotalCost = 0;
+              console.log('🎁 Creator token freebie transaction detected!');
+              break;
+            } else if (parsedLog && parsedLog.name === 'CreatorTokensBought') {
+              // Check if CreatorTokensBought event indicates it was a freebie
+              const eventArgs = parsedLog.args;
+              if (eventArgs && eventArgs.isFreebie === true) {
+                isFreebie = true;
+                actualPrice = 0;
+                actualTotalCost = 0;
+                console.log('🎁 Creator token freebie transaction detected via CreatorTokensBought event!');
+              }
+              break;
+            }
+          } catch (e) {
+            // Skip logs that can't be parsed (might be from other contracts)
+            continue;
+          }
+        }
+      }
+      
+      // Record transaction in backend database
+      try {
+        const { tokenApiService } = await import('@/app/lib/tokenApi');
+        
+        await tokenApiService.recordCreatorTokenTransaction({
+          user_address: address!,
+          buyer_user_id: buyerUserId,
+          creator_token_uuid: uuid,
+          transaction_type: 'BUY',
+          amount: 1,
+          price_per_token: actualPrice,
+          total_cost: actualTotalCost,
+          tx_hash: tx.hash,
+          block_number: receipt.blockNumber,
+          gas_used: Number(receipt.gasUsed?.toString() || '0'),
+          gas_price: Number(receipt.gasPrice?.toString() || '0'),
+          is_freebie: isFreebie,
+          fees_paid: 0
+        });
+        console.log('✅ Creator token transaction recorded in backend database', { isFreebie, actualPrice, actualTotalCost });
+      } catch (apiError) {
+        console.error('❌ Failed to record creator token transaction in backend:', apiError);
+        // Transaction still succeeded on blockchain, but not recorded in backend
+      }
+      
       return tx.hash;
     } catch (error) {
       console.error('Failed to buy creator tokens:', error);
@@ -340,8 +424,35 @@ export const useCreatorToken = () => {
 
     setLoading(true);
     try {
+      // Get current price for recording
+      const currentPrice = await getCurrentPrice(uuid);
+      
       const tx = await currentContract.sellCreatorTokensByUuid(uuid, amount);
-      await tx.wait();
+      const receipt = await tx.wait();
+      
+      // Record transaction in backend database
+      try {
+        const { tokenApiService } = await import('@/app/lib/tokenApi');
+        await tokenApiService.recordCreatorTokenTransaction({
+          user_address: address!,
+          creator_token_uuid: uuid,
+                transaction_type: 'SELL',
+          amount: amount,
+          price_per_token: currentPrice,
+          total_cost: currentPrice * amount,
+          tx_hash: tx.hash,
+          block_number: receipt.blockNumber,
+          gas_used: Number(receipt.gasUsed?.toString() || '0'),
+          gas_price: Number(receipt.gasPrice?.toString() || '0'),
+          is_freebie: false,
+          fees_paid: 0
+        });
+        console.log('✅ Creator token transaction recorded in backend database');
+      } catch (apiError) {
+        console.error('❌ Failed to record creator token transaction in backend:', apiError);
+        // Transaction still succeeded on blockchain, but not recorded in backend
+      }
+      
       return tx.hash;
     } catch (error) {
       console.error('Failed to sell creator tokens:', error);

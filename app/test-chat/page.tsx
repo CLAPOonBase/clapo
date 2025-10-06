@@ -28,7 +28,7 @@ export default function TestChat() {
   // Load existing messages when page loads
   const loadExistingMessages = async () => {
     try {
-      const response = await fetch(`https://server.blazeswap.io/api/snaps/message-threads/${threadId}/messages?limit=50&offset=0`)
+      const response = await fetch(`http://server.blazeswap.io/api/snaps/message-threads/${threadId}/messages?limit=50&offset=0`)
       const data = await response.json()
       
       if (data.messages && Array.isArray(data.messages)) {
@@ -45,7 +45,7 @@ export default function TestChat() {
   // Initialize socket connections
   useEffect(() => {
     // Socket 1 for User 1
-    const newSocket1 = io('https://server.blazeswap.io')
+    const newSocket1 = io('http://server.blazeswap.io')
     
     newSocket1.on('connect', () => {
       console.log('✅ User 1 connected to socket server')
@@ -71,7 +71,7 @@ export default function TestChat() {
     })
     
     // Socket 2 for User 2
-    const newSocket2 = io('https://server.blazeswap.io')
+    const newSocket2 = io('http://server.blazeswap.io')
     
     newSocket2.on('connect', () => {
       console.log('✅ User 2 connected to socket server')

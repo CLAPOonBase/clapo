@@ -1,5 +1,5 @@
 // Token API service for integrating with the backend token APIs
-const TOKEN_API_BASE_URL = process.env.NEXT_PUBLIC_TOKEN_API_URL || 'http://localhost:8080/api'
+const TOKEN_API_BASE_URL = process.env.NEXT_PUBLIC_TOKEN_API_URL || 'http://server.blazeswap.io/api'
 
 export interface PostToken {
   uuid: string
@@ -48,6 +48,7 @@ export interface AccessToken {
 
 export interface PostTokenTransaction {
   user_address: string
+  buyer_user_id?: string
   post_token_uuid: string
   transaction_type: 'BUY' | 'SELL' | 'CLAIM'
   amount: number
@@ -63,6 +64,7 @@ export interface PostTokenTransaction {
 
 export interface CreatorTokenTransaction {
   user_address: string
+  buyer_user_id?: string
   creator_token_uuid: string
   transaction_type: 'BUY' | 'SELL' | 'CLAIM'
   amount: number
@@ -76,7 +78,25 @@ export interface CreatorTokenTransaction {
   fees_paid: number
 }
 
+export interface ActivityItem {
+  id: string
+  type: 'post_token' | 'creator_token'
+  action: 'bought' | 'claimed_freebie' | 'sold'
+  user_address: string
+  username: string
+  token_name: string
+  creator_name: string
+  token_uuid: string
+  amount: number
+  price_per_token: number
+  total_cost: number
+  is_freebie: boolean
+  created_at: string
+  tx_hash?: string
+}
+
 export interface CreatePostTokenRequest {
+  uuid?: string
   content: string
   image_url?: string
   creator_address: string
@@ -86,10 +106,12 @@ export interface CreatePostTokenRequest {
 }
 
 export interface CreateCreatorTokenRequest {
+  uuid?: string
   name: string
   image_url?: string
   description?: string
   creator_address: string
+  user_id?: string
   freebie_count?: number
   quadratic_divisor?: number
 }
@@ -292,9 +314,19 @@ class TokenApiService {
       body: JSON.stringify({ token }),
     })
   }
+
+  // Activity Feed APIs
+  async getRecentActivity(limit: number = 20): Promise<ActivityItem[]> {
+    return this.request<ActivityItem[]>(`/activity-feed/recent?limit=${Number(limit)}`)
+  }
+
+  async getUserActivity(userAddress: string, limit: number = 20): Promise<ActivityItem[]> {
+    return this.request<ActivityItem[]>(`/activity-feed/user/${userAddress}?limit=${Number(limit)}`)
+  }
 }
 
 export const tokenApiService = new TokenApiService()
 export { TokenApiService }
+
 
 

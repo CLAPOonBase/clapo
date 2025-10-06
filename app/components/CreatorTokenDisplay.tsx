@@ -7,6 +7,7 @@ import { useAccessTokens } from '@/app/hooks/useAccessTokens'
 import { generateCreatorTokenUUID } from '@/app/lib/uuid'
 import { AccessTokenClaim } from './AccessTokenClaim'
 import { AccessTokenManager } from './AccessTokenManager'
+import { useSession } from 'next-auth/react'
 
 interface CreatorTokenDisplayProps {
   userId: string
@@ -14,9 +15,12 @@ interface CreatorTokenDisplayProps {
   avatarUrl?: string
   isOwnProfile?: boolean
   forceShow?: boolean // Add prop to force show the component
+  creatorTokenUuid?: string // Add creator token UUID prop
 }
 
 export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile = false, forceShow = false }: CreatorTokenDisplayProps) {
+  const { data: session } = useSession();
+  
   const { 
     checkCreatorExists, 
     getCurrentPrice, 
@@ -118,7 +122,7 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
 
     setTrading(true)
     try {
-      await buyCreatorTokens(tokenUuid)
+      await buyCreatorTokens(tokenUuid, session?.dbUser?.id)
       // Refresh data after successful purchase
       await refreshData()
     } catch (error) {

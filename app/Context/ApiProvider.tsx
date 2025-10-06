@@ -452,7 +452,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
   const testUserProfile = useCallback(async (userId: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'}/users/${userId}/profile`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://server.blazeswap.io/api/snaps'}/users/${userId}/profile`);
       const data = await response.json();
     } catch (error) {
       console.error('API test failed:', error);

@@ -174,7 +174,7 @@ export default function CreatorTokenTrading({
     setSuccess(null);
 
     try {
-      await buyCreatorTokens(creatorUuid);
+      await buyCreatorTokens(creatorUuid, session?.dbUser?.id);
       setSuccess('Successfully bought creator tokens!');
       await loadCreatorTokenData(); // Refresh data
     } catch (err: any) {

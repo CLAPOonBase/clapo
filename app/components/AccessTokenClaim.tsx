@@ -5,6 +5,7 @@ import { Gift, Key, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import { useAccessTokens } from '@/app/hooks/useAccessTokens'
 import { useCreatorToken } from '@/app/hooks/useCreatorToken'
 import { generateCreatorTokenUUID } from '@/app/lib/uuid'
+import { useSession } from 'next-auth/react'
 
 interface AccessTokenClaimProps {
   userId: string
@@ -13,6 +14,8 @@ interface AccessTokenClaimProps {
 }
 
 export function AccessTokenClaim({ userId, username, avatarUrl }: AccessTokenClaimProps) {
+  const { data: session } = useSession();
+  
   const {
     loading: accessTokenLoading,
     error: accessTokenError,
@@ -108,7 +111,7 @@ export function AccessTokenClaim({ userId, username, avatarUrl }: AccessTokenCla
       await claimAccessToken(accessToken.trim())
       
       // Then, claim the freebie through the smart contract
-      await buyCreatorTokens(creatorTokenUuid)
+      await buyCreatorTokens(creatorTokenUuid, session?.dbUser?.id)
       
       // Reset form
       setAccessToken('')

@@ -56,6 +56,7 @@ export const useTokenIntegration = () => {
   };
 
   const createPostToken = async (data: {
+    uuid?: string;
     content: string;
     image_url?: string;
     creator_address: string;
@@ -181,10 +182,12 @@ export const useTokenIntegration = () => {
   };
 
   const createCreatorToken = async (data: {
+    uuid?: string;
     name: string;
     image_url?: string;
     description?: string;
     creator_address: string;
+    user_id?: string;
     freebie_count?: number;
     quadratic_divisor?: number;
   }): Promise<CreatorToken | null> => {
