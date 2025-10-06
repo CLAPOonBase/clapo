@@ -14,6 +14,7 @@ import CommentInputBar from './CommentInputBar'
 import { UserProfileHover } from '../../components/UserProfileHover'
 import PostTokenPrice from '../../components/PostTokenPrice'
 import PostTokenTrading from '../../components/PostTokenTrading'
+import ReputationBadge from '../../components/ReputationBadge'
 
 type Props = {
   post: Post | ApiPost
@@ -50,6 +51,8 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   const postImage = isApiPost ? post.media_url : post.image
   const postAuthor = isApiPost ? (post.username || 'Unknown') : (post.author || 'Unknown')
   const postHandle = isApiPost ? `@${post.username || 'unknown'}` : (post.handle || '@unknown')
+  const authorReputation = isApiPost ? post.author_reputation : undefined
+  const authorReputationTier = isApiPost ? post.author_reputation_tier : undefined
   const getRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -476,6 +479,14 @@ const handleImageClick = (e: React.MouseEvent) => {
                           <span className="font-semibold text-white truncate hover:text-blue-500 transition-colors group-hover:underline">
                             {postAuthor}
                           </span>
+                          {authorReputation !== undefined && (
+                            <ReputationBadge
+                              score={authorReputation}
+                              tier={authorReputationTier}
+                              size="sm"
+                              showScore={false}
+                            />
+                          )}
                           <span className="text-gray-400">•</span>
                           <span className="text-secondary truncate">{postHandle}</span>
                         </div>

@@ -12,6 +12,7 @@ import { CreatorTokenDisplay } from '@/app/components/CreatorTokenDisplay'
 import { useCreatorToken } from '@/app/hooks/useCreatorToken'
 import { generateCreatorTokenUUID } from '@/app/lib/uuid'
 import CreatorTokenTrading from '@/app/components/CreatorTokenTrading'
+import ReputationBadge from '@/app/components/ReputationBadge'
 
 interface UserProfile {
   id: string
@@ -27,6 +28,8 @@ interface UserProfile {
   total_bookmarks_made: number
   followers_count: number
   following_count: number
+  reputation_score?: number
+  reputation_tier?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond'
   posts: Array<{
     id: string
     content: string
@@ -439,9 +442,19 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
 
                   {/* Username and Handle */}
                   <div className="flex flex-col">
-                    <h1 className="text-white text-lg font-bold mb-1">
-                      {userProfile.username}
-                    </h1>
+                    <div className="flex items-center space-x-2 mb-1">
+                      <h1 className="text-white text-lg font-bold">
+                        {userProfile.username}
+                      </h1>
+                      {userProfile.reputation_score !== undefined && (
+                        <ReputationBadge
+                          score={userProfile.reputation_score}
+                          tier={userProfile.reputation_tier}
+                          size="sm"
+                          showScore={true}
+                        />
+                      )}
+                    </div>
                     <p className="text-gray-400 text-sm mb-2">@{userProfile.username}</p>
                   </div>
                 </div>

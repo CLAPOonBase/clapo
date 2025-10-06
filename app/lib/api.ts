@@ -37,6 +37,10 @@ import {
   CommunityMembersResponse,
   CommunityMessagesResponse,
   EnhancedNotificationsResponse,
+  ReputationScore,
+  ReputationHistoryResponse,
+  GiveRepRequest,
+  GiveRepResponse,
 } from '../types/api'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'
@@ -554,6 +558,58 @@ class ApiService {
       offset: offset.toString(),
     })
     return this.request<FeedResponse>(`/feed/following?${params}`)
+  }
+
+  // Reputation API methods
+  async getReputationScore(userId: string): Promise<{ reputation: ReputationScore }> {
+    try {
+      const response = await this.request(`/reputation/${userId}`)
+      return response as { reputation: ReputationScore }
+    } catch (error) {
+      console.error('Error fetching reputation score:', error)
+      throw error
+    }
+  }
+
+  async getReputationHistory(userId: string, limit: number = 50, offset: number = 0): Promise<ReputationHistoryResponse> {
+    try {
+      const params = new URLSearchParams({
+        limit: limit.toString(),
+        offset: offset.toString(),
+      })
+      const response = await this.request(`/reputation/${userId}/history?${params}`)
+      return response as ReputationHistoryResponse
+    } catch (error) {
+      console.error('Error fetching reputation history:', error)
+      throw error
+    }
+  }
+
+  async giveReputation(data: GiveRepRequest): Promise<GiveRepResponse> {
+    try {
+      const response = await this.request('/reputation/give', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+      return response as GiveRepResponse
+    } catch (error) {
+      console.error('Error giving reputation:', error)
+      throw error
+    }
+  }
+
+  async getReputationLeaderboard(limit: number = 100, offset: number = 0): Promise<{ users: Array<{ user_id: string; username: string; avatar_url: string; score: number; tier: string }> }> {
+    try {
+      const params = new URLSearchParams({
+        limit: limit.toString(),
+        offset: offset.toString(),
+      })
+      const response = await this.request(`/reputation/leaderboard?${params}`)
+      return response as { users: Array<{ user_id: string; username: string; avatar_url: string; score: number; tier: string }> }
+    } catch (error) {
+      console.error('Error fetching reputation leaderboard:', error)
+      throw error
+    }
   }
 }
 
