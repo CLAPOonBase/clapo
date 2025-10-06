@@ -24,6 +24,22 @@ interface UserStats {
   isFollowing: boolean
 }
 
+interface UserProfile {
+  id: string
+  username: string
+  bio?: string
+  avatar_url?: string
+  followers_count: number
+  following_count: number
+  total_posts: number
+  website?: string
+  recentPosts?: Array<{
+    id: string
+    media_url?: string
+    content: string
+  }>
+}
+
 export function UserProfileHover({ 
   userId, 
   username, 
@@ -33,6 +49,7 @@ export function UserProfileHover({
 }: UserProfileHoverProps) {
   const [showProfile, setShowProfile] = useState(false)
   const [userStats, setUserStats] = useState<UserStats | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
@@ -73,29 +90,34 @@ export function UserProfileHover({
       setShowProfile(false)
       // Clear stats when hiding to allow fresh data next time
       setUserStats(null)
+      setUserProfile(null)
       setIsFollowing(false)
     }, 200)
   }
 
   const loadUserStats = async () => {
     if (!currentUserId || isLoading) return
-    
+
     // If we already have stats, don't reload
-    if (userStats) return
-    
+    if (userStats && userProfile) return
+
     setIsLoading(true)
     try {
       const profileResponse = await getUserProfile(userId)
-      
+
       if (profileResponse && profileResponse.profile) {
         const profile = profileResponse.profile
+
+        // Set user profile data
+        setUserProfile(profile)
+
         setUserStats({
           posts: profile.total_posts || 0,
           followers: profile.followers_count || 0,
           following: profile.following_count || 0,
           isFollowing: false
         })
-        
+
         // Check follow status
         if (!isOwnProfile) {
           const followersResponse = await getUserFollowers(userId, 100, 0)
@@ -180,82 +202,104 @@ export function UserProfileHover({
         
         {showProfile && (
           <div className={`absolute ${getPositionClasses()} z-50`}>
-            <div className="bg-black border border-dark-700 rounded-lg shadow-xl p-4 w-80 max-w-sm">
+            <div className="bg-black border-2 border-gray-700/70 rounded-2xl shadow-custom p-0 w-80 max-w-sm overflow-hidden">
               {/* Arrow */}
-              <div className={`absolute w-3 h-3 bg-black border-l border-t border-dark-700 transform rotate-45 ${
+              <div className={`absolute w-3 h-3 bg-black border-l border-t border-gray-700/70 transform rotate-45 ${
                 position === 'top' ? 'top-full -mt-1.5' :
                 position === 'bottom' ? 'bottom-full -mb-1.5' :
                 position === 'left' ? 'left-full -ml-1.5' :
                 'right-full -mr-1.5'
               }`} />
-              
-              {/* Header */}
-              <div className="flex items-start space-x-3 mb-4">
-                <div className="flex-shrink-0">
-                  <Image
-                    src={avatarUrl || '/4.png'}
-                    alt={username}
-                    width={48}
-                    height={48}
-                    className="w-12 h-12 h-12 rounded-full"
-                  />
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2">
-                    <h3 className="text-white font-semibold text-sm truncate">
-                      {username}
-                    </h3>
-                    {!isOwnProfile && (
-                      <button
-                        onClick={handleFollowToggle}
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                          isFollowing
-                            ? 'bg-dark-700 text-white hover:bg-dark-600'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                        }`}
-                      >
-                        {isFollowing ? 'Following' : 'Follow'}
-                      </button>
-                    )}
+
+              {/* Header Section */}
+              <div className="p-4 pb-3">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex-shrink-0">
+                      <Image
+                        src={userProfile?.avatar_url || avatarUrl || '/4.png'}
+                        alt={username}
+                        width={56}
+                        height={56}
+                        className="w-14 h-14 rounded-full border-2 border-gray-600"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/4.png';
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <button
+                          onClick={handleViewProfile}
+                          className="text-white font-semibold text-sm truncate hover:text-blue-400 transition-colors cursor-pointer"
+                        >
+                          {userProfile?.username || username}
+                        </button>
+                      </div>
+                      {userProfile?.website && (
+                        <p className="text-gray-400 text-sm truncate">{userProfile.website}</p>
+                      )}
+                      <p className="text-gray-500 text-sm flex items-center">
+                        <span className="mr-1">@</span>{userProfile?.username || username}
+                      </p>
+                    </div>
                   </div>
                 </div>
+
+                {/* Bio */}
+                {userProfile?.bio && (
+                  <p className="text-white text-sm mb-3 leading-relaxed">
+                    {userProfile.bio}
+                  </p>
+                )}
+
+                {/* Stats */}
+                {userStats && (
+                  <div className="grid grid-cols-3 gap-6 mb-4">
+                    <div className="text-center">
+                      <div className="text-white font-bold text-lg">{userStats.posts}</div>
+                      <div className="text-gray-400 text-sm">posts</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-white font-bold text-lg">{userStats.followers}</div>
+                      <div className="text-gray-400 text-sm">followers</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-white font-bold text-lg">{userStats.following}</div>
+                      <div className="text-gray-400 text-sm">following</div>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Stats */}
-              {userStats && (
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div className="text-center">
-                    <div className="text-white font-semibold text-lg">{userStats.posts}</div>
-                    <div className="text-dark-400 text-xs">Posts</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-white font-semibold text-lg">{userStats.followers}</div>
-                    <div className="text-dark-400 text-xs">Followers</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-white font-semibold text-lg">{userStats.following}</div>
-                    <div className="text-dark-400 text-xs">Following</div>
-                  </div>
+
+              {/* Follow Button */}
+              {!isOwnProfile && (
+                <div className="px-4 pb-4">
+                  <button
+                    onClick={handleFollowToggle}
+                    className="w-full py-2 text-white text-sm font-medium rounded-full transition-all duration-200"
+                    style={{
+                      backgroundColor: isFollowing ? "#6B7280" : "#6E54FF",
+                      boxShadow: isFollowing ? "none" : "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                    }}
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      <Users className="w-4 h-4" />
+                      <span>{isFollowing ? 'Following' : 'Follow'}</span>
+                    </div>
+                  </button>
                 </div>
               )}
 
               {/* Loading state */}
               {isLoading && (
-                <div className="text-center py-4">
-                  <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <div className="text-center py-8">
+                  <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
                 </div>
               )}
-
-              {/* View Profile Link */}
-              <div className="border-t border-dark-700 pt-3">
-                <button 
-                  onClick={handleViewProfile}
-                  className="w-full text-center text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
-                >
-                  View Profile
-                </button>
-              </div>
             </div>
           </div>
         )}

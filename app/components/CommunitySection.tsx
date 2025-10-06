@@ -89,23 +89,23 @@ export const CommunitySection = ({
   // Unified Community Card Component
   const CommunityCard = ({ community, isJoinSection = false }: { community: any, isJoinSection?: boolean }) => (
     <div
-      className={`group p-4 rounded-xl transition-all duration-200 border w-full ${
+      className={`group p-2.5 rounded-xl transition-all duration-200 border w-full ${
         selectedCommunity === community.id && !isJoinSection
-          ? 'bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-500/50 text-white shadow-lg' 
-          : 'bg-slate-700/30 border-slate-600/30 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500/50 hover:text-white'
+          ? 'bg-gray-700/30 border-[#6e54ff] text-white'
+          : 'border-transparent text-slate-300 hover:bg-gray-700/20 hover:text-white'
       } ${!isJoinSection ? 'cursor-pointer' : ''}`}
       onClick={!isJoinSection ? () => handleCommunityClick(community.id) : undefined}
     >
       {/* Header Section */}
-      <div className="flex items-center space-x-3 mb-3">
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ${
-          selectedCommunity === community.id && !isJoinSection 
-            ? 'bg-gradient-to-br from-purple-500 to-pink-500' 
+      <div className="flex items-center space-x-2.5 mb-2">
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden ${
+          selectedCommunity === community.id && !isJoinSection
+            ? 'bg-gradient-to-br from-purple-500 to-pink-500'
             : 'bg-gradient-to-br from-purple-500 to-pink-500'
         }`}>
           {community.image_url ? (
-            <img 
-              src={community.image_url} 
+            <img
+              src={community.image_url}
               alt={community.name}
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -115,18 +115,18 @@ export const CommunitySection = ({
               }}
             />
           ) : null}
-          <Hash className={`w-6 h-6 text-white ${community.image_url ? 'hidden' : ''}`} />
+          <Hash className={`w-5 h-5 text-white ${community.image_url ? 'hidden' : ''}`} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-white truncate">{community.name}</div>
-          <div className="text-sm text-slate-400 line-clamp-2 leading-tight">{community.description}</div>
+          <div className="text-xs font-medium text-white truncate">{community.name}</div>
+          <div className="text-[11px] text-slate-400 line-clamp-1 leading-tight">{community.description}</div>
         </div>
       </div>
 
       {/* Admin Badge */}
       {community.user_is_admin && (
-        <div className="mb-3">
-          <span className="inline-block px-2 py-1 text-xs bg-purple-500/20 text-purple-300 rounded-full">
+        <div className="mb-2">
+          <span className="inline-block px-1.5 py-0.5 text-[10px] bg-purple-500/20 text-purple-300 rounded-full">
             Admin
           </span>
         </div>
@@ -134,12 +134,12 @@ export const CommunitySection = ({
 
       {/* Footer Section */}
       <div className="flex items-center justify-between">
-        <div className="flex flex-col space-y-1">
-          <span className="text-xs text-slate-400 flex items-center">
-            <Users className="w-3 h-3 mr-1" />
+        <div className="flex flex-col space-y-0.5">
+          <span className="text-[10px] text-slate-400 flex items-center">
+            <Users className="w-2.5 h-2.5 mr-1" />
             {community.member_count || 0} members
           </span>
-          <span className="text-xs text-slate-400">
+          <span className="text-[10px] text-slate-400">
             Created by{' '}
             <button
               onClick={(e) => {
@@ -276,7 +276,7 @@ export const CommunitySection = ({
                     <div>
                       <button
                         onClick={() => handleUserClick(member.user_id)}
-                        className="font-medium text-white hover:text-blue-300 hover:underline cursor-pointer text-left"
+                        className="text-sm font-medium text-white hover:text-blue-300 hover:underline cursor-pointer text-left"
                       >
                         {member.username}
                       </button>

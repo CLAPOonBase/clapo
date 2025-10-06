@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import Image from 'next/image'
-import { X, User, Users, MapPin, Calendar, Link, Grid, Heart, MessageCircle, Share2, Image as ImageIcon, Eye, ArrowLeft, MessageSquare, Volume2, TrendingUp } from 'lucide-react'
+import { X, User, Users, MapPin, Calendar, Link, Grid, Heart, MessageCircle, Share2, Image as ImageIcon, Eye, ArrowLeft, MessageSquare, Volume2, TrendingUp, Repeat2, Triangle, Bookmark } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useApi } from '@/app/Context/ApiProvider'
 import { useRouter } from 'next/navigation'
@@ -11,6 +12,7 @@ import { CreatorTokenDisplay } from '@/app/components/CreatorTokenDisplay'
 import { useCreatorToken } from '@/app/hooks/useCreatorToken'
 import { generateCreatorTokenUUID } from '@/app/lib/uuid'
 import CreatorTokenTrading from '@/app/components/CreatorTokenTrading'
+import ReputationBadge from '@/app/components/ReputationBadge'
 
 interface UserProfile {
   id: string
@@ -26,6 +28,8 @@ interface UserProfile {
   total_bookmarks_made: number
   followers_count: number
   following_count: number
+  reputation_score?: number
+  reputation_tier?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond'
   posts: Array<{
     id: string
     content: string
@@ -416,142 +420,168 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
           </button>
         </div> */}
 
-<div className="border-2 border-gray-700/70 rounded-xl">
-  <div className="p-4 border-b-2 border-gray-700/70">
-    <div className="flex w-full items-start space-x-4">
-      <Image
-        src={userProfile.avatar_url || '/4.png'}
-        alt={userProfile.username}
-        width={80}
-        height={80}
-        className="w-20 h-20 rounded-full flex-shrink-0"
-      />
-      
-      <div className="flex-1 min-w-0">
-        <div className="mb-4 flex items-start space-x-6">
-          <div>
-            <h1 className="text-white text-xl font-bold mb-2 tracking-tight">
-              {userProfile.username}
-            </h1>
-            {userProfile.bio && (
-              <p className="text-gray-300 text-sm leading-relaxed">
-                {userProfile.bio}
-              </p>
-            )}
-          </div>
-          {!isOwnProfile && (
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={handleFollowToggle}
-                disabled={isCheckingFollowStatus}
-                className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors ${
-                  isCheckingFollowStatus
-                    ? 'shadow-custom bg-white cursor-not-allowed'
-                    : isFollowing
-                    ? 'shadow-custom bg-gradient-br from-white to-white cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
+        {/* Main Profile Card */}
+        <div className="border border-gray-700/50 rounded-2xl">
+          <div className="p-6 border-b border-gray-700/30">
+            {/* Top Row: Avatar and Action Buttons */}
+            <div className="flex items-start justify-between mb-3">
+              {/* Avatar and Bio Section */}
+              <div className="flex flex-col items-start space-y-3">
+                <div className="flex items-start space-x-4">
+                  <Image
+                    src={userProfile.avatar_url || '/4.png'}
+                    alt={userProfile.username}
+                    width={80}
+                    height={80}
+                    className="w-16 h-16 rounded-full border-2 border-gray-600"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/4.png';
+                    }}
+                  />
+
+                  {/* Username and Handle */}
+                  <div className="flex flex-col">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <h1 className="text-white text-lg font-bold">
+                        {userProfile.username}
+                      </h1>
+                      {userProfile.reputation_score !== undefined && (
+                        <ReputationBadge
+                          score={userProfile.reputation_score}
+                          tier={userProfile.reputation_tier}
+                          size="sm"
+                          showScore={true}
+                        />
+                      )}
+                    </div>
+                    <p className="text-gray-400 text-sm mb-2">@{userProfile.username}</p>
+                  </div>
+                </div>
+
+                {/* Bio Section */}
+                {userProfile.bio && (
+                  <div>
+                    <p className="text-white text-base leading-relaxed">
+                      {userProfile.bio}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col items-end space-y-6">
+                <div className="flex items-center space-x-3">
+                  {!isOwnProfile && (
+                    <>
+                      <button
+                        onClick={() => setShowTradingModal(true)}
+                        className="text-white text-sm font-medium rounded-full px-6 py-2 transition-all duration-200"
+                        style={{
+                          backgroundColor: "#6E54FF",
+                          boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                        }}
+                      >
+                        Buy Share
+                      </button>
+                      <button
+                        onClick={handleFollowToggle}
+                        disabled={isCheckingFollowStatus}
+                        className="bg-gray-700 hover:bg-gray-600 text-white border border-gray-600 rounded-full px-6 py-2 text-sm font-medium transition-all duration-200"
+                      >
+                        {isCheckingFollowStatus ? 'Checking...' : isFollowing ? 'Following' : 'Follow'}
+                      </button>
+                    </>
+                  )}
+                </div>
+
+
+                {/* Pool Rewards Section */}
+                <div className="bg-gray-700/30 border-2 border-[#6e54ff] rounded-2xl px-4 py-3 min-w-[200px] hover:bg-gray-700/50 transition-colors mt-4">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <h3 className="text-white text-xs font-medium mb-2">POOL REWARDS</h3>
+                    <div className="text-lg font-semibold text-white mb-1">$0</div>
+                    <div className="text-xs text-gray-400">Total Pool</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Stats Row */}
+            <div className="flex items-center space-x-8 -mt-8">
+              <div className="flex items-center space-x-2">
+                <span className="text-white font-bold text-lg">{userProfile.total_posts || 0}</span>
+                <span className="text-gray-400 text-sm">Posts</span>
+              </div>
+              <div
+                className={`flex items-center space-x-2 transition-colors ${
+                  isLoadingFollowers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-blue-400'
                 }`}
+                onClick={!isLoadingFollowers ? loadFollowersList : undefined}
               >
-                {isCheckingFollowStatus ? 'Checking...' : isFollowing ? 'Unfollow' : 'Follow'}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center space-x-8 flex-shrink-0">
-        <div className="text-center">
-          <div className="text-white font-semibold text-lg">{userProfile.total_posts}</div>
-          <div className="text-gray-400 text-xs">Posts</div>
-        </div>
-        <div 
-          className={`text-center transition-colors ${
-            isLoadingFollowers ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-blue-400'
-          }`} 
-          onClick={!isLoadingFollowers ? loadFollowersList : undefined}
-        >
-          <div className="text-white font-semibold text-lg">
-            {isLoadingFollowers ? '...' : userProfile.followers_count}
-          </div>
-          <div className="text-gray-400 text-xs">Followers</div>
-        </div>
-        <div 
-          className={`text-center transition-colors ${
-            isLoadingFollowing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-blue-400'
-          }`} 
-          onClick={!isLoadingFollowing ? loadFollowingList : undefined}
-        >
-          <div className="text-white font-semibold text-lg">
-            {isLoadingFollowing ? '...' : userProfile.following_count}
-          </div>
-          <div className="text-gray-400 text-xs">Following</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div className="w-full p-2">
-    <div className="rounded-2xl w-full shadow-2xl shadow-custom-purple overflow-hidden">
-      <div className="flex flex-col lg:flex-row">
-        {userProfile && (
-          <div className="flex-1  backdrop-blur-sm p-2 border-b lg:border-b-0 lg:border-r border-gray-700/70">
-            <div className="flex flex-col items-center justify-center h-full space-y-4">
-              <div className="text-center">
-                <h3 className="text-white text-lg font-bold mb-2">Creator Token</h3>
-                <p className="text-gray-400 text-sm">@{userProfile.username}</p>
+                <span className="text-white font-bold text-lg">
+                  {isLoadingFollowers ? '...' : userProfile.followers_count || 0}
+                </span>
+                <span className="text-gray-400 text-sm">Followers</span>
               </div>
-              
-              <div className="flex gap-1">
-                <button
-                  onClick={() => setShowTradingModal(true)}
-                  className="bg-green-600 hover:bg-green-700 text-white px-1 py-1 rounded-l-full font-medium text-xs sm:text-sm transition-colors"
-                >
-                  Buy Token
-                </button>
-                <button
-                  onClick={() => setShowTradingModal(true)}
-                  className="bg-red-600 hover:bg-red-700 text-white px-1 py-1 rounded-r-full font-medium text-xs sm:text-sm transition-colors"
-                >
-                  Sell Token
-                </button>
+              <div
+                className={`flex items-center space-x-2 transition-colors ${
+                  isLoadingFollowing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-blue-400'
+                }`}
+                onClick={!isLoadingFollowing ? loadFollowingList : undefined}
+              >
+                <span className="text-white font-bold text-lg">
+                  {isLoadingFollowing ? '...' : userProfile.following_count || 0}
+                </span>
+                <span className="text-gray-400 text-sm">Following</span>
               </div>
             </div>
           </div>
-        )}
-        
-        <div className="lg:w-80 bg-black/50 backdrop-blur-sm p-6">
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <h3 className="text-white text-sm font-bold tracking-wide mb-2">POOL REWARDS</h3>
-            <div className="text-2xl font-bold text-white mb-1">$0</div>
-            <div className="text-xs text-gray-400">Total Pool</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+
 </div>
 
 
-        <div className="border-b border-dark-700 mb-6">
-          <div className="flex">
-            {[
-              { id: 'posts', label: 'Posts', icon: Grid },
-              { id: 'activity', label: 'Activity', icon: MessageCircle },
-              { id: 'followers', label: 'Network', icon: Users },
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as any)}
-                className={`flex items-center space-x-2 px-6 py-3 text-sm font-medium transition-colors ${
-                  activeTab === id
-                    ? 'text-blue-400 border-b-2 border-blue-400'
-                    : 'text-dark-400 hover:text-white'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{label}</span>
-              </button>
-            ))}
+        <div className="mb-4 mt-4">
+          <div className="bg-gray-700/50 rounded-full p-0.5">
+            <div className="bg-black m-0.5 p-1 rounded-full relative flex">
+              {[
+                { id: 'posts', label: 'Posts', icon: Grid },
+                { id: 'activity', label: 'Activity', icon: MessageCircle },
+                { id: 'followers', label: 'Network', icon: Users },
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as any)}
+                  className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs font-medium transition-all duration-200 rounded-full relative z-10 flex-1 ${
+                    activeTab === id
+                      ? 'text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <Icon className="w-3 h-3" />
+                  <span>{label}</span>
+                </button>
+              ))}
+
+              {/* Animated background */}
+              <motion.div
+                className="absolute rounded-full"
+                style={{
+                  height: "32px",
+                  boxShadow:
+                    "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
+                  backgroundColor: "#6E54FF",
+                  top: "4px",
+                  left: "4px",
+                }}
+                initial={false}
+                animate={{
+                  x: activeTab === "posts" ? "0%" : activeTab === "activity" ? "100%" : "200%",
+                  width: "calc(33.333% - 8px)",
+                }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              />
+            </div>
           </div>
         </div>
 
@@ -560,126 +590,143 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
             <div className="space-y-4">
               {userProfile?.posts?.length > 0 ? (
                 userProfile.posts.map((post) => (
-                  <div key={post.id} className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl">
-                    <div className="flex items-start space-x-3">
-                      <Image
-                        src={userProfile.avatar_url || '/4.png'}
-                        alt={userProfile.username}
-                        width={40}
-                        height={40}
-                        className="w-10 h-10 rounded-full"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <span className="text-white font-semibold">
-                            {userProfile.username}
-                          </span>
-                          <span className="text-dark-400 text-sm">
-                            {formatDate(post.created_at)}
-                          </span>
-                        </div>
-                        <p className="text-white text-sm mb-3">{post.content}</p>
-                        
-                        {post.media_url && (
-                          <div className="mb-3">
-                            {post.media_url.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff|ico)$/i) ? (
-                              <Image
-                                src={post.media_url}
-                                alt="Post media"
-                                width={400}
-                                height={200}
-                                className="rounded-lg max-w-full"
-                              />
-                            ) : post.media_url.match(/\.(mp4|webm|ogg|mov|avi|mkv|flv|wmv|m4v|3gp|ts|mts|m2ts)$/i) ? (
-                              <video 
-                                src={post.media_url} 
-                                controls
-                                className="w-full max-h-96 bg-black rounded-lg"
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                            ) : post.media_url.match(/\.(mp3|wav|ogg|m4a|aac|flac|wma|opus|aiff|pcm)$/i) ? (
-                              <div className="bg-black p-4 flex items-center space-x-3 rounded-lg">
-                                <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                                  <Volume2 className="w-5 h-5 text-indigo-600" />
+                  <div key={post.id} className="shadow-custom border-2 border-gray-700/70 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
+                    <div className="flex flex-col">
+                      {/* Header Section */}
+                      <div className='flex items-center space-x-3'>
+                        <div className="flex flex-1 min-w-0 items-center justify-between">
+                          <div className="flex flex-1 min-w-0 items-center justify-between">
+                            <div className="flex flex-col min-w-0">
+                              <div className="flex items-center space-x-2 group cursor-pointer">
+                                {/* Avatar */}
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden">
+                                  <Image
+                                    src={userProfile.avatar_url || "/4.png"}
+                                    alt={userProfile.username}
+                                    width={32}
+                                    height={32}
+                                    className="w-full h-full object-cover bg-gray-200"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.src = "/4.png";
+                                    }}
+                                  />
                                 </div>
-                                <audio src={post.media_url} controls className="flex-1" />
-                              </div>
-                            ) : post.media_url.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|rtf|odt|ods|odp)$/i) ? (
-                              <div className="bg-black p-4 flex items-center space-x-3 rounded-lg">
-                                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                                  <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                                  </svg>
-                                </div>
-                                <div className="flex-1">
-                                  <div className="text-white text-sm font-medium">Document</div>
-                                  <a href={post.media_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 text-xs">
-                                    View document
-                                  </a>
+
+                                {/* Username */}
+                                <div className="flex items-center gap-2">
+                                  <div className="flex min-w-0 items-center flex-wrap gap-x-1 text-sm">
+                                    <span className="font-semibold text-white truncate hover:text-blue-500 transition-colors group-hover:underline">
+                                      {userProfile.username}
+                                    </span>
+                                    <span className="text-gray-400">•</span>
+                                    <span className="text-gray-400 truncate">@{userProfile.username}</span>
+                                  </div>
                                 </div>
                               </div>
-                            ) : post.media_url.match(/\.(zip|rar|7z|tar|gz|bz2|xz)$/i) ? (
-                              <div className="bg-black p-4 flex items-center space-x-3 rounded-lg">
-                                <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                                  <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clipRule="evenodd" />
-                                  </svg>
-                                </div>
-                                <div className="flex-1">
-                                  <div className="text-white text-sm font-medium">Archive</div>
-                                  <a href={post.media_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 text-xs">
-                                    Download archive
-                                  </a>
-                                </div>
-                              </div>
-                            ) : post.media_url.match(/\.(exe|msi|dmg|pkg|deb|rpm|appimage)$/i) ? (
-                              <div className="bg-black p-4 flex items-center space-x-3 rounded-lg">
-                                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                                  <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                                  </svg>
-                                </div>
-                                <div className="flex-1">
-                                  <div className="text-white text-sm font-medium">Executable</div>
-                                  <a href={post.media_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 text-xs">
-                                    Download file
-                                  </a>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="bg-black p-4 flex items-center space-x-3 rounded-lg">
-                                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                                  <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                                  </svg>
-                                </div>
-                                <div className="flex-1">
-                                  <div className="text-white text-sm font-medium">File</div>
-                                  <a href={post.media_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 text-xs">
-                                    Download file
-                                  </a>
-                                </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            {post.is_retweet && (
+                              <div className="flex items-center space-x-1 text-green-400">
+                                <Share2 className="w-3 h-3" />
+                                <span className="text-xs font-medium">Retweeted</span>
                               </div>
                             )}
+                            <span className="text-gray-400 text-sm">{formatDate(post.created_at)}</span>
                           </div>
-                        )}
-                        
-                        <div className="flex items-center space-x-6 text-dark-400 text-sm">
-                          <div className="flex items-center space-x-1">
-                            <MessageCircle className="w-4 h-4" />
-                            <span>{post.comment_count}</span>
+                        </div>
+                      </div>
+
+                      {/* Content Section */}
+                      <div className="ml-12">
+                        <div className="">
+                          <p className="text-white text-base leading-relaxed whitespace-pre-wrap break-words">
+                            {post.content}
+                          </p>
+
+                          {/* Media Section */}
+                          {post.media_url && (
+                            <div className="overflow-hidden mt-1">
+                              {post.media_url.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff|ico)$/i) ? (
+                                <div className="relative group inline-block">
+                                  <Image
+                                    src={post.media_url}
+                                    alt="Post content"
+                                    width={400}
+                                    height={320}
+                                    className="rounded-2xl max-h-80 w-auto object-cover cursor-pointer hover:opacity-95 transition-opacity duration-200"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement
+                                      target.style.display = 'none'
+                                    }}
+                                  />
+                                </div>
+                              ) : post.media_url.match(/\.(mp4|webm|ogg|mov|avi|mkv|flv|wmv|m4v|3gp|ts|mts|m2ts)$/i) ? (
+                                <video
+                                  src={post.media_url}
+                                  autoPlay
+                                  muted
+                                  loop
+                                  playsInline
+                                  controls
+                                  className="w-auto max-h-80 bg-black rounded-lg"
+                                />
+                              ) : post.media_url.match(/\.(mp3|wav|ogg|m4a|aac|flac|wma|opus|aiff|pcm)$/i) ? (
+                                <div className="bg-black p-3 flex items-center space-x-3 rounded-lg">
+                                  <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                                    <Volume2 className="w-4 h-4 text-indigo-600" />
+                                  </div>
+                                  <audio src={post.media_url} controls className="flex-1" />
+                                </div>
+                              ) : (
+                                <div className="bg-black p-3 flex items-center space-x-3 rounded-lg">
+                                  <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+                                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="text-white text-sm font-medium">File</div>
+                                    <a href={post.media_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 text-xs">
+                                      Download file
+                                    </a>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Engagement Actions */}
+                        <div className="flex items-center justify-between pt-3">
+                          <div className="flex items-center space-x-4">
+                            <button className="flex items-center space-x-1 text-gray-500 hover:text-white transition-colors opacity-60">
+                              <Heart className="w-4 h-4" />
+                              <span className="text-xs font-medium">{post.like_count}</span>
+                            </button>
+
+                            <button className="flex items-center space-x-1 text-gray-500 hover:text-white transition-colors opacity-60">
+                              <MessageCircle className="w-4 h-4" />
+                              <span className="text-xs font-medium">{post.comment_count}</span>
+                            </button>
+
+                            <button className="flex items-center space-x-1 text-gray-500 hover:text-white transition-colors opacity-60">
+                              <Repeat2 className="w-4 h-4 rotate-90" />
+                              <span className="text-xs font-medium">{post.retweet_count}</span>
+                            </button>
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <Heart className="w-4 h-4" />
-                            <span>{post.like_count}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Share2 className="w-4 h-4" />
-                            <span>{post.retweet_count}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Eye className="w-4 h-4" />
-                            <span>{post.view_count}</span>
+
+                          <div className='flex items-center space-x-4'>
+                            <div className='flex items-center space-x-1 cursor-pointer'>
+                              <Triangle className={`w-5 h-5 text-green-500 transition-all duration-200`} />
+                              <span className="text-sm hidden text-green-500 sm:block font-medium">$27.01</span>
+                            </div>
+
+                            <button className="flex items-center space-x-1 text-gray-500 hover:text-white transition-colors opacity-60">
+                              <Bookmark className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -695,27 +742,34 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
           )}
           
           {activeTab === 'activity' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {userProfile?.recent_activity?.length > 0 ? (
                 userProfile.recent_activity.map((activity, index) => (
-                  <div key={index} className="bg-black shadow-custom border-2 border-gray-700/70 p-4 rounded-xl">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
-                        {activity.activity_type === 'like' && <Heart className="w-5 h-5 text-white" />}
-                        {activity.activity_type === 'comment' && <MessageCircle className="w-5 h-5 text-white" />}
-                        {activity.activity_type === 'retweet' && <Share2 className="w-5 h-5 text-white" />}
-                        {activity.activity_type === 'post_created' && <Grid className="w-5 h-5 text-white" />}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <span className="text-white font-semibold capitalize">
-                            {activity.activity_type}
-                          </span>
-                          <span className="text-dark-400 text-sm">
-                            {formatDate(activity.created_at)}
-                          </span>
+                  <div key={index} className="bg-black shadow-custom border-2 border-gray-700/70 rounded-2xl overflow-hidden">
+                    <div className="p-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{
+                          backgroundColor: activity.activity_type === 'like' ? '#ef4444' :
+                                          activity.activity_type === 'comment' ? '#3b82f6' :
+                                          activity.activity_type === 'retweet' ? '#10b981' : '#6E54FF'
+                        }}>
+                          {activity.activity_type === 'like' && <Heart className="w-5 h-5 text-white" />}
+                          {activity.activity_type === 'comment' && <MessageCircle className="w-5 h-5 text-white" />}
+                          {activity.activity_type === 'retweet' && <Share2 className="w-5 h-5 text-white" />}
+                          {activity.activity_type === 'post_created' && <Grid className="w-5 h-5 text-white" />}
                         </div>
-                        <p className="text-white text-sm">{activity.post_content}</p>
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className="text-white font-semibold text-sm capitalize">
+                              {activity.activity_type.replace('_', ' ')}
+                            </span>
+                            <span className="text-gray-500 text-xs">•</span>
+                            <span className="text-gray-400 text-xs">
+                              {formatDate(activity.created_at)}
+                            </span>
+                          </div>
+                          <p className="text-white text-base leading-relaxed">{activity.post_content}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -730,7 +784,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
 
           {activeTab === 'followers' && (
             <div className="space-y-6">
-              <div className="bg-black rounded-xl p-4 border-2 border-gray-700/70 shaow-custom">
+              <div className="bg-black rounded-2xl p-6 border-2 border-gray-700/70 shadow-custom">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-white text-lg font-semibold">Followers ({userProfile.followers_count})</h3>
                   <button
@@ -786,7 +840,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
                 )}
               </div>
 
-              <div className="bg-black rounded-xl p-4 border-2 border-gray-700/70 shaow-custom">
+              <div className="bg-black rounded-2xl p-6 border-2 border-gray-700/70 shadow-custom">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-white text-lg font-semibold">Following ({userProfile.following_count})</h3>
                   <button

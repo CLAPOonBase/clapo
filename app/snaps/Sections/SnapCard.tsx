@@ -14,7 +14,7 @@ import CommentInputBar from './CommentInputBar'
 import { UserProfileHover } from '../../components/UserProfileHover'
 import PostTokenPrice from '../../components/PostTokenPrice'
 import PostTokenTrading from '../../components/PostTokenTrading'
-import { usePostTokenPrice } from '@/app/hooks/useGlobalPrice'
+import ReputationBadge from '../../components/ReputationBadge'
 
 type Props = {
   post: Post | ApiPost
@@ -51,8 +51,33 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   const postImage = isApiPost ? post.media_url : post.image
   const postAuthor = isApiPost ? (post.username || 'Unknown') : (post.author || 'Unknown')
   const postHandle = isApiPost ? `@${post.username || 'unknown'}` : (post.handle || '@unknown')
+  const authorReputation = isApiPost ? post.author_reputation : undefined
+  const authorReputationTier = isApiPost ? post.author_reputation_tier : undefined
+  const getRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return 'now';
+
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 30) return `${diffInDays}d ago`;
+
+    const diffInMonths = Math.floor(diffInDays / 30);
+    if (diffInMonths < 12) return `${diffInMonths}mo ago`;
+
+    const diffInYears = Math.floor(diffInMonths / 12);
+    return `${diffInYears}y ago`;
+  };
+
   const postTime = isApiPost
-    ? new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    ? getRelativeTime(post.created_at)
     : (post.time || 'Unknown')
   const postAvatar = isApiPost ? post.avatar_url : undefined
   const currentUserId = session?.dbUser?.id
@@ -457,6 +482,14 @@ const handleImageClick = (e: React.MouseEvent) => {
                           <span className="font-semibold text-white truncate hover:text-blue-500 transition-colors group-hover:underline">
                             {postAuthor}
                           </span>
+                          {authorReputation !== undefined && (
+                            <ReputationBadge
+                              score={authorReputation}
+                              tier={authorReputationTier}
+                              size="sm"
+                              showScore={false}
+                            />
+                          )}
                           <span className="text-gray-400">•</span>
                           <span className="text-secondary truncate">{postHandle}</span>
                         </div>
@@ -544,40 +577,40 @@ const handleImageClick = (e: React.MouseEvent) => {
             {/* Engagement Actions */}
             <div className="flex items-center justify-between pt-3">
               <div className="flex items-center space-x-4">
-                <button 
-                  onClick={e => { 
+                <button
+                  onClick={e => {
                     e.stopPropagation()
                     handleLike()
                   }}
                   disabled={isLoading.like || !currentUserId}
-                  className={`flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.liked ? 'text-red-500' : ''}`}
+                  className={`flex items-center space-x-1 text-gray-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.liked ? 'text-white opacity-70' : 'opacity-60'}`}
                 >
-                  <Heart className={`w-5 h-5 transition-all duration-200 ${userEngagement.liked ? 'fill-red-500 scale-110' : ''}`} />
-                  <span className="text-sm font-medium">{localEngagement.likes}</span>
+                  <Heart className={`w-4 h-4 transition-all duration-200 ${userEngagement.liked ? 'fill-white scale-105' : ''}`} />
+                  <span className="text-xs font-medium">{localEngagement.likes}</span>
                 </button>
 
-                <button 
+                <button
                   onClick={toggleCommentDropdown}
                   className={`flex items-center space-x-1 transition-colors ${
-                    commentDropdownOpen 
-                      ? 'text-blue-500' 
-                      : 'text-gray-500 hover:text-blue-500'
+                    commentDropdownOpen
+                      ? 'text-white opacity-70'
+                      : 'text-gray-500 hover:text-white opacity-60'
                   }`}
                 >
-                  <MessageCircle className="w-5 h-5" />
-                  <span className="text-sm font-medium">{localEngagement.comments}</span>
+                  <MessageCircle className={`w-4 h-4 ${commentDropdownOpen ? 'fill-white' : ''}`} />
+                  <span className="text-xs font-medium">{localEngagement.comments}</span>
                 </button>
 
-                <button 
-                  onClick={e => { 
+                <button
+                  onClick={e => {
                     e.stopPropagation()
                     handleRetweet()
                   }}
                   disabled={isLoading.retweet || !currentUserId || userEngagement.retweeted}
-                  className={`flex items-center space-x-1 text-gray-500 hover:text-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.retweeted ? 'text-green-500' : ''}`}
+                  className={`flex items-center space-x-1 text-gray-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.retweeted ? 'text-white opacity-70' : 'opacity-60'}`}
                 >
-                  <Repeat className={`w-5 h-5 transition-all duration-200 rotate-90 ${userEngagement.retweeted ? 'text-green-500' : ''}`} />
-                  <span className="text-sm font-medium">{localEngagement.retweets}</span>
+                  <Repeat className={`w-4 h-4 transition-all duration-200 rotate-90 ${userEngagement.retweeted ? 'text-white fill-white scale-105' : ''}`} />
+                  <span className="text-xs font-medium">{localEngagement.retweets}</span>
                 </button>
               </div>
 
@@ -591,19 +624,18 @@ const handleImageClick = (e: React.MouseEvent) => {
                   </span>
                 </div>
 
-  <button 
-    onClick={e => { 
-      e.stopPropagation()
-      handleBookmark()
-    }}
-    disabled={isLoading.bookmark || !currentUserId}
-    className={`flex items-center space-x-1 text-gray-500 hover:text-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.bookmarked ? 'text-purple-500' : ''}`}
-  >
-    <Bookmark className={`w-5 h-5 transition-all duration-200 ${userEngagement.bookmarked ? 'fill-purple-500 scale-110' : ''}`} />
-    <span className="text-sm hidden sm:block font-medium">{localEngagement.bookmarks}</span>
-  </button>
-</div>
-
+                <button
+                  onClick={e => {
+                    e.stopPropagation()
+                    handleBookmark()
+                  }}
+                  disabled={isLoading.bookmark || !currentUserId}
+                  className={`flex items-center space-x-1 text-gray-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.bookmarked ? 'text-white opacity-70' : 'opacity-60'}`}
+                >
+                  <Bookmark className={`w-4 h-4 transition-all duration-200 ${userEngagement.bookmarked ? 'fill-white scale-105' : ''}`} />
+                  <span className="text-xs hidden sm:block font-medium">{localEngagement.bookmarks}</span>
+                </button>
+              </div>
             </div>
 
             {/* Comments Dropdown */}

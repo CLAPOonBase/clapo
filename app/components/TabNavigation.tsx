@@ -21,37 +21,40 @@ export const TabNavigation = ({
   return (
     <div className="w-60">
       {/* Main Tabs - Fixed container */}
-      <div className="bg-gray-700/70 p-1 rounded-full my-3">
-        <div className="bg-black m-1 p-1 rounded-full">
-          <div className="relative flex justify-between items-center p-1 rounded-2xl">
+      <div className="bg-gray-700/50 rounded-full mb-0 p-0.5">
+        <div>
+          <div
+            className="flex justify-around bg-black m-0.5 p-0.5 items-center rounded-full relative"
+          >
             {[
-              { key: "dms", label: "Personal", icon: <MessageCircle className="w-4 h-4" /> },
-              { key: "communities", label: "Communities", icon: <Users className="w-4 h-4" /> },
+              { key: "dms", label: "Personal", icon: <MessageCircle className="w-3 h-3" /> },
+              { key: "communities", label: "Communities", icon: <Users className="w-3 h-3" /> },
             ].map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as "dms" | "communities")}
-                className={`flex items-center w-full justify-center py-2 px-2 gap-2 text-sm font-medium relative z-10 ${
-                  activeTab === tab.key ? "text-white" : "text-secondary"
+                className={`py-1.5 my-0.5 font-semibold w-full relative z-10 text-[11px] ${
+                  activeTab === tab.key ? "text-white" : "text-gray-400"
                 }`}
               >
-                {/* {tab.icon} */}
                 {tab.label}
               </button>
             ))}
 
             {/* Animated background highlight */}
             <motion.div
-              className="absolute top-1 bottom-1 rounded-full"
+              className="absolute rounded-full"
               style={{
+                height: "30px",
                 boxShadow:
-                  "0px 1px 0.5px 0px rgba(255,255,255,0.5) inset, 0px 1px 2px 0px rgba(110,84,255,0.5), 0px 0px 0px 1px #6E54FF",
+                  "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
                 backgroundColor: "#6E54FF",
+                margin: "4px",
               }}
               initial={false}
               animate={{
-                left: activeTab === "dms" ? "4px" : "calc(50% - 2px)",
-                right: activeTab === "dms" ? "calc(50% + 2px)" : "4px",
+                left: activeTab === "dms" ? "0%" : "calc(50% + 0px)",
+                width: "calc(50% - 4px)",
               }}
               transition={{ type: "spring", stiffness: 400, damping: 30 }}
             />
@@ -60,9 +63,9 @@ export const TabNavigation = ({
       </div>
 
       {/* Sub Navigation - Fixed height container to prevent layout shift */}
-      <div className="flex items-center">
+      <div className="flex items-center min-h-[28px]">
         {activeTab === "communities" && (
-          <motion.div 
+          <motion.div
             className="flex justify-start gap-2 items-center w-full"
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
@@ -75,8 +78,10 @@ export const TabNavigation = ({
               <button
                 key={section.key}
                 onClick={() => setCommunitySection(section.key as "my" | "join")}
-                className={`relative px-3 py-1 text-sm font-medium whitespace-nowrap ${
-                  communitySection === section.key ? "text-white bg-dark-700 rounded-full" : "text-slate-400"
+                className={`relative px-2.5 py-1 text-[10px] font-medium whitespace-nowrap rounded-full transition-all duration-200 ${
+                  communitySection === section.key
+                    ? "text-white bg-gray-700/50 border border-gray-600/30"
+                    : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/30"
                 }`}
               >
                 {section.label}
@@ -86,10 +91,10 @@ export const TabNavigation = ({
             {/* Plus button */}
             <button
               onClick={() => setShowCreateCommunityModal(true)}
-              className="px-2 py-1 rounded-lg border border-gray-700 hover:bg-slate-700 text-slate-300 hover:text-white transition-all duration-200 ml-2 flex-shrink-0"
+              className="px-1.5 py-1 rounded-full border border-gray-700/50 hover:bg-gray-700/30 text-gray-400 hover:text-white transition-all duration-200 ml-0.5 flex-shrink-0"
               title="Create Community"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3 h-3" />
             </button>
           </motion.div>
         )}
