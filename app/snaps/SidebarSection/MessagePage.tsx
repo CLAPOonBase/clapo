@@ -101,7 +101,16 @@ export default function MessagePage() {
         media_url: msg.media_url ?? msg.mediaUrl,
       }));
 
-  // Update selected user profile based on current thread or community
+  // Fixed: Using the same logic from ChatHeader to get the other user
+  const getOtherUser = (thread: any) => {
+    if (!thread || !session?.dbUser?.id) return null;
+    if (thread.isGroup) return null;
+    return thread.participants?.find(
+      (p: any) => p.user_id !== session.dbUser.id
+    );
+  };
+
+  // Fixed: Update selected user profile based on current thread or community
   useEffect(() => {
     if (currentThread && currentThread.participants) {
       const otherUser = currentThread.participants.find(p => p.user_id !== session?.dbUser?.id);
@@ -116,6 +125,23 @@ export default function MessagePage() {
           mutualFollowers: Math.floor(Math.random() * 20) + 1,
           type: 'user'
         });
+      } else {
+        // Fallback if no other user found
+        const firstParticipant = currentThread.participants?.[0];
+        if (firstParticipant && firstParticipant.user_id !== session?.dbUser?.id) {
+          setSelectedUserProfile({
+            username: firstParticipant.username || firstParticipant.name,
+            name: firstParticipant.name || firstParticipant.username || firstParticipant.name || 'User',
+            avatar: firstParticipant.avatar || firstParticipant.avatar || 'https://robohash.org/default.png',
+            bio: firstParticipant.bio || 'No bio available',
+            status: 'online',
+            lastSeen: 'Recently',
+            mutualFollowers: Math.floor(Math.random() * 20) + 1,
+            type: 'user'
+          });
+        } else {
+          setSelectedUserProfile(null);
+        }
       }
     } else if (currentCommunity) {
       setSelectedUserProfile({
@@ -290,6 +316,13 @@ export default function MessagePage() {
   };
 
   const handleSelectThread = async (threadId: string) => {
+    console.log('🔍 Selecting thread:', threadId);
+    console.log('🔍 All threads:', state.messageThreads);
+    
+    const selectedThreadData = state.messageThreads?.find(t => t.id === threadId);
+    console.log('🔍 Selected thread data:', selectedThreadData);
+    console.log('🔍 Participants:', selectedThreadData?.participants);
+    
     setSelectedThread(threadId);
     await getThreadMessages(threadId);
     // On mobile, show chat view when a thread is selected
@@ -523,6 +556,15 @@ export default function MessagePage() {
                           {new Date(selectedUserProfile.createdAt).toLocaleDateString()}
                         </p>
                       </div>
+                    ) : selectedUserProfile.type === 'group' ? (
+                      <div className="space-y-2">
+                        <div className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm inline-block">
+                          Group Chat
+                        </div>
+                        <p className="text-sm text-green-400">
+                          {selectedUserProfile.members} members
+                        </p>
+                      </div>
                     ) : (
                       <div className="space-y-1.5">
                         <div className="bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full text-xs inline-block">
@@ -576,6 +618,22 @@ export default function MessagePage() {
                         </button>
                         <button className="w-full bg-gray-700/50 hover:bg-gray-600/50 text-white text-xs py-1.5 px-3 rounded-lg transition-colors">
                           Block User
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedUserProfile.type === 'group' && (
+                    <div className="border-t border-gray-700/50 pt-4 mt-4">
+                      <h4 className="text-sm font-semibold text-slate-300 mb-3">
+                        Group Actions
+                      </h4>
+                      <div className="space-y-2">
+                        <button className="w-full bg-[#6E54FF] hover:bg-[#5940CC] text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                          View Members
+                        </button>
+                        <button className="w-full bg-slate-700 hover:bg-slate-600 text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                          Group Settings
                         </button>
                       </div>
                     </div>

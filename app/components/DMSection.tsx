@@ -159,7 +159,7 @@ export const DMSection = ({
             {user.avatar_url ? (
               <img src={user.avatar_url} alt={user.username || 'User'} className="w-full h-full object-cover" />
             ) : (
-              <div className="flex items-center justify-center w-full h-full text-white font-bold text-lg">
+              <div className="flex items-center justify-center w-full h-full text-white font-bold text-sm">
                 {user.username?.charAt(0)?.toUpperCase() || 'U'}
               </div>
             )}

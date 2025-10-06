@@ -19,7 +19,7 @@ export const TabNavigation = ({
   setShowCreateCommunityModal,
 }: TabNavigationProps) => {
   return (
-    <div className="w-72">
+    <div className="w-60">
       {/* Main Tabs - Fixed container */}
       <div className="bg-gray-700/50 rounded-full mb-0 p-0.5">
         <div>
