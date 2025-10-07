@@ -66,7 +66,7 @@ export const TabNavigation = ({
       <div className="flex items-center min-h-[28px]">
         {activeTab === "communities" && (
           <motion.div
-            className="flex justify-start gap-2 items-center w-full"
+            className="flex justify-start gap-2 mt-2 items-center w-full"
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.2 }}

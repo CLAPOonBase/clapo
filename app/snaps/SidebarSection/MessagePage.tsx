@@ -143,19 +143,20 @@ export default function MessagePage() {
           setSelectedUserProfile(null);
         }
       }
-    } else if (currentCommunity) {
-      setSelectedUserProfile({
-        username: currentCommunity.name,
-        name: currentCommunity.name,
-        avatar: currentCommunity.creator_avatar || '/4.png',
-        bio: currentCommunity.description || 'No description available',
-        status: 'community',
-        members: currentCommunity.member_count || 0,
-        type: 'community',
-        createdBy: currentCommunity.creator_username || 'Unknown',
-        createdAt: currentCommunity.created_at || 'Recently'
-      });
-    } else {
+    }  else if (currentCommunity) {
+  setSelectedUserProfile({
+    username: currentCommunity.name,
+    name: currentCommunity.name,
+    avatar: currentCommunity.profile_picture_url || currentCommunity.creator_avatar || '/4.png',
+    bio: currentCommunity.description || 'No description available',
+    status: 'community',
+    members: currentCommunity.member_count || 0,
+    type: 'community',
+    createdBy: currentCommunity.creator_username || 'Unknown',
+    createdAt: currentCommunity.created_at || 'Recently'
+  });
+}
+ else {
       setSelectedUserProfile(null);
     }
   }, [currentThread, currentCommunity, session?.dbUser?.id]);
