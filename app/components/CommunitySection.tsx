@@ -103,7 +103,7 @@ export const CommunitySection = ({
         <div className={`w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden ${
           selectedCommunity === community.id && !isJoinSection
             ? 'bg-gradient-to-br from-purple-500 to-pink-500'
-            : 'bg-gradient-to-br from-purple-500 to-pink-500'
+            : 'bg-gradient-to-br from-purple-500 to-pink-500 border'
         }`}>
           {community.image_url ? (
             <img

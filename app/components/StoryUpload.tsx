@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Camera, Video, X, Send, Upload } from 'lucide-react';
+import { useStories } from '../hooks/useStories';
 
 interface StoryUploadProps {
   onClose: () => void;
@@ -15,6 +16,8 @@ export const StoryUpload: React.FC<StoryUploadProps> = ({ onClose }) => {
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  
+  const { createStory } = useStories();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -40,9 +43,24 @@ export const StoryUpload: React.FC<StoryUploadProps> = ({ onClose }) => {
     setUploading(true);
     
     try {
-      // Simulate upload
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Story uploaded successfully');
+      // Upload using the API route to avoid CORS issues
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Upload failed');
+      }
+      
+      const uploadResult = await uploadResponse.json();
+      console.log('Story uploaded successfully:', uploadResult.url);
+      
+      // Create story with uploaded URL
+      await createStory(uploadResult.url, mediaType, caption || undefined);
       
       // Close modal
       onClose();
@@ -76,6 +94,7 @@ export const StoryUpload: React.FC<StoryUploadProps> = ({ onClose }) => {
     resetForm();
     onClose();
   };
+
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
