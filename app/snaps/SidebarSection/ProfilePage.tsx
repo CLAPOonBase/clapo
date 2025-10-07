@@ -166,15 +166,18 @@ export function ProfilePage({ user, posts }: Props) {
 
     setIsCreatingToken(true)
     try {
-      const tokenUuid = generateCreatorTokenUUID(session?.dbUser?.id)
+      // Generate ONE UUID that will be used for everything
+      const creatorUuid = crypto.randomUUID()
+      console.log('🎯 Generated consistent UUID for creator token:', creatorUuid)
       
       const tokenTxHash = await createCreatorToken(
-        tokenUuid,
+        creatorUuid, // Use the SAME UUID
         tokenName.trim(),
         profile?.avatar_url || '',
         tokenDescription.trim(),
         freebieCount,
-        quadraticDivisor
+        quadraticDivisor,
+        session?.dbUser?.id // Pass user ID for updating creator_token_uuid field
       )
       
       alert(`Creator token created successfully! TX: ${tokenTxHash.slice(0, 10)}...`)

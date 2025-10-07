@@ -1,58 +1,46 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { ChevronLeft, ChevronRight, X, Play, Pause, Volume2, VolumeX, Plus, Camera, Image } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Play, Pause, Volume2, VolumeX, Plus, Eye } from "lucide-react";
+import { useStories } from "@/app/hooks/useStories";
+import { StoryUpload } from "./StoryUpload";
+import { useSession } from "next-auth/react";
 
 type Story = {
   id: string;
-  content: string;
   media_url: string;
+  media_type: "video" | "image";
+  caption?: string;
   created_at: string;
-  username: string;
-  avatar: string;
-  type: "video" | "image";
+  user: {
+    id: string;
+    username: string;
+    name?: string;
+    avatar_url?: string;
+  };
+  view_count: number;
+  has_viewed: boolean;
 };
 
 const Stories: React.FC = () => {
-  const [stories, setStories] = useState<Story[]>([]);
+  const { data: session } = useSession();
+  const { stories, loading, error, fetchFollowingStories, recordStoryView, getStoryViewers } = useStories();
   const [currentStoryIndex, setCurrentStoryIndex] = useState<number>(0);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(true);
+  const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
+  const [showViewersModal, setShowViewersModal] = useState<boolean>(false);
+  const [storyViewers, setStoryViewers] = useState<any[]>([]);
+  const [loadingViewers, setLoadingViewers] = useState<boolean>(false);
+  const [viewedStories, setViewedStories] = useState<Set<string>>(new Set());
+  const [showBottomSheet, setShowBottomSheet] = useState<boolean>(false);
+  const [dragY, setDragY] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  // Add story form state
-  const [newStoryContent, setNewStoryContent] = useState<string>("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>("");
-
-  const sampleStories: Story[] = [
-    {
-      id: "f58a7695-b61a-462a-ab03-48edb729599",
-      content: "For a reason",
-      media_url:
-        "https://snappostmedia.s3.ap-southeast-1.amazonaws.com/ed7ee794-9ba2-450d-b47f-3328052d9195/1756492371197-kavulkkglg.mp4",
-      created_at: "2025-08-29T18:33:18.682Z",
-      username: "BajjuHydra",
-      avatar:
-        "https://snappostmedia.s3.ap-southeast-1.amazonaws.com/ed7ee794-9ba2-450d-b47f-3328052d9195/1756827650755-28btl0haa0j.png",
-      type: "video",
-    },
-    {
-      id: "cb517203-c5ab-4ede-819d-8e5a1b96a7",
-      content: "Clapo Logo",
-      media_url:
-        "https://snappostmedia.s3.ap-southeast-1.amazonaws.com/ed7ee794-9ba2-450d-b47f-3328052d9195/1756050279194-poyje5aehw.webp",
-      created_at: "2025-08-24T15:44:49.079Z",
-      username: "BajjuHydra",
-      avatar:
-        "https://snappostmedia.s3.ap-southeast-1.amazonaws.com/ed7ee794-9ba2-450d-b47f-3328052d9195/1756827650755-28btl0haa0j.png",
-      type: "image",
-    },
-  ];
+  const bottomSheetRef = useRef<HTMLDivElement | null>(null);
 
   // Check if story is expired (older than 24 hours)
   const isStoryExpired = (createdAt: string): boolean => {
@@ -91,38 +79,41 @@ const Stories: React.FC = () => {
   };
 
   useEffect(() => {
-    // Load stories from localStorage and combine with sample stories
-    const localStories = loadStoriesFromStorage();
-    const validSampleStories = filterExpiredStories(sampleStories);
-    const allStories = [...localStories, ...validSampleStories];
-    setStories(allStories);
-
-    // Clean up expired stories from localStorage
-    if (localStories.length > 0) {
-      saveStoriesToStorage(localStories);
-    }
+    fetchFollowingStories();
   }, []);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | undefined;
-    if (isModalOpen && isPlaying) {
-      const currentStory = stories[currentStoryIndex];
-      const duration = currentStory?.type === "video" ? 15000 : 5000;
+    console.log('showBottomSheet state changed:', showBottomSheet);
+  }, [showBottomSheet]);
 
-      interval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 100) {
-            goToNextStory();
-            return 0;
-          }
-          return prev + 100 / (duration / 100);
-        });
-      }, 100);
+  useEffect(() => {
+    let interval: NodeJS.Timeout | undefined;
+    if (isModalOpen && isPlaying && stories.length > 0) {
+      const currentStory = stories[currentStoryIndex];
+      if (currentStory) {
+        // Record view when story is opened (only once per story)
+        if (!viewedStories.has(currentStory.id)) {
+          recordStoryView(currentStory.id);
+          setViewedStories(prev => new Set(prev).add(currentStory.id));
+        }
+        
+        const duration = currentStory.media_type === "video" ? 15000 : 5000;
+
+        interval = setInterval(() => {
+          setProgress((prev) => {
+            if (prev >= 100) {
+              goToNextStory();
+              return 0;
+            }
+            return prev + 100 / (duration / 100);
+          });
+        }, 100);
+      }
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isModalOpen, isPlaying, currentStoryIndex, stories]);
+  }, [isModalOpen, isPlaying, currentStoryIndex, stories, recordStoryView, viewedStories]);
 
   const openStory = (index: number) => {
     setCurrentStoryIndex(index);
@@ -174,6 +165,31 @@ const Stories: React.FC = () => {
     }
   };
 
+  const handleViewStoryViewers = async (storyId: string) => {
+    console.log('handleViewStoryViewers called with storyId:', storyId);
+    
+    // Pause story progress immediately
+    setIsPlaying(false);
+    
+    // Open bottom sheet immediately
+    setShowBottomSheet(true);
+    setDragY(0);
+    setLoadingViewers(true);
+    
+    console.log('Bottom sheet should be opening now...');
+    
+    try {
+      const viewers = await getStoryViewers(storyId);
+      console.log('Viewers fetched:', viewers);
+      setStoryViewers(viewers);
+    } catch (error) {
+      console.error('Failed to fetch story viewers:', error);
+      // Don't show alert, just log the error
+    } finally {
+      setLoadingViewers(false);
+    }
+  };
+
   const formatTimeAgo = (dateString: string): string => {
     const now = new Date();
     const postDate = new Date(dateString);
@@ -186,7 +202,58 @@ const Stories: React.FC = () => {
     return `${Math.floor(diffInDays / 7)}w`;
   };
 
-  const isVideo = (story: Story) => story.type === "video";
+  const isVideo = (story: Story) => story.media_type === "video";
+
+  // Bottom sheet drag handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const touch = e.touches[0];
+    const newY = Math.max(0, Math.min(300, touch.clientY - window.innerHeight + 200));
+    setDragY(newY);
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    
+    // Snap to positions
+    if (dragY > 150) {
+      setShowBottomSheet(false);
+      setDragY(0);
+      // Resume story playback when sheet is closed by dragging
+      setIsPlaying(true);
+    } else if (dragY > 50) {
+      setDragY(100);
+    } else {
+      setDragY(0);
+    }
+  };
+
+  const closeBottomSheet = () => {
+    setShowBottomSheet(false);
+    setDragY(0);
+    // Resume story playback when closing viewers sheet
+    setIsPlaying(true);
+  };
+
+  if (loading) {
+    return (
+      <div className="w-full p-4">
+        <div className="flex gap-3">
+          {[...Array(6)].map((_, index) => (
+            <div key={index} className="flex-shrink-0">
+              <div className="w-20 h-20 rounded-full bg-gray-700 animate-pulse"></div>
+              <div className="w-16 h-3 bg-gray-700 rounded animate-pulse mt-1 mx-auto"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // Handle file selection
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,135 +315,61 @@ const Stories: React.FC = () => {
 
   return (
     <div style={{ zIndex: 99999 }} className="w-full">
+      
       {/* Stories Grid */}
       <div
         className={`flex gap-4 p-6 ${
           stories.length > 5 ? "overflow-x-auto scrollbar-hide" : "overflow-x-hidden scrollbar-hide"
         }`}
       >
-        {/* Add Story Button */}
-        <div className="flex-shrink-0 cursor-pointer group" onClick={openAddModal}>
+        {/* Upload Story Button */}
+        <div className="flex-shrink-0 cursor-pointer" onClick={() => setShowUploadModal(true)}>
           <div className="relative">
-            <div className="w-20 h-20 rounded-full border-2 border-dashed border-gray-600 flex items-center justify-center bg-gray-800/50 hover:bg-gray-700/50 transition-all duration-200 group-hover:border-purple-500 shadow-lg">
-              <Plus size={24} className="text-gray-400 group-hover:text-purple-400 transition-colors duration-200" />
+            <div className="w-20 h-20 rounded-full bg-gray-700 border-2 border-dashed border-gray-500 p-0.5 flex items-center justify-center">
+              <Plus size={24} className="text-gray-400" />
             </div>
           </div>
-          <p className="text-xs text-center mt-2 truncate w-20 text-gray-400 group-hover:text-white transition-colors duration-200">Add Story</p>
+          <p className="text-xs text-center mt-1 truncate w-20 text-gray-400">Your Story</p>
         </div>
 
-        {/* Existing Stories */}
-        {stories.map((story, index) => (
-          <div key={story.id} className="flex-shrink-0 cursor-pointer group" onClick={() => openStory(index)}>
-            <div className="relative">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 p-[2px] shadow-lg hover:shadow-xl transition-all duration-200 group-hover:scale-105">
-                <div className="w-full h-full rounded-full bg-black p-[2px]">
-                  <img
-                    src="https://snappostmedia.s3.ap-southeast-1.amazonaws.com/ed7ee794-9ba2-450d-b47f-3328052d9195/1756827650755-28btl0haa0j.png"
-                    alt={story.username}
-                    className="w-full h-full rounded-full object-cover"
-                    onError={e => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${story.username}` }}
-                  />
-                </div>
-              </div>
+        {/* User Stories */}
+        {stories.length === 0 && !loading && !error ? (
+          <div className="flex-shrink-0 text-center">
+            <div className="w-20 h-20 rounded-full bg-gray-700 flex items-center justify-center">
+              <span className="text-gray-400 text-xs">No stories yet</span>
             </div>
-            <p className="text-xs text-center mt-2 truncate w-20 text-secondary group-hover:text-white transition-colors duration-200">{story.username}</p>
+            <p className="text-xs text-center mt-1 text-gray-400">Create your first story!</p>
           </div>
-        ))}
-      </div>
-
-      {/* Add Story Modal */}
-      {isAddModalOpen && (
-        <div style={{ zIndex: 99999 }} className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
-          <div className="shadow-custom border-2 border-gray-700 rounded-3xl bg-black max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-white">Add Story</h2>
-                <button onClick={closeAddModal} className="text-gray-400 hover:text-gray-200 transition-colors duration-200">
-                  <X size={24} />
-                </button>
-              </div>
-
-              {/* File Input */}
-              <div className="mb-6">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*,video/*"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full border-2 border-dashed border-gray-600 rounded-2xl p-8 flex flex-col items-center justify-center hover:border-purple-500 hover:bg-gray-800/50 transition-all duration-200"
-                >
-                  {selectedFile ? (
-                    <div className="text-center">
-                      {selectedFile.type.startsWith('video/') ? (
-                        <Camera size={48} className="text-purple-500 mx-auto mb-3" />
-                      ) : (
-                        <Image size={48} className="text-purple-500 mx-auto mb-3" />
-                      )}
-                      <p className="text-sm font-medium text-white">{selectedFile.name}</p>
-                      <p className="text-xs text-gray-400 mt-1">Click to change</p>
-                    </div>
-                  ) : (
-                    <div className="text-center">
-                      <Plus size={48} className="text-gray-400 mx-auto mb-3" />
-                      <p className="text-sm font-medium text-gray-300">Select Image or Video</p>
-                      <p className="text-xs text-gray-500 mt-1">Click to browse files</p>
-                    </div>
-                  )}
-                </button>
-              </div>
-
-              {/* Preview */}
-              {previewUrl && (
-                <div className="mb-6">
-                  <p className="text-sm font-medium mb-3 text-gray-300">Preview:</p>
-                  <div className="border border-gray-700 rounded-2xl overflow-hidden shadow-lg">
-                    {selectedFile?.type.startsWith('video/') ? (
-                      <video src={previewUrl} className="w-full h-48 object-cover" controls />
-                    ) : (
-                      <img src={previewUrl} alt="Preview" className="w-full h-48 object-cover" />
-                    )}
+        ) : (
+          stories.map((story, index) => (
+            <div key={story.id} className="flex-shrink-0 cursor-pointer" onClick={() => openStory(index)}>
+              <div className="relative">
+                <div className={`w-20 h-20 rounded-full p-0.5 ${
+                  story.has_viewed 
+                    ? 'bg-gray-600' 
+                    : 'bg-gradient-to-r from-purple-500 via-pink-500 to-red-500'
+                }`}>
+                  <div className="w-full h-full rounded-full bg-white p-0.5">
+                    <img
+                      src={story.user.avatar_url || '/default-avatar.png'}
+                      alt={story.user.username}
+                      className="w-full h-full rounded-full object-cover"
+                    />
                   </div>
                 </div>
-              )}
-
-              {/* Content Input */}
-              <div className="mb-8">
-                <label className="block text-sm font-medium mb-3 text-gray-300">Caption (optional)</label>
-                <textarea
-                  value={newStoryContent}
-                  onChange={(e) => setNewStoryContent(e.target.value)}
-                  placeholder="Write a caption for your story..."
-                  className="w-full p-4 bg-gray-800/50 border border-gray-700 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder-gray-400 transition-all duration-200"
-                  rows={3}
-                />
               </div>
-
-              {/* Buttons */}
-              <div className="flex gap-4">
-                <button
-                  onClick={closeAddModal}
-                  className="flex-1 px-6 py-3 border border-gray-600 text-gray-300 rounded-2xl hover:bg-gray-800/50 hover:text-white transition-all duration-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAddStory}
-                  disabled={!selectedFile}
-                  className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-2xl hover:bg-purple-700 transition-all duration-200 disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed shadow-lg"
-                >
-                  Add Story
-                </button>
-              </div>
+              <p className="text-xs text-center mt-1 truncate w-20">{story.user.username}</p>
             </div>
-          </div>
-        </div>
+          ))
+        )}
+      </div>
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <StoryUpload onClose={() => setShowUploadModal(false)} />
       )}
 
-      {/* Story Modal */}
+      {/* Modal */}
       {isModalOpen && stories[currentStoryIndex] && (
         <div style={{ zIndex: 99999 }} className="fixed inset-0 bg-black z-50 flex items-center justify-center">
           {/* Progress Bars */}
@@ -401,30 +394,38 @@ const Stories: React.FC = () => {
           {/* Header */}
           <div className="absolute top-8 left-4 right-4 flex items-center justify-between z-20 mt-4">
             <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full overflow-hidden shadow-lg">
-                <img
-                  src={stories[currentStoryIndex].avatar}
-                  alt={stories[currentStoryIndex].username}
-                  className="w-full h-full object-cover"
-                  onError={e => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${stories[currentStoryIndex].username}` }}
-                />
-              </div>
+              <img
+                src={stories[currentStoryIndex].user.avatar_url || '/default-avatar.png'}
+                alt={stories[currentStoryIndex].user.username}
+                className="w-8 h-8 rounded-full"
+              />
               <div>
-                <p className="text-white font-semibold text-lg">{stories[currentStoryIndex].username}</p>
-                <p className="text-gray-300 text-sm">{formatTimeAgo(stories[currentStoryIndex].created_at)}</p>
+                <p className="text-white font-semibold text-sm">{stories[currentStoryIndex].user.username}</p>
+                <p className="text-gray-300 text-xs">{formatTimeAgo(stories[currentStoryIndex].created_at)}</p>
               </div>
             </div>
-            <button 
-              onClick={closeStory} 
-              className="text-white hover:text-gray-300 bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full p-2 transition-all duration-200"
-            >
-              <X size={24} />
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Viewers button - only show for story owner */}
+              {stories[currentStoryIndex].user.id === session?.dbUser?.id && (
+                <button 
+                  onClick={() => handleViewStoryViewers(stories[currentStoryIndex].id)}
+                  disabled={loadingViewers}
+                  className="flex items-center gap-1 px-2 py-1 bg-black/50 text-white rounded-lg hover:bg-black/70 transition-colors disabled:opacity-50"
+                  title="View story viewers"
+                >
+                  <Eye size={16} />
+                  <span className="text-xs">{stories[currentStoryIndex].view_count}</span>
+                </button>
+              )}
+              <button onClick={closeStory} className="text-white hover:text-gray-300">
+                <X size={24} />
+              </button>
+            </div>
           </div>
 
           {/* Story Content */}
           <div className="relative w-full h-full flex items-center justify-center">
-            {isVideo(stories[currentStoryIndex]) ? (
+            {stories[currentStoryIndex].media_type === "video" ? (
               <video
                 ref={videoRef}
                 src={stories[currentStoryIndex].media_url}
@@ -441,13 +442,27 @@ const Stories: React.FC = () => {
               />
             )}
 
-            {stories[currentStoryIndex].content && (
-              <div className="absolute bottom-28 left-4 right-4">
-                <div className="bg-black bg-opacity-70 backdrop-blur-sm px-4 py-3 rounded-2xl border border-gray-700/50 shadow-lg">
-                  <p className="text-white text-center text-base leading-relaxed">
-                    {stories[currentStoryIndex].content}
-                  </p>
-                </div>
+            {stories[currentStoryIndex].caption && (
+              <div className="absolute bottom-20 left-4 right-4">
+                <p className="text-white text-center bg-black bg-opacity-50 px-4 py-2 rounded-lg">
+                  {stories[currentStoryIndex].caption}
+                </p>
+              </div>
+            )}
+
+            {/* Instagram-style Viewers Indicator at Bottom */}
+            {stories[currentStoryIndex].user.id === session?.dbUser?.id && (
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-30">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log('Viewers button clicked for story:', stories[currentStoryIndex].id);
+                    handleViewStoryViewers(stories[currentStoryIndex].id);
+                  }}
+                  className="px-4 py-2 bg-black/60 backdrop-blur-sm text-white rounded-full hover:bg-black/80 transition-all duration-200 shadow-lg pointer-events-auto"
+                >
+                  <span className="text-sm font-medium">story views</span>
+                </button>
               </div>
             )}
 
@@ -468,7 +483,7 @@ const Stories: React.FC = () => {
               <ChevronLeft size={24} />
             </button>
 
-            {isVideo(stories[currentStoryIndex]) && (
+            {stories[currentStoryIndex].media_type === "video" && (
               <>
                 <button 
                   onClick={togglePlayPause} 
@@ -491,6 +506,94 @@ const Stories: React.FC = () => {
             >
               <ChevronRight size={24} />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Instagram-style Story Viewers Bottom Sheet */}
+      {showBottomSheet && (
+        <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 999999 }}>
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 transition-opacity"
+            onClick={closeBottomSheet}
+            style={{ pointerEvents: showBottomSheet ? 'auto' : 'none' }}
+          />
+          
+          {/* Bottom Sheet */}
+          <div
+            ref={bottomSheetRef}
+            className="absolute bottom-0 left-0 right-0 bg-gray-900 rounded-t-3xl shadow-2xl transform transition-transform duration-300 ease-out pointer-events-auto border-t border-gray-700"
+            style={{
+              transform: `translateY(${Math.max(0, 200 - dragY)}px)`,
+              height: `${Math.max(200, 400 - dragY)}px`,
+            }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* Drag Handle */}
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-12 h-1 bg-gray-600 rounded-full" />
+            </div>
+
+            {/* Header */}
+            <div className="px-6 pb-4 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Eye size={20} className="text-gray-300" />
+                  <h2 className="text-lg font-semibold text-white">
+                    {storyViewers.length} {storyViewers.length === 1 ? 'viewer' : 'viewers'}
+                  </h2>
+                </div>
+                <button 
+                  onClick={closeBottomSheet}
+                  className="p-2 rounded-full hover:bg-gray-800 transition-colors"
+                >
+                  <X size={20} className="text-gray-400" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              {loadingViewers ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                </div>
+              ) : storyViewers.length === 0 ? (
+                <div className="text-center py-8">
+                  <Eye size={48} className="mx-auto mb-3 text-gray-500" />
+                  <p className="text-gray-400">No viewers yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {storyViewers.map((viewer) => (
+                    <div key={viewer.id} className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-800 transition-colors">
+                      <img 
+                        src={viewer.avatar_url || '/default-avatar.png'} 
+                        alt={viewer.username}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-gray-700"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-medium truncate">
+                          {viewer.name || viewer.username}
+                        </p>
+                        <p className="text-gray-400 text-sm truncate">
+                          @{viewer.username}
+                        </p>
+                      </div>
+                      <div className="text-gray-500 text-xs">
+                        {new Date(viewer.viewed_at).toLocaleTimeString([], { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

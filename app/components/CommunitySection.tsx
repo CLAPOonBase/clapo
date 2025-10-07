@@ -1,8 +1,9 @@
-import { Users, Hash, ArrowLeft } from 'lucide-react';
+import { Users, Hash, ArrowLeft, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useApi } from '../Context/ApiProvider';
 import { CommunityMember } from '../types/api';
 import { useRouter } from 'next/navigation';
+import { CommunityProfileSettings } from './CommunityProfileSettings';
 
 interface CommunitySectionProps {
   communitySection: 'my' | 'join' | 'create';
@@ -28,6 +29,7 @@ export const CommunitySection = ({
   const [showMembers, setShowMembers] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [justJoined, setJustJoined] = useState<string | null>(null);
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
 
   const selectedCommunityData = state.communities?.find((community: any) => community.id === selectedCommunity);
 
@@ -197,9 +199,9 @@ export const CommunitySection = ({
           <div className="bg-slate-700/30 border border-slate-600/30 rounded-xl p-4 mb-4">
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center overflow-hidden">
-                {selectedCommunityData.image_url ? (
+                {selectedCommunityData.profile_picture_url ? (
                   <img 
-                    src={selectedCommunityData.image_url} 
+                    src={selectedCommunityData.profile_picture_url} 
                     alt={selectedCommunityData.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -209,12 +211,36 @@ export const CommunitySection = ({
                     }}
                   />
                 ) : null}
-                <Hash className={`w-6 h-6 text-white ${selectedCommunityData.image_url ? 'hidden' : ''}`} />
+                <Hash className={`w-6 h-6 text-white ${selectedCommunityData.profile_picture_url ? 'hidden' : ''}`} />
               </div>
               <div className="flex-1">
                 <div className="font-semibold text-white">{selectedCommunityData.name}</div>
                 <div className="text-sm text-slate-400">{selectedCommunityData.description}</div>
               </div>
+              {/* Always show settings button for debugging */}
+              <button
+                onClick={() => {
+                  console.log('Opening community profile settings for:', selectedCommunityData.name);
+                  console.log('showProfileSettings before:', showProfileSettings);
+                  setShowProfileSettings(true);
+                  console.log('showProfileSettings after:', true);
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors border border-gray-600 hover:border-gray-500"
+                title="Community Profile Settings"
+              >
+                <Settings size={16} />
+                <span className="text-xs">Settings</span>
+              </button>
+              
+              {/* Debug info - remove in production */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="text-xs text-gray-500 mt-2">
+                  <div>Is Admin: {selectedCommunityData.user_is_admin ? 'Yes' : 'No'}</div>
+                  <div>Creator ID: {selectedCommunityData.creator_id}</div>
+                  <div>Your ID: {session?.dbUser?.id}</div>
+                  <div>Can Edit: {(selectedCommunityData.user_is_admin || selectedCommunityData.creator_id === session?.dbUser?.id) ? 'Yes' : 'No'}</div>
+                </div>
+              )}
             </div>
             <div className="flex items-center justify-between text-xs text-slate-400 mb-3">
               <span className="flex items-center">
@@ -325,6 +351,26 @@ export const CommunitySection = ({
             )}
           </div>
         ) : null}
+        
+        {/* Community Profile Settings Modal */}
+        {showProfileSettings && selectedCommunity && (
+          <CommunityProfileSettings
+            communityId={selectedCommunity}
+            onClose={() => {
+              console.log('Closing community profile settings');
+              setShowProfileSettings(false);
+            }}
+          />
+        )}
+        
+        {/* Debug info for modal */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="fixed bottom-4 right-4 bg-black bg-opacity-75 text-white p-2 text-xs rounded">
+            <div>showProfileSettings: {showProfileSettings ? 'true' : 'false'}</div>
+            <div>selectedCommunity: {selectedCommunity || 'null'}</div>
+            <div>Modal should show: {(showProfileSettings && selectedCommunity) ? 'YES' : 'NO'}</div>
+          </div>
+        )}
       </div>
     </div>
   );

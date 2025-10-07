@@ -197,12 +197,17 @@ export function SnapComposer({ close }: { close: () => void }) {
     setIsSubmitting(true)
 
     try {
-      console.log('🚀 Submitting post with data:', { userId, content: content.trim(), mediaUrl })
+      // Generate ONE UUID that will be used for everything
+      const postUuid = crypto.randomUUID()
+      console.log('🎯 Generated consistent UUID for post and token:', postUuid)
+      
+      console.log('🚀 Submitting post with data:', { userId, content: content.trim(), mediaUrl, uuid: postUuid })
       
       const postData = {
         userId,
         content: content.trim(),
         mediaUrl,
+        uuid: postUuid, // Pass the UUID to backend
         parentPostId: undefined,
         isRetweet: false,
         retweetRefId: undefined,
@@ -215,26 +220,16 @@ export function SnapComposer({ close }: { close: () => void }) {
       // Always create post token if wallet is connected
       if (isConnected) {
         try {
-          console.log('🚀 Creating post token...')
-          const postId = response?.post?.id
-          console.log('Post ID for token creation:', postId)
-          if (postId) {
-            // Generate a unique UUID for the token
-            const tokenUuid = generatePostTokenUUID(postId)
-            console.log('Generated token UUID:', tokenUuid)
-            const tokenTxHash = await createPostToken(
-              tokenUuid,
-              content.trim(),
-              mediaUrl || '',
-              freebieCount,
-              quadraticDivisor
-            )
-            console.log('✅ Post token created successfully, TX:', tokenTxHash)
-            showSuccessToast(`Snap posted and token created! TX: ${tokenTxHash.slice(0, 10)}...`)
-          } else {
-            console.error('No post ID found in response:', response)
-            showSuccessToast('Snap posted but no post ID found for token creation')
-          }
+          console.log('🚀 Creating post token with same UUID:', postUuid)
+          const tokenTxHash = await createPostToken(
+            postUuid, // Use the SAME UUID
+            content.trim(),
+            mediaUrl || '',
+            freebieCount,
+            quadraticDivisor
+          )
+          console.log('✅ Post token created successfully, TX:', tokenTxHash)
+          showSuccessToast(`Snap posted and token created! TX: ${tokenTxHash.slice(0, 10)}...`)
         } catch (tokenError) {
           console.error('Failed to create post token:', tokenError)
           let errorMessage = 'Snap posted successfully, but token creation failed'
