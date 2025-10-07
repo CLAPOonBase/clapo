@@ -37,40 +37,42 @@ export const StoryUpload: React.FC<StoryUploadProps> = ({ onClose }) => {
     }
   };
 
-  const handleUpload = async () => {
-    if (!selectedFile) return;
+const handleUpload = async () => {
+  if (!selectedFile) return;
+  
+  setUploading(true);
+  
+  try {
+    const formData = new FormData();
+    formData.append('file', selectedFile);
     
-    setUploading(true);
+    const uploadResponse = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
     
-    try {
-      // Upload using the API route to avoid CORS issues
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      
-      const uploadResponse = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!uploadResponse.ok) {
-        throw new Error('Upload failed');
-      }
-      
-      const uploadResult = await uploadResponse.json();
-      console.log('Story uploaded successfully:', uploadResult.url);
-      
-      // Create story with uploaded URL
-      await createStory(uploadResult.url, mediaType, caption || undefined);
-      
-      // Close modal
-      onClose();
-    } catch (error) {
-      console.error('Failed to upload story:', error);
-      alert('Failed to upload story. Please try again.');
-    } finally {
-      setUploading(false);
+    if (!uploadResponse.ok) {
+      throw new Error('Upload failed');
     }
-  };
+    
+    const uploadResult = await uploadResponse.json();
+    console.log('Story uploaded successfully:', uploadResult.url);
+    
+    // Create story with uploaded URL
+    await createStory(uploadResult.url, mediaType, caption || undefined);
+
+    // ✅ Close modal and refresh page
+    onClose();
+    window.location.reload();  // <--- this forces full page refresh
+
+  } catch (error) {
+    console.error('Failed to upload story:', error);
+    alert('Failed to upload story. Please try again.');
+  } finally {
+    setUploading(false);
+  }
+};
+
 
   const handleCameraClick = () => {
     fileInputRef.current?.click();

@@ -374,7 +374,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
 
   if (isLoading) {
     return (
-      <div className="flex-col max-w-3xl md:flex-row text-white flex mx-auto">
+      <div className="flex-col md:flex-row text-white flex mx-auto">
         {/* <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} /> */}
         <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky bg-black p-4">
           <div className="animate-pulse">
@@ -405,7 +405,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
   }
 
   return (
-    <div className="flex-col md:flex-row max-w-3xl border-gray-700/70 text-white flex mx-auto">
+    <div className="flex-col md:flex-row border-gray-700/70 text-white flex mx-auto">
       <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
 
       <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky bg-black py-4">
