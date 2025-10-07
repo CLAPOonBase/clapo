@@ -4,6 +4,7 @@ import { useApi } from '../Context/ApiProvider';
 import { CommunityMember } from '../types/api';
 import { useRouter } from 'next/navigation';
 import { CommunityProfileSettings } from './CommunityProfileSettings';
+import Image from 'next/image';
 
 interface CommunitySectionProps {
   communitySection: 'my' | 'join' | 'create';
@@ -103,12 +104,14 @@ export const CommunitySection = ({
         <div className={`w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden ${
           selectedCommunity === community.id && !isJoinSection
             ? 'bg-gradient-to-br from-purple-500 to-pink-500'
-            : 'bg-gradient-to-br from-purple-500 to-pink-500 border'
+            : 'border border-white/40'
         }`}>
-          {community.image_url ? (
-            <img
-              src={community.image_url}
+          {community.profile_picture_url ? (
+            <Image
+              src={community.profile_picture_url}
               alt={community.name}
+              width={100}
+              height={100}
               className="w-full h-full object-cover"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
@@ -117,7 +120,7 @@ export const CommunitySection = ({
               }}
             />
           ) : null}
-          <Hash className={`w-5 h-5 text-white ${community.image_url ? 'hidden' : ''}`} />
+          <Hash className={`w-5 h-5 text-white ${community.profile_picture_url ? 'hidden' : ''}`} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-xs font-medium text-white truncate">{community.name}</div>
@@ -232,15 +235,7 @@ export const CommunitySection = ({
                 <span className="text-xs">Settings</span>
               </button>
               
-              {/* Debug info - remove in production */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="text-xs text-gray-500 mt-2">
-                  <div>Is Admin: {selectedCommunityData.user_is_admin ? 'Yes' : 'No'}</div>
-                  <div>Creator ID: {selectedCommunityData.creator_id}</div>
-                  <div>Your ID: {session?.dbUser?.id}</div>
-                  <div>Can Edit: {(selectedCommunityData.user_is_admin || selectedCommunityData.creator_id === session?.dbUser?.id) ? 'Yes' : 'No'}</div>
-                </div>
-              )}
+            
             </div>
             <div className="flex items-center justify-between text-xs text-slate-400 mb-3">
               <span className="flex items-center">
