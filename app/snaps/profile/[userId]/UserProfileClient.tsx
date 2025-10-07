@@ -405,10 +405,10 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
   }
 
   return (
-    <div className="flex-col md:flex-row border-gray-700/70 text-white flex mx-auto">
+    <div className="flex-col md:flex-row justify-between border-gray-700/70 text-white flex mx-auto">
       <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
 
-      <div className="flex-1 md:m-4 md:mt-1 rounded-2xl sticky bg-black py-4">
+      <div className="flex-1 max-w-3xl mx-auto md:m-4 md:mt-1 rounded-2xl sticky bg-black py-4">
         {/* Back Button */}
         {/* <div className="mb-6">
           <button
@@ -898,6 +898,9 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
             </div>
           )}
         </div>
+      </div>
+      <div className='border border-gray-700/70 rounded-2xl hidden lg:block w-80 h-screen mr-4 sticky top-4 bg-black p-4'>
+
       </div>
       
       {/* Followers Modal */}

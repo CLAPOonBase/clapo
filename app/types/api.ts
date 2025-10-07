@@ -399,6 +399,7 @@ export interface CreateCommunityRequest {
 }
 
 export interface Community {
+  profile_picture_url: string
   id: string
   name: string
   description: string
