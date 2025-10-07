@@ -29,6 +29,8 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
   
   
 
+  const { data: session } = useSession();
+
   const { 
     buyShares, 
     sellShares, 
@@ -46,7 +48,6 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
     disconnectWallet
   } = usePostToken();
 
-  const { data: session } = useSession();
   const userAddress = address; // Use wallet address instead of session address
 
   // Load post token data
@@ -56,13 +57,19 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
     }
   }, [isOpen, postId]);
 
+  // Helper function to get the correct post token UUID
+  const getPostTokenUuid = async (): Promise<string> => {
+    // Now the postId IS the token UUID (they're the same!)
+    return postId;
+  };
+
   const loadPostTokenData = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Generate the UUID that was used during token creation
-      const tokenUuid = `post-${postId}`;
+      // Get the correct post token UUID
+      const tokenUuid = await getPostTokenUuid();
       
       const [price, actualPriceValue, postStats, freebies, canClaim] = await Promise.all([
         getCurrentPrice(tokenUuid),
@@ -113,8 +120,8 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
     setSuccess(null);
 
     try {
-      const tokenUuid = `post-${postId}`;
-      await buyShares(tokenUuid);
+      const tokenUuid = await getPostTokenUuid();
+      await buyShares(tokenUuid, session?.dbUser?.id);
       setSuccess('Successfully bought shares!');
       await loadPostTokenData(); // Refresh data
     } catch (err: any) {
@@ -140,7 +147,7 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
     setSuccess(null);
 
     try {
-      const tokenUuid = `post-${postId}`;
+      const tokenUuid = await getPostTokenUuid();
       await sellShares(tokenUuid, amount);
       setSuccess('Successfully sold shares!');
       await loadPostTokenData(); // Refresh data

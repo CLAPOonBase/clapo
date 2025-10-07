@@ -1,8 +1,7 @@
-import { Users, Hash, ArrowLeft } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { useApi } from '../Context/ApiProvider';
-import { CommunityMember } from '../types/api';
+import { Users, Hash } from 'lucide-react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 interface CommunitySectionProps {
   communitySection: 'my' | 'join' | 'create';
@@ -21,11 +20,7 @@ export const CommunitySection = ({
   onSelectCommunity,
   onJoinCommunity
 }: CommunitySectionProps) => {
-  const { getCommunityMembers } = useApi();
   const router = useRouter();
-  const [members, setMembers] = useState<CommunityMember[]>([]);
-  const [loadingMembers, setLoadingMembers] = useState(false);
-  const [showMembers, setShowMembers] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [justJoined, setJustJoined] = useState<string | null>(null);
 
@@ -46,37 +41,8 @@ export const CommunitySection = ({
     router.push(`/snaps/profile/${userId}`)
   };
 
-  useEffect(() => {
-    if (selectedCommunity && showMembers) {
-      fetchMembers();
-    }
-  }, [selectedCommunity, showMembers]);
-
-  const fetchMembers = async () => {
-    if (!selectedCommunity) return;
-    
-    setLoadingMembers(true);
-    try {
-      console.log('🔍 Fetching members for community:', selectedCommunity);
-      const response = await getCommunityMembers(selectedCommunity);
-      console.log('🔍 Community members response:', response);
-      setMembers(response.members || []);
-      console.log('🔍 Set members:', response.members || []);
-    } catch (error) {
-      console.error('Failed to fetch community members:', error);
-    } finally {
-      setLoadingMembers(false);
-    }
-  };
-
   const handleCommunityClick = (communityId: string) => {
     onSelectCommunity(communityId);
-    setShowMembers(true);
-  };
-
-  const handleBackToCommunities = () => {
-    setShowMembers(false);
-    onSelectCommunity('');
   };
 
   const handleJoin = (communityId: string) => {
@@ -86,82 +52,70 @@ export const CommunitySection = ({
     setTimeout(() => setShowPopup(false), 2000); // close popup after 2s
   };
 
-  // Unified Community Card Component
-  const CommunityCard = ({ community, isJoinSection = false }: { community: any, isJoinSection?: boolean }) => (
-    <div
-      className={`group p-2.5 rounded-xl transition-all duration-200 border w-full ${
-        selectedCommunity === community.id && !isJoinSection
-          ? 'bg-gray-700/30 border-[#6e54ff] text-white'
-          : 'border-transparent text-slate-300 hover:bg-gray-700/20 hover:text-white'
-      } ${!isJoinSection ? 'cursor-pointer' : ''}`}
-      onClick={!isJoinSection ? () => handleCommunityClick(community.id) : undefined}
-    >
-      {/* Header Section */}
-      <div className="flex items-center space-x-2.5 mb-2">
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden ${
-          selectedCommunity === community.id && !isJoinSection
-            ? 'bg-gradient-to-br from-purple-500 to-pink-500'
-            : 'bg-gradient-to-br from-purple-500 to-pink-500'
-        }`}>
-          {community.image_url ? (
-            <img
-              src={community.image_url}
-              alt={community.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-                target.nextElementSibling?.classList.remove('hidden');
-              }}
-            />
-          ) : null}
-          <Hash className={`w-5 h-5 text-white ${community.image_url ? 'hidden' : ''}`} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-xs font-medium text-white truncate">{community.name}</div>
-          <div className="text-[11px] text-slate-400 line-clamp-1 leading-tight">{community.description}</div>
-        </div>
-      </div>
+  // Redesigned Community Card - Horizontal layout matching personal chat
+  const CommunityCard = ({ community, isJoinSection = false }: { community: any, isJoinSection?: boolean }) => {
+    const isSelected = selectedCommunity === community.id && !isJoinSection;
 
-      {/* Admin Badge */}
-      {community.user_is_admin && (
-        <div className="mb-2">
-          <span className="inline-block px-1.5 py-0.5 text-[10px] bg-purple-500/20 text-purple-300 rounded-full">
-            Admin
-          </span>
-        </div>
-      )}
+    return (
+      <div
+        className={`w-full px-2.5 py-1.5 rounded-xl transition-all duration-200 border ${
+          isSelected
+            ? 'bg-gray-700/30 border-[#6e54ff] text-white'
+            : 'border-transparent text-slate-300 hover:bg-gray-700/20 hover:text-white'
+        } ${!isJoinSection ? 'cursor-pointer' : ''}`}
+        onClick={!isJoinSection ? () => handleCommunityClick(community.id) : undefined}
+      >
+        {/* Header Section - Horizontal layout */}
+        <div className="flex items-center space-x-2.5">
+          {/* Community Image - Left side */}
+          <div className={`w-9 h-9 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ${
+            isSelected
+              ? 'bg-gradient-to-br from-purple-500 to-pink-500'
+              : 'bg-slate-600'
+          }`}>
+            {community.profile_picture_url ? (
+              <Image
+                src={community.profile_picture_url}
+                alt={community.name}
+                width={36}
+                height={36}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  target.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+            ) : null}
+            <Hash className={`w-5 h-5 text-white ${community.profile_picture_url ? 'hidden' : ''}`} />
+          </div>
 
-      {/* Footer Section */}
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col space-y-0.5">
-          <span className="text-[10px] text-slate-400 flex items-center">
-            <Users className="w-2.5 h-2.5 mr-1" />
-            {community.member_count || 0} members
-          </span>
-          <span className="text-[10px] text-slate-400">
-            Created by{' '}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (community.creator_id) {
-                  handleUserClick(community.creator_id);
-                }
-              }}
-              className="text-blue-400 hover:text-blue-300 hover:underline"
-            >
-              {community.creator_username || 'Unknown'}
-            </button>
-          </span>
+          {/* Community Info - Right side */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className="text-sm font-semibold text-white truncate">
+                {community.name}
+              </span>
+              {community.user_is_admin && (
+                <span className="inline-block px-1.5 py-0.5 text-[10px] bg-purple-500/20 text-purple-300 rounded-full flex-shrink-0">
+                  Admin
+                </span>
+              )}
+            </div>
+            <div className="text-sm text-slate-400 flex items-center leading-tight">
+              <Users className="w-3 h-3 mr-1" />
+              {community.member_count || 0} members
+            </div>
+          </div>
         </div>
-        
-        {/* Action Button for Join Section */}
+
+        {/* Join Button - Below (only for join section) */}
         {isJoinSection && (
-          <div className="ml-3">
+          <div className="mt-2 ml-11">
             {justJoined === community.id ? (
               <button
                 disabled
-                className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg cursor-not-allowed min-w-[70px]"
+                className="w-full px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-lg cursor-not-allowed"
               >
                 Joined
               </button>
@@ -171,7 +125,7 @@ export const CommunitySection = ({
                   e.stopPropagation();
                   handleJoin(community.id);
                 }}
-                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25 min-w-[70px]"
+                className="w-full px-3 py-1.5 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25"
               >
                 Join
               </button>
@@ -179,121 +133,8 @@ export const CommunitySection = ({
           </div>
         )}
       </div>
-    </div>
-  );
-
-  if (showMembers && selectedCommunityData) {
-    return (
-      <div className="py-4">
-        <div className="mb-4">
-          <button
-            onClick={handleBackToCommunities}
-            className="flex items-center text-slate-400 hover:text-white transition-colors mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Communities
-          </button>
-          
-          <div className="bg-slate-700/30 border border-slate-600/30 rounded-xl p-4 mb-4">
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center overflow-hidden">
-                {selectedCommunityData.image_url ? (
-                  <img 
-                    src={selectedCommunityData.image_url} 
-                    alt={selectedCommunityData.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      target.nextElementSibling?.classList.remove('hidden');
-                    }}
-                  />
-                ) : null}
-                <Hash className={`w-6 h-6 text-white ${selectedCommunityData.image_url ? 'hidden' : ''}`} />
-              </div>
-              <div className="flex-1">
-                <div className="font-semibold text-white">{selectedCommunityData.name}</div>
-                <div className="text-sm text-slate-400">{selectedCommunityData.description}</div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-xs text-slate-400 mb-3">
-              <span className="flex items-center">
-                <Users className="w-3 h-3 mr-1" />
-                {members.length} members
-              </span>
-              <span>Created by 
-                <button
-                  onClick={() => selectedCommunityData.creator_id && handleUserClick(selectedCommunityData.creator_id)}
-                  className="ml-1 text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                >
-                  {selectedCommunityData.creator_username || 'Unknown'}
-                </button>
-              </span>
-            </div>
-            
-            {selectedCommunityData.user_is_admin && (
-              <div className="mt-2">
-                <span className="inline-block px-2 py-1 text-xs bg-purple-500/20 text-purple-300 rounded-full">
-                  Admin
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-white mb-3">Members</h3>
-            {loadingMembers ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
-              </div>
-            ) : members.length === 0 ? (
-              <div className="text-center py-8 text-slate-400">
-                <p>No members found</p>
-              </div>
-            ) : (
-              members.map((member: CommunityMember) => (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between p-3 bg-slate-700/30 border border-slate-600/30 rounded-lg"
-                >
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => handleUserClick(member.user_id)}
-                      className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
-                    >
-                      {member.avatar_url ? (
-                        <img 
-                          src={member.avatar_url} 
-                          className='rounded-full w-8 h-8 object-cover' 
-                          alt={member.username || 'Member'} 
-                        />
-                      ) : (
-                        <span className="text-sm font-medium text-white">
-                          {member.username?.charAt(0)?.toUpperCase() || 'U'}
-                        </span>
-                      )}
-                    </button>
-                    <div>
-                      <button
-                        onClick={() => handleUserClick(member.user_id)}
-                        className="text-sm font-medium text-white hover:text-blue-300 hover:underline cursor-pointer text-left"
-                      >
-                        {member.username}
-                      </button>
-                      <div className="text-xs text-slate-400">{member.bio || 'No bio'}</div>
-                    </div>
-                  </div>
-                  <div className="text-xs text-slate-400">
-                    {member.joined_at ? new Date(member.joined_at).toLocaleDateString() : 'Unknown'}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
     );
-  }
+  };
 
   return (
     <div className="py-4">

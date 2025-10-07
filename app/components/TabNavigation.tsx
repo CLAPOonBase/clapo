@@ -33,7 +33,7 @@ export const TabNavigation = ({
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as "dms" | "communities")}
-                className={`py-1.5 my-0.5 font-semibold w-full relative z-10 text-[11px] ${
+                className={`py-1.5 my-0.5 font-semibold w-full relative z-10 text-sm ${
                   activeTab === tab.key ? "text-white" : "text-gray-400"
                 }`}
               >
@@ -66,7 +66,7 @@ export const TabNavigation = ({
       <div className="flex items-center min-h-[28px]">
         {activeTab === "communities" && (
           <motion.div
-            className="flex justify-start gap-2 items-center w-full"
+            className="flex justify-start gap-2 mt-2 items-center w-full"
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.2 }}
@@ -78,7 +78,7 @@ export const TabNavigation = ({
               <button
                 key={section.key}
                 onClick={() => setCommunitySection(section.key as "my" | "join")}
-                className={`relative px-2.5 py-1 text-[10px] font-medium whitespace-nowrap rounded-full transition-all duration-200 ${
+                className={`relative px-2.5 py-1 text-sm font-medium whitespace-nowrap rounded-full transition-all duration-200 ${
                   communitySection === section.key
                     ? "text-white bg-gray-700/50 border border-gray-600/30"
                     : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/30"

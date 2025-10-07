@@ -81,11 +81,40 @@ export interface UserPortfolio {
   currentValue: number;
 }
 
+// Cache for contract deployment status to avoid repeated RPC calls
+let contractDeploymentCache: { [address: string]: boolean } = {};
+
 export const usePostToken = () => {
   const { provider, signer, address, isConnecting, connect, disconnect } = useWalletContext();
   const [contract, setContract] = useState<ethers.Contract | null>(null);
   const [loading, setLoading] = useState(false);
-  
+
+  // Create a read-only provider using Monad RPC for read operations
+  const readOnlyProvider = new ethers.JsonRpcProvider(
+    process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://testnet-rpc.monad.xyz'
+  );
+
+  // Helper function to check if contract is deployed (with caching)
+  const isContractDeployed = async (contractAddress: string): Promise<boolean> => {
+    // Check cache first
+    if (contractDeploymentCache[contractAddress] !== undefined) {
+      return contractDeploymentCache[contractAddress];
+    }
+
+    try {
+      const code = await readOnlyProvider.getCode(contractAddress);
+      const isDeployed = code !== '0x';
+      // Cache the result
+      contractDeploymentCache[contractAddress] = isDeployed;
+      return isDeployed;
+    } catch (error) {
+      console.error('Error checking contract deployment:', error);
+      // Cache as false to avoid repeated failed calls
+      contractDeploymentCache[contractAddress] = false;
+      return false;
+    }
+  };
+
   // Derive isConnected from global wallet context
   const isConnected = !!signer && !!address;
 
@@ -203,6 +232,29 @@ export const usePostToken = () => {
         status: receipt.status
       });
 
+      // Create post token in backend database
+      try {
+        const { tokenApiService } = await import('@/app/lib/tokenApi');
+        const backendResponse = await tokenApiService.createPostToken({
+          uuid: uuid, // Pass the same UUID used for blockchain
+          content: content,
+          image_url: imageUrl,
+          creator_address: address!,
+          freebie_count: freebieCount,
+          quadratic_divisor: quadraticDivisor,
+          total_supply: 100000 // Default total supply
+        });
+        
+        if (backendResponse.success) {
+          console.log('✅ Post token created in backend database:', backendResponse.data?.uuid);
+        } else {
+          console.error('❌ Failed to create post token in backend:', backendResponse.message);
+        }
+      } catch (apiError) {
+        console.error('❌ Failed to create post token in backend database:', apiError);
+        // Don't throw here - blockchain transaction succeeded, backend is optional
+      }
+
       return tx.hash;
     } catch (error) {
       console.error('❌ Failed to create post token:', error);
@@ -299,7 +351,7 @@ export const usePostToken = () => {
   };
 
   // Buy shares
-  const buyShares = async (uuid: string) => {
+  const buyShares = async (uuid: string, buyerUserId?: string) => {
     if (!contract || !signer) {
       throw new Error('Contract not connected');
     }
@@ -315,7 +367,66 @@ export const usePostToken = () => {
       
       // Now proceed with the purchase
       const tx = await contract.buyPostTokensByUuid(uuid);
-      await tx.wait();
+      const receipt = await tx.wait();
+      
+      // Check if this was a freebie transaction by looking for FreebieClaimed event
+      let isFreebie = false;
+      let actualPrice = currentPrice;
+      let actualTotalCost = currentPrice;
+      
+      if (receipt.logs) {
+        for (const log of receipt.logs) {
+          try {
+            const parsedLog = contract.interface.parseLog(log);
+            if (parsedLog && parsedLog.name === 'FreebieClaimed') {
+              isFreebie = true;
+              actualPrice = 0;
+              actualTotalCost = 0;
+              console.log('🎁 Freebie transaction detected!');
+              break;
+            } else if (parsedLog && parsedLog.name === 'PostTokensBought') {
+              // Check if PostTokensBought event indicates it was a freebie
+              const eventArgs = parsedLog.args;
+              if (eventArgs && eventArgs.isFreebie === true) {
+                isFreebie = true;
+                actualPrice = 0;
+                actualTotalCost = 0;
+                console.log('🎁 Freebie transaction detected via PostTokensBought event!');
+              }
+              break;
+            }
+          } catch (e) {
+            // Skip logs that can't be parsed (might be from other contracts)
+            continue;
+          }
+        }
+      }
+      
+      // Record transaction in backend database
+      try {
+        const { tokenApiService } = await import('@/app/lib/tokenApi');
+        
+        await tokenApiService.recordPostTokenTransaction({
+          user_address: address!,
+          buyer_user_id: buyerUserId,
+          post_token_uuid: uuid,
+          transaction_type: 'BUY',
+          amount: 1,
+          price_per_token: actualPrice,
+          total_cost: actualTotalCost,
+          tx_hash: tx.hash,
+          block_number: receipt.blockNumber,
+          gas_used: Number(receipt.gasUsed?.toString() || '0'),
+          gas_price: Number(receipt.gasPrice?.toString() || '0'),
+          is_freebie: isFreebie,
+          fees_paid: 0
+        });
+        console.log('✅ Transaction recorded in backend database', { isFreebie, actualPrice, actualTotalCost });
+      } catch (apiError) {
+        console.error('❌ Failed to record transaction in backend:', apiError);
+        // Transaction still succeeded on blockchain, but not recorded in backend
+      }
+      
       return tx.hash;
     } catch (error) {
       console.error('Failed to buy shares:', error);
@@ -333,8 +444,35 @@ export const usePostToken = () => {
 
     setLoading(true);
     try {
+      // Get current price for recording
+      const currentPrice = await getCurrentPrice(uuid);
+      
       const tx = await contract.sellPostTokensByUuid(uuid, amount);
-      await tx.wait();
+      const receipt = await tx.wait();
+      
+      // Record transaction in backend database
+      try {
+        const { tokenApiService } = await import('@/app/lib/tokenApi');
+        await tokenApiService.recordPostTokenTransaction({
+          user_address: address!,
+          post_token_uuid: uuid,
+               transaction_type: 'SELL',
+          amount: amount,
+          price_per_token: currentPrice,
+          total_cost: currentPrice * amount,
+          tx_hash: tx.hash,
+          block_number: receipt.blockNumber,
+          gas_used: Number(receipt.gasUsed?.toString() || '0'),
+          gas_price: Number(receipt.gasPrice?.toString() || '0'),
+          is_freebie: false,
+          fees_paid: 0
+        });
+        console.log('✅ Transaction recorded in backend database');
+      } catch (apiError) {
+        console.error('❌ Failed to record transaction in backend:', apiError);
+        // Transaction still succeeded on blockchain, but not recorded in backend
+      }
+      
       return tx.hash;
     } catch (error) {
       console.error('Failed to sell shares:', error);
@@ -352,6 +490,13 @@ export const usePostToken = () => {
     }
 
     try {
+      // Check if contract is deployed using cached check
+      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
+      if (!deployed) {
+        console.log('Contract not deployed, returning 0 price');
+        return 0;
+      }
+
       // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
@@ -375,6 +520,13 @@ export const usePostToken = () => {
     }
 
     try {
+      // Check if contract is deployed using cached check
+      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
+      if (!deployed) {
+        console.log('Contract not deployed, returning null stats');
+        return null;
+      }
+
       // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
@@ -437,6 +589,13 @@ export const usePostToken = () => {
     }
 
     try {
+      // Check if contract is deployed using cached check
+      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
+      if (!deployed) {
+        console.log('Contract not deployed, returning 0 freebies');
+        return 0;
+      }
+
       // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
@@ -460,6 +619,13 @@ export const usePostToken = () => {
     }
 
     try {
+      // Check if contract is deployed using cached check
+      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
+      if (!deployed) {
+        console.log('Contract not deployed at address, returning 0 actual price');
+        return 0;
+      }
+
       // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
@@ -488,6 +654,13 @@ export const usePostToken = () => {
     }
 
     try {
+      // Check if contract is deployed using cached check
+      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
+      if (!deployed) {
+        console.log('Contract not deployed, returning false');
+        return false;
+      }
+
       // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
@@ -550,19 +723,26 @@ export const usePostToken = () => {
   // Check if post token exists
   const checkPostTokenExists = async (uuid: string): Promise<boolean> => {
     console.log(`🔍 checkPostTokenExists called for post: ${uuid}`);
-    console.log(`Contract status:`, { 
-      hasContract: !!contract, 
+    console.log(`Contract status:`, {
+      hasContract: !!contract,
       contractAddress: CONTRACT_ADDRESS,
       hasSigner: !!signer,
       userAddress: address
     });
-    
+
     if (!contract) {
       console.log('❌ No contract available for checking post existence');
       return false;
     }
 
     try {
+      // Check if contract is deployed using cached check
+      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
+      if (!deployed) {
+        console.log('Contract not deployed, returning false');
+        return false;
+      }
+
       console.log(`📞 Calling contract.doesUuidExist(${uuid})...`);
       // Use the safe function that doesn't revert
       const exists = await contract.doesUuidExist(uuid);

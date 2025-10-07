@@ -206,6 +206,7 @@ export interface CreatePostRequest {
   parentPostId?: string
   isRetweet?: boolean
   retweetRefId?: string
+  mentions?: string[] // Array of mentioned user IDs
 }
 
 export interface Post {
@@ -226,6 +227,12 @@ export interface Post {
   avatar_url: string
   author_reputation?: number
   author_reputation_tier?: ReputationTier
+  mentions?: Array<{
+    user_id: string
+    username: string
+    avatar_url?: string
+    name?: string
+  }>
   likes?: Array<{
     user_id: string
     username: string
@@ -452,6 +459,7 @@ export interface CreateCommunityRequest {
 }
 
 export interface Community {
+  profile_picture_url: string
   id: string
   name: string
   description: string
@@ -604,6 +612,7 @@ export interface MessageThread {
   name: string
   createdAt: string
   participants?: Array<{
+    avatar_url: string
     id: string
     user_id: string
     username: string

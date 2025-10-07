@@ -75,7 +75,7 @@ export const MessageItem = ({
         {!isOwnMessage && isFirstInGroup && message.sender_username && (
           <button
             onClick={() => handleUserClick(message.sender_id)}
-            className="text-xs font-medium text-gray-400 hover:text-gray-300 transition-colors duration-200 hover:underline cursor-pointer mb-1"
+            className="text-sm font-semibold text-gray-400 hover:text-gray-300 transition-colors duration-200 hover:underline cursor-pointer mb-1"
           >
             {message.sender_username}
           </button>
@@ -121,7 +121,7 @@ export const MessageItem = ({
 
           {/* Text Content */}
           {message.content && (
-            <p className={`text-sm leading-relaxed break-words whitespace-pre-wrap ${
+            <p className={`text-base leading-relaxed break-words whitespace-pre-wrap ${
               message.media_url ? 'px-4 py-2' : ''
             }`}>
               {message.content}

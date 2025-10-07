@@ -6,7 +6,7 @@ import {
   LeaderboardResponse,
 } from '../types/api'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_REPUTATION_API_URL || 'http://localhost:3001/api'
+const API_BASE_URL = process.env.NEXT_PUBLIC_REPUTATION_API_URL || 'https://server.blazeswap.io/api'
 
 /**
  * Get user's reputation score and stats

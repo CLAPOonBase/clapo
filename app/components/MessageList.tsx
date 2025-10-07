@@ -142,7 +142,7 @@ export const MessageList = ({ messages, currentUserId }: MessageListProps) => {
               {/* Date Separator */}
               {showDateSeparator && (
                 <div className="flex items-center justify-center my-4">
-                  <div className="bg-gray-800/60 text-gray-400 text-xs px-3 py-1 rounded-full border border-gray-700/50">
+                  <div className="bg-gray-800/60 text-gray-400 text-sm px-3 py-1 rounded-full border border-gray-700/50">
                     {formatDateSeparator(message.created_at)}
                   </div>
                 </div>

@@ -12,6 +12,7 @@ import { TabNavigation } from '@/app/components/TabNavigation';
 import { DMSection } from '@/app/components/DMSection';
 import { CommunitySection } from '@/app/components/CommunitySection';
 import { ChatHeader } from '@/app/components/ChatHeader';
+import { CommunityMembersSidebar } from '@/app/components/CommunityMembersSidebar';
 
 export default function MessagePage() {
   const { data: session } = useSession();
@@ -143,19 +144,20 @@ export default function MessagePage() {
           setSelectedUserProfile(null);
         }
       }
-    } else if (currentCommunity) {
-      setSelectedUserProfile({
-        username: currentCommunity.name,
-        name: currentCommunity.name,
-        avatar: currentCommunity.creator_avatar || '/4.png',
-        bio: currentCommunity.description || 'No description available',
-        status: 'community',
-        members: currentCommunity.member_count || 0,
-        type: 'community',
-        createdBy: currentCommunity.creator_username || 'Unknown',
-        createdAt: currentCommunity.created_at || 'Recently'
-      });
-    } else {
+    }  else if (currentCommunity) {
+  setSelectedUserProfile({
+    username: currentCommunity.name,
+    name: currentCommunity.name,
+    avatar: currentCommunity.profile_picture_url || currentCommunity.creator_avatar || '/4.png',
+    bio: currentCommunity.description || 'No description available',
+    status: 'community',
+    members: currentCommunity.member_count || 0,
+    type: 'community',
+    createdBy: currentCommunity.creator_username || 'Unknown',
+    createdAt: currentCommunity.created_at || 'Recently'
+  });
+}
+ else {
       setSelectedUserProfile(null);
     }
   }, [currentThread, currentCommunity, session?.dbUser?.id]);
@@ -178,6 +180,16 @@ export default function MessagePage() {
       getMessageThreads(session.dbUser.id);
     }
   }, [session?.dbUser?.id, getCommunities, getMessageThreads]);
+
+  // Handle navigation from user profile to start a conversation
+  useEffect(() => {
+    const threadId = sessionStorage.getItem('selectedThreadId');
+    if (threadId) {
+      setActiveTab('dms');
+      setSelectedThread(threadId);
+      sessionStorage.removeItem('selectedThreadId'); // Clear after use
+    }
+  }, [state.messageThreads]);
 
   const handleSendMessage = async (content: string, mediaUrl?: string) => {
     if (!session?.dbUser?.id) return;
@@ -423,7 +435,7 @@ export default function MessagePage() {
           mobileView === 'sidebar' ? 'translate-x-full absolute' : 'translate-x-0'
         }`}>
           {/* Back Button + Chat Header */}
-          <div className="flex items-center p-4 border-b border-slate-700/30">
+          <div className="flex items-center p-4 border-b-2 border-gray-700/70">
             <button
               onClick={handleBackToSidebar}
               className="mr-3 p-2 hover:bg-gray-700/30 rounded-lg transition-colors"
@@ -458,7 +470,7 @@ export default function MessagePage() {
       {/* Desktop Layout */}
       <div  className="hidden md:flex w-full shadow-2xl overflow-hidden">
         {/* Sidebar */}
-        <div className="w-72 flex flex-col border-r border-gray-700/50 pr-2">
+        <div className="w-72 flex flex-col border-r-2 border-gray-700/70 pr-2">
           {/* Header */}
           <div className="pt-4">
             <TabNavigation
@@ -501,7 +513,7 @@ export default function MessagePage() {
         {/* Chat Area */}
         <div className="flex w-full pl-4">
          <div className="flex w-full h-screen pt-4 pb-4"> {/* Added top padding to match sidebar */}
-  <div className="flex-1 flex flex-col h-full bg-black rounded-2xl border border-gray-800/60 overflow-hidden shadow-2xl">
+  <div className="flex-1 flex flex-col h-full bg-black rounded-2xl border-2 border-gray-700/70 overflow-hidden shadow-2xl">
     <ChatHeader
       activeTab={activeTab}
       currentThread={currentThread}
@@ -514,7 +526,7 @@ export default function MessagePage() {
       currentUserId={session?.dbUser?.id}
     />
 
-    <div className="px-5 py-3 bg-black border-t border-gray-800/60">
+    <div className="px-5 py-3 bg-black border-t-2 border-gray-700/70">
       <MessageInput
         onSend={handleSendMessage}
         disabled={!selectedThread && !selectedCommunity}
@@ -524,10 +536,16 @@ export default function MessagePage() {
 </div>
 
           {/* Selected Chat Details Sidebar */}
-          <div className="hidden lg:block w-[420px] border-l border-gray-700/50 pt-4" style={{ zIndex: 999 }}>
+          <div className="hidden lg:block w-[420px] border-l-2 border-gray-700/70 pt-4" style={{ zIndex: 999 }}>
             <div className="p-4">
-              {selectedUserProfile ? (
-                <div className="border border-gray-700/50 rounded-2xl p-4">
+              {/* Show Community Members if community is selected */}
+              {activeTab === 'communities' && selectedCommunity && currentCommunity ? (
+                <CommunityMembersSidebar
+                  communityId={selectedCommunity}
+                  communityData={currentCommunity}
+                />
+              ) : selectedUserProfile ? (
+                <div className="border-2 border-gray-700/70 rounded-2xl p-4">
                   <div className="text-center mb-4">
                     <img
                       src={selectedUserProfile.avatar}

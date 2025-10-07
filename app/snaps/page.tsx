@@ -225,11 +225,11 @@ function SocialFeedPageContent() {
   const renderContent = () => {
     switch (currentPage) {
       case "explore":
-        return <div className="w-full lg:pl-60 mt-6">
+        return <div className="w-full  mt-6">
           <ExplorePage/>
         </div>
       case "notifications":
-        return <div className="w-full max-w-3xl mt-6 lg:ml-80"> <NotificationPage/></div>
+        return <div className="w-full max-w-3xl mx-auto mt-6 "> <NotificationPage/></div>
       case "likes":
         return allPosts.length > 0 ? (
           <SnapCard
@@ -262,41 +262,41 @@ function SocialFeedPageContent() {
           </div>
         );
       case "bookmarks":
-        return <div className="w-full max-w-3xl mt-6 lg:ml-80">
+        return <div className="w-full max-w-3xl mx-auto mt-6 ">
           <BookmarkPage />
         </div>;
       case "activity":
-        return <div className="w-full max-w-3xl mt-6 lg:ml-80">
-          <ActivityPage />{" "}
+        return <div className="w-full max-w-3xl mx-auto mt-6 ">
+          <ActivityPage />
         </div>;
       case "profile":
-        return <div className="w-full max-w-3xl lg:ml-80 mt-6">
+        return <div className="w-full max-w-3xl mx-auto  mt-6">
           <ProfilePage user={mockUsers[0]} posts={[]} />{" "}
         </div>;
       case "search":
-        return <div className="w-full max-w-3xl lg:ml-80 mt-6">
+        return <div className="w-full max-w-3xl mx-auto  mt-6">
           <SearchPage />
         </div>;
       case "share":
-        return <div className="w-full lg:pl-60 mt-6">
+        return <div className="w-full mt-6">
           <SharePage />
         </div>;
       case "messages":
         return (
-          <div className="w-full lg:pl-20">
+          <div className="w-full">
             <MessagePage />
           </div>
         );
       case "invite":
         return (
-          <div className="w-full max-w-3xl lg:ml-80 mt-6">
+          <div className="w-full max-w-3xl mx-auto  mt-6">
             <InvitePage />
           </div>
         );
       case "home":
       default:
         return (
-          <div className="max-w-2xl lg:ml-80 px-2 sm:px-0">
+          <div className="max-w-2xl mx-auto px-2 sm:px-0">
             <div className="relative">
               {/* Subtle background gradient */}
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-900/5 to-transparent pointer-events-none" />
@@ -306,7 +306,7 @@ function SocialFeedPageContent() {
    <div className="bg-gray-700/50 rounded-full mb-4 p-0.5 ">
       <div>
         <div
-          style={{ zIndex: 999 }}
+        
           className="flex justify-around bg-black m-0.5 p-1 items-center rounded-full relative"
         >
           {["FOR YOU", "FOLLOWING","COMMUNITY"].map((tab) => (
@@ -588,7 +588,7 @@ function SocialFeedPageContent() {
         {currentPage !== "messages" && currentPage !== "share" && currentPage !=="explore" && session?.dbUser && (
           <div
             className="hidden md:block lg:block xl:block 2xl:block w-[340px] h-screen sticky top-0"
-            style={{ zIndex: 999 }}
+           
           >
             <div className="p-6">
               {/* Recent Activity */}
