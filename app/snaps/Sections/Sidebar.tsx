@@ -356,7 +356,7 @@ const handleNavClick = (value: PageKey) => {
       </AnimatePresence>
 
       {/* Desktop Sidebar - Only visible on desktop, exactly as before */}
-      <div className="hidden lg:block fixed left-0 top-0 max-h-screen bg-black border-r-2 border-gray-700/70 z-[100]">
+      <div className="hidden lg:block sticky left-0 top-0 max-h-screen bg-black border-r-2 border-gray-700/70">
         <motion.div
           onMouseEnter={() => shouldCollapse && setIsHovered(true)}
           onMouseLeave={() => shouldCollapse && setIsHovered(false)}

@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, X, Play, Pause, Volume2, VolumeX, Plus, Eye 
 import { useStories } from "@/app/hooks/useStories";
 import { StoryUpload } from "./StoryUpload";
 import { useSession } from "next-auth/react";
+import { motion, AnimatePresence, PanInfo } from "framer-motion";
 
 type Story = {
   id: string;
@@ -22,101 +23,94 @@ type Story = {
   has_viewed: boolean;
 };
 
+type GroupedStory = {
+  user: {
+    id: string;
+    username: string;
+    name?: string;
+    avatar_url?: string;
+  };
+  stories: Story[];
+  has_viewed: boolean;
+};
+
 const Stories: React.FC = () => {
   const { data: session } = useSession();
   const { stories, loading, error, fetchFollowingStories, recordStoryView, getStoryViewers } = useStories();
+  const [currentUserIndex, setCurrentUserIndex] = useState<number>(0);
   const [currentStoryIndex, setCurrentStoryIndex] = useState<number>(0);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(true);
   const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
-  const [showViewersModal, setShowViewersModal] = useState<boolean>(false);
+  const [showBottomSheet, setShowBottomSheet] = useState<boolean>(false);
   const [storyViewers, setStoryViewers] = useState<any[]>([]);
   const [loadingViewers, setLoadingViewers] = useState<boolean>(false);
   const [viewedStories, setViewedStories] = useState<Set<string>>(new Set());
-  const [showBottomSheet, setShowBottomSheet] = useState<boolean>(false);
   const [dragY, setDragY] = useState<number>(0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const bottomSheetRef = useRef<HTMLDivElement | null>(null);
 
-  // Check if story is expired (older than 24 hours)
-  const isStoryExpired = (createdAt: string): boolean => {
-    const storyTime = new Date(createdAt).getTime();
-    const currentTime = new Date().getTime();
-    const twentyFourHours = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-    return currentTime - storyTime > twentyFourHours;
-  };
-
-  // Filter expired stories
-  const filterExpiredStories = (storyList: Story[]): Story[] => {
-    return storyList.filter(story => !isStoryExpired(story.created_at));
-  };
-
-  // Load stories from localStorage and filter expired ones
-  const loadStoriesFromStorage = (): Story[] => {
-    try {
-      const stored = localStorage.getItem('user_stories');
-      if (stored) {
-        const parsedStories = JSON.parse(stored);
-        return filterExpiredStories(parsedStories);
+  // Group stories by user
+  const groupedStories: GroupedStory[] = React.useMemo(() => {
+    const grouped = stories.reduce((acc: { [key: string]: GroupedStory }, story) => {
+      const userId = story.user.id;
+      if (!acc[userId]) {
+        acc[userId] = {
+          user: story.user,
+          stories: [],
+          has_viewed: true,
+        };
       }
-    } catch (error) {
-      console.error('Error loading stories from storage:', error);
-    }
-    return [];
-  };
+      acc[userId].stories.push(story);
+      if (!story.has_viewed) {
+        acc[userId].has_viewed = false;
+      }
+      return acc;
+    }, {});
 
-  // Save stories to localStorage
-  const saveStoriesToStorage = (storyList: Story[]) => {
-    try {
-      localStorage.setItem('user_stories', JSON.stringify(storyList));
-    } catch (error) {
-      console.error('Error saving stories to storage:', error);
-    }
-  };
+    return Object.values(grouped);
+  }, [stories]);
+
+  const currentUserStories = groupedStories[currentUserIndex]?.stories || [];
+  const currentStory = currentUserStories[currentStoryIndex];
 
   useEffect(() => {
     fetchFollowingStories();
   }, []);
 
-  useEffect(() => {
-    console.log('showBottomSheet state changed:', showBottomSheet);
-  }, [showBottomSheet]);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout | undefined;
-    if (isModalOpen && isPlaying && stories.length > 0) {
-      const currentStory = stories[currentStoryIndex];
-      if (currentStory) {
-        // Record view when story is opened (only once per story)
-        if (!viewedStories.has(currentStory.id)) {
-          recordStoryView(currentStory.id);
-          setViewedStories(prev => new Set(prev).add(currentStory.id));
-        }
-        
-        const duration = currentStory.media_type === "video" ? 15000 : 5000;
-
-        interval = setInterval(() => {
-          setProgress((prev) => {
-            if (prev >= 100) {
-              goToNextStory();
-              return 0;
-            }
-            return prev + 100 / (duration / 100);
-          });
-        }, 100);
-      }
+ useEffect(() => {
+  let interval: NodeJS.Timeout | undefined;
+  if (isModalOpen && isPlaying && currentStory) {
+    // Record view when story is opened
+    if (!viewedStories.has(currentStory.id)) {
+      recordStoryView(currentStory.id);
+      setViewedStories(prev => new Set(prev).add(currentStory.id));
     }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isModalOpen, isPlaying, currentStoryIndex, stories, recordStoryView, viewedStories]);
 
-  const openStory = (index: number) => {
-    setCurrentStoryIndex(index);
+    const duration = currentStory.media_type === "video" ? 15000 : 5000;
+
+    interval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          goToNextStory();
+          return 0;
+        }
+        return prev + 100 / (duration / 100);
+      });
+    }, 100);
+  }
+  return () => {
+    if (interval) clearInterval(interval);
+  };
+}, [isModalOpen, isPlaying, currentStory, recordStoryView, viewedStories]);
+
+
+  const openStory = (userIndex: number) => {
+    setCurrentUserIndex(userIndex);
+    setCurrentStoryIndex(0);
     setIsModalOpen(true);
     setProgress(0);
     setIsPlaying(true);
@@ -126,23 +120,40 @@ const Stories: React.FC = () => {
     setIsModalOpen(false);
     setProgress(0);
     setIsPlaying(false);
+    setCurrentStoryIndex(0);
     if (videoRef.current) {
       videoRef.current.pause();
     }
   };
 
-  const goToNextStory = () => {
-    if (currentStoryIndex < stories.length - 1) {
-      setCurrentStoryIndex((prev) => prev + 1);
-      setProgress(0);
-    } else {
-      closeStory();
-    }
-  };
+const goToNextStory = () => {
+  if (currentStoryIndex < currentUserStories.length - 1) {
+    setCurrentStoryIndex(prev => prev + 1);
+    setProgress(0);
+  } else if (currentUserIndex < groupedStories.length - 1) {
+    setCurrentUserIndex(prev => prev + 1);
+    setCurrentStoryIndex(0);
+    setProgress(0);
+  } else {
+    // Loop to first user's first story
+    setCurrentUserIndex(0);
+    setCurrentStoryIndex(0);
+    setProgress(0);
+  }
+};
+
 
   const goToPrevStory = () => {
+    // Check if there's a previous story for current user
     if (currentStoryIndex > 0) {
       setCurrentStoryIndex((prev) => prev - 1);
+      setProgress(0);
+    } 
+    // Move to previous user's last story
+    else if (currentUserIndex > 0) {
+      setCurrentUserIndex((prev) => prev - 1);
+      const prevUserStories = groupedStories[currentUserIndex - 1].stories;
+      setCurrentStoryIndex(prevUserStories.length - 1);
       setProgress(0);
     }
   };
@@ -166,25 +177,16 @@ const Stories: React.FC = () => {
   };
 
   const handleViewStoryViewers = async (storyId: string) => {
-    console.log('handleViewStoryViewers called with storyId:', storyId);
-    
-    // Pause story progress immediately
     setIsPlaying(false);
-    
-    // Open bottom sheet immediately
     setShowBottomSheet(true);
     setDragY(0);
     setLoadingViewers(true);
     
-    console.log('Bottom sheet should be opening now...');
-    
     try {
       const viewers = await getStoryViewers(storyId);
-      console.log('Viewers fetched:', viewers);
       setStoryViewers(viewers);
     } catch (error) {
       console.error('Failed to fetch story viewers:', error);
-      // Don't show alert, just log the error
     } finally {
       setLoadingViewers(false);
     }
@@ -202,9 +204,24 @@ const Stories: React.FC = () => {
     return `${Math.floor(diffInDays / 7)}w`;
   };
 
-  const isVideo = (story: Story) => story.media_type === "video";
+  // Handle swipe gestures for stories
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const swipeThreshold = 50;
+    
+    // Swipe left for next story
+    if (info.offset.x < -swipeThreshold) {
+      goToNextStory();
+    }
+    // Swipe right for previous story
+    else if (info.offset.x > swipeThreshold) {
+      goToPrevStory();
+    }
+    // Swipe down to close
+    else if (info.offset.y > swipeThreshold) {
+      closeStory();
+    }
+  };
 
-  // Bottom sheet drag handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     setIsDragging(true);
   };
@@ -220,11 +237,9 @@ const Stories: React.FC = () => {
     if (!isDragging) return;
     setIsDragging(false);
     
-    // Snap to positions
     if (dragY > 150) {
       setShowBottomSheet(false);
       setDragY(0);
-      // Resume story playback when sheet is closed by dragging
       setIsPlaying(true);
     } else if (dragY > 50) {
       setDragY(100);
@@ -236,8 +251,58 @@ const Stories: React.FC = () => {
   const closeBottomSheet = () => {
     setShowBottomSheet(false);
     setDragY(0);
-    // Resume story playback when closing viewers sheet
     setIsPlaying(true);
+  };
+
+  // Animation variants
+  const storyModalVariants = {
+    hidden: { scale: 0.8, opacity: 0 },
+    visible: { scale: 1, opacity: 1, transition: { duration: 0.3, ease: "easeOut" } },
+    exit: { scale: 0.8, opacity: 0, transition: { duration: 0.2, ease: "easeIn" } }
+  };
+
+  const storySlideVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 300 : -300,
+      opacity: 0,
+      scale: 0.9
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+      scale: 1,
+      transition: { duration: 0.3, ease: "easeOut" }
+    },
+    exit: (direction: number) => ({
+      x: direction < 0 ? 300 : -300,
+      opacity: 0,
+      scale: 0.9,
+      transition: { duration: 0.3, ease: "easeIn" }
+    })
+  };
+
+  const bottomSheetVariants = {
+    hidden: { y: "100%" },
+    visible: { 
+      y: 0, 
+      transition: { 
+        type: "spring", 
+        damping: 25, 
+        stiffness: 300 
+      } 
+    },
+    exit: { 
+      y: "100%", 
+      transition: { 
+        duration: 0.2, 
+        ease: "easeIn" 
+      } 
+    }
+  };
+
+  const progressBarVariants = {
+    initial: { width: "0%" },
+    animate: { width: "100%" }
   };
 
   if (loading) {
@@ -255,348 +320,537 @@ const Stories: React.FC = () => {
     );
   }
 
-  // Handle file selection
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-    }
-  };
-
-  // Add new story
-  const handleAddStory = () => {
-    if (!selectedFile) return;
-
-    const newStory: Story = {
-      id: `story_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      content: newStoryContent,
-      media_url: previewUrl,
-      created_at: new Date().toISOString(),
-      username: "You", // Replace with actual username
-      avatar: "https://via.placeholder.com/100x100?text=You", // Replace with actual avatar
-      type: selectedFile.type.startsWith('video/') ? 'video' : 'image'
-    };
-
-    // Add to stories list
-    const updatedStories = [newStory, ...stories];
-    setStories(updatedStories);
-
-    // Save user stories to localStorage (excluding sample stories)
-    const localStories = loadStoriesFromStorage();
-    const updatedLocalStories = [newStory, ...localStories];
-    saveStoriesToStorage(updatedLocalStories);
-
-    // Reset form
-    setNewStoryContent("");
-    setSelectedFile(null);
-    setPreviewUrl("");
-    setIsAddModalOpen(false);
-    
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const openAddModal = () => {
-    setIsAddModalOpen(true);
-  };
-
-  const closeAddModal = () => {
-    setIsAddModalOpen(false);
-    setNewStoryContent("");
-    setSelectedFile(null);
-    setPreviewUrl("");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
   return (
-    <div style={{ zIndex: 99999 }} className="w-full">
-      
+    <div className="w-full max-w-6xl mx-auto">
       {/* Stories Grid */}
-      <div
+      <motion.div
         className={`flex gap-4 p-6 ${
-          stories.length > 5 ? "overflow-x-auto scrollbar-hide" : "overflow-x-hidden scrollbar-hide"
+          groupedStories.length > 5 ? "overflow-x-auto scrollbar-hide" : "overflow-x-hidden scrollbar-hide"
         }`}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
       >
         {/* Upload Story Button */}
-        <div className="flex-shrink-0 cursor-pointer" onClick={() => setShowUploadModal(true)}>
+        <motion.div 
+          className="flex-shrink-0 cursor-pointer" 
+          onClick={() => setShowUploadModal(true)}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
           <div className="relative">
-            <div className="w-20 h-20 rounded-full bg-gray-700 border-2 border-dashed border-gray-500 p-0.5 flex items-center justify-center">
+            <div className="w-20 h-20 rounded-full bg-black border-2 border-dashed border-gray-500 p-0.5 flex items-center justify-center">
               <Plus size={24} className="text-gray-400" />
             </div>
           </div>
           <p className="text-xs text-center mt-1 truncate w-20 text-gray-400">Your Story</p>
-        </div>
+        </motion.div>
 
         {/* User Stories */}
-        {stories.length === 0 && !loading && !error ? (
-          <div className="flex-shrink-0 text-center">
+        {groupedStories.length === 0 && !loading && !error ? (
+          <motion.div 
+            className="flex-shrink-0 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
             <div className="w-20 h-20 rounded-full bg-gray-700 flex items-center justify-center">
               <span className="text-gray-400 text-xs">No stories yet</span>
             </div>
             <p className="text-xs text-center mt-1 text-gray-400">Create your first story!</p>
-          </div>
+          </motion.div>
         ) : (
-          stories.map((story, index) => (
-            <div key={story.id} className="flex-shrink-0 cursor-pointer" onClick={() => openStory(index)}>
+          groupedStories.map((groupedStory, index) => (
+            <motion.div 
+              key={groupedStory.user.id} 
+              className="flex-shrink-0 cursor-pointer" 
+              onClick={() => openStory(index)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.1 }}
+            >
               <div className="relative">
-                <div className={`w-20 h-20 rounded-full p-0.5 ${
-                  story.has_viewed 
-                    ? 'bg-gray-600' 
-                    : 'bg-gradient-to-r from-purple-500 via-pink-500 to-red-500'
-                }`}>
-                  <div className="w-full h-full rounded-full bg-white p-0.5">
+                <motion.div 
+                  className={`w-20 h-20 rounded-full p-0.5 ${
+                    groupedStory.has_viewed 
+                      ? 'bg-gray-600' 
+                      : 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500'
+                  }`}
+                  whileHover={{ scale: 1.1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                >
+                  <div className="w-full h-full rounded-full bg-black p-0.5">
                     <img
-                      src={story.user.avatar_url || '/default-avatar.png'}
-                      alt={story.user.username}
+                      src={groupedStory.user.avatar_url || '/default-avatar.png'}
+                      alt={groupedStory.user.username}
                       className="w-full h-full rounded-full object-cover"
                     />
                   </div>
-                </div>
+                </motion.div>
               </div>
-              <p className="text-xs text-center mt-1 truncate w-20">{story.user.username}</p>
-            </div>
+              <p className="text-xs text-center mt-1 truncate w-20">{groupedStory.user.username}</p>
+            </motion.div>
           ))
         )}
-      </div>
+      </motion.div>
 
       {/* Upload Modal */}
-      {showUploadModal && (
-        <StoryUpload onClose={() => setShowUploadModal(false)} />
-      )}
+      <AnimatePresence>
+        {showUploadModal && (
+          <StoryUpload onClose={() => setShowUploadModal(false)} />
+        )}
+      </AnimatePresence>
 
-      {/* Modal */}
-      {isModalOpen && stories[currentStoryIndex] && (
-        <div style={{ zIndex: 99999 }} className="fixed inset-0 bg-black z-50 flex items-center justify-center">
-          {/* Progress Bars */}
-          <div className="absolute top-4 left-4 right-4 flex gap-1 z-20">
-            {stories.map((_, index) => (
-              <div key={index} className="flex-1 h-0.5 bg-gray-600 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-white transition-all duration-100"
-                  style={{
-                    width:
-                      index < currentStoryIndex
-                        ? "100%"
-                        : index === currentStoryIndex
-                        ? `${progress}%`
-                        : "0%",
-                  }}
-                ></div>
-              </div>
-            ))}
-          </div>
-
-          {/* Header */}
-          <div className="absolute top-8 left-4 right-4 flex items-center justify-between z-20 mt-4">
-            <div className="flex items-center gap-3">
-              <img
-                src={stories[currentStoryIndex].user.avatar_url || '/default-avatar.png'}
-                alt={stories[currentStoryIndex].user.username}
-                className="w-8 h-8 rounded-full"
-              />
-              <div>
-                <p className="text-white font-semibold text-sm">{stories[currentStoryIndex].user.username}</p>
-                <p className="text-gray-300 text-xs">{formatTimeAgo(stories[currentStoryIndex].created_at)}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Viewers button - only show for story owner */}
-              {stories[currentStoryIndex].user.id === session?.dbUser?.id && (
-                <button 
-                  onClick={() => handleViewStoryViewers(stories[currentStoryIndex].id)}
-                  disabled={loadingViewers}
-                  className="flex items-center gap-1 px-2 py-1 bg-black/50 text-white rounded-lg hover:bg-black/70 transition-colors disabled:opacity-50"
-                  title="View story viewers"
-                >
-                  <Eye size={16} />
-                  <span className="text-xs">{stories[currentStoryIndex].view_count}</span>
-                </button>
-              )}
-              <button onClick={closeStory} className="text-white hover:text-gray-300">
-                <X size={24} />
-              </button>
-            </div>
-          </div>
-
-          {/* Story Content */}
-          <div className="relative w-full h-full flex items-center justify-center">
-            {stories[currentStoryIndex].media_type === "video" ? (
-              <video
-                ref={videoRef}
-                src={stories[currentStoryIndex].media_url}
-                className="max-w-full max-h-full object-contain"
-                autoPlay
-                muted={isMuted}
-                loop
-              />
-            ) : (
-              <img
-                src={stories[currentStoryIndex].media_url}
-                alt="Story content"
-                className="max-w-full max-h-full object-contain"
-              />
-            )}
-
-            {stories[currentStoryIndex].caption && (
-              <div className="absolute bottom-20 left-4 right-4">
-                <p className="text-white text-center bg-black bg-opacity-50 px-4 py-2 rounded-lg">
-                  {stories[currentStoryIndex].caption}
-                </p>
-              </div>
-            )}
-
-            {/* Instagram-style Viewers Indicator at Bottom */}
-            {stories[currentStoryIndex].user.id === session?.dbUser?.id && (
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-30">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    console.log('Viewers button clicked for story:', stories[currentStoryIndex].id);
-                    handleViewStoryViewers(stories[currentStoryIndex].id);
-                  }}
-                  className="px-4 py-2 bg-black/60 backdrop-blur-sm text-white rounded-full hover:bg-black/80 transition-all duration-200 shadow-lg pointer-events-auto"
-                >
-                  <span className="text-sm font-medium">story views</span>
-                </button>
-              </div>
-            )}
-
-            {/* Navigation Areas */}
-            <div className="absolute inset-0 flex">
-              <button className="flex-1 z-10" onClick={goToPrevStory} disabled={currentStoryIndex === 0}></button>
-              <button className="flex-1 z-10" onClick={goToNextStory}></button>
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className="absolute bottom-6 left-4 right-4 flex items-center justify-center gap-6 z-20">
-            <button
-              onClick={goToPrevStory}
-              disabled={currentStoryIndex === 0}
-              className="text-white hover:text-purple-400 disabled:opacity-50 disabled:cursor-not-allowed bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full p-3 transition-all duration-200 shadow-lg"
-            >
-              <ChevronLeft size={24} />
-            </button>
-
-            {stories[currentStoryIndex].media_type === "video" && (
-              <>
-                <button 
-                  onClick={togglePlayPause} 
-                  className="text-white hover:text-purple-400 bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full p-3 transition-all duration-200 shadow-lg"
-                >
-                  {isPlaying ? <Pause size={24} /> : <Play size={24} />}
-                </button>
-                <button 
-                  onClick={toggleMute} 
-                  className="text-white hover:text-purple-400 bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full p-3 transition-all duration-200 shadow-lg"
-                >
-                  {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
-                </button>
-              </>
-            )}
-
-            <button 
-              onClick={goToNextStory} 
-              className="text-white hover:text-purple-400 bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full p-3 transition-all duration-200 shadow-lg"
-            >
-              <ChevronRight size={24} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Instagram-style Story Viewers Bottom Sheet */}
-      {showBottomSheet && (
-        <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 999999 }}>
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-black/50 transition-opacity"
-            onClick={closeBottomSheet}
-            style={{ pointerEvents: showBottomSheet ? 'auto' : 'none' }}
-          />
-          
-          {/* Bottom Sheet */}
-          <div
-            ref={bottomSheetRef}
-            className="absolute bottom-0 left-0 right-0 bg-gray-900 rounded-t-3xl shadow-2xl transform transition-transform duration-300 ease-out pointer-events-auto border-t border-gray-700"
-            style={{
-              transform: `translateY(${Math.max(0, 200 - dragY)}px)`,
-              height: `${Math.max(200, 400 - dragY)}px`,
-            }}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
+      {/* Story Modal - Instagram Style */}
+      <AnimatePresence>
+        {isModalOpen && currentStory && (
+          <motion.div 
+            className="fixed inset-0 bg-black z-[99999] flex items-center justify-center"
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            // variants={storyModalVariants}
           >
-            {/* Drag Handle */}
-            <div className="flex justify-center pt-3 pb-2">
-              <div className="w-12 h-1 bg-gray-600 rounded-full" />
+            {/* Blurred Background */}
+            <motion.div 
+              className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-30"
+              style={{
+                backgroundImage: `url(${currentStory.media_url})`,
+              }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.3 }}
+              transition={{ duration: 0.5 }}
+            />
+
+            {/* Progress Bars */}
+            <div className="absolute top-2 left-4 right-4 flex gap-1 z-50">
+              {currentUserStories.map((_, index) => (
+                <div key={index} className="flex-1 h-0.5 bg-white/30 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-white"
+                    initial="initial"
+                    animate={index === currentStoryIndex ? "animate" : "initial"}
+                    variants={progressBarVariants}
+                    style={{
+                      width: index < currentStoryIndex ? "100%" : index === currentStoryIndex ? `${progress}%` : "0%",
+                    }}
+                    transition={{ 
+                      duration: index === currentStoryIndex ? (currentStory.media_type === "video" ? 15 : 5) : 0,
+                      ease: "linear" 
+                    }}
+                  />
+                </div>
+              ))}
             </div>
 
             {/* Header */}
-            <div className="px-6 pb-4 border-b border-gray-700">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Eye size={20} className="text-gray-300" />
-                  <h2 className="text-lg font-semibold text-white">
-                    {storyViewers.length} {storyViewers.length === 1 ? 'viewer' : 'viewers'}
-                  </h2>
-                </div>
-                <button 
-                  onClick={closeBottomSheet}
-                  className="p-2 rounded-full hover:bg-gray-800 transition-colors"
+            <motion.div 
+              className="absolute top-6 left-4 right-4 flex items-center justify-between z-50"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="flex items-center gap-3">
+                <motion.div 
+                  className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 p-0.5"
+                  whileHover={{ scale: 1.1 }}
                 >
-                  <X size={20} className="text-gray-400" />
-                </button>
+                  <img
+                    src={currentStory.user.avatar_url || '/default-avatar.png'}
+                    alt={currentStory.user.username}
+                    className="w-full h-full rounded-full object-cover border-2 border-black"
+                  />
+                </motion.div>
+                <div>
+                  <p className="text-white font-semibold text-sm">{currentStory.user.username}</p>
+                  <p className="text-gray-300 text-xs">{formatTimeAgo(currentStory.created_at)}</p>
+                </div>
               </div>
-            </div>
+              <div className="flex items-center gap-2">
+                {currentStory.user.id === session?.dbUser?.id && (
+                  <motion.button 
+                    onClick={() => handleViewStoryViewers(currentStory.id)}
+                    disabled={loadingViewers}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-black/50 backdrop-blur-sm text-white rounded-full hover:bg-black/70 transition-colors disabled:opacity-50"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Eye size={16} />
+                    <span className="text-xs font-medium">{currentStory.view_count}</span>
+                  </motion.button>
+                )}
+                {currentStory.media_type === "video" && (
+                  <>
+                    <motion.button 
+                      onClick={togglePlayPause} 
+                      className="p-2 bg-black/50 backdrop-blur-sm text-white rounded-full hover:bg-black/70 transition-colors"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+                    </motion.button>
+                    <motion.button 
+                      onClick={toggleMute} 
+                      className="p-2 bg-black/50 backdrop-blur-sm text-white rounded-full hover:bg-black/70 transition-colors"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                    </motion.button>
+                  </>
+                )}
+                <motion.button 
+                  onClick={closeStory} 
+                  className="p-2 text-white hover:text-gray-300"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <X size={24} />
+                </motion.button>
+              </div>
+            </motion.div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto px-6 py-4">
-              {loadingViewers ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                </div>
-              ) : storyViewers.length === 0 ? (
-                <div className="text-center py-8">
-                  <Eye size={48} className="mx-auto mb-3 text-gray-500" />
-                  <p className="text-gray-400">No viewers yet</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {storyViewers.map((viewer) => (
-                    <div key={viewer.id} className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-800 transition-colors">
-                      <img 
-                        src={viewer.avatar_url || '/default-avatar.png'} 
-                        alt={viewer.username}
-                        className="w-12 h-12 rounded-full object-cover border-2 border-gray-700"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white font-medium truncate">
-                          {viewer.name || viewer.username}
-                        </p>
-                        <p className="text-gray-400 text-sm truncate">
-                          @{viewer.username}
-                        </p>
-                      </div>
-                      <div className="text-gray-500 text-xs">
-                        {new Date(viewer.viewed_at).toLocaleTimeString([], { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            {/* Story Content Container */}
+            <motion.div 
+              className="relative w-full h-full max-w-md mx-auto flex items-center justify-center"
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.2}
+              onDragEnd={handleDragEnd}
+            >
+              <AnimatePresence mode="wait" custom={currentStoryIndex}>
+                <motion.div
+                  key={`${currentUserIndex}-${currentStoryIndex}`}
+                  custom={currentStoryIndex}
+                  // variants={storySlideVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  className="w-full h-full flex items-center justify-center"
+                >
+                  {currentStory.media_type === "video" ? (
+                    <video
+                      ref={videoRef}
+                      src={currentStory.media_url}
+                      className="w-full h-full object-contain"
+                      autoPlay
+                      muted={isMuted}
+                      loop
+                    />
+                  ) : (
+                    <img
+                      src={currentStory.media_url}
+                      alt="Story content"
+                      className="w-full h-full object-contain"
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Caption */}
+              {currentStory.caption && (
+                <motion.div 
+                  className="absolute bottom-24 left-4 right-4 z-40"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <p className="text-white text-sm text-center bg-black/60 backdrop-blur-sm px-4 py-2 rounded-2xl">
+                    {currentStory.caption}
+                  </p>
+                </motion.div>
               )}
-            </div>
+
+              {/* Navigation Areas - Tap to navigate */}
+              <div className="absolute inset-0 flex z-30">
+                <button 
+                  className="flex-1" 
+                  onClick={goToPrevStory} 
+                  disabled={currentUserIndex === 0 && currentStoryIndex === 0}
+                />
+                <button 
+                  className="flex-1" 
+                  onClick={goToNextStory}
+                />
+              </div>
+
+              {/* Story Viewers Button (Instagram Style) */}
+              {currentStory.user.id === session?.dbUser?.id && (
+                <motion.div 
+                  className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-40"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.7 }}
+                >
+                  <motion.button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewStoryViewers(currentStory.id);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-black/60 backdrop-blur-sm text-white rounded-full hover:bg-black/80 transition-all duration-200 shadow-lg"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Eye size={16} />
+                    <span className="text-sm font-medium">{currentStory.view_count} views</span>
+                  </motion.button>
+                </motion.div>
+              )}
+            </motion.div>
+
+            {/* Previous Story Preview (Left Side) */}
+            {(currentUserIndex > 0 || currentStoryIndex > 0) && (
+              <motion.div 
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <motion.button
+                  onClick={goToPrevStory}
+                  className="text-white hover:text-gray-300 bg-black/50 backdrop-blur-sm rounded-full p-3 hover:bg-black/70 transition-all"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <ChevronLeft size={28} />
+                </motion.button>
+                {currentStoryIndex > 0 ? (
+                  // Previous story of same user
+                  <div className="hidden md:flex flex-col items-center">
+                    <motion.div 
+                      className="w-16 h-24 rounded-xl overflow-hidden opacity-60 hover:opacity-100 transition-opacity cursor-pointer border-2 border-white/30" 
+                      onClick={goToPrevStory}
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      <img
+                        src={currentUserStories[currentStoryIndex - 1].media_url}
+                        alt="Previous story"
+                        className="w-full h-full object-cover"
+                      />
+                    </motion.div>
+                  </div>
+                ) : currentUserIndex > 0 ? (
+                  // Previous user's last story
+                  <div className="hidden md:flex flex-col items-center">
+                    <motion.div 
+                      className="w-16 h-24 rounded-xl overflow-hidden opacity-60 hover:opacity-100 transition-opacity cursor-pointer border-2 border-white/30" 
+                      onClick={goToPrevStory}
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      <img
+                        src={groupedStories[currentUserIndex - 1].stories[groupedStories[currentUserIndex - 1].stories.length - 1].media_url}
+                        alt="Previous user"
+                        className="w-full h-full object-cover"
+                      />
+                    </motion.div>
+                    <motion.div 
+                      className="mt-2 flex flex-col items-center"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                    >
+                      <img
+                        src={groupedStories[currentUserIndex - 1].user.avatar_url || '/default-avatar.png'}
+                        alt={groupedStories[currentUserIndex - 1].user.username}
+                        className="w-10 h-10 rounded-full object-cover border-2 border-white"
+                      />
+                      <p className="text-white text-xs mt-1 truncate max-w-[80px]">
+                        {groupedStories[currentUserIndex - 1].user.username}
+                      </p>
+                    </motion.div>
+                  </div>
+                ) : null}
+              </motion.div>
+            )}
+            
+            {/* Next Story Preview (Right Side) */}
+            {(currentUserIndex < groupedStories.length - 1 || currentStoryIndex < currentUserStories.length - 1) && (
+              <motion.div 
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <motion.button
+                  onClick={goToNextStory}
+                  className="text-white hover:text-gray-300 bg-black/50 backdrop-blur-sm rounded-full p-3 hover:bg-black/70 transition-all"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <ChevronRight size={28} />
+                </motion.button>
+                {currentStoryIndex < currentUserStories.length - 1 ? (
+                  // Next story of same user
+                  <div className="hidden md:flex flex-col items-center">
+                    <motion.div 
+                      className="w-16 h-24 rounded-xl overflow-hidden opacity-60 hover:opacity-100 transition-opacity cursor-pointer border-2 border-white/30" 
+                      onClick={goToNextStory}
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      <img
+                        src={currentUserStories[currentStoryIndex + 1].media_url}
+                        alt="Next story"
+                        className="w-full h-full object-cover"
+                      />
+                    </motion.div>
+                  </div>
+                ) : currentUserIndex < groupedStories.length - 1 ? (
+                  // Next user's first story
+                  <div className="hidden md:flex flex-col items-center">
+                    <motion.div 
+                      className="w-16 h-24 rounded-xl overflow-hidden opacity-60 hover:opacity-100 transition-opacity cursor-pointer border-2 border-white/30" 
+                      onClick={goToNextStory}
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      <img
+                        src={groupedStories[currentUserIndex + 1].stories[0].media_url}
+                        alt="Next user"
+                        className="w-full h-full object-cover"
+                      />
+                    </motion.div>
+                    <motion.div 
+                      className="mt-2 flex flex-col items-center"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                    >
+                      <img
+                        src={groupedStories[currentUserIndex + 1].user.avatar_url || '/default-avatar.png'}
+                        alt={groupedStories[currentUserIndex + 1].user.username}
+                        className="w-10 h-10 rounded-full object-cover border-2 border-white"
+                      />
+                      <p className="text-white text-xs mt-1 font-medium">Next</p>
+                      <p className="text-white text-xs truncate max-w-[80px]">
+                        {groupedStories[currentUserIndex + 1].user.username}
+                      </p>
+                    </motion.div>
+                  </div>
+                ) : null}
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Story Viewers Bottom Sheet */}
+      <AnimatePresence>
+        {showBottomSheet && (
+          <div className="fixed inset-0 z-[999999]">
+            <motion.div 
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={closeBottomSheet}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+            
+            <motion.div
+              ref={bottomSheetRef}
+              className="absolute bottom-0 left-0 right-0 max-w-md mx-auto bg-gray-900 rounded-t-3xl shadow-2xl transform transition-transform duration-300 ease-out border-t border-gray-700"
+              style={{
+                transform: `translateY(${dragY}px)`,
+                maxHeight: '70vh',
+              }}
+              // variants={bottomSheetVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-12 h-1.5 bg-gray-600 rounded-full" />
+              </div>
+
+              <div className="px-6 pb-4 border-b border-gray-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Eye size={22} className="text-gray-300" />
+                    <h2 className="text-lg font-semibold text-white">
+                      {storyViewers.length} {storyViewers.length === 1 ? 'view' : 'views'}
+                    </h2>
+                  </div>
+                  <motion.button 
+                    onClick={closeBottomSheet}
+                    className="p-2 rounded-full hover:bg-gray-800 transition-colors"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <X size={22} className="text-gray-400" />
+                  </motion.button>
+                </div>
+              </div>
+
+              <div className="overflow-y-auto px-6 py-4" style={{ maxHeight: 'calc(70vh - 120px)' }}>
+                {loadingViewers ? (
+                  <motion.div 
+                    className="flex items-center justify-center py-12"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <motion.div 
+                      className="animate-spin rounded-full h-10 w-10 border-b-2 border-pink-500"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    />
+                  </motion.div>
+                ) : storyViewers.length === 0 ? (
+                  <motion.div 
+                    className="text-center py-12"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <Eye size={56} className="mx-auto mb-4 text-gray-600" />
+                    <p className="text-gray-400 text-lg">No views yet</p>
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    className="space-y-1"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ staggerChildren: 0.1 }}
+                  >
+                    {storyViewers.map((viewer) => (
+                      <motion.div 
+                        key={viewer.id} 
+                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-800/50 transition-colors"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        whileHover={{ scale: 1.02 }}
+                      >
+                        <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 p-0.5">
+                          <img 
+                            src={viewer.avatar_url || '/default-avatar.png'} 
+                            alt={viewer.username}
+                            className="w-full h-full rounded-full object-cover border-2 border-gray-900"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-medium text-sm truncate">
+                            {viewer.name || viewer.username}
+                          </p>
+                          <p className="text-gray-400 text-xs truncate">
+                            @{viewer.username}
+                          </p>
+                        </div>
+                        <div className="text-gray-500 text-xs whitespace-nowrap">
+                          {new Date(viewer.viewed_at).toLocaleTimeString([], { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 };

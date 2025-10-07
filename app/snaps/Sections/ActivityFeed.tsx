@@ -125,8 +125,7 @@ export default function UserActivityFeed({ username, limit = 10 }: UserActivityF
 
   return (
     <div className="text-white">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-medium text-white">Recent Activity</h3>
+      {/* <div className="flex items-center justify-between mb-2">
         <button
           onClick={refreshActivity}
           disabled={loading}
@@ -134,7 +133,7 @@ export default function UserActivityFeed({ username, limit = 10 }: UserActivityF
         >
           <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
         </button>
-      </div>
+      </div> */}
       
       <div className="max-h-72 overflow-y-auto">
         {activities.length === 0 ? (
