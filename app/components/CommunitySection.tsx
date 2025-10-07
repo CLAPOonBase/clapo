@@ -219,21 +219,7 @@ export const CommunitySection = ({
               <div className="flex-1">
                 <div className="font-semibold text-white">{selectedCommunityData.name}</div>
                 <div className="text-sm text-slate-400">{selectedCommunityData.description}</div>
-              </div>
-              {/* Always show settings button for debugging */}
-              <button
-                onClick={() => {
-                  console.log('Opening community profile settings for:', selectedCommunityData.name);
-                  console.log('showProfileSettings before:', showProfileSettings);
-                  setShowProfileSettings(true);
-                  console.log('showProfileSettings after:', true);
-                }}
-                className="flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors border border-gray-600 hover:border-gray-500"
-                title="Community Profile Settings"
-              >
-                <Settings size={16} />
-                <span className="text-xs">Settings</span>
-              </button>
+              </div>         
               
             
             </div>
@@ -275,7 +261,7 @@ export const CommunitySection = ({
               members.map((member: CommunityMember) => (
                 <div
                   key={member.id}
-                  className="flex items-center justify-between p-3 bg-slate-700/30 border border-slate-600/30 rounded-lg"
+                  className="flex items-center justify-between px-3 py-2 bg-slate-700/30 border border-slate-600/30 rounded-lg"
                 >
                   <div className="flex items-center space-x-3">
                     <button
@@ -301,12 +287,12 @@ export const CommunitySection = ({
                       >
                         {member.username}
                       </button>
-                      <div className="text-xs text-slate-400">{member.bio || 'No bio'}</div>
+                      {/* <div className="text-xs text-slate-400">{member.bio || 'No bio'}</div> */}
                     </div>
                   </div>
-                  <div className="text-xs text-slate-400">
+                  {/* <div className="text-xs text-slate-400">
                     {member.joined_at ? new Date(member.joined_at).toLocaleDateString() : 'Unknown'}
-                  </div>
+                  </div> */}
                 </div>
               ))
             )}
