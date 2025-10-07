@@ -1,0 +1,36 @@
+<svg width="400" height="120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Impact&amp;display=swap');
+
+      .invite-text {
+        font-family: Impact, Arial Black, sans-serif;
+        font-weight: 900;
+        letter-spacing: 8px;
+      }
+
+      .subtitle-text {
+        font-family: Impact, Arial Black, sans-serif;
+        font-weight: 700;
+        letter-spacing: 2px;
+      }
+    </style>
+
+    <!-- Grunge texture filter -->
+    <filter id="grunge">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" />
+      <feColorMatrix values="0 0 0 0 0, 0 0 0 0 0, 0 0 0 0 0, 0 0 0 -1.2 1.2"/>
+      <feComposite operator="in" in2="SourceGraphic" />
+    </filter>
+  </defs>
+
+  <!-- Main INVITE text with grunge effect -->
+  <text x="50%" y="50" text-anchor="middle" class="invite-text" font-size="72" fill="#6E54FF" stroke="#4338CA" stroke-width="3" filter="url(#grunge)">
+    INVITE
+  </text>
+
+  <!-- Subtitle -->
+  <text x="50%" y="95" text-anchor="middle" class="subtitle-text" font-size="24" fill="#6E54FF" stroke="#4338CA" stroke-width="1.5">
+    Share Access Code
+  </text>
+</svg>

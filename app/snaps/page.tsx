@@ -9,7 +9,7 @@ import { SnapComposer } from "./Sections/SnapComposer";
 import SnapCard from "./Sections/SnapCard";
 import Image from "next/image";
 import ActivityFeed from './Sections/ActivityFeed'
-import { ExplorePage } from "./SidebarSection/ExplorePage";
+import  ExplorePage  from "./SidebarSection/ExplorePage";
 import NotificationPage from "./SidebarSection/NotificationPage";
 import BookmarkPage from "./SidebarSection/BookmarkPage";
 import { ProfilePage } from "./SidebarSection/ProfilePage";
@@ -17,6 +17,7 @@ import SearchPage from "./SidebarSection/SearchPage";
 import MessagePage from "./SidebarSection/MessagePage";
 import { mockUsers } from "../lib/mockdata";
 import ActivityPage from "./SidebarSection/ActivityPage";
+import InvitePage from "./SidebarSection/InvitePage";
 import { useApi } from "../Context/ApiProvider";
 import { PostSkeleton, LoadingSpinner } from "../components/SkeletonLoader";
 import UserActivityFeed from "./Sections/ActivityFeed";
@@ -41,6 +42,7 @@ function SocialFeedPageContent() {
     | "share"
     | "search"
     | "shares"
+    | "invite"
   >("home");
   const [followingPosts, setFollowingPosts] = useState<any[]>([]);
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(false);
@@ -77,6 +79,7 @@ function SocialFeedPageContent() {
         "share",
         "search",
         "shares",
+        "invite",
       ];
       if (validPages.includes(pageParam as any)) {
         setCurrentPage(pageParam as any);
@@ -127,6 +130,7 @@ function SocialFeedPageContent() {
         "share",
         "search",
         "shares",
+        "invite",
       ];
       if (validPages.includes(targetPage as any)) {
         setCurrentPage(targetPage as any);
@@ -212,16 +216,20 @@ function SocialFeedPageContent() {
     return newSet;
   };
 
-  const allPosts = state.posts.posts;
+  const allPosts = [...state.posts.posts].sort((a, b) => {
+    const dateA = new Date(a.created_at).getTime();
+    const dateB = new Date(b.created_at).getTime();
+    return dateB - dateA; // Sort by newest first
+  });
 
   const renderContent = () => {
     switch (currentPage) {
       case "explore":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full lg:pl-60 mt-6">
           <ExplorePage/>
         </div>
       case "notifications":
-        return <div className="w-full max-w-3xl lg:ml-80"> <NotificationPage/></div>
+        return <div className="w-full max-w-3xl mt-6 lg:ml-80"> <NotificationPage/></div>
       case "likes":
         return allPosts.length > 0 ? (
           <SnapCard
@@ -254,23 +262,23 @@ function SocialFeedPageContent() {
           </div>
         );
       case "bookmarks":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full max-w-3xl mt-6 lg:ml-80">
           <BookmarkPage />
         </div>;
       case "activity":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full max-w-3xl mt-6 lg:ml-80">
           <ActivityPage />{" "}
         </div>;
       case "profile":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full max-w-3xl lg:ml-80 mt-6">
           <ProfilePage user={mockUsers[0]} posts={[]} />{" "}
         </div>;
       case "search":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full max-w-3xl lg:ml-80 mt-6">
           <SearchPage />
         </div>;
       case "share":
-        return <div className="w-full max-w-3xl lg:ml-80">
+        return <div className="w-full lg:pl-60 mt-6">
           <SharePage />
         </div>;
       case "messages":
@@ -279,23 +287,33 @@ function SocialFeedPageContent() {
             <MessagePage />
           </div>
         );
+      case "invite":
+        return (
+          <div className="w-full max-w-3xl lg:ml-80 mt-6">
+            <InvitePage />
+          </div>
+        );
       case "home":
       default:
-        return <div className="max-w-2xl lg:ml-80 px-2 sm:px-0">
-             <>
-            <Stories />
-            <SnapComposer />
-   <div className="bg-gray-700/70 rounded-full mt-2 p-1">
+        return (
+          <div className="max-w-2xl lg:ml-80 px-2 sm:px-0">
+            <div className="relative">
+              {/* Subtle background gradient */}
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-900/5 to-transparent pointer-events-none" />
+              <div className="relative z-10">
+                <Stories />
+                {/* <SnapComposer /> */}
+   <div className="bg-gray-700/50 rounded-full mb-4 p-0.5 ">
       <div>
         <div
           style={{ zIndex: 999 }}
-          className="flex justify-around bg-black m-1 p-1 items-center rounded-full relative"
+          className="flex justify-around bg-black m-0.5 p-1 items-center rounded-full relative"
         >
-          {["FOR YOU", "FOLLOWING"].map((tab) => (
+          {["FOR YOU", "FOLLOWING","COMMUNITY"].map((tab) => (
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
-              className={`p-2 mb-2 font-semibold w-full relative z-10 text-xs sm:text-sm ${
+              className={`p-2 my-1 font-semibold w-full relative z-10 text-xs sm:text-sm ${
                 activeTab === tab ? "text-white" : "text-gray-400"
               }`}
             >
@@ -303,30 +321,33 @@ function SocialFeedPageContent() {
             </button>
           ))}
 
-          <motion.div
-            className="absolute rounded-full"
-            style={{
-              height: '40px', // Match button height including padding
-              boxShadow:
-                "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
-              backgroundColor: "#6E54FF",
+    <motion.div
+  className="absolute rounded-full"
+  style={{
+    height: "40px",
+    boxShadow:
+      "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
+    backgroundColor: "#6E54FF",
+    margin: "6px",
+  }}
+  initial={false}
+  animate={{
+    left:
+      activeTab === "FOR YOU"
+        ? "0%"
+        : activeTab === "FOLLOWING"
+        ? "calc(33% + 0px)"
+        : "calc(66% + 0px)",
+    width: "calc(33% - 6px)",
+  }}
+  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+/>
 
-              margin: '6px 6px', // Account for the p-1 spacing
-            }}
-            initial={false}
-            animate={{
-              left: activeTab === "FOR YOU" ? "0%" : "calc(50% - 6px)",
-              width: "calc(50% - 6px)", // Subtract margin to fit properly
-            }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          />
         </div>
       </div>
     </div>
-            <div className="mt-2 pt-2 rounded-2xl">
-            
-
-              <div className="">
+            <div className="mt-4 pt-4">
+              <div className="mt-2">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeTab}
@@ -440,8 +461,10 @@ function SocialFeedPageContent() {
                 </AnimatePresence>
               </div>
             </div>
-          </>
-        </div>
+              </div>
+            </div>
+          </div>
+        );
     }
   };
 
@@ -467,7 +490,7 @@ function SocialFeedPageContent() {
         transition={{ duration: 0.6, ease: "easeOut" }}
       >
         <div className="flex-col md:flex-row lg:ml-52 text-white flex">
-         <div className="hidden lg:block">
+         <div className=" lg:block">
            <Sidebar 
             currentPage={currentPage} 
             setCurrentPage={setCurrentPage}
@@ -475,7 +498,7 @@ function SocialFeedPageContent() {
             onNavigateToSnaps={handleNavigateToSnaps}
           />
          </div>
-          <div className="flex-1 ml-0 md:ml-4 mr-2 md:mr-6 rounded-md px-2">
+          <div className="flex-1 ml-0 md:ml-4 mr-2 md:mr-6 rounded-md px-2 mt-20 md:mt-0">
             <div className="bg-[#1A1A1A] rounded-2xl border border-gray-800 overflow-hidden">
               <div className="flex flex-col lg:flex-row min-h-[400px] sm:min-h-[550px]">
                 {/* Left Side - Hero Image */}
@@ -529,7 +552,13 @@ function SocialFeedPageContent() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
-      <div className="flex text-white mx-auto">
+      <div className="flex text-white mx-auto relative">
+        {/* Ambient background effects */}
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-20 left-20 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-20 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-indigo-600/5 rounded-full blur-2xl" />
+        </div>
         {/* Left Sidebar - Fixed width on desktop, hidden on mobile */}
         <div className="hidden lg:block">
           <Sidebar 
@@ -556,25 +585,78 @@ function SocialFeedPageContent() {
         </div>
 
         {/* Right Sidebar - Only visible at 2xl breakpoint */}
-        {currentPage !== "messages" && session?.dbUser && (
+        {currentPage !== "messages" && currentPage !== "share" && currentPage !=="explore" && session?.dbUser && (
           <div
-            className="hidden md:block lg:block xl:block 2xl:block w-80 h-screen sticky top-0"
+            className="hidden md:block lg:block xl:block 2xl:block w-[340px] h-screen sticky top-0"
             style={{ zIndex: 999 }}
           >
             <div className="p-6">
               {/* Recent Activity */}
-              <div className="h-80 overflow-hidden flex flex-col justify-center items-start border-2 border-gray-700/70 rounded-2xl mb-4">
-                <span className="bg-dark-700 rounded-full px-2 mt-2 mx-2">
+              <div className="h-80 overflow-hidden flex flex-col justify-center items-start
+                           bg-black border-2 border-gray-700/70 rounded-2xl mb-6
+                           shadow-xl shadow-black/20 backdrop-blur-sm
+                           hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300">
+                <span className="bg-gray-700/30 border-2 border-[#6e54ff] rounded-2xl px-3 py-1 mt-3 mx-3
+                              text-xs font-medium text-gray-200">
                   Recent Activity
                 </span>
                 <UserActivityFeed userId={session.dbUser.id} />
               </div>
 
+              {/* Invite Button */}
+              <button
+  onClick={() => setCurrentPage('invite')}
+  className="w-full rounded-3xl bg-[#1A1A1A] border-2 border-[#6E54FF] hover:bg-[#2A2A2A] transition-all duration-200 overflow-hidden mb-6 p-4 h-28"
+>
+  <Image
+    src="/invite_clean.svg"
+    alt="Invite"
+    width={450}
+    height={160}
+    className="w-full h-full object-contain scale-110"
+  />
+</button>
+
+
               {/* Followers Suggestions */}
-              <div className="h-80 flex flex-col justify-start items-start border-2 border-gray-700/70 rounded-2xl mb-4">
-                <span className="bg-dark-700 rounded-full px-2 mt-2 mx-2">
+              <div className="h-80 flex flex-col justify-start items-start
+                           bg-black border-2 border-gray-700/70 rounded-2xl mb-6
+                           shadow-xl shadow-black/20 backdrop-blur-sm
+                           hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300">
+                <span className="bg-gray-700/30 border-2 border-[#6e54ff] rounded-2xl px-3 py-1 mt-3 mx-3
+                              text-xs font-medium text-gray-200">
                   Followers Suggestions
                 </span>
+
+                {/* Sample Followers List */}
+                <div className="flex-1 w-full p-3 overflow-y-auto">
+                  <div className="space-y-3">
+                    {[
+                      { id: 1, username: 'alextech', followers: 1240, avatar: 'https://robohash.org/alextech.png?size=100x100' },
+                      { id: 2, username: 'sarah_dev', followers: 856, avatar: 'https://robohash.org/sarah.png?size=100x100' },
+                      { id: 3, username: 'crypto_mike', followers: 2100, avatar: 'https://robohash.org/mike.png?size=100x100' },
+                      { id: 4, username: 'designpro', followers: 567, avatar: 'https://robohash.org/designpro.png?size=100x100' },
+                      { id: 5, username: 'blockchain_bob', followers: 1890, avatar: 'https://robohash.org/bob.png?size=100x100' }
+                    ].map((user) => (
+                      <div key={user.id} className="flex items-center justify-between p-2 hover:bg-gray-700/20 rounded-lg transition-colors">
+                        <div className="flex items-center space-x-3">
+                          <img
+                            src={user.avatar}
+                            alt={user.username}
+                            className="w-10 h-10 rounded-full object-cover border border-gray-600/30"
+                          />
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium text-white">{user.username}</span>
+                            <span className="text-xs text-gray-400">{user.followers.toLocaleString()} followers</span>
+                          </div>
+                        </div>
+                        <button className="bg-[#6e54ff] hover:bg-[#5940cc] text-white text-xs px-3 py-1 rounded-lg transition-colors">
+                          Follow
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

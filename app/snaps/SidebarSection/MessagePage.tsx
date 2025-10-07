@@ -81,8 +81,16 @@ export default function MessagePage() {
 
   const currentThread = state.messageThreads?.find(t => t.id === selectedThread);
   const currentCommunity = state.communities?.find(c => c.id === selectedCommunity);
-  const currentMessages = activeTab === 'dms' 
-    ? state.threadMessages[selectedThread || ''] || []
+  const currentMessages = activeTab === 'dms'
+    ? (state.threadMessages[selectedThread || ''] || []).map((msg: any) => ({
+        id: msg.id,
+        sender_id: msg.sender_id ?? msg.senderId ?? '',
+        content: msg.content,
+        created_at: msg.created_at ?? msg.createdAt ?? '',
+        sender_username: msg.sender_username ?? msg.senderUsername,
+        sender_avatar: msg.sender_avatar ?? msg.senderAvatar,
+        media_url: msg.media_url ?? msg.mediaUrl,
+      }))
     : (state.communityMessages[selectedCommunity || ''] || []).map((msg: any) => ({
         id: msg.id,
         sender_id: msg.sender_id ?? msg.senderId ?? '',
@@ -90,29 +98,56 @@ export default function MessagePage() {
         created_at: msg.created_at ?? msg.createdAt ?? '',
         sender_username: msg.sender_username ?? msg.senderUsername,
         sender_avatar: msg.sender_avatar ?? msg.senderAvatar,
+        media_url: msg.media_url ?? msg.mediaUrl,
       }));
 
-  // Update selected user profile based on current thread or community
+  // Fixed: Using the same logic from ChatHeader to get the other user
+  const getOtherUser = (thread: any) => {
+    if (!thread || !session?.dbUser?.id) return null;
+    if (thread.isGroup) return null;
+    return thread.participants?.find(
+      (p: any) => p.user_id !== session.dbUser.id
+    );
+  };
+
+  // Fixed: Update selected user profile based on current thread or community
   useEffect(() => {
     if (currentThread && currentThread.participants) {
-      const otherUser = currentThread.participants.find(p => p.id !== session?.dbUser?.id);
+      const otherUser = currentThread.participants.find(p => p.user_id !== session?.dbUser?.id);
       if (otherUser) {
         setSelectedUserProfile({
           username: otherUser.username,
           name: otherUser.name || otherUser.username,
-          avatar: otherUser.avatar || '/api/placeholder/80/80',
+          avatar: otherUser.avatar_url || otherUser.avatar || '/4.png',
           bio: otherUser.bio || 'No bio available',
           status: 'online',
           lastSeen: otherUser.lastSeen || 'Recently',
           mutualFollowers: Math.floor(Math.random() * 20) + 1,
           type: 'user'
         });
+      } else {
+        // Fallback if no other user found
+        const firstParticipant = currentThread.participants?.[0];
+        if (firstParticipant && firstParticipant.user_id !== session?.dbUser?.id) {
+          setSelectedUserProfile({
+            username: firstParticipant.username || firstParticipant.name,
+            name: firstParticipant.name || firstParticipant.username || firstParticipant.name || 'User',
+            avatar: firstParticipant.avatar || firstParticipant.avatar || 'https://robohash.org/default.png',
+            bio: firstParticipant.bio || 'No bio available',
+            status: 'online',
+            lastSeen: 'Recently',
+            mutualFollowers: Math.floor(Math.random() * 20) + 1,
+            type: 'user'
+          });
+        } else {
+          setSelectedUserProfile(null);
+        }
       }
     } else if (currentCommunity) {
       setSelectedUserProfile({
         username: currentCommunity.name,
         name: currentCommunity.name,
-        avatar: currentCommunity.creator_avatar || '/api/placeholder/80/80',
+        avatar: currentCommunity.creator_avatar || '/4.png',
         bio: currentCommunity.description || 'No description available',
         status: 'community',
         members: currentCommunity.member_count || 0,
@@ -144,43 +179,52 @@ export default function MessagePage() {
     }
   }, [session?.dbUser?.id, getCommunities, getMessageThreads]);
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, mediaUrl?: string) => {
     if (!session?.dbUser?.id) return;
 
     if (activeTab === 'dms' && selectedThread) {
-      await handleSendDMMessage(content);
+      await handleSendDMMessage(content, mediaUrl);
     } else if (activeTab === 'communities' && selectedCommunity) {
-      await handleSendCommunityMessage(content);
+      await handleSendCommunityMessage(content, mediaUrl);
     }
   };
 
-  const handleSendDMMessage = async (content: string) => {
+  const handleSendDMMessage = async (content: string, mediaUrl?: string) => {
     if (!selectedThread || !socket) return;
+
+    console.log('🔍 handleSendDMMessage called:', { content, mediaUrl, threadId: selectedThread });
 
     try {
       if (isConnected) {
-        (socket as any).emit('send_dm_message', { 
-          userId: session.dbUser.id, 
-          content, 
-          threadId: selectedThread 
+        console.log('📡 Sending via WebSocket');
+        (socket as any).emit('send_dm_message', {
+          userId: session.dbUser.id,
+          content,
+          mediaUrl,
+          threadId: selectedThread
         }, async (response: { success: boolean; message?: string }) => {
+          console.log('📥 WebSocket response:', response);
           if (!response.success) {
+            console.log('⚠️ WebSocket failed, falling back to REST API');
             await sendMessage(selectedThread, {
               senderId: session.dbUser.id,
-              content
+              content,
+              mediaUrl
             });
           }
           await getThreadMessages(selectedThread);
         });
       } else {
+        console.log('🌐 Sending via REST API (no WebSocket)');
         await sendMessage(selectedThread, {
           senderId: session.dbUser.id,
-          content
+          content,
+          mediaUrl
         });
         await getThreadMessages(selectedThread);
       }
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error('❌ Failed to send message:', error);
     }
   };
 
@@ -206,10 +250,10 @@ export default function MessagePage() {
     }
   }
 
-  const handleSendCommunityMessage = async (content: string) => {
+  const handleSendCommunityMessage = async (content: string, mediaUrl?: string) => {
     if (!selectedCommunity || !session?.dbUser?.id) return;
 
-    console.log('🔍 Sending community message:', { content, communityId: selectedCommunity, userId: session.dbUser.id });
+    console.log('🔍 Sending community message:', { content, mediaUrl, communityId: selectedCommunity, userId: session.dbUser.id });
 
     try {
       if (isConnected && socket) {
@@ -217,6 +261,7 @@ export default function MessagePage() {
         (socket as any).emit('send_community_message', {
           userId: session.dbUser.id,
           content,
+          mediaUrl,
           communityId: selectedCommunity
         }, async (response: { success: boolean; message?: string }) => {
           console.log('🔍 WebSocket response:', response);
@@ -224,7 +269,8 @@ export default function MessagePage() {
             console.log('🔍 Falling back to REST API');
             await sendCommunityMessage(selectedCommunity, {
               senderId: session.dbUser.id,
-              content
+              content,
+              mediaUrl
             });
           }
           await fetchCommunityMessages();
@@ -233,7 +279,8 @@ export default function MessagePage() {
         console.log('🔍 Using REST API for message');
         await sendCommunityMessage(selectedCommunity, {
           senderId: session.dbUser.id,
-          content
+          content,
+          mediaUrl
         });
         await fetchCommunityMessages();
       }
@@ -269,6 +316,13 @@ export default function MessagePage() {
   };
 
   const handleSelectThread = async (threadId: string) => {
+    console.log('🔍 Selecting thread:', threadId);
+    console.log('🔍 All threads:', state.messageThreads);
+    
+    const selectedThreadData = state.messageThreads?.find(t => t.id === threadId);
+    console.log('🔍 Selected thread data:', selectedThreadData);
+    console.log('🔍 Participants:', selectedThreadData?.participants);
+    
     setSelectedThread(threadId);
     await getThreadMessages(threadId);
     // On mobile, show chat view when a thread is selected
@@ -319,9 +373,9 @@ export default function MessagePage() {
           mobileView === 'chat' ? '-translate-x-full absolute' : 'translate-x-0'
         }`}>
           {/* Header */}
-          <div className="p-4 border-b border-slate-700/50">
+          <div className="p-4 border-b border-slate-700/30">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-[#6E54FF]">
+              <h2 className="text-lg font-semibold text-white">
                 Messages
               </h2>
               <ConnectionStatus isConnected={isConnected} />
@@ -369,12 +423,12 @@ export default function MessagePage() {
           mobileView === 'sidebar' ? 'translate-x-full absolute' : 'translate-x-0'
         }`}>
           {/* Back Button + Chat Header */}
-          <div className="flex items-center p-4 border-b border-slate-700/50">
+          <div className="flex items-center p-4 border-b border-slate-700/30">
             <button
               onClick={handleBackToSidebar}
-              className="mr-3 p-2 hover:bg-slate-700 rounded-lg transition-colors"
+              className="mr-3 p-2 hover:bg-gray-700/30 rounded-lg transition-colors"
             >
-              <ArrowLeft className="w-5 h-5 text-slate-300" />
+              <ArrowLeft className="w-4 h-4 text-gray-400" />
             </button>
             <div className="flex-1">
               <ChatHeader 
@@ -404,10 +458,10 @@ export default function MessagePage() {
       {/* Desktop Layout */}
       <div  className="hidden md:flex w-full shadow-2xl overflow-hidden">
         {/* Sidebar */}
-        <div  className="w-80 flex flex-col border-r border-gray-700/70 pr-2">
+        <div className="w-72 flex flex-col border-r border-gray-700/50 pr-2">
           {/* Header */}
-          <div className="">
-            <TabNavigation 
+          <div className="pt-4">
+            <TabNavigation
               activeTab={activeTab}
               setActiveTab={setActiveTab}
               // dmSection={dmSection}
@@ -419,9 +473,9 @@ export default function MessagePage() {
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto scrollbar-hide scrollbar-thumb-slate-600 scrollbar-track-transparent">
+          <div className="flex-1 overflow-y-auto scrollbar-hide">
             {activeTab === 'dms' ? (
-              <DMSection 
+              <DMSection
                 // dmSection={dmSection}
                 state={state}
                 session={session}
@@ -432,7 +486,7 @@ export default function MessagePage() {
                 onStartChat={handleStartChatWithUser}
               />
             ) : (
-              <CommunitySection 
+              <CommunitySection
                 communitySection={communitySection}
                 state={state}
                 session={session}
@@ -445,23 +499,23 @@ export default function MessagePage() {
         </div>
 
         {/* Chat Area */}
-        <div className="flex w-full">
-         <div className="flex w-full h-screen pb-4"> {/* Add padding to the full screen container */}
-  <div className="flex-1 flex flex-col h-full rounded-lg ">
-    <ChatHeader 
+        <div className="flex w-full pl-4">
+         <div className="flex w-full h-screen pt-4 pb-4"> {/* Added top padding to match sidebar */}
+  <div className="flex-1 flex flex-col h-full bg-black rounded-2xl border border-gray-800/60 overflow-hidden shadow-2xl">
+    <ChatHeader
       activeTab={activeTab}
       currentThread={currentThread}
       currentCommunity={currentCommunity}
       session={session}
     />
 
-    <MessageList 
-      messages={currentMessages} 
-      currentUserId={session?.dbUser?.id} 
+    <MessageList
+      messages={currentMessages}
+      currentUserId={session?.dbUser?.id}
     />
 
-    <div className="px-6 py-4">
-      <MessageInput 
+    <div className="px-5 py-3 bg-black border-t border-gray-800/60">
+      <MessageInput
         onSend={handleSendMessage}
         disabled={!selectedThread && !selectedCommunity}
       />
@@ -470,74 +524,83 @@ export default function MessagePage() {
 </div>
 
           {/* Selected Chat Details Sidebar */}
-          <div className=" 2xl:block w-96 border-l-2 border-gray-700/70 sticky top-0" style={{ zIndex: 999 }}>
-            <div className="p-6">
+          <div className="hidden lg:block w-[420px] border-l border-gray-700/50 pt-4" style={{ zIndex: 999 }}>
+            <div className="p-4">
               {selectedUserProfile ? (
-                <div className="border-2 border-gray-700/70 rounded-2xl p-6">
-                  <div className="text-center mb-6">
-                    <img 
-                      src={selectedUserProfile.avatar} 
+                <div className="border border-gray-700/50 rounded-2xl p-4">
+                  <div className="text-center mb-4">
+                    <img
+                      src={selectedUserProfile.avatar}
                       alt={selectedUserProfile.name}
-                      className="w-24 h-24 rounded-full object-cover mx-auto mb-4"
+                      className="w-16 h-16 rounded-full object-cover mx-auto mb-3"
                     />
-                    <h3 className="text-xl font-bold text-white mb-1">
+                    <h3 className="text-lg font-semibold text-white mb-1">
                       {selectedUserProfile.name}
                     </h3>
-                    <p className="text-sm text-slate-400 mb-2">
+                    <p className="text-xs text-gray-400 mb-2">
                       @{selectedUserProfile.username}
                     </p>
                     
                     {selectedUserProfile.type === 'community' ? (
-                      <div className="space-y-2">
-                        <div className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm inline-block">
+                      <div className="space-y-1.5">
+                        <div className="bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full text-xs inline-block">
                           Community
+                        </div>
+                        <p className="text-xs text-green-400">
+                          {selectedUserProfile.members} members
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Created by @{selectedUserProfile.createdBy}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {new Date(selectedUserProfile.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ) : selectedUserProfile.type === 'group' ? (
+                      <div className="space-y-2">
+                        <div className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm inline-block">
+                          Group Chat
                         </div>
                         <p className="text-sm text-green-400">
                           {selectedUserProfile.members} members
                         </p>
-                        <p className="text-xs text-slate-400">
-                          Created by @{selectedUserProfile.createdBy}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {new Date(selectedUserProfile.createdAt).toLocaleDateString()}
-                        </p>
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        <div className="bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-sm inline-block">
+                      <div className="space-y-1.5">
+                        <div className="bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full text-xs inline-block">
                           {selectedUserProfile.status}
                         </div>
                         {selectedUserProfile.mutualFollowers && (
-                          <p className="text-sm text-blue-400">
+                          <p className="text-xs text-blue-400">
                             {selectedUserProfile.mutualFollowers} mutual followers
                           </p>
                         )}
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-gray-500">
                           Last seen: {selectedUserProfile.lastSeen}
                         </p>
                       </div>
                     )}
                   </div>
                   
-                  <div className="border-t border-gray-700/50 pt-4">
-                    <h4 className="text-sm font-semibold text-slate-300 mb-2">
+                  <div className="border-t border-gray-700/30 pt-3">
+                    <h4 className="text-xs font-medium text-gray-300 mb-2">
                       {selectedUserProfile.type === 'community' ? 'Description' : 'Bio'}
                     </h4>
-                    <p className="text-sm text-slate-300 leading-relaxed">
+                    <p className="text-xs text-gray-400 leading-relaxed">
                       {selectedUserProfile.bio}
                     </p>
                   </div>
 
                   {selectedUserProfile.type === 'community' && (
-                    <div className="border-t border-gray-700/50 pt-4 mt-4">
-                      <h4 className="text-sm font-semibold text-slate-300 mb-3">
+                    <div className="border-t border-gray-700/30 pt-3 mt-3">
+                      <h4 className="text-xs font-medium text-gray-300 mb-2">
                         Community Actions
                       </h4>
-                      <div className="space-y-2">
-                        <button className="w-full bg-[#6E54FF] hover:bg-[#5940CC] text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                      <div className="space-y-1.5">
+                        <button className="w-full bg-[#6E54FF] hover:bg-[#5940CC] text-white text-xs py-1.5 px-3 rounded-lg transition-colors">
                           View Members
                         </button>
-                        <button className="w-full bg-slate-700 hover:bg-slate-600 text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                        <button className="w-full bg-gray-700/50 hover:bg-gray-600/50 text-white text-xs py-1.5 px-3 rounded-lg transition-colors">
                           Community Settings
                         </button>
                       </div>
@@ -545,28 +608,44 @@ export default function MessagePage() {
                   )}
 
                   {selectedUserProfile.type === 'user' && (
+                    <div className="border-t border-gray-700/30 pt-3 mt-3">
+                      <h4 className="text-xs font-medium text-gray-300 mb-2">
+                        User Actions
+                      </h4>
+                      <div className="space-y-1.5">
+                        <button className="w-full bg-[#6E54FF] hover:bg-[#5940CC] text-white text-xs py-1.5 px-3 rounded-lg transition-colors">
+                          View Profile
+                        </button>
+                        <button className="w-full bg-gray-700/50 hover:bg-gray-600/50 text-white text-xs py-1.5 px-3 rounded-lg transition-colors">
+                          Block User
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedUserProfile.type === 'group' && (
                     <div className="border-t border-gray-700/50 pt-4 mt-4">
                       <h4 className="text-sm font-semibold text-slate-300 mb-3">
-                        User Actions
+                        Group Actions
                       </h4>
                       <div className="space-y-2">
                         <button className="w-full bg-[#6E54FF] hover:bg-[#5940CC] text-white text-sm py-2 px-4 rounded-lg transition-colors">
-                          View Profile
+                          View Members
                         </button>
                         <button className="w-full bg-slate-700 hover:bg-slate-600 text-white text-sm py-2 px-4 rounded-lg transition-colors">
-                          Block User
+                          Group Settings
                         </button>
                       </div>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="border-2 border-gray-700/70 rounded-2xl p-6 text-center">
-                  <MessageCircle className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-slate-400 mb-2">
+                <div className="border border-gray-700/50 rounded-2xl p-4 text-center">
+                  <MessageCircle className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                  <h3 className="text-sm font-medium text-gray-400 mb-1">
                     No chat selected
                   </h3>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-xs text-gray-500">
                     Select a conversation to view details
                   </p>
                 </div>

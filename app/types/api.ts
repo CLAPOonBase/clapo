@@ -36,6 +36,52 @@ export interface LoginResponse {
   token: string
 }
 
+// Reputation Types
+export interface ReputationScore {
+  user_id: string
+  score: number
+  tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond'
+  daily_claps_given: number
+  daily_replies_given: number
+  daily_givereps_sent: number
+  daily_givereps_received: number
+  last_decay_at: string
+  streak_days: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ReputationEvent {
+  id: string
+  user_id: string
+  event_type: 'clap' | 'reply' | 'remix' | 'giverep_sent' | 'giverep_received' | 'decay'
+  points_delta: number
+  score_after: number
+  source_user_id?: string
+  ref_id?: string
+  created_at: string
+}
+
+export interface ReputationHistoryResponse {
+  message: string
+  events: ReputationEvent[]
+  current_score: number
+}
+
+export interface GiveRepRequest {
+  from_user_id: string
+  to_user_id: string
+  points: number
+  context?: string
+}
+
+export interface GiveRepResponse {
+  message: string
+  event: ReputationEvent
+  sender_new_score: number
+  receiver_new_score: number
+}
+
 // User Profile Types
 export interface UserProfile {
   id: string
@@ -46,6 +92,8 @@ export interface UserProfile {
   createdAt: string
   followerCount: number
   followingCount: number
+  reputation_score?: number
+  reputation_tier?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond'
   total_posts?: number
   total_likes_given?: number
   total_comments_made?: number
@@ -80,6 +128,7 @@ export interface ProfileResponse {
 }
 
 export interface UpdateProfileRequest {
+  username?: string
   bio?: string
   avatarUrl?: string
 }
@@ -122,6 +171,8 @@ export interface Post {
   post_popularity_score: number
   username: string
   avatar_url: string
+  author_reputation?: number
+  author_reputation_tier?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond'
   likes?: Array<{
     user_id: string
     username: string
@@ -144,6 +195,8 @@ export interface Post {
     user_id: string
     username: string
     avatar_url: string
+    author_reputation?: number
+    author_reputation_tier?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond'
   }>
 }
 
@@ -498,6 +551,7 @@ export interface MessageThread {
   name: string
   createdAt: string
   participants?: Array<{
+    avatar_url: string
     id: string
     user_id: string
     username: string

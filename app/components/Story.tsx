@@ -27,6 +27,7 @@ const Stories: React.FC = () => {
   const { stories, loading, error, fetchFollowingStories, recordStoryView, getStoryViewers } = useStories();
   const [currentStoryIndex, setCurrentStoryIndex] = useState<number>(0);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(true);
@@ -40,6 +41,42 @@ const Stories: React.FC = () => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const bottomSheetRef = useRef<HTMLDivElement | null>(null);
+
+  // Check if story is expired (older than 24 hours)
+  const isStoryExpired = (createdAt: string): boolean => {
+    const storyTime = new Date(createdAt).getTime();
+    const currentTime = new Date().getTime();
+    const twentyFourHours = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+    return currentTime - storyTime > twentyFourHours;
+  };
+
+  // Filter expired stories
+  const filterExpiredStories = (storyList: Story[]): Story[] => {
+    return storyList.filter(story => !isStoryExpired(story.created_at));
+  };
+
+  // Load stories from localStorage and filter expired ones
+  const loadStoriesFromStorage = (): Story[] => {
+    try {
+      const stored = localStorage.getItem('user_stories');
+      if (stored) {
+        const parsedStories = JSON.parse(stored);
+        return filterExpiredStories(parsedStories);
+      }
+    } catch (error) {
+      console.error('Error loading stories from storage:', error);
+    }
+    return [];
+  };
+
+  // Save stories to localStorage
+  const saveStoriesToStorage = (storyList: Story[]) => {
+    try {
+      localStorage.setItem('user_stories', JSON.stringify(storyList));
+    } catch (error) {
+      console.error('Error saving stories to storage:', error);
+    }
+  };
 
   useEffect(() => {
     fetchFollowingStories();
@@ -218,13 +255,71 @@ const Stories: React.FC = () => {
     );
   }
 
+  // Handle file selection
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
+  };
+
+  // Add new story
+  const handleAddStory = () => {
+    if (!selectedFile) return;
+
+    const newStory: Story = {
+      id: `story_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      content: newStoryContent,
+      media_url: previewUrl,
+      created_at: new Date().toISOString(),
+      username: "You", // Replace with actual username
+      avatar: "https://via.placeholder.com/100x100?text=You", // Replace with actual avatar
+      type: selectedFile.type.startsWith('video/') ? 'video' : 'image'
+    };
+
+    // Add to stories list
+    const updatedStories = [newStory, ...stories];
+    setStories(updatedStories);
+
+    // Save user stories to localStorage (excluding sample stories)
+    const localStories = loadStoriesFromStorage();
+    const updatedLocalStories = [newStory, ...localStories];
+    saveStoriesToStorage(updatedLocalStories);
+
+    // Reset form
+    setNewStoryContent("");
+    setSelectedFile(null);
+    setPreviewUrl("");
+    setIsAddModalOpen(false);
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const openAddModal = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const closeAddModal = () => {
+    setIsAddModalOpen(false);
+    setNewStoryContent("");
+    setSelectedFile(null);
+    setPreviewUrl("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <div style={{ zIndex: 99999 }} className="w-full">
       
       {/* Stories Grid */}
       <div
-        className={`flex gap-3 p-4 ${
-          stories.length > 6 ? "overflow-x-auto scrollbar-hide" : "overflow-x-hidden scrollbar-hide"
+        className={`flex gap-4 p-6 ${
+          stories.length > 5 ? "overflow-x-auto scrollbar-hide" : "overflow-x-hidden scrollbar-hide"
         }`}
       >
         {/* Upload Story Button */}
@@ -379,27 +474,36 @@ const Stories: React.FC = () => {
           </div>
 
           {/* Controls */}
-          <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center gap-4 z-20">
+          <div className="absolute bottom-6 left-4 right-4 flex items-center justify-center gap-6 z-20">
             <button
               onClick={goToPrevStory}
               disabled={currentStoryIndex === 0}
-              className="text-white hover:text-gray-300 disabled:opacity-50"
+              className="text-white hover:text-purple-400 disabled:opacity-50 disabled:cursor-not-allowed bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full p-3 transition-all duration-200 shadow-lg"
             >
               <ChevronLeft size={24} />
             </button>
 
             {stories[currentStoryIndex].media_type === "video" && (
               <>
-                <button onClick={togglePlayPause} className="text-white hover:text-gray-300">
+                <button 
+                  onClick={togglePlayPause} 
+                  className="text-white hover:text-purple-400 bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full p-3 transition-all duration-200 shadow-lg"
+                >
                   {isPlaying ? <Pause size={24} /> : <Play size={24} />}
                 </button>
-                <button onClick={toggleMute} className="text-white hover:text-gray-300">
+                <button 
+                  onClick={toggleMute} 
+                  className="text-white hover:text-purple-400 bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full p-3 transition-all duration-200 shadow-lg"
+                >
                   {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
                 </button>
               </>
             )}
 
-            <button onClick={goToNextStory} className="text-white hover:text-gray-300">
+            <button 
+              onClick={goToNextStory} 
+              className="text-white hover:text-purple-400 bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full p-3 transition-all duration-200 shadow-lg"
+            >
               <ChevronRight size={24} />
             </button>
           </div>

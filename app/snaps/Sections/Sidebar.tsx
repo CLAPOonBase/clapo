@@ -1,5 +1,5 @@
 "use client";
-import { Home, Bell, User, MessageCircle, Activity, Blocks, TrendingUp, Menu, X } from "lucide-react";
+import { Home, Bell, User, MessageCircle, Activity, Blocks, TrendingUp, Menu, X, Telescope, Wallet, Lock, Settings, LogOut } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -7,8 +7,9 @@ import { useRouter } from "next/navigation";
 import { useWalletContext } from "@/context/WalletContext";
 import { useSession } from "next-auth/react";
 import SignInPage from "@/app/SignIn/SignInPage";
+import { SnapComposer } from "./SnapComposer";
 
-type PageKey = "home" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks";
+type PageKey = "home" | "wallet" | "explore" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks";
 
 type SidebarProps = {
   setCurrentPage: (page: PageKey) => void;
@@ -18,64 +19,6 @@ type SidebarProps = {
   onNavigateToOpinio?: () => void;
   onNavigateToSnaps?: () => void;
 };
-
-const navItems: {
-  label: string;
-  value: PageKey;
-  icon: React.ReactNode;
-  activeIcon: React.ReactNode;
-  showOnMobile?: boolean;
-  showOnDesktop?: boolean;
-}[] = [
-  { 
-    label: "Home", 
-    value: "home", 
-    icon: <Home className="w-6 h-6" />, 
-    activeIcon: <Home className="w-6 h-6" fill="currentColor" />,
-    showOnMobile: true, 
-    showOnDesktop: true 
-  },
-  { 
-    label: "Notifications", 
-    value: "notifications", 
-    icon: <Bell className="w-6 h-6" />, 
-    activeIcon: <Bell className="w-6 h-6" fill="currentColor" />,
-    showOnMobile: true, 
-    showOnDesktop: true 
-  },
-  { 
-    label: "Activity", 
-    value: "activity", 
-    icon: <Activity className="w-6 h-6" />, 
-    activeIcon: <Activity className="w-6 h-6" fill="currentColor" />,
-    showOnMobile: true,
-    showOnDesktop: true 
-  },
-  { 
-    label: "Messages", 
-    value: "messages", 
-    icon: <MessageCircle className="w-6 h-6" />, 
-    activeIcon: <MessageCircle className="w-6 h-6" fill="currentColor" />,
-    showOnMobile: true,
-    showOnDesktop: true 
-  },
-  { 
-    label: "Profile", 
-    value: "profile", 
-    icon: <User className="w-6 h-6" />, 
-    activeIcon: <User className="w-6 h-6" fill="currentColor" />,
-    showOnMobile: true,
-    showOnDesktop: true 
-  },
-  { 
-    label: "Share", 
-    value: "share", 
-    icon: <Blocks className="w-6 h-6" />, 
-    activeIcon: <Blocks className="w-6 h-6" fill="currentColor" />,
-    showOnMobile: true,
-    showOnDesktop: true 
-  },
-];
 
 interface ExtendedSession {
   user?: {
@@ -104,21 +47,124 @@ export default function Sidebar({
   onNavigateToSnaps
 }: SidebarProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const [activeDialog, setActiveDialog] = useState<null | "x" | "wallet">(null);
+  const [activeDialog, setActiveDialog] = useState<null | "x" | "wallet" | "createPost">(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const router = useRouter();
   const { connect, disconnect, address } = useWalletContext();
   const { data: session } = useSession() as { data: ExtendedSession | null };
 
-  const bottomNavItems = [
-     { name: "Opinio", path: "/opinio" },
-     { name: "Claps", path: "/" },
-   ];
-
-  const handleNavClick = (value: PageKey) => {
-    setCurrentPage(value);
-    setIsMobileSidebarOpen(false); // Close mobile sidebar after navigation
+  // Create a custom profile icon component that uses avatar if available
+  const ProfileIcon = ({ isActive, className }: { isActive?: boolean; className?: string }) => {
+    if (session?.dbUser?.avatar_url) {
+      return (
+        <Image
+          src={session.dbUser.avatar_url}
+          alt="Profile"
+          width={24}
+          height={24}
+          className={`rounded-full ${className || "w-6 h-6"} object-cover border border-gray-600/40`}
+        />
+      );
+    }
+    return isActive ?
+      <User className={`${className || "w-6 h-6"} text-white`} /> :
+      <User className={className || "w-6 h-6"} />;
   };
+
+  const navItems: {
+    label: string;
+    value: PageKey;
+    icon: React.ReactNode;
+    activeIcon: React.ReactNode;
+    showOnMobile?: boolean;
+    showOnDesktop?: boolean;
+  }[] = [
+    {
+      label: "Home",
+      value: "home",
+      icon: <Home className="w-6 h-6" />,
+      activeIcon: <Home className="w-6 h-6 text-white" />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+      {
+      label: "Explore",
+      value: "explore",
+      icon: <Telescope className="w-6 h-6" />,
+      activeIcon: <Telescope className="w-6 h-6 text-white" />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+      {
+      label: "Creator Shares",
+      value: "share",
+      icon: <Blocks className="w-6 h-6" />,
+      activeIcon: <Blocks className="w-6 h-6 text-white" />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+    {
+      label: "Messages",
+      value: "messages",
+      icon: <MessageCircle className="w-6 h-6" />,
+      activeIcon: <MessageCircle className="w-6 h-6 text-white" />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+    {
+      label: "Notifications",
+      value: "notifications",
+      icon: <Bell className="w-6 h-6" />,
+      activeIcon: <Bell className="w-6 h-6 text-white" />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+    // {
+    //   label: "Activity",
+    //   value: "activity",
+    //   icon: <Activity className="w-6 h-6" />,
+    //   activeIcon: <Activity className="w-6 h-6 text-white" />,
+    //   showOnMobile: true,
+    //   showOnDesktop: true
+    // },
+
+
+      {
+      label: "Wallet",
+      value: "wallet",
+      icon: <Wallet className="w-6 h-6" />,
+      activeIcon: <Wallet className="w-6 h-6 text-white" />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+      {
+      label: "Profile",
+      value: "profile",
+      icon: <ProfileIcon isActive={false} />,
+      activeIcon: <ProfileIcon isActive={true} />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+
+  ];
+
+  const bottomNavItems = [
+  { name: "Opinio", path: "/opinio", img: "/opinio-nav.png" },
+  { name: "Claps", path: "/", img: "/navlogo.png" },
+];
+
+
+const handleNavClick = (value: PageKey) => {
+  if (window.location.pathname !== '/') {
+    router.push('/');
+    setTimeout(() => {
+      setCurrentPage(value);
+    }, 100);
+  } else {
+    setCurrentPage(value);
+  }
+  setIsMobileSidebarOpen(false);
+};
 
   const handleOpinioClick = () => {
     if (onNavigateToOpinio) {
@@ -145,10 +191,13 @@ export default function Sidebar({
   const closeDialog = () => setActiveDialog(null);
 
   const shouldCollapse = !alwaysExpanded && collapsibleItems.includes(currentPage);
-  const sidebarWidth = shouldCollapse ? (isHovered ? 220 : 85) : 220;
+  const sidebarWidth = shouldCollapse ? (isHovered ? 240 : 85) : 240;
 
   const isLoggedIn = !!session;
   const isWalletConnected = !!address;
+
+  // Check if current page is home to show Create Post button
+  const showCreatePost = currentPage === "home";
 
   const toggleMobileSidebar = () => {
     setIsMobileSidebarOpen(!isMobileSidebarOpen);
@@ -250,7 +299,21 @@ export default function Sidebar({
                           </motion.button>
                         );
                       })}
+                      
+                    {/* Mobile Create Post Button - Only show on home page */}
+                    {showCreatePost && (
+                      <button
+                        onClick={() => setActiveDialog("createPost")}
+                        className="inline-flex w-full items-center justify-center gap-[6px] min-w-[105px]
+                                   transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                                   bg-[hsla(220,10%,12%,1)] text-white shadow px-3 py-1.5 text-xs 
+                                   rounded-full leading-[24px] font-bold w-full sm:w-auto whitespace-nowrap mt-4"
+                      >
+                        Create Post
+                      </button>
+                    )}
                   </nav>
+               
                 </div>
 
                 {/* Bottom Section for Mobile */}
@@ -261,23 +324,11 @@ export default function Sidebar({
                       onClick={() => openDialog("x")}
                       className="inline-flex items-center justify-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 gap-[6px] min-w-[105px] transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)] bg-[hsla(220,10%,12%,1)] text-white shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000] hover:bg-[hsla(220,10%,18%,1)] px-3 py-2 text-xs rounded-full leading-[24px] font-bold w-full whitespace-nowrap"
                     >
-                      {isLoggedIn ? session.dbUser?.username || "CONNECTED" : "CONNECT X"}
+                    <Image src={session?.dbUser?.avatar_url || "/default-avatar.png"} alt={""} width={1000} height={1000} className="rounded-full h-8 w-8 bg-black border border-gray-700/70"/>
+
+                      {isLoggedIn ? session?.dbUser?.username || "CONNECTED" : "CONNECT X"}
                     </button>
-                    <button
-                      style={{
-                        boxShadow:
-                          "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(26, 19, 161, 0.50), 0px 0px 0px 1px #4F47EB",
-                        backgroundColor: "#6E54FF",
-                        color: "white",
-                        padding: "8px 16px",
-                      }}
-                      onClick={() => openDialog("wallet")}
-                      className="bg-[#23272B] text-white rounded-full px-3 py-2 text-xs font-bold shadow w-full"
-                    >
-                      {isWalletConnected
-                        ? `${address?.slice(0, 6)}...${address?.slice(-4)}`
-                        : "CONNECT WALLET"}
-                    </button>
+                 
                   </div>
                   
                   <div className="space-y-2">
@@ -369,6 +420,21 @@ export default function Sidebar({
                     </motion.button>
                   );
                 })}
+              
+              {/* Desktop Create Post Button - Only show on home page */}
+              {showCreatePost && (
+                <div className="w-full flex flex-col gap-2 mt-6">
+                  <button
+                    onClick={() => setActiveDialog("createPost")}
+                    className="inline-flex w-full items-center justify-center gap-[6px] min-w-[105px]
+                               transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                               bg-[hsla(220,10%,12%,1)] text-white shadow px-3 py-1.5 text-xs 
+                               rounded-full leading-[24px] font-bold w-full sm:w-auto whitespace-nowrap"
+                  >
+                    Create Post
+                  </button>
+                </div>
+              )}
             </nav>
           </div>
 
@@ -382,48 +448,37 @@ export default function Sidebar({
                 transition={{ delay: 0.1 }}
                 className="space-y-3"
               >
-                {/* Desktop Buttons (only lg and up) */}
-                <div className="hidden lg:flex flex-col gap-2 items-center">
-                  <button
-                    onClick={() => openDialog("x")}
-                    className="inline-flex items-center justify-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 gap-[6px] min-w-[105px] transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)] bg-[hsla(220,10%,12%,1)] text-white shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000] hover:bg-[hsla(220,10%,18%,1)] px-3 py-1.5 text-xs rounded-full leading-[24px] font-bold w-full sm:w-auto whitespace-nowrap"
-                  >
-                    {isLoggedIn ? session.dbUser?.username || "CONNECTED" : "CONNECT X"}
-                  </button>
-                  <button
-                    style={{
-                      boxShadow:
-                        "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(26, 19, 161, 0.50), 0px 0px 0px 1px #4F47EB",
-                      backgroundColor: "#6E54FF",
-                      color: "white",
-                      padding: "8px 16px",
-                    }}
-                    onClick={() => openDialog("wallet")}
-                    className="bg-[#23272B] text-white rounded-full px-3 py-1 text-xs font-bold shadow"
-                  >
-                    {isWalletConnected
-                      ? `${address?.slice(0, 6)}...${address?.slice(-4)}`
-                      : "CONNECT WALLET"}
-                  </button>
+
+                <div className="space-y-3">
+                  <h3 className="text-white text-sm font-semibold tracking-wide uppercase">
+                    EXPLORE MORE
+                  </h3>
+
+                  <div className="space-y-2">
+                    {bottomNavItems.map((item) => (
+                      <button
+                        key={item.name}
+                        onClick={() => {
+                          if (item.name === "Opinio") {
+                            handleOpinioClick();
+                          } else if (item.name === "Claps") {
+                            handleSnapsClick();
+                          }
+                        }}
+                        className="w-full px-4 py-3 rounded-3xl bg-[#1A1A1A] border-2 border-[#6E54FF] hover:bg-[#2A2A2A] transition-all duration-200 flex items-center justify-center"
+                      >
+                        <Image
+                          src={item.img}
+                          alt={item.name}
+                          width={120}
+                          height={40}
+                          className="object-contain h-8 w-auto"
+                        />
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                
-                <div className="space-y-2">
-                  {bottomNavItems.map((item, index) => (
-                    <button 
-                      key={item.name}
-                      onClick={() => {
-                        if (item.name === "Opinio") {
-                          handleOpinioClick();
-                        } else if (item.name === "Claps") {
-                          handleSnapsClick();
-                        }
-                      }}
-                      className="w-full px-4 py-2 rounded-lg text-center bg-gray-700/30 border border-gray-600/40 hover:bg-gray-700/50 transition-colors"
-                    >
-                      <div className="text-gray-300 font-medium text-sm">{item.name}</div>
-                    </button>
-                  ))}
-                </div>
+
               </motion.div>
             )}
           </AnimatePresence>
@@ -431,22 +486,25 @@ export default function Sidebar({
       </div>
 
       {/* Dialog Rendering */}
-      <AnimatePresence>
-        {activeDialog && (
-          <motion.div
-            key="dialog"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[10000]"
-            onClick={closeDialog}
-          >
-            <div onClick={(e) => e.stopPropagation()}>
-              <SignInPage close={closeDialog} />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+   <AnimatePresence>
+  {activeDialog && (
+    <motion.div
+      key="dialog"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[10000]"
+      onClick={() => setActiveDialog(null)}
+    >
+      <div onClick={(e) => e.stopPropagation()}>
+        {activeDialog === "x" && <SignInPage close={() => setActiveDialog(null)} />}
+        {activeDialog === "wallet" && <SignInPage close={() => setActiveDialog(null)} />}
+        {activeDialog === "createPost" && <SnapComposer close={() => setActiveDialog(null)} />}
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
+
     </>
   );
 }

@@ -133,23 +133,35 @@ export const UpdateProfileModal = ({
   if (!show) return null;
 
   return (
-    <div className="absolute top-0 inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4">
-      <div className="bg-black rounded-2xl p-8 w-full max-w-md border border-slate-700/50 shadow-2xl">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
-            <User className="w-6 h-6 text-white" />
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-black border-2 border-gray-700/70 rounded-xl p-4 w-full max-w-lg shadow-custom">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{
+              backgroundColor: "#6E54FF",
+              boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+            }}>
+              <User className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-white">Update Profile</h3>
+              <p className="text-sm text-gray-400">Edit your profile information</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-2xl font-bold text-white">Update Profile</h3>
-            <p className="text-sm text-slate-400">Edit your profile information</p>
-          </div>
+          <button
+            onClick={onClose}
+            disabled={isLoading || isUploading}
+            className="w-8 h-8 rounded-full bg-gray-700/50 hover:bg-gray-600/50 flex items-center justify-center transition-colors disabled:opacity-50"
+          >
+            <X className="w-4 h-4 text-gray-400" />
+          </button>
         </div>
         
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Avatar Section */}
-          <div className="flex flex-col items-center space-y-4">
+          <div className="flex flex-col items-center space-y-3">
             <div className="relative">
-              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-slate-600/50">
+              <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-600">
                 <Image
                   src={previewUrl || avatarUrl || currentProfile.avatar_url || '/4.png'}
                   alt="Profile avatar"
@@ -162,18 +174,21 @@ export const UpdateProfileModal = ({
                   }}
                 />
                 {isUploading && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
-                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="absolute inset-0 bg-black/70 flex items-center justify-center rounded-full">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   </div>
                 )}
               </div>
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center" style={{
+                backgroundColor: "#6E54FF",
+                boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+              }}>
                 <Camera className="w-3 h-3 text-white" />
               </div>
             </div>
             
             {/* Upload Controls */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -185,7 +200,7 @@ export const UpdateProfileModal = ({
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 text-white text-sm rounded-lg transition-all duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-gray-700/50 hover:bg-gray-600/50 disabled:bg-gray-800/50 text-white text-sm rounded-xl border border-gray-600/30 transition-all duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Upload className="w-4 h-4" />
                 <span>{isUploading ? 'Uploading...' : 'Upload Image'}</span>
@@ -194,43 +209,43 @@ export const UpdateProfileModal = ({
                 <button
                   onClick={handleRemoveImage}
                   disabled={isUploading}
-                  className="px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white text-sm rounded-lg transition-all duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-2 bg-red-600/80 hover:bg-red-600 disabled:bg-red-800/50 text-white text-sm rounded-xl border border-red-500/30 transition-all duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <X className="w-4 h-4" />
                   <span>Remove</span>
                 </button>
               )}
             </div>
-            <p className="text-xs text-slate-400 text-center">
+            <p className="text-xs text-gray-400 text-center">
               Upload a new profile picture (JPEG, PNG, GIF, WebP, max 5MB)
             </p>
           </div>
 
           {/* Username Field */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Username</label>
+            <label className="block text-sm font-medium text-white mb-1">Username</label>
             <input
               type="text"
               placeholder="Enter username..."
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-700/50 text-white rounded-xl border border-slate-600/50 focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+              className="w-full px-3 py-2.5 bg-black border-2 border-gray-700/70 text-white rounded-xl focus:border-[#6E54FF]/50 focus:outline-none transition-all duration-200 placeholder:text-gray-500"
             />
           </div>
-          
+
           {/* Bio Field */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Bio</label>
+            <label className="block text-sm font-medium text-white mb-1">Bio</label>
             <textarea
               placeholder="Tell us about yourself..."
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-700/50 text-white rounded-xl border border-slate-600/50 focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 resize-none"
-              rows={3}
+              className="w-full px-3 py-2.5 bg-black border-2 border-gray-700/70 text-white rounded-xl focus:border-[#6E54FF]/50 focus:outline-none transition-all duration-200 resize-none placeholder:text-gray-500"
+              rows={4}
               maxLength={200}
             />
             <div className="text-right mt-1">
-              <span className="text-xs text-slate-400">{bio.length}/200</span>
+              <span className="text-xs text-gray-400">{bio.length}/200</span>
             </div>
           </div>
           
@@ -239,7 +254,11 @@ export const UpdateProfileModal = ({
             <button
               onClick={handleUpdate}
               disabled={!username.trim() || !hasChanges || isLoading || isUploading}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-slate-600 disabled:to-slate-600 text-white font-medium rounded-xl transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="flex-1 px-6 py-2 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              style={{
+                backgroundColor: !username.trim() || !hasChanges || isLoading || isUploading ? "#6B7280" : "#6E54FF",
+                boxShadow: !username.trim() || !hasChanges || isLoading || isUploading ? "none" : "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+              }}
             >
               {isLoading ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -247,11 +266,11 @@ export const UpdateProfileModal = ({
                 'Update Profile'
               )}
             </button>
-            
+
             <button
               onClick={onClose}
               disabled={isLoading || isUploading}
-              className="flex-1 px-6 py-3 bg-slate-600 hover:bg-slate-500 disabled:bg-slate-700 text-white font-medium rounded-xl transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-6 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 text-white text-sm font-medium rounded-full border border-gray-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>

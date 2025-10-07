@@ -26,6 +26,8 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  
+  
 
   const { data: session } = useSession();
 
@@ -196,19 +198,11 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b-2 border-gray-700/70">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600/20 rounded-xl border border-blue-500/30">
-              <Triangle className="w-5 h-5 text-blue-400" />
-            </div>
-            <div>
-              <h2 className="text-white text-xl font-bold tracking-tight">Post Token Trading</h2>
-              {/* <p className="text-gray-400 text-sm truncate max-w-[200px]">{postContent}</p> */}
-            </div>
-          </div>
+        <div className="flex items-center justify-between border-b-2 border-gray-700/70">
+  <span></span>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-800/50 rounded-xl transition-colors border border-gray-700/50"
+            className="p-2 hover:bg-gray-800/50 "
           >
             <X className="w-5 h-5 text-gray-400" />
           </button>
@@ -217,7 +211,7 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Wallet Connection */}
-          {!isConnected && (
+          {/* {!isConnected && (
             <div className="bg-black/50 backdrop-blur-sm rounded-2xl p-4 shadow-2xl">
               <div className="flex items-center justify-between">
                 <div>
@@ -232,10 +226,10 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                 />
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Connected Wallet Info */}
-          {isConnected && address && (
+          {/* {isConnected && address && (
             <div className="bg-green-900/20 backdrop-blur-sm rounded-2xl p-4 border-2 border-green-500/30 shadow-2xl">
               <div className="flex items-center justify-between">
                 <div>
@@ -250,7 +244,7 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                 </button>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Stats Overview */}
           {/* {stats && (
@@ -319,7 +313,7 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                     : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
                 }`}
               >
-                Buy Shares
+                Buy
               </button>
               <button
                 onClick={() => setActiveTab('sell')}
@@ -329,7 +323,7 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                     : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
                 }`}
               >
-                Sell Shares
+                Sell
               </button>
             </div>
           </div>
@@ -376,6 +370,14 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                      <span className="text-gray-400 text-sm">Total cost</span>
                      <span className="text-white text-lg font-bold tracking-tight">
                        {userCanClaimFreebie && remainingFreebies > 0 ? 'FREE' : formatPrice(currentPrice * amount)}
+                     </span>
+                   </div>
+                      <div className="flex justify-between items-center">
+                     <span className="text-gray-400 text-sm">Your Porfolio</span>
+                     <span className="text-white text-lg font-bold tracking-tight">
+                      {/* user portfolio balance i want  */}
+                        {portfolio ? formatPrice(portfolio.currentValue) : '$0.0000'}
+                        
                      </span>
                    </div>
                  </div>
