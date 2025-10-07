@@ -54,6 +54,18 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   const postHandle = isApiPost ? `@${post.username || 'unknown'}` : (post.handle || '@unknown')
   const authorReputation = isApiPost ? post.author_reputation : undefined
   const authorReputationTier = isApiPost ? post.author_reputation_tier : undefined
+
+  // Debug: Log reputation data and full post object
+  if (isApiPost) {
+    console.log(`🔍 Post ${postId} - Author: ${postAuthor}`)
+    console.log('📊 Reputation Data:', {
+      score: authorReputation,
+      tier: authorReputationTier,
+      hasScore: authorReputation !== undefined,
+      hasTier: authorReputationTier !== undefined
+    })
+    console.log('📦 Full Post Object:', post)
+  }
   const getRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();

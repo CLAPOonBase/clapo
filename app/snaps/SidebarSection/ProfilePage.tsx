@@ -12,6 +12,8 @@ import { useCreatorToken } from "@/app/hooks/useCreatorToken"
 import { generateCreatorTokenUUID } from "@/app/lib/uuid"
 import { CreatorTokenDisplay } from "@/app/components/CreatorTokenDisplay"
 import CreatorTokenTrading from "@/app/components/CreatorTokenTrading"
+import ReputationBadge from "@/app/components/ReputationBadge"
+import ReputationHistoryModal from "@/app/components/ReputationHistoryModal"
 
 type Props = {
   user?: User
@@ -50,6 +52,7 @@ export function ProfilePage({ user, posts }: Props) {
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(false)
   const [showFollowersList, setShowFollowersList] = useState(false)
   const [showFollowingList, setShowFollowingList] = useState(false)
+  const [showReputationHistory, setShowReputationHistory] = useState(false)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -295,6 +298,24 @@ export function ProfilePage({ user, posts }: Props) {
                       {profile.username}
                     </h1>
                     <p className="text-gray-400 text-sm mb-2">@{profile.username}</p>
+                    {/* Reputation Badge with History Button */}
+                    {profile.reputation_tier && (
+                      <div className="mt-1 flex items-center space-x-2">
+                        <ReputationBadge
+                          tier={profile.reputation_tier}
+                          score={profile.reputation_score || 0}
+                          size="md"
+                          showScore={true}
+                          showLabel={true}
+                        />
+                        <button
+                          onClick={() => setShowReputationHistory(true)}
+                          className="text-blue-400 hover:text-blue-300 text-xs transition-colors"
+                        >
+                          View History
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -491,6 +512,15 @@ export function ProfilePage({ user, posts }: Props) {
                                       <span className="font-semibold text-white truncate hover:text-blue-500 transition-colors group-hover:underline">
                                         {profile.username}
                                       </span>
+                                      {profile.reputation_tier && (
+                                        <ReputationBadge
+                                          tier={profile.reputation_tier}
+                                          score={profile.reputation_score || 0}
+                                          size="sm"
+                                          showScore={true}
+                                          showLabel={false}
+                                        />
+                                      )}
                                       <span className="text-gray-400">•</span>
                                       <span className="text-secondary truncate">@{profile.username}</span>
                                     </div>
@@ -1004,6 +1034,16 @@ export function ProfilePage({ user, posts }: Props) {
           creatorImageUrl={profile.avatar_url}
           isOpen={showTradingModal}
           onClose={() => setShowTradingModal(false)}
+        />
+      )}
+
+      {/* Reputation History Modal */}
+      {showReputationHistory && session?.dbUser?.id && (
+        <ReputationHistoryModal
+          isOpen={showReputationHistory}
+          onClose={() => setShowReputationHistory(false)}
+          userId={session.dbUser.id}
+          username={profile?.username || ''}
         />
       )}
     </div>

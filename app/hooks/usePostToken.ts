@@ -347,7 +347,8 @@ export const usePostToken = () => {
   // Get current price
   const getCurrentPrice = async (uuid: string): Promise<number> => {
     if (!contract) {
-      throw new Error('Contract not connected');
+      console.log('Contract not initialized yet, returning 0 price');
+      return 0;
     }
 
     try {
@@ -369,7 +370,8 @@ export const usePostToken = () => {
   // Get post stats
   const getPostStats = async (uuid: string): Promise<PostTokenStats | null> => {
     if (!contract) {
-      throw new Error('Contract not connected');
+      console.log('Contract not initialized yet, returning null stats');
+      return null;
     }
 
     try {
@@ -404,7 +406,8 @@ export const usePostToken = () => {
   // Get user portfolio
   const getUserPortfolio = async (uuid: string, userAddress: string): Promise<UserPortfolio | null> => {
     if (!contract) {
-      throw new Error('Contract not connected');
+      console.log('Contract not initialized yet, returning null portfolio');
+      return null;
     }
 
     try {
@@ -429,7 +432,8 @@ export const usePostToken = () => {
   // Get remaining freebies
   const getRemainingFreebies = async (uuid: string): Promise<number> => {
     if (!contract) {
-      throw new Error('Contract not connected');
+      console.log('Contract not initialized yet, returning 0 freebies');
+      return 0;
     }
 
     try {
@@ -451,7 +455,8 @@ export const usePostToken = () => {
   // Get actual price (ignores freebie availability)
   const getActualPrice = async (uuid: string): Promise<number> => {
     if (!contract) {
-      throw new Error('Contract not connected');
+      console.log('Contract not initialized yet, returning 0 actual price');
+      return 0;
     }
 
     try {

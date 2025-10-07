@@ -3,6 +3,8 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import EngagementDetails from './EngagementDetails'
+import ReputationBadge from './ReputationBadge'
+import { ReputationTier } from '../types/api'
 
 interface Post {
   id: string
@@ -20,6 +22,8 @@ interface Post {
   post_popularity_score: number
   username: string
   avatar_url: string
+  author_reputation?: number
+  author_reputation_tier?: ReputationTier
   likes?: Array<{
     user_id: string
     username: string
@@ -42,6 +46,8 @@ interface Post {
     user_id: string
     username: string
     avatar_url: string
+    author_reputation?: number
+    author_reputation_tier?: ReputationTier
   }>
 }
 
@@ -104,6 +110,15 @@ export default function EnhancedPostCard({ post, onLike, onRetweet, onBookmark, 
           <div className="flex-1">
             <div className="flex items-center space-x-2 mb-2">
               <span className="font-semibold text-gray-900">@{post.username}</span>
+              {post.author_reputation_tier && (
+                <ReputationBadge
+                  tier={post.author_reputation_tier}
+                  score={post.author_reputation || 0}
+                  size="sm"
+                  showScore={true}
+                  showLabel={false}
+                />
+              )}
               <span className="text-gray-500 text-sm">{formatDate(post.created_at)}</span>
             </div>
             
