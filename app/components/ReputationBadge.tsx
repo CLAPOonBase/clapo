@@ -73,6 +73,41 @@ export default function ReputationBadge({
       bgColor: 'rgba(245, 158, 11, 0.1)',
       borderColor: 'rgba(245, 158, 11, 0.3)',
       label: 'Legend'
+    },
+    Bronze: {
+      icon: undefined,
+      color: '',
+      bgColor: '',
+      borderColor: '',
+      label: ''
+    },
+    Silver: {
+      icon: undefined,
+      color: '',
+      bgColor: '',
+      borderColor: '',
+      label: ''
+    },
+    Gold: {
+      icon: undefined,
+      color: '',
+      bgColor: '',
+      borderColor: '',
+      label: ''
+    },
+    Diamond: {
+      icon: undefined,
+      color: '',
+      bgColor: '',
+      borderColor: '',
+      label: ''
+    },
+    Platinum: {
+      icon: undefined,
+      color: '',
+      bgColor: '',
+      borderColor: '',
+      label: ''
     }
   }
 

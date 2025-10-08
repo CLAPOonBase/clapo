@@ -37,7 +37,7 @@ export interface LoginResponse {
 }
 
 // Reputation Types (matching backend implementation)
-export type ReputationTier = 'newcomer' | 'contributor' | 'veteran' | 'expert' | 'legend'
+export type ReputationTier ='Bronze' |'Silver' | 'Gold' |'Diamond' |'Platinum' | 'newcomer' | 'contributor' | 'veteran' | 'expert' | 'legend'
 
 export interface ReputationScore {
   user_id: string
