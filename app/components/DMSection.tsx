@@ -170,7 +170,7 @@ export const DMSection = ({
                 e.stopPropagation();
                 handleUserClick(user.id);
               }}
-              className="text-sm font-medium text-white hover:text-blue-300 transition-colors hover:underline cursor-pointer text-left truncate block"
+              className="text-base font-semibold text-white hover:text-blue-300 transition-colors hover:underline cursor-pointer text-left truncate block"
             >
               {user.username}
             </button>
@@ -240,14 +240,14 @@ export const DMSection = ({
                 e.stopPropagation();
                 if (!thread.isGroup && otherUser?.id) handleUserClick(otherUser.id);
               }}
-              className={`text-xs font-medium truncate block text-left transition-colors ${
-                hasUnread ? "text-white" : ""
+              className={`text-sm font-semibold truncate block text-left transition-colors ${
+                hasUnread ? "text-white" : "text-white"
               } ${!thread.isGroup && otherUser?.id ? "hover:text-blue-300 hover:underline" : ""}`}
             >
               {thread.isGroup ? thread.name : otherUser?.username || "User"}
             </button>
             {lastMessage && (
-              <div className={`text-[11px] truncate leading-tight mt-0.5 ${
+              <div className={`text-sm truncate leading-tight mt-0.5 ${
                 hasUnread ? "text-slate-200 font-medium" : "text-slate-400"
               }`}>
                 {lastMessage.sender_id === session?.dbUser?.id ? "You: " : ""}

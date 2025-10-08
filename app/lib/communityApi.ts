@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps';
 
 export interface CommunityProfile {
   id: string;
@@ -33,7 +33,7 @@ export class CommunityApiService {
     communityId: string, 
     data: UpdateCommunityProfileRequest
   ): Promise<CommunityProfile> {
-    const response = await fetch(`${API_BASE_URL}/api/snaps/communities/${communityId}/profile`, {
+    const response = await fetch(`${API_BASE_URL}/communities/${communityId}/profile`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -51,7 +51,7 @@ export class CommunityApiService {
 
   // Get community with profile details
   static async getCommunityProfile(communityId: string): Promise<CommunityProfile> {
-    const response = await fetch(`${API_BASE_URL}/api/snaps/communities/${communityId}/profile`, {
+    const response = await fetch(`${API_BASE_URL}/communities/${communityId}/profile`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

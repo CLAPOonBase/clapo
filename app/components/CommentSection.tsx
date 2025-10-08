@@ -6,6 +6,7 @@ import { X, Send } from 'lucide-react'
 import { ApiPost } from '@/app/types'
 import { useApi } from '../Context/ApiProvider'
 import { useSession } from 'next-auth/react'
+import ReputationBadge from './ReputationBadge'
 
 interface CommentSectionProps {
   post: ApiPost
@@ -87,6 +88,15 @@ export default function CommentSection({ post, onClose, onCommentAdded }: Commen
             <div className="flex flex-1 flex-col">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-white">@{post.username}</span>
+                {post.author_reputation_tier && (
+                  <ReputationBadge
+                    tier={post.author_reputation_tier}
+                    score={post.author_reputation || 0}
+                    size="sm"
+                    showScore={true}
+                    showLabel={false}
+                  />
+                )}
                 <span className="text-sm text-gray-400">{formatDate(post.created_at)}</span>
               </div>
               <p className="mt-1 text-gray-200">{post.content}</p>
@@ -110,6 +120,15 @@ export default function CommentSection({ post, onClose, onCommentAdded }: Commen
                 <div className="flex flex-col flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-white">@{comment.username}</span>
+                    {comment.author_reputation_tier && (
+                      <ReputationBadge
+                        tier={comment.author_reputation_tier}
+                        score={comment.author_reputation || 0}
+                        size="sm"
+                        showScore={true}
+                        showLabel={false}
+                      />
+                    )}
                     <span className="text-xs text-gray-400">{formatDate(comment.created_at)}</span>
                   </div>
                   <p className="text-sm text-gray-300">{comment.content}</p>

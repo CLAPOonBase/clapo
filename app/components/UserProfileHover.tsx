@@ -4,10 +4,12 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
-import { User, Users, MapPin, Calendar, Link, Image as ImageIcon } from 'lucide-react'
+import { User, Users, MapPin, Calendar, Link, Image as ImageIcon, Star } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useApi } from '@/app/Context/ApiProvider'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { giveReputation } from '@/app/lib/reputationApi'
+import ReputationBadge from '@/app/components/ReputationBadge'
 
 interface UserProfileHoverProps {
   userId: string
@@ -33,6 +35,8 @@ interface UserProfile {
   following_count: number
   total_posts: number
   website?: string
+  reputation_score?: number
+  reputation_tier?: 'newcomer' | 'contributor' | 'veteran' | 'expert' | 'legend'
   recentPosts?: Array<{
     id: string
     media_url?: string
@@ -52,6 +56,7 @@ export function UserProfileHover({
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false)
+  const [isGivingRep, setIsGivingRep] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const { data: session } = useSession()
   const { getUserProfile, getUserFollowers, getUserFollowing, followUser, unfollowUser } = useApi()
@@ -167,13 +172,28 @@ export function UserProfileHover({
       scrollY: window.scrollY,
       timestamp: Date.now()
     }
-    
+
     // Store in sessionStorage for persistence across navigation
     sessionStorage.setItem('profileNavigationState', JSON.stringify(currentState))
-    
+
     // Navigate to profile
     router.push(`/snaps/profile/${userId}`)
     setShowProfile(false)
+  }
+
+  const handleGiveRep = async () => {
+    if (!currentUserId || isOwnProfile || isGivingRep) return
+
+    setIsGivingRep(true)
+    try {
+      await giveReputation(currentUserId, userId, 'Given from profile hover')
+      alert('Reputation given successfully!')
+    } catch (error) {
+      console.error('Failed to give reputation:', error)
+      alert(error.message || 'Failed to give reputation. You may have reached your daily limit.')
+    } finally {
+      setIsGivingRep(false)
+    }
   }
 
   const getPositionClasses = () => {
@@ -255,6 +275,19 @@ export function UserProfileHover({
                   </p>
                 )}
 
+                {/* Reputation Badge */}
+                {userProfile?.reputation_tier && (
+                  <div className="mb-3">
+                    <ReputationBadge
+                      tier={userProfile.reputation_tier}
+                      score={userProfile.reputation_score || 0}
+                      size="sm"
+                      showScore={true}
+                      showLabel={true}
+                    />
+                  </div>
+                )}
+
                 {/* Stats */}
                 {userStats && (
                   <div className="grid grid-cols-3 gap-6 mb-4">
@@ -275,9 +308,9 @@ export function UserProfileHover({
               </div>
 
 
-              {/* Follow Button */}
+              {/* Action Buttons */}
               {!isOwnProfile && (
-                <div className="px-4 pb-4">
+                <div className="px-4 pb-4 space-y-2">
                   <button
                     onClick={handleFollowToggle}
                     className="w-full py-2 text-white text-sm font-medium rounded-full transition-all duration-200"
@@ -289,6 +322,17 @@ export function UserProfileHover({
                     <div className="flex items-center justify-center space-x-2">
                       <Users className="w-4 h-4" />
                       <span>{isFollowing ? 'Following' : 'Follow'}</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={handleGiveRep}
+                    disabled={isGivingRep}
+                    className="w-full py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm font-medium rounded-full transition-all duration-200"
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      <Star className="w-4 h-4" />
+                      <span>{isGivingRep ? 'Giving Rep...' : 'Give Reputation'}</span>
                     </div>
                   </button>
                 </div>

@@ -13,12 +13,15 @@ import {
   X,
   CheckCircle,
   Wallet,
+  AtSign,
 } from 'lucide-react'
 import MediaUpload, { MediaUploadHandle } from '@/app/components/MediaUpload'
 import { useSession } from 'next-auth/react'
 import { useApi } from '@/app/Context/ApiProvider'
 import { usePostToken } from '@/app/hooks/usePostToken'
 import { generatePostTokenUUID } from '@/app/lib/uuid'
+import MentionAutocomplete from '@/app/components/MentionAutocomplete'
+import { getMentionTriggerInfo, replaceMentionText, extractMentions } from '@/app/lib/mentionUtils.tsx'
 
 // Toast Component
 const Toast = ({ 
@@ -64,7 +67,16 @@ export function SnapComposer({ close }: { close: () => void }) {
   const [mediaUrl, setMediaUrl] = useState<string | undefined>()
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
-  
+
+  // Mention state
+  const [showMentionAutocomplete, setShowMentionAutocomplete] = useState(false)
+  const [mentionSearch, setMentionSearch] = useState('')
+  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 })
+  const [cursorPosition, setCursorPosition] = useState(0)
+  const [mentionStartPos, setMentionStartPos] = useState(0)
+  const [mentionedUsers, setMentionedUsers] = useState<Array<{ user_id: string; username: string }>>([])
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
   // Token creation parameters (quadratic pricing system)
   const [freebieCount, setFreebieCount] = useState(1) // Number of free tokens
   const [quadraticDivisor, setQuadraticDivisor] = useState(1) // Price curve steepness (1 = steep, higher = flatter)
@@ -157,6 +169,66 @@ export function SnapComposer({ close }: { close: () => void }) {
     setUploadedMedia(null)
   }
 
+  // Handle content change and mention detection
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value
+    const newCursorPosition = e.target.selectionStart || 0
+
+    setContent(newContent)
+    setCursorPosition(newCursorPosition)
+
+    // Check for mention trigger
+    const mentionInfo = getMentionTriggerInfo(newContent, newCursorPosition)
+
+    if (mentionInfo && mentionInfo.triggered) {
+      setShowMentionAutocomplete(true)
+      setMentionSearch(mentionInfo.searchText)
+      setMentionStartPos(mentionInfo.startPos)
+
+      // Calculate position for autocomplete dropdown
+      if (textareaRef.current) {
+        const textBeforeCursor = newContent.slice(0, newCursorPosition)
+        const lines = textBeforeCursor.split('\n')
+        const currentLineIndex = lines.length - 1
+        const rect = textareaRef.current.getBoundingClientRect()
+
+        setMentionPosition({
+          top: rect.top + (currentLineIndex * 20) + 40,
+          left: rect.left + 10,
+        })
+      }
+    } else {
+      setShowMentionAutocomplete(false)
+    }
+  }
+
+  // Handle mention selection
+  const handleMentionSelect = (user: { id: string; username: string }) => {
+    const { newText, newCursorPosition } = replaceMentionText(
+      content,
+      mentionStartPos,
+      cursorPosition,
+      user.username
+    )
+
+    setContent(newText)
+    setShowMentionAutocomplete(false)
+
+    // Add to mentioned users list
+    if (!mentionedUsers.find(u => u.user_id === user.id)) {
+      setMentionedUsers([...mentionedUsers, { user_id: user.id, username: user.username }])
+    }
+
+    // Set cursor position
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.selectionStart = newCursorPosition
+        textareaRef.current.selectionEnd = newCursorPosition
+        textareaRef.current.focus()
+      }
+    }, 0)
+  }
+
   const handleSubmit = async () => {
     console.log('🚀 handleSubmit function called!')
     
@@ -203,6 +275,12 @@ export function SnapComposer({ close }: { close: () => void }) {
       
       console.log('🚀 Submitting post with data:', { userId, content: content.trim(), mediaUrl, uuid: postUuid })
       
+      // Extract mentioned user IDs from content
+      const allMentionUsernames = extractMentions(content)
+      const mentionedUserIds = allMentionUsernames
+        .map(username => mentionedUsers.find(u => u.username === username)?.user_id)
+        .filter(Boolean) as string[]
+
       const postData = {
         userId,
         content: content.trim(),
@@ -211,6 +289,7 @@ export function SnapComposer({ close }: { close: () => void }) {
         parentPostId: undefined,
         isRetweet: false,
         retweetRefId: undefined,
+        mentions: mentionedUserIds, // Add mentioned user IDs
       }
 
       console.log('🚀 About to call createPost with data:', postData)
@@ -421,11 +500,12 @@ export function SnapComposer({ close }: { close: () => void }) {
             </div>
             <div className="flex-1">
               <TextareaAutosize
+                ref={textareaRef}
                 minRows={3}
                 maxRows={8}
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="What's happening?"
+                onChange={handleContentChange}
+                placeholder="What's happening? Type @ to mention someone"
                 className="w-full resize-none bg-black border-2 border-gray-700/70 p-3 rounded-xl text-white placeholder-gray-500 text-base leading-relaxed focus:outline-none focus:border-[#6E54FF]/50 transition-all duration-200"
               />
               <div className="text-right mt-1">
@@ -494,6 +574,16 @@ export function SnapComposer({ close }: { close: () => void }) {
             </button>
           </div>
         </div>
+
+        {/* Mention Autocomplete */}
+        {showMentionAutocomplete && (
+          <MentionAutocomplete
+            searchText={mentionSearch}
+            onSelect={handleMentionSelect}
+            onClose={() => setShowMentionAutocomplete(false)}
+            position={mentionPosition}
+          />
+        )}
       </motion.div>
     </>
   )

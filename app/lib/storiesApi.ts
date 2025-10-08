@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps';
 
 export interface Story {
   id: string;
@@ -35,7 +35,7 @@ export interface StoryViewRequest {
 export class StoriesApiService {
   // Create a new story
   static async createStory(data: CreateStoryRequest): Promise<Story> {
-    const response = await fetch(`${API_BASE_URL}/api/snaps/stories`, {
+    const response = await fetch(`${API_BASE_URL}/stories`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ export class StoriesApiService {
 
   // Get stories from users that the current user is following
   static async getFollowingStories(userId: string, limit: number = 50): Promise<Story[]> {
-    const response = await fetch(`${API_BASE_URL}/api/snaps/stories/following?user_id=${userId}&limit=${limit}`, {
+    const response = await fetch(`${API_BASE_URL}/stories/following?user_id=${userId}&limit=${limit}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -70,7 +70,7 @@ export class StoriesApiService {
 
   // Get stories for a specific user
   static async getUserStories(userId: string, currentUserId: string): Promise<Story[]> {
-    const response = await fetch(`${API_BASE_URL}/api/snaps/stories/user/${userId}?current_user_id=${currentUserId}`, {
+    const response = await fetch(`${API_BASE_URL}/stories/user/${userId}?current_user_id=${currentUserId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ export class StoriesApiService {
 
   // Record a story view
   static async recordStoryView(storyId: string, userId: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/snaps/stories/view`, {
+    const response = await fetch(`${API_BASE_URL}/stories/view`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -102,7 +102,7 @@ export class StoriesApiService {
 
   // Get story viewers (only for story owner)
   static async getStoryViewers(storyId: string, userId: string): Promise<any[]> {
-    const response = await fetch(`${API_BASE_URL}/api/snaps/stories/${storyId}/viewers?user_id=${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/stories/${storyId}/viewers?user_id=${userId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -119,7 +119,7 @@ export class StoriesApiService {
 
   // Delete a story
   static async deleteStory(storyId: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/snaps/stories/${storyId}`, {
+    const response = await fetch(`${API_BASE_URL}/stories/${storyId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -133,7 +133,7 @@ export class StoriesApiService {
 
   // Cleanup expired stories (admin)
   static async cleanupExpiredStories(): Promise<{ deletedCount: number }> {
-    const response = await fetch(`${API_BASE_URL}/api/snaps/stories/cleanup`, {
+    const response = await fetch(`${API_BASE_URL}/stories/cleanup`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

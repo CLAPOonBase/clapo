@@ -283,9 +283,36 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
     }
   }
 
+  const handleMessageUser = async () => {
+    if (!currentUserId || !userProfile) return
+
+    try {
+      // Create or get direct thread with this user
+      const response = await fetch('https://server.blazeswap.io/api/snaps/messages/direct-thread', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId1: currentUserId,
+          userId2: userId
+        }),
+      })
+
+      const threadResponse = await response.json()
+      const thread = threadResponse?.thread || threadResponse?.data?.thread || threadResponse?.data || threadResponse
+
+      // Navigate to messages page with this thread selected
+      sessionStorage.setItem('selectedThreadId', thread.id)
+      router.push('/snaps?page=messages')
+    } catch (error) {
+      console.error('Failed to start conversation:', error)
+    }
+  }
+
   const handleFollowToggle = async () => {
     if (!currentUserId || isOwnProfile || !userProfile) return
-    
+
     try {
       if (isFollowing) {
         await unfollowUser(userId, { followerId: currentUserId })
@@ -421,7 +448,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
         </div> */}
 
         {/* Main Profile Card */}
-        <div className="border border-gray-700/50 rounded-2xl">
+        <div className="border-2 border-gray-700/70 rounded-2xl">
           <div className="p-6 border-b border-gray-700/30">
             {/* Top Row: Avatar and Action Buttons */}
             <div className="flex items-start justify-between mb-3">
@@ -491,6 +518,15 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
                       >
                         {isCheckingFollowStatus ? 'Checking...' : isFollowing ? 'Following' : 'Follow'}
                       </button>
+                      {isFollowing && (
+                        <button
+                          onClick={handleMessageUser}
+                          className="bg-gray-700 hover:bg-gray-600 text-white border border-gray-600 rounded-full p-2 transition-all duration-200 flex items-center justify-center"
+                          title="Message"
+                        >
+                          <MessageSquare className="w-5 h-5" />
+                        </button>
+                      )}
                     </>
                   )}
                 </div>

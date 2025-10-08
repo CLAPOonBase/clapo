@@ -1,11 +1,12 @@
 'use client'
 
 import React from 'react'
-import { Trophy, Award, Star, Crown, Gem } from 'lucide-react'
+import { Sprout, Users, Shield, Crown, Trophy } from 'lucide-react'
+import { ReputationTier } from '../types/api'
 
 interface ReputationBadgeProps {
   score?: number
-  tier?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond'
+  tier?: ReputationTier
   size?: 'sm' | 'md' | 'lg'
   showScore?: boolean
   showLabel?: boolean
@@ -13,59 +14,65 @@ interface ReputationBadgeProps {
 
 export default function ReputationBadge({
   score = 0,
-  tier = 'Bronze',
+  tier = 'newcomer',
   size = 'md',
   showScore = true,
   showLabel = false
 }: ReputationBadgeProps) {
 
   // Determine tier based on score if tier not explicitly provided
-  const getTierFromScore = (score: number): 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' => {
-    if (score >= 800) return 'Diamond'
-    if (score >= 600) return 'Platinum'
-    if (score >= 400) return 'Gold'
-    if (score >= 200) return 'Silver'
-    return 'Bronze'
+  const getTierFromScore = (score: number): ReputationTier => {
+    if (score >= 1000) return 'legend'
+    if (score >= 500) return 'expert'
+    if (score >= 200) return 'veteran'
+    if (score >= 100) return 'contributor'
+    return 'newcomer'
   }
 
   const currentTier = tier || getTierFromScore(score)
 
-  // Tier configurations
-  const tierConfig = {
-    Bronze: {
-      icon: Award,
-      color: '#CD7F32',
-      bgColor: 'rgba(205, 127, 50, 0.1)',
-      borderColor: 'rgba(205, 127, 50, 0.3)',
-      label: 'Bronze'
+  // Tier configurations matching backend implementation
+  const tierConfig: Record<ReputationTier, {
+    icon: any
+    color: string
+    bgColor: string
+    borderColor: string
+    label: string
+  }> = {
+    newcomer: {
+      icon: Sprout,
+      color: '#9CA3AF',
+      bgColor: 'rgba(156, 163, 175, 0.1)',
+      borderColor: 'rgba(156, 163, 175, 0.3)',
+      label: 'Newcomer'
     },
-    Silver: {
-      icon: Trophy,
-      color: '#C0C0C0',
-      bgColor: 'rgba(192, 192, 192, 0.1)',
-      borderColor: 'rgba(192, 192, 192, 0.3)',
-      label: 'Silver'
+    contributor: {
+      icon: Users,
+      color: '#10B981',
+      bgColor: 'rgba(16, 185, 129, 0.1)',
+      borderColor: 'rgba(16, 185, 129, 0.3)',
+      label: 'Contributor'
     },
-    Gold: {
-      icon: Star,
-      color: '#FFD700',
-      bgColor: 'rgba(255, 215, 0, 0.1)',
-      borderColor: 'rgba(255, 215, 0, 0.3)',
-      label: 'Gold'
+    veteran: {
+      icon: Shield,
+      color: '#3B82F6',
+      bgColor: 'rgba(59, 130, 246, 0.1)',
+      borderColor: 'rgba(59, 130, 246, 0.3)',
+      label: 'Veteran'
     },
-    Platinum: {
+    expert: {
       icon: Crown,
-      color: '#E5E4E2',
-      bgColor: 'rgba(229, 228, 226, 0.1)',
-      borderColor: 'rgba(229, 228, 226, 0.3)',
-      label: 'Platinum'
+      color: '#8B5CF6',
+      bgColor: 'rgba(139, 92, 246, 0.1)',
+      borderColor: 'rgba(139, 92, 246, 0.3)',
+      label: 'Expert'
     },
-    Diamond: {
-      icon: Gem,
-      color: '#B9F2FF',
-      bgColor: 'rgba(185, 242, 255, 0.1)',
-      borderColor: 'rgba(185, 242, 255, 0.3)',
-      label: 'Diamond'
+    legend: {
+      icon: Trophy,
+      color: '#F59E0B',
+      bgColor: 'rgba(245, 158, 11, 0.1)',
+      borderColor: 'rgba(245, 158, 11, 0.3)',
+      label: 'Legend'
     }
   }
 

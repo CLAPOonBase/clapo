@@ -3,6 +3,7 @@ import React from 'react'
 import { MoreHorizontal } from 'lucide-react'
 import { UserProfileHover } from '../../components/UserProfileHover'
 import { Post, ApiPost } from '@/app/types'
+import ReputationBadge from '@/app/components/ReputationBadge'
 
 interface SnapCardHeaderProps {
   post: Post | ApiPost
@@ -15,6 +16,8 @@ export default function SnapCardHeader({ post, formatDate, onOptionsClick }: Sna
   const username = isApiPost ? post.username : post.handle
   const avatarUrl = isApiPost ? post.avatar_url : undefined
   const createdAt = isApiPost ? post.created_at : post.time
+  const reputationTier = isApiPost && 'author_reputation_tier' in post ? post.author_reputation_tier : undefined
+  const reputationScore = isApiPost && 'author_reputation' in post ? post.author_reputation : undefined
 
   return (
     <div className="flex items-start justify-between mb-3">
@@ -39,6 +42,15 @@ export default function SnapCardHeader({ post, formatDate, onOptionsClick }: Sna
             <h3 className="font-semibold text-white text-sm">
               @{username}
             </h3>
+            {reputationTier && (
+              <ReputationBadge
+                tier={reputationTier}
+                score={reputationScore || 0}
+                size="sm"
+                showScore={true}
+                showLabel={false}
+              />
+            )}
             <span className="text-gray-500 text-xs">
               {formatDate(createdAt)}
             </span>

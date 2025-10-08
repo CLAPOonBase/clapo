@@ -81,11 +81,40 @@ export interface UserPortfolio {
   currentValue: number;
 }
 
+// Cache for contract deployment status to avoid repeated RPC calls
+let contractDeploymentCache: { [address: string]: boolean } = {};
+
 export const usePostToken = () => {
   const { provider, signer, address, isConnecting, connect, disconnect } = useWalletContext();
   const [contract, setContract] = useState<ethers.Contract | null>(null);
   const [loading, setLoading] = useState(false);
-  
+
+  // Create a read-only provider using Monad RPC for read operations
+  const readOnlyProvider = new ethers.JsonRpcProvider(
+    process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://testnet-rpc.monad.xyz'
+  );
+
+  // Helper function to check if contract is deployed (with caching)
+  const isContractDeployed = async (contractAddress: string): Promise<boolean> => {
+    // Check cache first
+    if (contractDeploymentCache[contractAddress] !== undefined) {
+      return contractDeploymentCache[contractAddress];
+    }
+
+    try {
+      const code = await readOnlyProvider.getCode(contractAddress);
+      const isDeployed = code !== '0x';
+      // Cache the result
+      contractDeploymentCache[contractAddress] = isDeployed;
+      return isDeployed;
+    } catch (error) {
+      console.error('Error checking contract deployment:', error);
+      // Cache as false to avoid repeated failed calls
+      contractDeploymentCache[contractAddress] = false;
+      return false;
+    }
+  };
+
   // Derive isConnected from global wallet context
   const isConnected = !!signer && !!address;
 
@@ -456,10 +485,18 @@ export const usePostToken = () => {
   // Get current price
   const getCurrentPrice = async (uuid: string): Promise<number> => {
     if (!contract) {
-      throw new Error('Contract not connected');
+      console.log('Contract not initialized yet, returning 0 price');
+      return 0;
     }
 
     try {
+      // Check if contract is deployed using cached check
+      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
+      if (!deployed) {
+        console.log('Contract not deployed, returning 0 price');
+        return 0;
+      }
+
       // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
@@ -478,10 +515,18 @@ export const usePostToken = () => {
   // Get post stats
   const getPostStats = async (uuid: string): Promise<PostTokenStats | null> => {
     if (!contract) {
-      throw new Error('Contract not connected');
+      console.log('Contract not initialized yet, returning null stats');
+      return null;
     }
 
     try {
+      // Check if contract is deployed using cached check
+      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
+      if (!deployed) {
+        console.log('Contract not deployed, returning null stats');
+        return null;
+      }
+
       // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
@@ -513,7 +558,8 @@ export const usePostToken = () => {
   // Get user portfolio
   const getUserPortfolio = async (uuid: string, userAddress: string): Promise<UserPortfolio | null> => {
     if (!contract) {
-      throw new Error('Contract not connected');
+      console.log('Contract not initialized yet, returning null portfolio');
+      return null;
     }
 
     try {
@@ -538,10 +584,18 @@ export const usePostToken = () => {
   // Get remaining freebies
   const getRemainingFreebies = async (uuid: string): Promise<number> => {
     if (!contract) {
-      throw new Error('Contract not connected');
+      console.log('Contract not initialized yet, returning 0 freebies');
+      return 0;
     }
 
     try {
+      // Check if contract is deployed using cached check
+      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
+      if (!deployed) {
+        console.log('Contract not deployed, returning 0 freebies');
+        return 0;
+      }
+
       // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
@@ -560,10 +614,18 @@ export const usePostToken = () => {
   // Get actual price (ignores freebie availability)
   const getActualPrice = async (uuid: string): Promise<number> => {
     if (!contract) {
-      throw new Error('Contract not connected');
+      console.log('Contract not initialized yet, returning 0 actual price');
+      return 0;
     }
 
     try {
+      // Check if contract is deployed using cached check
+      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
+      if (!deployed) {
+        console.log('Contract not deployed at address, returning 0 actual price');
+        return 0;
+      }
+
       // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
@@ -592,6 +654,13 @@ export const usePostToken = () => {
     }
 
     try {
+      // Check if contract is deployed using cached check
+      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
+      if (!deployed) {
+        console.log('Contract not deployed, returning false');
+        return false;
+      }
+
       // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
@@ -654,19 +723,26 @@ export const usePostToken = () => {
   // Check if post token exists
   const checkPostTokenExists = async (uuid: string): Promise<boolean> => {
     console.log(`🔍 checkPostTokenExists called for post: ${uuid}`);
-    console.log(`Contract status:`, { 
-      hasContract: !!contract, 
+    console.log(`Contract status:`, {
+      hasContract: !!contract,
       contractAddress: CONTRACT_ADDRESS,
       hasSigner: !!signer,
       userAddress: address
     });
-    
+
     if (!contract) {
       console.log('❌ No contract available for checking post existence');
       return false;
     }
 
     try {
+      // Check if contract is deployed using cached check
+      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
+      if (!deployed) {
+        console.log('Contract not deployed, returning false');
+        return false;
+      }
+
       console.log(`📞 Calling contract.doesUuidExist(${uuid})...`);
       // Use the safe function that doesn't revert
       const exists = await contract.doesUuidExist(uuid);

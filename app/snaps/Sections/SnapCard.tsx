@@ -12,10 +12,11 @@ import Toast from '../../components/Toast'
 import { AnimatePresence, motion } from "framer-motion"
 import CommentInputBar from './CommentInputBar'
 import { UserProfileHover } from '../../components/UserProfileHover'
-import PostTokenPrice from '../../components/PostTokenPrice'
 import PostTokenTrading from '../../components/PostTokenTrading'
 import ReputationBadge from '../../components/ReputationBadge'
 import { usePostTokenPrice } from '@/app/hooks/useGlobalPrice'
+import { renderTextWithMentions } from '@/app/lib/mentionUtils.tsx'
+import { useRouter } from 'next/navigation'
 
 type Props = {
   post: Post | ApiPost
@@ -45,6 +46,7 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
 
   const { likePost, unlikePost, retweetPost, bookmarkPost, unbookmarkPost, viewPost, addComment, getPostComments, state } = useApi()
   const { data: session } = useSession()
+  const router = useRouter()
 
   const isApiPost = 'user_id' in post
   const postId = post.id.toString()
@@ -54,6 +56,18 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   const postHandle = isApiPost ? `@${post.username || 'unknown'}` : (post.handle || '@unknown')
   const authorReputation = isApiPost ? post.author_reputation : undefined
   const authorReputationTier = isApiPost ? post.author_reputation_tier : undefined
+
+  // Debug: Log reputation data and full post object
+  if (isApiPost) {
+    console.log(`🔍 Post ${postId} - Author: ${postAuthor}`)
+    console.log('📊 Reputation Data:', {
+      score: authorReputation,
+      tier: authorReputationTier,
+      hasScore: authorReputation !== undefined,
+      hasTier: authorReputationTier !== undefined
+    })
+    console.log('📦 Full Post Object:', post)
+  }
   const getRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -300,9 +314,8 @@ const handleImageClick = (e: React.MouseEvent) => {
     }
   }
 
-    // const isApiPost = 'user_id' in post
-  // const postId = post.id.toString()
   const { price: postTokenPrice, loading: priceLoading } = usePostTokenPrice(postId)
+
   const handleBookmark = async () => {
     if (!currentUserId || isLoading.bookmark) return
     
@@ -519,7 +532,13 @@ const handleImageClick = (e: React.MouseEvent) => {
           <div className="ml-12">
             <div className="">
               <p className="text-white text-base leading-relaxed whitespace-pre-wrap break-words">
-                {displayedText}
+                {renderTextWithMentions(
+                  displayedText,
+                  isApiPost ? post.mentions : undefined,
+                  (userId, username) => {
+                    router.push(`/snaps/profile/${userId}`)
+                  }
+                )}
               </p>
               
               {isLong && (

@@ -35,7 +35,7 @@ export const ChatHeader = ({
   };
 
   return (
-    <div className="px-5 py-3 border-b border-gray-800/60 bg-black">
+    <div className="px-5 py-3 border-b-2 border-gray-700/70 bg-black">
       {activeTab === 'dms' && currentThread ? (
         <div className="flex items-center space-x-3">
           {/* Avatar */}
@@ -55,12 +55,12 @@ export const ChatHeader = ({
 
           {/* Name and type */}
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-white mb-0.5">
+            <h3 className="text-base font-semibold text-white mb-0.5">
               {currentThread.isGroup
                 ? currentThread.name
                 : otherUser?.username || 'User'}
             </h3>
-            <p className="text-xs text-gray-400 flex items-center">
+            <p className="text-sm text-gray-400 flex items-center">
               {currentThread.isGroup ? (
                 <>
                   <Dot className="w-3 h-3 text-green-400" />
@@ -101,24 +101,24 @@ export const ChatHeader = ({
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold text-white mb-0.5">
+              <h3 className="text-base font-semibold text-white mb-0.5">
                 {currentCommunity.name}
               </h3>
-              <p className="text-xs text-gray-400">
+              <p className="text-sm text-gray-400">
                 Pool: <span className="text-blue-400 font-medium">$40000</span>
               </p>
             </div>
           </div>
 
           <div className="text-right">
-            <p className="text-xs text-gray-400">Min. Share</p>
-            <p className="text-xs text-purple-400 font-semibold">10</p>
+            <p className="text-sm text-gray-400">Min. Share</p>
+            <p className="text-sm text-purple-400 font-semibold">10</p>
           </div>
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-8 pt-72 text-gray-400">
           <MessageCircle className="w-16 h-16 mb-4 opacity-30" />
-          <p className="text-lg font-medium mb-2">
+          <p className="text-base font-medium mb-2">
             {activeTab === 'dms'
               ? 'Select a conversation'
               : 'Select a community'}

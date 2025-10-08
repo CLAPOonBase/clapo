@@ -36,17 +36,32 @@ export interface LoginResponse {
   token: string
 }
 
-// Reputation Types
+// Reputation Types (matching backend implementation)
+export type ReputationTier = 'newcomer' | 'contributor' | 'veteran' | 'expert' | 'legend'
+
 export interface ReputationScore {
   user_id: string
   score: number
-  tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond'
-  daily_claps_given: number
-  daily_replies_given: number
-  daily_givereps_sent: number
-  daily_givereps_received: number
+  tier: ReputationTier
+  daily_stats: {
+    claps_given: number
+    claps_received: number
+    replies_given: number
+    replies_received: number
+    remixes_given: number
+    remixes_received: number
+    givereps_given: number
+  }
+  lifetime_stats: {
+    claps_given: number
+    claps_received: number
+    replies_given: number
+    replies_received: number
+    remixes_given: number
+    remixes_received: number
+    givereps_given: number
+  }
   last_decay_at: string
-  streak_days: number
   created_at: string
   updated_at: string
 }
@@ -54,32 +69,70 @@ export interface ReputationScore {
 export interface ReputationEvent {
   id: string
   user_id: string
-  event_type: 'clap' | 'reply' | 'remix' | 'giverep_sent' | 'giverep_received' | 'decay'
-  points_delta: number
+  event_type: 'clap_given' | 'clap_received' | 'reply_given' | 'reply_received' | 'remix_given' | 'remix_received' | 'giverep_given' | 'giverep_received' | 'decay' | 'manual_adjustment' | 'penalty'
+  points_change: number
+  score_before: number
   score_after: number
-  source_user_id?: string
-  ref_id?: string
+  tier_before: ReputationTier
+  tier_after: ReputationTier
+  from_user_id?: string
+  from_user?: {
+    id: string
+    username: string
+    avatar_url: string
+  }
+  post_id?: string
+  comment_id?: string
+  context?: string
+  metadata?: Record<string, any>
   created_at: string
 }
 
 export interface ReputationHistoryResponse {
-  message: string
-  events: ReputationEvent[]
-  current_score: number
+  success: boolean
+  data: ReputationEvent[]
+  pagination: {
+    limit: number
+    offset: number
+  }
 }
 
 export interface GiveRepRequest {
   from_user_id: string
   to_user_id: string
-  points: number
   context?: string
 }
 
 export interface GiveRepResponse {
+  success: boolean
   message: string
-  event: ReputationEvent
-  sender_new_score: number
-  receiver_new_score: number
+}
+
+export interface LeaderboardEntry {
+  user_id: string
+  username: string
+  avatar_url: string
+  score: number
+  tier: ReputationTier
+  lifetime_claps_received: number
+  lifetime_replies_received: number
+  lifetime_remixes_received: number
+  lifetime_givereps_received: number
+  rank: number
+}
+
+export interface LeaderboardResponse {
+  success: boolean
+  data: LeaderboardEntry[]
+  pagination: {
+    limit: number
+    offset: number
+  }
+}
+
+export interface ReputationResponse {
+  success: boolean
+  data: ReputationScore
 }
 
 // User Profile Types
@@ -93,7 +146,7 @@ export interface UserProfile {
   followerCount: number
   followingCount: number
   reputation_score?: number
-  reputation_tier?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond'
+  reputation_tier?: ReputationTier
   total_posts?: number
   total_likes_given?: number
   total_comments_made?: number
@@ -153,6 +206,7 @@ export interface CreatePostRequest {
   parentPostId?: string
   isRetweet?: boolean
   retweetRefId?: string
+  mentions?: string[] // Array of mentioned user IDs
 }
 
 export interface Post {
@@ -172,7 +226,13 @@ export interface Post {
   username: string
   avatar_url: string
   author_reputation?: number
-  author_reputation_tier?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond'
+  author_reputation_tier?: ReputationTier
+  mentions?: Array<{
+    user_id: string
+    username: string
+    avatar_url?: string
+    name?: string
+  }>
   likes?: Array<{
     user_id: string
     username: string
@@ -196,7 +256,7 @@ export interface Post {
     username: string
     avatar_url: string
     author_reputation?: number
-    author_reputation_tier?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond'
+    author_reputation_tier?: ReputationTier
   }>
 }
 

@@ -55,8 +55,8 @@ export default function PostTokenPrice({ postId, postContent, onTradeClick }: Po
       console.log(`📋 Step 1: Checking if post has a token...`);
       
       // Check if post has a token
-      // Now the postId IS the token UUID (they're the same!)
-      const tokenUuid = postId;
+      // Generate the UUID that was used during token creation
+      const tokenUuid = `post-${postId}`;
       const exists = await checkPostTokenExists(tokenUuid);
       console.log(`✅ Post ${postId} token exists:`, exists);
       setHasToken(exists);
