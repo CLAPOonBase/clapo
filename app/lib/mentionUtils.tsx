@@ -1,5 +1,5 @@
 // Utility functions for handling user mentions in posts
-import React from 'react';
+import React, { JSX } from 'react';
 
 export interface Mention {
   username: string;

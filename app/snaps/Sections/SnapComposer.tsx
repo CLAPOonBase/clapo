@@ -21,7 +21,8 @@ import { useApi } from '@/app/Context/ApiProvider'
 import { usePostToken } from '@/app/hooks/usePostToken'
 import { generatePostTokenUUID } from '@/app/lib/uuid'
 import MentionAutocomplete from '@/app/components/MentionAutocomplete'
-import { getMentionTriggerInfo, replaceMentionText, extractMentions } from '@/app/lib/mentionUtils.tsx'
+// import { getMentionTriggerInfo } from ''
+import { getMentionTriggerInfo, replaceMentionText, extractMentions } from '@/app/lib/mentionUtils'
 
 // Toast Component
 const Toast = ({ 
