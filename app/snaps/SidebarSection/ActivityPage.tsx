@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 import { ActivityItem } from "@/app/types";
 import ActivityFeed from "../Sections/ActivityFeed"
 
@@ -41,7 +43,13 @@ const ActivityPage = () => {
       },
     ];
   return <div className="">
-    <ActivityFeed items={mockActivity} />
+    <div className="border h-56">
+      Activity
+    </div>
+    <div>
+      Follower Suggesttions
+    </div>
+    {/* <ActivityFeed items={mockActivity} /> */}
   </div>
 }
 

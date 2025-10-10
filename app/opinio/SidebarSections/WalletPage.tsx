@@ -39,7 +39,7 @@ const WalletPage = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="bg-dark-800 p-4 rounded-xl text-sm"
+            className="bg-[#1A1A1A] p-4 rounded-xl text-sm border border-[#2A2A2A] shadow-custom"
           >
             <p className="text-[#999]">HEY, {user.walletAddress}</p>
             <p className="text-[#666]">Welcome back! Here’s what’s trending in the markets.</p>
@@ -49,15 +49,15 @@ const WalletPage = () => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="bg-dark-800 rounded-xl p-6 space-y-4"
+            className="bg-[#1A1A1A] rounded-xl p-6 space-y-4 border border-[#2A2A2A] shadow-custom"
           >
             <div className="flex space-x-4 text-sm">
               {Object.entries(tabs).map(([key, label]) => (
                 <button
                   key={key}
                   onClick={() => setActiveTab(key as keyof typeof tabs)}
-                  className={`pb-2 ${
-                    activeTab === key ? 'text-white border-b-2 border-primary' : 'text-[#888]'
+                  className={`pb-2 transition-colors ${
+                    activeTab === key ? 'text-white border-b-2 border-[#6E54FF]' : 'text-[#888]'
                   }`}
                 >
                   {label}
@@ -83,17 +83,17 @@ const WalletPage = () => {
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-dark-800 rounded-xl p-6 w-full xl:w-1/2 text-center"
+          className="bg-[#1A1A1A] rounded-xl p-6 w-full xl:w-1/2 text-center border border-[#2A2A2A] shadow-custom"
         >
           <p className="text-[#888] text-xs">TOTAL BALANCE</p>
           <p className="text-4xl font-bold">${user.totalBalance.toLocaleString()}</p>
           <p className="text-[#888] text-sm">{user.depositRate}</p>
 
           <div className="flex flex-col sm:flex-row gap-4 mt-4">
-            <button className="w-full bg-white text-black px-4 py-2 rounded-lg text-sm font-medium">
+            <button className="w-full bg-[#2A2A2A] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#3A3A3A] transition-colors border border-[#2A2A2A]">
               DEPOSIT
             </button>
-            <button className="w-full bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-medium">
+            <button className="w-full bg-[#6E54FF] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#836EF9] transition-colors shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]">
               WITHDRAW
             </button>
           </div>
@@ -104,7 +104,7 @@ const WalletPage = () => {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-dark-800 rounded-xl p-6 space-y-4"
+        className="bg-[#1A1A1A] rounded-xl p-6 space-y-4 border border-[#2A2A2A] shadow-custom"
       >
         <div className="flex justify-between items-center">
           <p className="text-sm text-[#aaa]">TRANSACTION</p>

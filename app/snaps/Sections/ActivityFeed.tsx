@@ -1,98 +1,174 @@
-// components/UserActivityFeed.tsx
+'use client';
 
-import React from 'react'
-
-interface ActivityItem {
-  activity_type: 'like' | 'comment' | 'retweet' | 'post_created'
-  created_at: string
-  post_content: string
-  post_id: string
-}
+import React, { useEffect } from 'react';
+import { useActivityFeed } from '@/app/hooks/useActivityFeed';
+import { ActivityItem } from '@/app/lib/tokenApi';
+import { RefreshCw, TrendingUp, Gift, DollarSign, Clock } from 'lucide-react';
 
 interface UserActivityFeedProps {
-  username: string
-  activity: ActivityItem[]
+  username?: string;
+  limit?: number;
 }
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  })
-}
+export default function UserActivityFeed({ username, limit = 10 }: UserActivityFeedProps) {
+  const { activities, loading, error, fetchRecentActivity, refreshActivity } = useActivityFeed();
 
-const getActivityIcon = (type: string) => {
-  switch (type) {
-    case 'like':
-      return (
-        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5..." />
-        </svg>
-      )
-    case 'comment':
-      return (
-        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01..." />
-        </svg>
-      )
-    case 'retweet':
-      return (
-        <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M23 4v6h-6M1 20v-6h6..." />
-        </svg>
-      )
-    case 'post_created':
-      return (
-        <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2..." />
-        </svg>
-      )
-    default:
-      return null
-  }
-}
+  useEffect(() => {
+    fetchRecentActivity(limit);
+  }, [limit]);
 
-const getActivityText = (type: string) => {
-  switch (type) {
-    case 'like':
-      return 'liked a post'
-    case 'comment':
-      return 'commented on a post'
-    case 'retweet':
-      return 'retweeted a post'
-    case 'post_created':
-      return 'created a post'
-    default:
-      return 'interacted with a post'
-  }
-}
+  const formatActivityMessage = (activity: ActivityItem): string => {
+    const { username: user, action, token_name, creator_name, amount, total_cost, is_freebie, type } = activity;
+    
+    if (is_freebie) {
+      if (type === 'post_token') {
+        return `${user} claimed a freebie of a snap by ${creator_name}`;
+      } else {
+        return `${user} claimed a freebie of creator share of ${creator_name}`;
+      }
+    }
+    
+    switch (action) {
+      case 'bought':
+        if (type === 'post_token') {
+          return `${user} bought a snap of ${creator_name}`;
+        } else {
+          return `${user} bought creator share of ${creator_name}`;
+        }
+      case 'sold':
+        if (type === 'post_token') {
+          return `${user} sold a snap of ${creator_name}`;
+        } else {
+          return `${user} sold creator share of ${creator_name}`;
+        }
+      case 'claimed_freebie':
+        if (type === 'post_token') {
+          return `${user} claimed a freebie of a snap by ${creator_name}`;
+        } else {
+          return `${user} claimed a freebie of creator share of ${creator_name}`;
+        }
+      default:
+        return `${user} ${action} ${token_name}`;
+    }
+  };
 
-export default function UserActivityFeed({ username, activity }: UserActivityFeedProps) {
-  if (!activity || activity.length === 0) {
+  const getActivityIcon = (activity: ActivityItem) => {
+    if (activity.is_freebie) {
+      return <Gift className="w-3 h-3 text-green-500" />;
+    }
+    
+    switch (activity.action) {
+      case 'bought':
+        return <TrendingUp className="w-3 h-3 text-blue-500" />;
+      case 'sold':
+        return <DollarSign className="w-3 h-3 text-red-500" />;
+      default:
+        return <Clock className="w-3 h-3 text-gray-500" />;
+    }
+  };
+
+  const formatTimeAgo = (dateString: string): string => {
+    const now = new Date();
+    const activityDate = new Date(dateString);
+    const diffInSeconds = Math.floor((now.getTime() - activityDate.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) {
+      return 'Just now';
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes}m ago`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours}h ago`;
+    } else {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days}d ago`;
+    }
+  };
+
+  if (loading && activities.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        <p>No recent activity</p>
+      <div className="text-white">
+        <div className="max-h-72 overflow-y-auto">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-start p-4">
+              <div className="w-8 h-8 bg-gray-600 rounded-full mr-3 flex-shrink-0 animate-pulse" />
+              <div className="flex-1">
+                <div className="h-3 bg-gray-600 rounded animate-pulse mb-2" />
+                <div className="h-3 bg-gray-600 rounded animate-pulse mb-1 w-3/4" />
+                <div className="h-3 bg-gray-600 rounded animate-pulse w-1/2" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-    )
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-white">
+        <div className="max-h-72 overflow-y-auto">
+          <div className="p-4 text-center">
+            <p className="text-red-400 text-sm mb-2">{error}</p>
+            <button
+              onClick={() => fetchRecentActivity(limit)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-4">
-      {activity.map((activityItem, index) => (
-        <div key={index} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg">
-          <div className="flex-shrink-0 mt-1">{getActivityIcon(activityItem.activity_type)}</div>
-          <div className="flex-1">
-            <div className="flex items-center space-x-2 mb-1">
-              <span className="font-semibold text-gray-900">@{username}</span>
-              <span className="text-gray-500 text-sm">{getActivityText(activityItem.activity_type)}</span>
-              <span className="text-gray-400 text-sm">{formatDate(activityItem.created_at)}</span>
-            </div>
-            <p className="text-gray-600 text-sm">{activityItem.post_content}</p>
+    <div className="text-white">
+      {/* <div className="flex items-center justify-between mb-2">
+        <button
+          onClick={refreshActivity}
+          disabled={loading}
+          className="text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+        </button>
+      </div> */}
+      
+      <div className="max-h-72 overflow-y-auto">
+        {activities.length === 0 ? (
+          <div className="p-4 text-center">
+            <p className="text-gray-400 text-sm">No recent activity</p>
           </div>
-        </div>
-      ))}
+        ) : (
+          activities.map((activity, index) => (
+            <div 
+              key={activity.id} 
+              className="flex items-start p-4 hover:bg-gray-800 transition-colors"
+            >
+              <div className="w-8 h-8 bg-gray-600 rounded-full mr-3 flex-shrink-0 flex items-center justify-center">
+                {getActivityIcon(activity)}
+              </div>
+              <div className="flex-1">
+                <div className="text-xs font-medium text-white mb-1">
+                  {activity.username}
+                </div>
+                <div className="text-xs text-gray-300 mb-1">
+                  {formatActivityMessage(activity)}
+                </div>
+                <div className="flex items-center">
+                  <div className="text-xs font-semibold text-green-400">
+                    {activity.is_freebie ? 'FOR $0' : `FOR $${activity.total_cost.toFixed(2)}`}
+                  </div>
+                  <div className="text-xs text-gray-400 ml-2">
+                    • {formatTimeAgo(activity.created_at)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
-  )
+  );
 }

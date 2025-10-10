@@ -21,7 +21,7 @@ export default function TradingTabs() {
   );
 
   return (
-    <div className="bg-dark-800 text-white rounded-xl w-full mx-auto p-4 space-y-4">
+    <div className="bg-[#1A1A1A] text-white rounded-xl w-full mx-auto p-4 space-y-4 border border-[#2A2A2A] shadow-custom">
       <div className="flex items-center space-x-4 text-sm border-b justify-between border-slate-700">
         {tabs.map(tab => (
           <button
@@ -30,8 +30,8 @@ export default function TradingTabs() {
             className={cn(
               'py-2 px-3 w-full border-b-2 transition-colors duration-200',
               activeTab === tab
-                ? 'border-orange-500 text-white'
-                : 'border-transparent text-secondary hover:text-white'
+                ? 'border-[#6E54FF] text-white'
+                : 'border-transparent text-gray-400 hover:text-white'
             )}
           >
             {tab.toUpperCase()}
@@ -42,17 +42,17 @@ export default function TradingTabs() {
       {activeTab === 'Position' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-         <div className='w-full flex items-center border border-secondary/20 rounded-md bg-transparent px-3 py-2 space-x-2'>
-               <Search className="text-secondary w-5 h-5" />
+         <div className='w-full flex items-center border border-[#2A2A2A] rounded-md bg-transparent px-3 py-2 space-x-2'>
+               <Search className="text-gray-400 w-5 h-5" />
             <input
               type="text"
               placeholder="Search"
-              className="bg-transparent w-full outline-none placeholder:text-secondary"
+              className="bg-transparent w-full outline-none placeholder:text-gray-400 text-white"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
          </div>
-            <button className="ml-2 text-sm text-nowrap px-3 py-2 bg-transaprent border-secondary/20 border rounded-md text-secondary">
+            <button className="ml-2 text-sm text-nowrap px-3 py-2 bg-[#2A2A2A] border-[#2A2A2A] border rounded-md text-gray-400 hover:text-white transition-colors">
               CURRENT VALUE
             </button>
           </div>
@@ -60,7 +60,7 @@ export default function TradingTabs() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="text-secondary">
+                <tr className="text-gray-400">
                   <th className="p-2">Market</th>
                   <th className="p-2">Aug → Nov</th>
                   <th className="p-2">Bet</th>
@@ -85,13 +85,13 @@ export default function TradingTabs() {
       )}
 
       {activeTab === 'Open Orders' && (
-        <div className="text-secondary text-sm p-4 bg-slate-800 rounded-md text-center">
+        <div className="text-gray-400 text-sm p-4 bg-[#2A2A2A] rounded-md text-center border border-[#2A2A2A]">
           No open orders right now.
         </div>
       )}
 
       {activeTab === 'History' && (
-        <div className="text-secondary text-sm p-4 bg-slate-800 rounded-md text-center">
+        <div className="text-gray-400 text-sm p-4 bg-[#2A2A2A] rounded-md text-center border border-[#2A2A2A]">
           No history to show.
         </div>
       )}

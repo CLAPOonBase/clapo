@@ -85,7 +85,10 @@ export type PageKey =
   | 'profile'
   | 'search'
   | 'activity'
-  | 'messages';
+  | 'messages'
+  | 'share'
+  | 'explore'
+  | 'search';
 
   export type OpinionPageKey =
   | 'exploremarket'
@@ -125,6 +128,8 @@ export interface ApiPost {
   post_popularity_score: number
   username: string
   avatar_url: string
+  author_reputation?: number
+  author_reputation_tier?: 'newcomer' | 'contributor' | 'veteran' | 'expert' | 'legend'
   likes?: Array<{
     user_id: string
     username: string
@@ -147,6 +152,8 @@ export interface ApiPost {
     user_id: string
     username: string
     avatar_url: string
+    author_reputation?: number
+    author_reputation_tier?: 'newcomer' | 'contributor' | 'veteran' | 'expert' | 'legend'
   }>
 }
 

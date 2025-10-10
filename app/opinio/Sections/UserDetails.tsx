@@ -1,4 +1,5 @@
 import { useWalletContext } from "@/context/WalletContext";
+import { useOpinioContext } from "@/app/Context/OpinioContext";
 import React, { useState, useEffect } from "react";
 import { Wallet, WalletCards, RefreshCw } from "lucide-react";
 
@@ -11,16 +12,19 @@ const UserDetails = () => {
     getTokenBalance,
     getETHBalance,
   } = useWalletContext();
+  
+  const { usdcStatus, refreshData } = useOpinioContext();
+  
   const [tokenBalance, setTokenBalance] = useState<string>("0");
-  const [ethBalance, setEthBalance] = useState<string>("0");
+  const [usdcBalance, setUsdcBalance] = useState<string>("0");
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [tokenInfo, setTokenInfo] = useState<{ symbol: string; name: string }>({
     symbol: "",
     name: "",
   });
 
-  // Your specific token address
-  const TOKEN_ADDRESS = "0x4fCF1784B31630811181f670Aea7A7bEF803eaED";
+  // Your Mock USDC token address
+  const MOCK_USDC_TOKEN_ADDRESS = "0x44aAAEeC1A83c30Fe5784Af49E6a38D3709Ee148";
 
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -32,23 +36,33 @@ const UserDetails = () => {
     try {
       setIsLoadingBalance(true);
 
-      // Fetch both token and ETH balances
-      const [tokenData, ethBal] = await Promise.all([
-        getTokenBalance(TOKEN_ADDRESS),
-        getETHBalance(),
-      ]);
-
+      // Fetch Mock USDC token balance
+      const tokenData = await getTokenBalance(MOCK_USDC_TOKEN_ADDRESS);
       setTokenBalance(parseFloat(tokenData.formatted).toFixed(4));
-      setEthBalance(parseFloat(ethBal).toFixed(4));
       setTokenInfo({ symbol: tokenData.symbol, name: tokenData.name });
+      
     } catch (error) {
       console.error("Failed to fetch balances:", error);
       setTokenBalance("Error");
-      setEthBalance("Error");
     } finally {
       setIsLoadingBalance(false);
     }
   };
+
+  // Update USDC balance when usdcStatus changes
+  useEffect(() => {
+    if (usdcStatus) {
+      try {
+        const balance = parseFloat(usdcStatus.balance.toString()) / Math.pow(10, Number(usdcStatus.decimals));
+        setUsdcBalance(balance.toFixed(4));
+      } catch (error) {
+        console.error("Failed to format USDC balance:", error);
+        setUsdcBalance("Error");
+      }
+    } else {
+      setUsdcBalance("0");
+    }
+  }, [usdcStatus]);
 
   // Fetch balances when wallet connects
   useEffect(() => {
@@ -57,7 +71,7 @@ const UserDetails = () => {
     } else {
       // Reset balances when disconnected
       setTokenBalance("0");
-      setEthBalance("0");
+      setUsdcBalance("0");
       setTokenInfo({ symbol: "", name: "" });
     }
   }, [address]);
@@ -70,18 +84,22 @@ const UserDetails = () => {
     }
   };
 
-  const handleRefreshBalance = () => {
+  const handleRefreshBalance = async () => {
     if (address) {
       fetchBalances();
+      // Also refresh USDC data from Opinio contract
+      if (refreshData) {
+        await refreshData();
+      }
     }
   };
 
   return (
     <div>
       <div className="w-full rounded-md md:flex md:space-x-4 space-y-4 md:space-y-0 justify-between">
-        <div className="bg-dark-800 p-4 rounded-md w-full flex flex-col text-left">
+        <div className="bg-[#1A1A1A] p-4 rounded-md w-full flex flex-col text-left border border-[#2A2A2A] shadow-custom">
           <div className="flex items-center space-x-2 mb-2">
-            <span className="text-2xl">
+            <span className="text-2xl text-secondary">
               Hey, {address ? formatAddress(address) : "Guest"}
             </span>
             <div className="flex items-center space-x-1">
@@ -99,17 +117,17 @@ const UserDetails = () => {
               </span>
             </div>
           </div>
-          <span className="text-secondary">
+          <span className="text-gray-400">
             Welcome back! Here&apos;s what&apos;s trending in the markets.
           </span>
           <div className="flex items-center space-x-2 mt-3">
             <button
               onClick={handleWalletAction}
               disabled={isConnecting}
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+              className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 address
                   ? "bg-red-600 hover:bg-red-700 text-white"
-                  : "bg-primary hover:bg-primary/90 text-white"
+                  : "bg-[#6E54FF] hover:bg-[#836EF9] text-white"
               } ${isConnecting ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <Wallet size={16} />
@@ -126,7 +144,7 @@ const UserDetails = () => {
               <button
                 onClick={handleRefreshBalance}
                 disabled={isLoadingBalance}
-                className="flex items-center space-x-1 px-2 py-1.5 rounded-md text-sm bg-gray-600 hover:bg-gray-700 text-white transition-colors disabled:opacity-50"
+                className="flex items-center space-x-1 px-2 py-1.5 rounded-md text-sm bg-gray-600 hover:bg-black text-white transition-colors disabled:opacity-50"
               >
                 <RefreshCw
                   size={14}
@@ -138,34 +156,29 @@ const UserDetails = () => {
           </div>
         </div>
 
-        <div className="bg-dark-800 p-4 rounded-md w-full flex justify-between items-center">
-          <div className="flex flex-col items-start text-secondary w-full">
+        <div className="bg-[#1A1A1A] p-4 rounded-md w-full flex justify-between items-center border border-[#2A2A2A] shadow-custom">
+          <div className="flex flex-col items-start text-gray-400 w-full">
             <span>Balances</span>
 
             {address ? (
               <div className="w-full space-y-2 mt-2">
-                {/* ETH Balance */}
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">ETH:</span>
-                  <span className="text-lg text-white">
-                    {isLoadingBalance ? "Loading..." : `${ethBalance} ETH`}
-                  </span>
-                </div>
-
-                {/* Token Balance */}
+                {/* Mock USDC Balance */}
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-400">
-                    {tokenInfo.symbol || "Token"}:
+                    {tokenInfo.symbol || "Mock USDC"}:
                   </span>
                   <span className="text-lg text-white">
                     {isLoadingBalance
                       ? "Loading..."
-                      : `${tokenBalance} ${tokenInfo.symbol}`}
+                      : `${tokenBalance} ${tokenInfo.symbol || "USDC"}`}
                   </span>
                 </div>
 
                 <span className="text-xs text-green-400 mt-1">
                   Wallet Connected ✓
+                </span>
+                <span className="text-xs text-gray-400 mt-1">
+                  Token: {MOCK_USDC_TOKEN_ADDRESS.slice(0, 6)}...{MOCK_USDC_TOKEN_ADDRESS.slice(-4)}
                 </span>
               </div>
             ) : (

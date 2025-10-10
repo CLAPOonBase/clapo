@@ -30,7 +30,7 @@ export default function EngagementDetails({ likes, retweets, bookmarks, onClose 
     return (
       <div className="space-y-3">
         {users.map((user) => (
-          <div key={user.user_id} className="flex items-center space-x-3 p-3 hover:bg-gray-700 rounded-lg">
+          <div key={user.user_id} className="flex items-center space-x-3 p-3 hover:bg-black rounded-lg">
             <div className="relative w-10 h-10">
               <img
                 src={user.avatar_url}
@@ -54,7 +54,7 @@ export default function EngagementDetails({ likes, retweets, bookmarks, onClose 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-dark-800 rounded-lg w-full max-w-md mx-4 max-h-[80vh] overflow-hidden">
+      <div className="bg-black rounded-lg w-full max-w-md mx-4 max-h-[80vh] overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
           <h3 className="text-lg font-semibold text-white">Engagement Details</h3>
           <button

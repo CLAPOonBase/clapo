@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
 import Image from 'next/image'
+import { motion } from 'framer-motion'
 import {
   Image as ImageIcon,
   Video,
@@ -10,17 +11,104 @@ import {
   Mic,
   SendHorizonal,
   X,
+  CheckCircle,
+  Wallet,
+  AtSign,
 } from 'lucide-react'
 import MediaUpload, { MediaUploadHandle } from '@/app/components/MediaUpload'
 import { useSession } from 'next-auth/react'
 import { useApi } from '@/app/Context/ApiProvider'
+import { usePostToken } from '@/app/hooks/usePostToken'
+import { generatePostTokenUUID } from '@/app/lib/uuid'
+import MentionAutocomplete from '@/app/components/MentionAutocomplete'
+// import { getMentionTriggerInfo } from ''
+import { getMentionTriggerInfo, replaceMentionText, extractMentions } from '@/app/lib/mentionUtils'
 
-export function SnapComposer() {
+// Toast Component
+const Toast = ({ 
+  message, 
+  isVisible, 
+  onClose 
+}: { 
+  message: string
+  isVisible: boolean
+  onClose: () => void 
+}) => {
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => {
+        onClose()
+      }, 3000) // Auto-dismiss after 3 seconds
+      
+      return () => clearTimeout(timer)
+    }
+  }, [isVisible, onClose])
+
+  if (!isVisible) return null
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-top-2 duration-300">
+      <div className="bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 min-w-[300px]">
+        <CheckCircle className="w-5 h-5 flex-shrink-0" />
+        <span className="text-sm font-medium">{message}</span>
+        <button
+          onClick={onClose}
+          className="ml-2 hover:bg-green-700 rounded p-1 transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export function SnapComposer({ close }: { close: () => void }) {
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [mediaUrl, setMediaUrl] = useState<string | undefined>()
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+
+  // Mention state
+  const [showMentionAutocomplete, setShowMentionAutocomplete] = useState(false)
+  const [mentionSearch, setMentionSearch] = useState('')
+  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 })
+  const [cursorPosition, setCursorPosition] = useState(0)
+  const [mentionStartPos, setMentionStartPos] = useState(0)
+  const [mentionedUsers, setMentionedUsers] = useState<Array<{ user_id: string; username: string }>>([])
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Token creation parameters (quadratic pricing system)
+  const [freebieCount, setFreebieCount] = useState(1) // Number of free tokens
+  const [quadraticDivisor, setQuadraticDivisor] = useState(1) // Price curve steepness (1 = steep, higher = flatter)
+  
   const { createPost, fetchPosts } = useApi();
+  const { createPostToken, isConnected, connectWallet, isConnecting, address } = usePostToken();
   const { data: session, status } = useSession();
+  const { getUserProfile, updateUserProfile } = useApi()
+  const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState<any>(null)
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (session?.dbUser?.id) {
+        try {
+          setLoading(true)
+          const profileData = await getUserProfile(session.dbUser.id)
+          setProfile(profileData.profile)
+        } catch (error) {
+          console.error('Failed to fetch profile:', error)
+        } finally {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchProfile()
+  }, [session?.dbUser?.id, getUserProfile])
+
+  console.log("profile", profile)
+  
   const [uploadedMedia, setUploadedMedia] = useState<{
     url: string
     name: string
@@ -30,34 +118,51 @@ export function SnapComposer() {
   const mediaUploadRef = useRef<MediaUploadHandle>(null)
   const userId = session?.dbUser?.id
 
+  React.useEffect(() => {
+    console.log('🔍 Session changed:', {
+      status,
+      session,
+      userId,
+      sessionDbUser: session?.dbUser
+    })
+  }, [session, status, userId])
+
   const actions = [
-    { icon: ImageIcon, label: 'Photo', color: 'text-blue-400 border-blue-300 hover:text-blue-300', type: 'image' },
-    { icon: Video, label: 'Video', color: 'text-purple-400 border-purple-300 hover:text-purple-300', type: 'video' },
-    { icon: File, label: 'File', color: 'text-emerald-400 border-emerald-300 hover:text-emerald-300', type: 'any' },
-    { icon: Mic, label: 'Audio', color: 'text-amber-400 border-amber-300 hover:text-amber-300', type: 'audio' },
+    { icon: ImageIcon, label: 'Photo', color: 'text-blue-400', type: 'image' as const },
+    { icon: Video, label: 'Video', color: 'text-purple-400', type: 'video' as const },
   ]
 
+  const showSuccessToast = (message: string) => {
+    setToastMessage(message)
+    setShowToast(true)
+  }
+
+  const showErrorToast = (message: string) => {
+    setToastMessage(message)
+    setShowToast(true)
+  }
+
+  const handleCloseToast = () => {
+    setShowToast(false)
+  }
+
   const handleMediaUpload = (url: string) => {
-    fetch(url)
-      .then((res) => res.blob())
-      .then((blob) => {
-        const type = blob.type
-        let mediaType: 'image' | 'video' | 'audio' | 'other' = 'other'
+    setMediaUrl(url)
+    
+    const isImage = url.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+    const isVideo = url.match(/\.(mp4|webm|ogg|mov)$/i)
+    const isAudio = url.match(/\.(mp3|wav|ogg|m4a)$/i)
+    
+    let mediaType: 'image' | 'video' | 'audio' | 'other' = 'other'
+    if (isImage) mediaType = 'image'
+    else if (isVideo) mediaType = 'video'
+    else if (isAudio) mediaType = 'audio'
 
-        if (type.startsWith('image/')) mediaType = 'image'
-        else if (type.startsWith('video/')) mediaType = 'video'
-        else if (type.startsWith('audio/')) mediaType = 'audio'
-
-        setUploadedMedia({
-          url,
-          name: 'uploaded-file',
-          type: mediaType,
-        })
-        setMediaUrl(url)
-      })
-      .catch((err) => {
-        console.error('Failed to parse uploaded media', err)
-      })
+    setUploadedMedia({
+      url,
+      name: 'uploaded-file',
+      type: mediaType,
+    })
   }
 
   const handleRemoveMedia = () => {
@@ -65,38 +170,189 @@ export function SnapComposer() {
     setUploadedMedia(null)
   }
 
+  // Handle content change and mention detection
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value
+    const newCursorPosition = e.target.selectionStart || 0
+
+    setContent(newContent)
+    setCursorPosition(newCursorPosition)
+
+    // Check for mention trigger
+    const mentionInfo = getMentionTriggerInfo(newContent, newCursorPosition)
+
+    if (mentionInfo && mentionInfo.triggered) {
+      setShowMentionAutocomplete(true)
+      setMentionSearch(mentionInfo.searchText)
+      setMentionStartPos(mentionInfo.startPos)
+
+      // Calculate position for autocomplete dropdown
+      if (textareaRef.current) {
+        const textBeforeCursor = newContent.slice(0, newCursorPosition)
+        const lines = textBeforeCursor.split('\n')
+        const currentLineIndex = lines.length - 1
+        const rect = textareaRef.current.getBoundingClientRect()
+
+        setMentionPosition({
+          top: rect.top + (currentLineIndex * 20) + 40,
+          left: rect.left + 10,
+        })
+      }
+    } else {
+      setShowMentionAutocomplete(false)
+    }
+  }
+
+  // Handle mention selection
+  const handleMentionSelect = (user: { id: string; username: string }) => {
+    const { newText, newCursorPosition } = replaceMentionText(
+      content,
+      mentionStartPos,
+      cursorPosition,
+      user.username
+    )
+
+    setContent(newText)
+    setShowMentionAutocomplete(false)
+
+    // Add to mentioned users list
+    if (!mentionedUsers.find(u => u.user_id === user.id)) {
+      setMentionedUsers([...mentionedUsers, { user_id: user.id, username: user.username }])
+    }
+
+    // Set cursor position
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.selectionStart = newCursorPosition
+        textareaRef.current.selectionEnd = newCursorPosition
+        textareaRef.current.focus()
+      }
+    }, 0)
+  }
+
   const handleSubmit = async () => {
-    if (!content.trim() && !mediaUrl) return
+    console.log('🚀 handleSubmit function called!')
+    
+    // Check if there's any content or media
+    if (!hasContent && !mediaUrl) {
+      alert('Please add some content or media before posting')
+      return
+    }
+    
+    // Check wallet connection for token creation
+    if (!isConnected) {
+      try {
+        await connectWallet()
+        // Continue with post creation after wallet connection
+      } catch (error) {
+        console.error('Failed to connect wallet:', error)
+        alert('Failed to connect wallet. Post will be created without token trading.')
+      }
+    }
+    
+    console.log('🔍 Submit Debug:', {
+      session,
+      sessionDbUser: session?.dbUser,
+      sessionDbUserId: session?.dbUser?.id,
+      userId,
+      content: content.trim(),
+      mediaUrl,
+      createPostToken: !!createPostToken,
+      isConnected
+    })
+    
     if (!userId) {
       console.error('User ID is missing from session')
+      alert('Please log in to create a post')
       return
     }
 
     setIsSubmitting(true)
 
     try {
-      const postData = {
+      // Generate ONE UUID that will be used for everything
+      const postUuid = crypto.randomUUID()
+      console.log('🎯 Generated consistent UUID for post and token:', postUuid)
+      
+      // Extract mentions from content for logging
+      const mentions = extractMentions(content.trim())
+      console.log('🚀 Submitting post with data:', {
         userId,
         content: content.trim(),
         mediaUrl,
-        parentPostId: undefined,
-        isRetweet: false,
-        retweetRefId: undefined,
+        uuid: postUuid,
+        detectedMentions: mentions
+      })
+
+      // Backend automatically detects @username mentions from content
+      // No need to extract and send mentions separately
+      const postData: any = {
+        userId,
+        content: content.trim(),
       }
 
-      await createPost(postData)
+      // Only add mediaUrl if it exists
+      if (mediaUrl) {
+        postData.mediaUrl = mediaUrl
+      }
 
+      console.log('🚀 About to call createPost with data:', postData)
+      console.log('📝 Content contains @mentions:', mentions.length > 0 ? mentions : 'none')
+      const response = await createPost(postData)
+      console.log('✅ createPost completed successfully', response)
+      console.log('📬 Check backend for mention notifications for:', mentions.map(m => m.username).join(', '))
+
+      // Always create post token if wallet is connected
+      if (isConnected) {
+        try {
+          console.log('🚀 Creating post token with same UUID:', postUuid)
+          const tokenTxHash = await createPostToken(
+            postUuid, // Use the SAME UUID
+            content.trim(),
+            mediaUrl || '',
+            freebieCount,
+            quadraticDivisor
+          )
+          console.log('✅ Post token created successfully, TX:', tokenTxHash)
+          showSuccessToast(`Snap posted and token created! TX: ${tokenTxHash.slice(0, 10)}...`)
+        } catch (tokenError) {
+          console.error('Failed to create post token:', tokenError)
+          let errorMessage = 'Snap posted successfully, but token creation failed'
+          
+          if (tokenError.message?.includes('Post with this UUID already exists')) {
+            errorMessage = 'Snap posted successfully, but token already exists for this post'
+          } else if (tokenError.message?.includes('Insufficient')) {
+            errorMessage = 'Snap posted successfully, but insufficient USDC for token creation'
+          } else if (tokenError.message?.includes('reverted')) {
+            errorMessage = 'Snap posted successfully, but token creation transaction failed'
+          }
+          
+          showErrorToast(errorMessage)
+        }
+      } else {
+        showSuccessToast('Snap posted successfully! (Connect wallet to enable token trading)')
+      }
+
+      // Reset form and close dialog after successful post creation
       setContent('')
       setMediaUrl(undefined)
       setUploadedMedia(null)
       
-      if (typeof window !== 'undefined' && window.alert) {
-        window.alert('Post created successfully!')
-      }
-      await fetchPosts(userId)
+      // Reset loading state immediately
+      setIsSubmitting(false)
+      
+      // Close the dialog
+      close()
+      
+      // Fetch posts in background (don't wait for it)
+      fetchPosts(userId).catch(error => {
+        console.error('Failed to fetch posts after creation:', error)
+      })
+      
     } catch (error) {
       console.error('Failed to create post:', error)
-    } finally {
+      alert('Failed to create post. Please try again.')
+      // Reset loading state on error
       setIsSubmitting(false)
     }
   }
@@ -111,15 +367,15 @@ export function SnapComposer() {
   }
 
   const renderMediaPreview = () => {
-    if (!uploadedMedia) return null
+    if (!uploadedMedia || !uploadedMedia.url) return null
 
     return (
       <div className="relative group mt-3">
-        <div className="relative overflow-hidden rounded-lg flex justify-center bg-dark-800/50 border border-dark-700/50">
+        <div className="relative overflow-hidden rounded-lg flex justify-center bg-black/50 border border-dark-700/50">
           {uploadedMedia.type === 'image' && (
             <Image
               src={uploadedMedia.url}
-              alt={uploadedMedia.name}
+              alt={uploadedMedia.name || 'Uploaded image'}
               width={400}
               height={192}
               className="w-auto h-48 object-cover rounded-lg"
@@ -129,14 +385,14 @@ export function SnapComposer() {
               }}
             />
           )}
-          {uploadedMedia.type === 'video' && (
+          {uploadedMedia.type === 'video' && uploadedMedia.url && (
             <video
               src={uploadedMedia.url}
               className="w-auto h-48 object-cover rounded-lg"
               controls
             />
           )}
-          {uploadedMedia.type === 'audio' && (
+          {uploadedMedia.type === 'audio' && uploadedMedia.url && (
             <div className="p-6 flex items-center justify-center">
               <audio src={uploadedMedia.url} controls className="w-full" />
             </div>
@@ -146,7 +402,7 @@ export function SnapComposer() {
               <div className="text-center">
                 {getMediaIcon(uploadedMedia.type)}
                 <p className="mt-3 text-sm text-dark-400">
-                  {uploadedMedia.name}
+                  {uploadedMedia.name || 'Uploaded file'}
                 </p>
               </div>
             </div>
@@ -164,91 +420,177 @@ export function SnapComposer() {
 
   const charCount = content.length
   const isOverLimit = charCount > 200
-  const canSubmit = (content.trim() || mediaUrl) && !isSubmitting && !isOverLimit
+  const hasContent = content.trim().length > 0
+  const canSubmit = (hasContent || mediaUrl) && !isSubmitting && !isOverLimit
+  const canClickButton = (hasContent || mediaUrl) && !isSubmitting && !isOverLimit
+
+  // Get button text and styling based on state
+  const getSnapButtonContent = () => {
+    if (isSubmitting) {
+      return {
+        text: isConnected ? 'Posting...' : 'Posting...',
+        icon: <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />,
+        className: 'bg-blue-600/80 text-white cursor-not-allowed'
+      }
+    }
+    
+    if (!isConnected) {
+      return {
+        text: 'Connect & Snap',
+        icon: <Wallet className="w-4 h-4" />,
+        className: 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-blue-500/25'
+      }
+    }
+    
+    return {
+      text: 'Snap',
+      icon: <SendHorizonal className="w-4 h-4" />,
+      className: 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-500/25'
+    }
+  }
+
+  const snapButton = getSnapButtonContent()
 
   return (
-    <div className="w-full bg-dark-800 backdrop-blur-sm rounded-xl p-5 shadow-xl">
-      {/* Text Input */}
-      <div className="relative">
-        <TextareaAutosize
-          minRows={3}
-          maxRows={8}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="What's happening?"
-          className="w-full resize-none bg-dark-700 p-2 rounded-md text-white placeholder-dark-400 text-base leading-relaxed focus:outline-none"
-        />
-        {/* Character Counter */}
-         
-          <div className={`absolute bottom-2 right-2 text-xs font-medium px-2 py-1 rounded ${
-            isOverLimit 
-              ? 'text-red-400 bg-red-900/20' 
-              : charCount > 180 
-                ? 'text-amber-400 bg-amber-900/20'
-                : 'text-dark-400 bg-dark-800/50'
-          }`}>
-            {charCount}/200
-          </div>
-        
-      </div>
-
-      {/* Hidden Media Upload Component */}
-      <MediaUpload
-        ref={mediaUploadRef}
-        onMediaUploaded={handleMediaUpload}
-        onMediaRemoved={handleRemoveMedia}
-        userId={userId}
-        className="hidden"
+    <>
+      {/* Toast Component */}
+      <Toast 
+        message={toastMessage}
+        isVisible={showToast}
+        onClose={handleCloseToast}
       />
-
-      {/* Media Preview */}
-      {renderMediaPreview()}
-
-      {/* Divider */}
-      <div className="border-t border-dark-700/50 mt-4 pt-4">
-        <div className="flex items-center justify-between">
-          {/* Media Actions */}
-          <div className="flex items-center gap-4">
-            {actions.map(({ icon: Icon, label, color, type }) => (
-              <button
-                key={label}
-                onClick={() => mediaUploadRef.current?.openFileDialog()}
-                disabled={isSubmitting}
-                className={`flex border border-opacity-30 items-center gap-2 px-3 py-2 rounded-lg hover:bg-dark-800/50 transition-all duration-200 ${color} ${
-                  isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                }`}
-                title={label}
-              >
-                <Icon className="w-5 h-5" />
-                <span className="text-sm font-medium hidden md:inline">
-                  {label}
-                </span>
-              </button>
-            ))}
+      
+      {/* Dialog Container */}
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="bg-black border-2 border-gray-700/70 rounded-xl w-full max-w-2xl shadow-custom relative p-4"
+      >
+        {/* Header with Close Button */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{
+              backgroundColor: "#6E54FF",
+              boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+            }}>
+              <SendHorizonal className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-white">Create a Snap</h3>
+              <p className="text-sm text-gray-400">Share what's happening</p>
+            </div>
           </div>
-
-          {/* Submit Button */}
           <button
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
-              canSubmit
-                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-500/25'
-                : isOverLimit
-                  ? 'bg-red-600/50 text-red-300 cursor-not-allowed'
-                  : 'bg-dark-700 text-dark-400 cursor-not-allowed'
-            }`}
-            title={isOverLimit ? 'Message exceeds 200 character limit' : ''}
+            onClick={close}
+            disabled={isSubmitting}
+            className="w-8 h-8 rounded-full bg-gray-700/50 hover:bg-gray-600/50 flex items-center justify-center transition-colors disabled:opacity-50"
           >
-            {isSubmitting ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <SendHorizonal className="w-4 h-4" />
-            )}
-            <span>{isSubmitting ? 'Posting...' : 'Snap'}</span>
+            <X className="w-4 h-4 text-gray-400" />
           </button>
         </div>
-      </div>
-    </div>
+
+        {/* Dialog Content */}
+        <div className="space-y-4">
+          {/* Text Input */}
+          <div className='flex gap-3'>
+            <div className='rounded-full h-12 w-12 flex-shrink-0'>
+              <Image
+                src={profile?.avatar_url && profile.avatar_url.trim() !== "" ? profile.avatar_url : "/4.png"}
+                alt="profile avatar"
+                width={48}
+                height={48}
+                className="w-12 h-12 rounded-full object-cover border-2 border-gray-600"
+              />
+            </div>
+            <div className="flex-1">
+              <TextareaAutosize
+                ref={textareaRef}
+                minRows={3}
+                maxRows={8}
+                value={content}
+                onChange={handleContentChange}
+                placeholder="What's happening? Type @ to mention someone"
+                className="w-full resize-none bg-black border-2 border-gray-700/70 p-3 rounded-xl text-white placeholder-gray-500 text-base leading-relaxed focus:outline-none focus:border-[#6E54FF]/50 transition-all duration-200"
+              />
+              <div className="text-right mt-1">
+                <span className={`text-xs ${
+                  isOverLimit
+                    ? 'text-red-400'
+                    : charCount > 180
+                      ? 'text-amber-400'
+                      : 'text-gray-400'
+                }`}>
+                  {charCount}/200
+                </span>
+              </div>
+            </div>
+          </div>
+
+            {/* Hidden Media Upload Component */}
+            <MediaUpload
+              ref={mediaUploadRef}
+              onMediaUploaded={handleMediaUpload}
+              onMediaRemoved={handleRemoveMedia}
+              userId={userId || ''}
+              className="hidden"
+            />
+
+            {/* Media Preview */}
+            {renderMediaPreview()}
+
+          {/* Actions Bar */}
+          <div className="flex items-center justify-between pt-2">
+            {/* Media Actions */}
+            <div className="flex items-center gap-2">
+              {actions.map(({ icon: Icon, label, color, type }) => (
+                <button
+                  key={label}
+                  onClick={() => mediaUploadRef.current?.openFileDialog(type)}
+                  disabled={isSubmitting}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-700/50 hover:bg-gray-600/50 disabled:bg-gray-800/50 border border-gray-600/30 transition-all duration-200 ${color} disabled:opacity-50 disabled:cursor-not-allowed`}
+                  title={label}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="text-sm font-medium hidden sm:inline">
+                    {label}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Submit Button */}
+            <button
+              onClick={() => {
+                console.log('🔍 Submit button clicked!')
+                console.log('🔍 Button state:', { canClickButton, content, mediaUrl, isSubmitting, isOverLimit })
+                handleSubmit()
+              }}
+              disabled={!canClickButton}
+              className="px-6 py-2 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: canClickButton ? "#6E54FF" : "#6B7280",
+                boxShadow: canClickButton ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
+              }}
+              title={isOverLimit ? 'Message exceeds 200 character limit' : ''}
+            >
+              {snapButton.icon}
+              <span>{snapButton.text}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Mention Autocomplete */}
+        {showMentionAutocomplete && (
+          <MentionAutocomplete
+            searchText={mentionSearch}
+            onSelect={handleMentionSelect}
+            onClose={() => setShowMentionAutocomplete(false)}
+            position={mentionPosition}
+          />
+        )}
+      </motion.div>
+    </>
   )
 }

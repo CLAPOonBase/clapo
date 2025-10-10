@@ -36,6 +36,105 @@ export interface LoginResponse {
   token: string
 }
 
+// Reputation Types (matching backend implementation)
+export type ReputationTier ='Bronze' |'Silver' | 'Gold' |'Diamond' |'Platinum' | 'newcomer' | 'contributor' | 'veteran' | 'expert' | 'legend'
+
+export interface ReputationScore {
+  user_id: string
+  score: number
+  tier: ReputationTier
+  daily_stats: {
+    claps_given: number
+    claps_received: number
+    replies_given: number
+    replies_received: number
+    remixes_given: number
+    remixes_received: number
+    givereps_given: number
+  }
+  lifetime_stats: {
+    claps_given: number
+    claps_received: number
+    replies_given: number
+    replies_received: number
+    remixes_given: number
+    remixes_received: number
+    givereps_given: number
+  }
+  last_decay_at: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ReputationEvent {
+  id: string
+  user_id: string
+  event_type: 'clap_given' | 'clap_received' | 'reply_given' | 'reply_received' | 'remix_given' | 'remix_received' | 'giverep_given' | 'giverep_received' | 'decay' | 'manual_adjustment' | 'penalty'
+  points_change: number
+  score_before: number
+  score_after: number
+  tier_before: ReputationTier
+  tier_after: ReputationTier
+  from_user_id?: string
+  from_user?: {
+    id: string
+    username: string
+    avatar_url: string
+  }
+  post_id?: string
+  comment_id?: string
+  context?: string
+  metadata?: Record<string, any>
+  created_at: string
+}
+
+export interface ReputationHistoryResponse {
+  success: boolean
+  data: ReputationEvent[]
+  pagination: {
+    limit: number
+    offset: number
+  }
+}
+
+export interface GiveRepRequest {
+  from_user_id: string
+  to_user_id: string
+  context?: string
+}
+
+export interface GiveRepResponse {
+  success: boolean
+  message: string
+}
+
+export interface LeaderboardEntry {
+  user_id: string
+  username: string
+  avatar_url: string
+  score: number
+  tier: ReputationTier
+  lifetime_claps_received: number
+  lifetime_replies_received: number
+  lifetime_remixes_received: number
+  lifetime_givereps_received: number
+  rank: number
+}
+
+export interface LeaderboardResponse {
+  success: boolean
+  data: LeaderboardEntry[]
+  pagination: {
+    limit: number
+    offset: number
+  }
+}
+
+export interface ReputationResponse {
+  success: boolean
+  data: ReputationScore
+}
+
 // User Profile Types
 export interface UserProfile {
   id: string
@@ -46,6 +145,8 @@ export interface UserProfile {
   createdAt: string
   followerCount: number
   followingCount: number
+  reputation_score?: number
+  reputation_tier?: ReputationTier
   total_posts?: number
   total_likes_given?: number
   total_comments_made?: number
@@ -80,6 +181,7 @@ export interface ProfileResponse {
 }
 
 export interface UpdateProfileRequest {
+  username?: string
   bio?: string
   avatarUrl?: string
 }
@@ -89,8 +191,10 @@ export interface SearchUsersResponse {
   users: Array<{
     id: string
     username: string
+    email: string
     bio: string
-    avatarUrl: string
+    avatar_url: string | null
+    created_at: string
   }>
 }
 
@@ -102,6 +206,7 @@ export interface CreatePostRequest {
   parentPostId?: string
   isRetweet?: boolean
   retweetRefId?: string
+  mentions?: string[] // Array of mentioned user IDs
 }
 
 export interface Post {
@@ -120,6 +225,14 @@ export interface Post {
   post_popularity_score: number
   username: string
   avatar_url: string
+  author_reputation?: number
+  author_reputation_tier?: ReputationTier
+  mentions?: Array<{
+    user_id: string
+    username: string
+    avatar_url?: string
+    name?: string
+  }>
   likes?: Array<{
     user_id: string
     username: string
@@ -142,6 +255,8 @@ export interface Post {
     user_id: string
     username: string
     avatar_url: string
+    author_reputation?: number
+    author_reputation_tier?: ReputationTier
   }>
 }
 
@@ -157,7 +272,7 @@ export interface FeedResponse {
 
 // Engagement Types
 export interface ViewPostRequest {
-  userId: string
+  viewerId: string
 }
 
 export interface ViewPostResponse {
@@ -173,7 +288,7 @@ export interface LikeResponse {
   message: string
   like: {
     id: string
-    userId: string
+    likerId: string
     postId: string
     createdAt: string
   }
@@ -183,7 +298,7 @@ export interface UnlikeResponse {
   message: string
   unlike: {
     id: string
-    userId: string
+    likerId: string
     postId: string
   }
 }
@@ -191,14 +306,14 @@ export interface UnlikeResponse {
 export interface CommentRequest {
   userId: string
   content: string
-  mediaUrl?: string
+  parentCommentId?: string
 }
 
 export interface CommentResponse {
   message: string
   comment: {
     id: string
-    userId: string
+    commenterId: string
     postId: string
     content: string
     createdAt: string
@@ -227,15 +342,14 @@ export interface BookmarkResponse {
   message: string
   bookmark: {
     id: string
-    userId: string
+    bookmarkerId: string
     postId: string
-    createdAt: string
   }
 }
 
 // Social Features Types
 export interface FollowRequest {
-  followerId: string
+  userId: string
 }
 
 export interface FollowResponse {
@@ -345,11 +459,17 @@ export interface CreateCommunityRequest {
 }
 
 export interface Community {
+  profile_picture_url: string
   id: string
   name: string
   description: string
-  creatorId: string
-  createdAt: string
+  creator_id: string
+  created_at: string
+  creator_username: string
+  creator_avatar: string
+  user_joined_at?: string | null
+  user_is_admin?: boolean
+  member_count: number
 }
 
 export interface CreateCommunityResponse {
@@ -374,10 +494,13 @@ export interface JoinCommunityResponse {
 
 export interface CommunityMember {
   id: string
-  communityId: string
-  userId: string
-  joinedAt: string
-  isAdmin: boolean
+  community_id: string
+  user_id: string
+  joined_at: string
+  is_admin: boolean
+  username: string
+  avatar_url: string
+  bio: string
 }
 
 export interface CommunitiesResponse {
@@ -398,17 +521,67 @@ export interface CommunityMessagesResponse {
 // Notification Types
 export interface Notification {
   id: string
-  userId: string
+  user_id: string
   type: 'like' | 'retweet' | 'follow' | 'comment' | 'mention'
-  refId: string
-  fromUserId: string
-  isRead: boolean
-  createdAt: string
+  content: string
+  related_id: string
+  is_read: boolean
+  created_at: string
+  // Enhanced notification data
+  actor_id?: string
+  actor_username?: string
+  actor_avatar_url?: string
+  post_id?: string
+  post_content_preview?: string
+  post_media_url?: string
+  comment_content?: string
+  mention_context?: string
+}
+
+// Enhanced Notification Types (new backend API)
+export interface EnhancedNotification {
+  id: string
+  type: 'like' | 'comment' | 'retweet' | 'bookmark' | 'follow' | 'dm' | 'community_message'
+  user_id: string
+  from_user_id: string
+  ref_id: string
+  is_read: boolean
+  created_at: string
+  from_user: {
+    id: string
+    username: string
+    email: string
+    bio: string
+    avatar_url: string
+    created_at: string
+  }
+  content: {
+    id: string
+    content: string
+    media_url: string | null
+    created_at: string
+    view_count: number
+    like_count: number
+    comment_count: number
+    retweet_count: number
+    author_username: string
+    author_avatar: string
+  }
+  context: {
+    action: string
+    preview: string
+    engagement: string
+  }
 }
 
 export interface NotificationsResponse {
   message: string
   notifications: Notification[]
+}
+
+export interface EnhancedNotificationsResponse {
+  message: string
+  notifications: EnhancedNotification[]
 }
 
 // Activity Types
@@ -438,6 +611,16 @@ export interface MessageThread {
   isGroup: boolean
   name: string
   createdAt: string
+  participants?: Array<{
+    avatar_url: string
+    id: string
+    user_id: string
+    username: string
+    name?: string
+    avatar?: string
+    bio?: string
+    lastSeen?: string
+  }>
 }
 
 export interface ThreadMessage {
@@ -447,15 +630,15 @@ export interface ThreadMessage {
   content: string
   mediaUrl?: string
   createdAt: string
-  senderUsername?: string
 }
 
 export interface CommunityMessage {
   id: string
-  communityId: string
-  senderId: string
+  community_id: string
+  sender_id: string
   content: string
-  mediaUrl?: string
-  createdAt: string
-  senderUsername?: string
+  media_url?: string
+  created_at: string
+  sender_username?: string
+  sender_avatar?: string
 } 

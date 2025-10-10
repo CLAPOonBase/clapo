@@ -1,119 +1,509 @@
 "use client";
-
-import { Home, Search, Bell, User, MessageCircle, Activity } from "lucide-react";
-import Image from "next/image";
-import { PageKey } from "@/app/types";
+import { Home, Bell, User, MessageCircle, Activity, Blocks, TrendingUp, Menu, X, Telescope, Wallet, Lock, Settings, LogOut } from "lucide-react";
 import { useState } from "react";
-import UserProfileCard from "./UserProfileCard";
+import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useWalletContext } from "@/context/WalletContext";
+import { useSession } from "next-auth/react";
+import SignInPage from "@/app/SignIn/SignInPage";
+import { SnapComposer } from "./SnapComposer";
+
+type PageKey = "home" | "wallet" | "explore" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks";
 
 type SidebarProps = {
   setCurrentPage: (page: PageKey) => void;
   currentPage?: PageKey;
+  collapsibleItems?: PageKey[];
+  alwaysExpanded?: boolean;
+  onNavigateToOpinio?: () => void;
+  onNavigateToSnaps?: () => void;
 };
 
-const navItems: {
-  label: string;
-  value: PageKey;
-  icon: React.ReactNode;
-  showOnMobile?: boolean;
-  showOnDesktop?: boolean;
-}[] = [
-  { label: "HOME", value: "home", icon: <Home className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
-  { label: "EXPLORE", value: "explore", icon: <Search className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
-  { label: "NOTIFICATIONS", value: "notifications", icon: <Bell className="w-5 h-5 md:mr-4" />, showOnMobile: true, showOnDesktop: true },
-  { label: "ACTIVITY", value: "activity", icon: <Activity className="w-5 h-5 md:mr-4" />, showOnDesktop: false },
-  { label: "MESSAGES", value: "messages", icon: <MessageCircle className="w-5 h-5 md:mr-4" />, showOnMobile: true },
-  { label: "PROFILE", value: "profile", icon: <User className="w-5 h-5 md:mr-4" />, showOnDesktop: true },
+interface ExtendedSession {
+  user?: {
+    name?: string;
+    email?: string;
+    image?: string;
+  };
+  dbUser?: {
+    id: string;
+    username: string;
+    email: string;
+    bio: string;
+    avatar_url: string;
+    createdAt: string;
+  };
+  dbUserId?: string;
+  access_token?: string;
+}
+
+export default function Sidebar({ 
+  setCurrentPage, 
+  currentPage = "home",
+  collapsibleItems = ["messages"], 
+  alwaysExpanded = false,
+  onNavigateToOpinio,
+  onNavigateToSnaps
+}: SidebarProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [activeDialog, setActiveDialog] = useState<null | "x" | "wallet" | "createPost">(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const router = useRouter();
+  const { connect, disconnect, address } = useWalletContext();
+  const { data: session } = useSession() as { data: ExtendedSession | null };
+
+  // Create a custom profile icon component that uses avatar if available
+  const ProfileIcon = ({ isActive, className }: { isActive?: boolean; className?: string }) => {
+    if (session?.dbUser?.avatar_url) {
+      return (
+        <Image
+          src={session.dbUser.avatar_url}
+          alt="Profile"
+          width={24}
+          height={24}
+          className={`rounded-full ${className || "w-6 h-6"} object-cover border border-gray-600/40`}
+        />
+      );
+    }
+    return isActive ?
+      <User className={`${className || "w-6 h-6"} text-white`} /> :
+      <User className={className || "w-6 h-6"} />;
+  };
+
+  const navItems: {
+    label: string;
+    value: PageKey;
+    icon: React.ReactNode;
+    activeIcon: React.ReactNode;
+    showOnMobile?: boolean;
+    showOnDesktop?: boolean;
+  }[] = [
+    {
+      label: "Home",
+      value: "home",
+      icon: <Home className="w-6 h-6" />,
+      activeIcon: <Home className="w-6 h-6 text-white" />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+      {
+      label: "Explore",
+      value: "explore",
+      icon: <Telescope className="w-6 h-6" />,
+      activeIcon: <Telescope className="w-6 h-6 text-white" />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+      {
+      label: "Creator Shares",
+      value: "share",
+      icon: <Blocks className="w-6 h-6" />,
+      activeIcon: <Blocks className="w-6 h-6 text-white" />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+    {
+      label: "Messages",
+      value: "messages",
+      icon: <MessageCircle className="w-6 h-6" />,
+      activeIcon: <MessageCircle className="w-6 h-6 text-white" />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+    {
+      label: "Notifications",
+      value: "notifications",
+      icon: <Bell className="w-6 h-6" />,
+      activeIcon: <Bell className="w-6 h-6 text-white" />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+    // {
+    //   label: "Activity",
+    //   value: "activity",
+    //   icon: <Activity className="w-6 h-6" />,
+    //   activeIcon: <Activity className="w-6 h-6 text-white" />,
+    //   showOnMobile: true,
+    //   showOnDesktop: true
+    // },
+
+
+      {
+      label: "Wallet",
+      value: "wallet",
+      icon: <Wallet className="w-6 h-6" />,
+      activeIcon: <Wallet className="w-6 h-6 text-white" />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+      {
+      label: "Profile",
+      value: "profile",
+      icon: <ProfileIcon isActive={false} />,
+      activeIcon: <ProfileIcon isActive={true} />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+
+  ];
+
+  const bottomNavItems = [
+  { name: "Opinio", path: "/opinio", img: "/opinio-nav.png" },
+  { name: "Claps", path: "/", img: "/navlogo.png" },
 ];
 
 
-export default function Sidebar({ setCurrentPage, currentPage }: SidebarProps) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const handleNavClick = (value: PageKey) => {
+const handleNavClick = (value: PageKey) => {
+  if (window.location.pathname !== '/') {
+    router.push('/');
+    setTimeout(() => {
+      setCurrentPage(value);
+    }, 100);
+  } else {
     setCurrentPage(value);
-    setIsMobileMenuOpen(false); // Close mobile menu after selection
+  }
+  setIsMobileSidebarOpen(false);
+};
+
+  const handleOpinioClick = () => {
+    if (onNavigateToOpinio) {
+      onNavigateToOpinio();
+    } else {
+      router.push('/opinio');
+    }
+    setIsMobileSidebarOpen(false);
   };
 
+  const handleSnapsClick = () => {
+    if (onNavigateToSnaps) {
+      onNavigateToSnaps();
+    } else {
+      router.push('/snaps');
+    }
+    setIsMobileSidebarOpen(false);
+  };
+
+  const openDialog = (type: "x" | "wallet") => {
+    setActiveDialog(type);
+    setIsMobileSidebarOpen(false);
+  };
+  const closeDialog = () => setActiveDialog(null);
+
+  const shouldCollapse = !alwaysExpanded && collapsibleItems.includes(currentPage);
+  const sidebarWidth = shouldCollapse ? (isHovered ? 240 : 85) : 240;
+
+  const isLoggedIn = !!session;
+  const isWalletConnected = !!address;
+
+  // Check if current page is home to show Create Post button
+  const showCreatePost = currentPage === "home";
+
+  const toggleMobileSidebar = () => {
+    setIsMobileSidebarOpen(!isMobileSidebarOpen);
+  };
+  
   return (
     <>
-     
-
-      {/* Mobile Overlay */}
-      {isMobileMenuOpen && (
-        <div
-          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* Desktop/Tablet Sidebar */}
-      <div className={`
-        hidden md:block
-        sticky top-0
-        h-full
-        w-16 lg:w-64
-        px-4
-        space-y-4
-        overflow-y-auto
-      `}>
-        {/* User Profile Section */}
-        <UserProfileCard onManageClick={() => handleNavClick('profile')} />
-
-
-        {/* Navigation */}
-        <nav className="space-y-2 bg-dark-800 rounded-md p-4 text-secondary">
-          {navItems
-  .filter((item) => item.showOnDesktop !== false)
-  .map(({ label, value, icon }) => (
-
-            <div
-              key={value}
-              onClick={() => handleNavClick(value)}
-              className={`flex items-center p-3 rounded-lg hover:bg-gray-800 cursor-pointer group relative ${
-                currentPage === value ? 'text-white' : ''
-              }`}
-              title={label} // Tooltip for collapsed state
-            >
-              <div className="flex-shrink-0">
-                {icon}
-              </div>
-              <span className="hidden lg:block ml-4 truncate">
-                {label}
-              </span>
-              
-              {/* Tooltip for medium screens when collapsed */}
-              <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 lg:hidden">
-                {label}
-              </div>
-            </div>
-          ))}
-        </nav>
-      </div>
-
-     
-      {/* Mobile Bottom Navigation Bar */}
-      <div style={{zIndex:"1000"}} className="md:hidden fixed bottom-0 left-0 right-0 bg-dark-800 border-t border-gray-700 z-30">
-        <div className="flex justify-around items-center py-2 px-4">
-         {navItems
-  .filter((item) => item.showOnMobile !== false)
-  .map(({ value, icon }) => (
-
-            <button
-              key={value}
-              onClick={() => handleNavClick(value)}
-              className={`flex flex-col items-center justify-center p-2 min-w-0 flex-1 ${
-                currentPage === value ? 'text-white bg-gray-700 rounded-full' : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <div className="w-5 h-5 mb-1">
-                {icon}
-              </div>
-              {/* <span className="text-[8px] truncate w-full text-center">{label}</span> */}
-            </button>
-          ))}
+      {/* Mobile Top Bar - Only visible on mobile */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 bg-black border-b-2 border-gray-700/70 z-[9999] px-4 py-3">
+        <div className="flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center">
+            <Image
+              src="/navlogo.png"
+              alt="Clapo Logo"
+              width={120}
+              height={40}
+              className="object-contain h-8 w-auto"
+            />
+          </div>
+          
+          {/* Menu Button */}
+          <button
+            onClick={toggleMobileSidebar}
+            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700/40 transition-colors"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
         </div>
       </div>
+
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isMobileSidebarOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-[9998]"
+              onClick={() => setIsMobileSidebarOpen(false)}
+            />
+            
+            {/* Mobile Sidebar */}
+            <motion.div
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="lg:hidden fixed left-0 top-0 w-70 h-full bg-black border-r-2 border-gray-700/70 z-[9998] overflow-y-auto"
+            >
+              <div className="flex flex-col justify-between h-full px-4 py-6">
+                {/* Header with Close Button */}
+                <div>
+                  <div className="flex items-center justify-between mb-8">
+                    <Image
+                      src="/navlogo.png"
+                      alt="Clapo Logo"
+                      width={120}
+                      height={40}
+                      className="object-contain h-8 w-auto"
+                    />
+                    <button
+                      onClick={() => setIsMobileSidebarOpen(false)}
+                      className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700/40 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Navigation */}
+                  <nav className="flex flex-col gap-1">
+                    {navItems
+                      .filter((item) => item.showOnMobile !== false)
+                      .map(({ label, value, icon, activeIcon }, index) => {
+                        const isActive = currentPage === value;
+
+                        return (
+                          <motion.button
+                            key={value}
+                            onClick={() => handleNavClick(value)}
+                            className={`flex items-center px-4 py-3 rounded-xl transition-all duration-200 group relative text-left w-full
+                              ${isActive 
+                                ? "text-white font-semibold bg-gray-700/30" 
+                                : "text-gray-400 hover:text-white hover:bg-gray-700/40"
+                              }
+                            `}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                          >
+                            <span className="flex-shrink-0">
+                              {isActive ? activeIcon : icon}
+                            </span>
+                            <span className="ml-4 whitespace-nowrap font-medium text-sm">
+                              {label}
+                            </span>
+                          </motion.button>
+                        );
+                      })}
+                      
+                    {/* Mobile Create Post Button - Only show on home page */}
+                    {showCreatePost && (
+                      <button
+                        onClick={() => setActiveDialog("createPost")}
+                        className="inline-flex w-full items-center justify-center gap-[6px] min-w-[105px]
+                                   transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                                   bg-[hsla(220,10%,12%,1)] text-white shadow px-3 py-1.5 text-xs 
+                                   rounded-full leading-[24px] font-bold w-full sm:w-auto whitespace-nowrap mt-4"
+                      >
+                        Create Post
+                      </button>
+                    )}
+                  </nav>
+               
+                </div>
+
+                {/* Bottom Section for Mobile */}
+                <div className="space-y-3">
+                  {/* Mobile Connect Buttons */}
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => openDialog("x")}
+                      className="inline-flex items-center justify-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 gap-[6px] min-w-[105px] transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)] bg-[hsla(220,10%,12%,1)] text-white shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000] hover:bg-[hsla(220,10%,18%,1)] px-3 py-2 text-xs rounded-full leading-[24px] font-bold w-full whitespace-nowrap"
+                    >
+                    <Image src={session?.dbUser?.avatar_url || "/default-avatar.png"} alt={""} width={1000} height={1000} className="rounded-full h-8 w-8 bg-black border border-gray-700/70"/>
+
+                      {isLoggedIn ? session?.dbUser?.username || "CONNECTED" : "CONNECT X"}
+                    </button>
+                 
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {bottomNavItems.map((item, index) => (
+                      <button 
+                        key={item.name}
+                        onClick={() => {
+                          if (item.name === "Opinio") {
+                            handleOpinioClick();
+                          } else if (item.name === "Claps") {
+                            handleSnapsClick();
+                          }
+                        }}
+                        className="w-full px-4 py-2 rounded-lg text-center bg-gray-700/30 border border-gray-600/40 hover:bg-gray-700/50 transition-colors"
+                      >
+                        <div className="text-gray-300 font-medium text-sm">{item.name}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Desktop Sidebar - Only visible on desktop, exactly as before */}
+      <div className="hidden lg:block sticky left-0 top-0 max-h-screen bg-black border-r-2 border-gray-700/70">
+        <motion.div
+          onMouseEnter={() => shouldCollapse && setIsHovered(true)}
+          onMouseLeave={() => shouldCollapse && setIsHovered(false)}
+          animate={{ width: sidebarWidth }}
+          transition={{ type: "spring", stiffness: 300, damping: 24, mass: 0.8 }}
+          className="flex flex-col justify-between h-screen px-4 py-6 overflow-hidden"
+        >
+          {/* Logo Section */}
+          <div>
+            <div className="flex items-center justify-start mb-20">
+              <Image
+                src="/navlogo.png"
+                alt="Clapo Logo"
+                width={1000}
+                height={1000}
+                className="object-contain w-auto h-8"
+              />
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex flex-col gap-1">
+              {navItems
+                .filter((item) => item.showOnDesktop !== false)
+                .map(({ label, value, icon, activeIcon }, index) => {
+                  const showLabel = !shouldCollapse || isHovered;
+                  const isActive = currentPage === value;
+
+                  return (
+                    <motion.button
+                      key={value}
+                      onClick={() => handleNavClick(value)}
+                      className={`flex items-center px-4 py-1.5 rounded-xl transition-all duration-200 group relative text-left
+                        ${isActive 
+                          ? "text-white font-semibold" 
+                          : "text-gray-400 hover:text-white hover:bg-gray-700/40"
+                        }
+                      `}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <span className="flex-shrink-0">
+                        {isActive ? activeIcon : icon}
+                      </span>
+
+                      <AnimatePresence mode="wait">
+                        {showLabel && (
+                          <motion.span
+                            className="ml-4 whitespace-nowrap font-medium text-sm"
+                            initial={shouldCollapse ? { opacity: 0, x: -10 } : { opacity: 1, x: 0 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={shouldCollapse ? { opacity: 0, x: -10 } : { opacity: 1, x: 0 }}
+                            transition={{ duration: 0.15, ease: "easeOut" }}
+                          >
+                            {label}
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </motion.button>
+                  );
+                })}
+              
+              {/* Desktop Create Post Button - Only show on home page */}
+              {showCreatePost && (
+                <div className="w-full flex flex-col gap-2 mt-6">
+                  <button
+                    onClick={() => setActiveDialog("createPost")}
+                    className="inline-flex w-full items-center justify-center gap-[6px] min-w-[105px]
+                               transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                               bg-[hsla(220,10%,12%,1)] text-white shadow px-3 py-1.5 text-xs 
+                               rounded-full leading-[24px] font-bold w-full sm:w-auto whitespace-nowrap"
+                  >
+                    Create Post
+                  </button>
+                </div>
+              )}
+            </nav>
+          </div>
+
+          {/* Bottom Section */}
+          <AnimatePresence>
+            {(!shouldCollapse || isHovered) && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ delay: 0.1 }}
+                className="space-y-3"
+              >
+
+                <div className="space-y-3">
+                  <h3 className="text-white text-sm font-semibold tracking-wide uppercase">
+                    EXPLORE MORE
+                  </h3>
+
+                  <div className="space-y-2">
+                    {bottomNavItems.map((item) => (
+                      <button
+                        key={item.name}
+                        onClick={() => {
+                          if (item.name === "Opinio") {
+                            handleOpinioClick();
+                          } else if (item.name === "Claps") {
+                            handleSnapsClick();
+                          }
+                        }}
+                        className="w-full px-4 py-3 rounded-3xl bg-[#1A1A1A] border-2 border-[#6E54FF] hover:bg-[#2A2A2A] transition-all duration-200 flex items-center justify-center"
+                      >
+                        <Image
+                          src={item.img}
+                          alt={item.name}
+                          width={120}
+                          height={40}
+                          className="object-contain h-8 w-auto"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </div>
+
+      {/* Dialog Rendering */}
+   <AnimatePresence>
+  {activeDialog && (
+    <motion.div
+      key="dialog"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[10000]"
+      onClick={() => setActiveDialog(null)}
+    >
+      <div onClick={(e) => e.stopPropagation()}>
+        {activeDialog === "x" && <SignInPage close={() => setActiveDialog(null)} />}
+        {activeDialog === "wallet" && <SignInPage close={() => setActiveDialog(null)} />}
+        {activeDialog === "createPost" && <SnapComposer close={() => setActiveDialog(null)} />}
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
     </>
   );
