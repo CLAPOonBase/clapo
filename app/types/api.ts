@@ -281,7 +281,7 @@ export interface ViewPostResponse {
 }
 
 export interface LikePostRequest {
-  likerId: string
+  userId: string
 }
 
 export interface LikeResponse {
@@ -304,9 +304,9 @@ export interface UnlikeResponse {
 }
 
 export interface CommentRequest {
-  commenterId: string
+  userId: string
   content: string
-  mediaUrl?: string
+  parentCommentId?: string
 }
 
 export interface CommentResponse {
@@ -335,7 +335,7 @@ export interface RetweetResponse {
 }
 
 export interface BookmarkRequest {
-  bookmarkerId: string
+  userId: string
 }
 
 export interface BookmarkResponse {
@@ -349,7 +349,7 @@ export interface BookmarkResponse {
 
 // Social Features Types
 export interface FollowRequest {
-  followerId: string
+  userId: string
 }
 
 export interface FollowResponse {

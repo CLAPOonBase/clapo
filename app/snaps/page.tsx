@@ -531,10 +531,16 @@ function SocialFeedPageContent() {
                       <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-3 sm:mb-4">
                         Get Started
                       </h1>
-                      <p className="text-gray-400 text-sm sm:text-base leading-relaxed px-2">
+                      <p className="text-gray-400 text-sm sm:text-base leading-relaxed px-2 mb-6">
                         Sign in to start posting, engaging with others, and
                         exploring the Web3 social experience.
                       </p>
+                      <button
+                        onClick={() => signIn("twitter")}
+                        className="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-bold shadow-lg text-sm sm:text-base"
+                      >
+                        Connect X
+                      </button>
                     </div>
                   </div>
                 </div>

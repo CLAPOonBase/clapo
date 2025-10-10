@@ -37,6 +37,9 @@ interface ExtendedSession {
   const isLoggedIn = !!session;
   const isWalletConnected = !!address;
 
+  // Debug logging
+  console.log('Session state:', { session, isLoggedIn });
+
   const handleXConnect = async () => {
     setIsConnectingX(true);
     try {
@@ -153,32 +156,36 @@ interface ExtendedSession {
                   </div>
                   <h3 className="font-bold text-white text-lg">X (Twitter)</h3>
                 </div>
-                
-                {isLoggedIn ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 p-3 bg-green-600/10 border border-green-600/30 rounded-lg">
-                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                      <p className="text-sm text-green-300">
-                        Connected as @{session.dbUser?.username}
-                      </p>
-                    </div>
-                    <button
-                      onClick={handleXDisconnect}
-                      disabled={isConnectingX}
-                      className="w-full py-3 px-6 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors font-medium"
-                    >
-                      {isConnectingX ? "Disconnecting..." : "Disconnect"}
-                    </button>
-                  </div>
-                ) : (
+
+                <div className="space-y-4">
+                  {/* Always show login button */}
                   <button
                     onClick={handleXConnect}
                     disabled={isConnectingX}
                     className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 transition-all font-medium shadow-lg"
                   >
-                    {isConnectingX ? "Connecting..." : "Connect X Account"}
+                    {isConnectingX ? "Connecting..." : "Login with X"}
                   </button>
-                )}
+
+                  {/* Show connection status if logged in */}
+                  {isLoggedIn && (
+                    <>
+                      <div className="flex items-center gap-3 p-3 bg-green-600/10 border border-green-600/30 rounded-lg">
+                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                        <p className="text-sm text-green-300">
+                          Connected as @{session.dbUser?.username}
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleXDisconnect}
+                        disabled={isConnectingX}
+                        className="w-full py-3 px-6 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors font-medium"
+                      >
+                        {isConnectingX ? "Disconnecting..." : "Disconnect"}
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Wallet Connection */}

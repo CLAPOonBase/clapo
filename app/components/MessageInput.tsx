@@ -1,5 +1,7 @@
 import { useState, KeyboardEvent, useRef } from 'react';
 import { Send, Image as ImageIcon, Video, X } from 'lucide-react';
+import MentionAutocomplete from './MentionAutocomplete';
+import { getMentionTriggerInfo, replaceMentionText } from '@/app/lib/mentionUtils';
 
 interface MessageInputProps {
   onSend: (content: string, mediaUrl?: string) => void;
@@ -12,6 +14,65 @@ export const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Mention state
+  const [showMentionAutocomplete, setShowMentionAutocomplete] = useState(false);
+  const [mentionSearch, setMentionSearch] = useState('');
+  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [mentionStartPos, setMentionStartPos] = useState(0);
+
+  // Handle content change and mention detection
+  const handleContentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newContent = e.target.value;
+    const newCursorPosition = e.target.selectionStart || 0;
+
+    setMessageContent(newContent);
+    setCursorPosition(newCursorPosition);
+
+    // Check for mention trigger
+    const mentionInfo = getMentionTriggerInfo(newContent, newCursorPosition);
+
+    if (mentionInfo && mentionInfo.triggered) {
+      setShowMentionAutocomplete(true);
+      setMentionSearch(mentionInfo.searchText);
+      setMentionStartPos(mentionInfo.startPos);
+
+      // Calculate position for autocomplete dropdown
+      if (inputRef.current) {
+        const rect = inputRef.current.getBoundingClientRect();
+        setMentionPosition({
+          top: rect.top - 250, // Show above input
+          left: rect.left,
+        });
+      }
+    } else {
+      setShowMentionAutocomplete(false);
+    }
+  };
+
+  // Handle mention selection
+  const handleMentionSelect = (user: { id: string; username: string }) => {
+    const { newText, newCursorPosition } = replaceMentionText(
+      messageContent,
+      mentionStartPos,
+      cursorPosition,
+      user.username
+    );
+
+    setMessageContent(newText);
+    setShowMentionAutocomplete(false);
+
+    // Set cursor position
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.selectionStart = newCursorPosition;
+        inputRef.current.selectionEnd = newCursorPosition;
+        inputRef.current.focus();
+      }
+    }, 0);
+  };
 
   const handleSend = async () => {
     if (!messageContent.trim() && !selectedFile) return;
@@ -42,6 +103,7 @@ export const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
         }
       }
 
+      // Backend automatically detects @username mentions from content
       // Send the message with or without media
       console.log('📤 Sending message with media:', { content: messageContent.trim() || 'Sent a file', mediaUrl });
       onSend(messageContent.trim() || 'Sent a file', mediaUrl);
@@ -168,10 +230,11 @@ export const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
         {/* Text Input */}
         <div className="flex-1 relative">
           <input
+            ref={inputRef}
             type="text"
-            placeholder="Message..."
+            placeholder="Message... Type @ to mention"
             value={messageContent}
-            onChange={(e) => setMessageContent(e.target.value)}
+            onChange={handleContentChange}
             onKeyPress={handleKeyPress}
             className="w-full px-4 py-2 bg-transparent text-sm text-white rounded-full focus:outline-none transition-all duration-200 placeholder-gray-500"
             disabled={disabled || isUploading}
@@ -191,6 +254,16 @@ export const MessageInput = ({ onSend, disabled }: MessageInputProps) => {
           )}
         </button>
       </div>
+
+      {/* Mention Autocomplete */}
+      {showMentionAutocomplete && (
+        <MentionAutocomplete
+          searchText={mentionSearch}
+          onSelect={handleMentionSelect}
+          onClose={() => setShowMentionAutocomplete(false)}
+          position={mentionPosition}
+        />
+      )}
     </div>
   );
 };

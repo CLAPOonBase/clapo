@@ -274,28 +274,33 @@ export function SnapComposer({ close }: { close: () => void }) {
       const postUuid = crypto.randomUUID()
       console.log('🎯 Generated consistent UUID for post and token:', postUuid)
       
-      console.log('🚀 Submitting post with data:', { userId, content: content.trim(), mediaUrl, uuid: postUuid })
-      
-      // Extract mentioned user IDs from content
-      const allMentionUsernames = extractMentions(content)
-      const mentionedUserIds = allMentionUsernames
-        .map(username => mentionedUsers.find(u => u.username === username)?.user_id)
-        .filter(Boolean) as string[]
-
-      const postData = {
+      // Extract mentions from content for logging
+      const mentions = extractMentions(content.trim())
+      console.log('🚀 Submitting post with data:', {
         userId,
         content: content.trim(),
         mediaUrl,
-        uuid: postUuid, // Pass the UUID to backend
-        parentPostId: undefined,
-        isRetweet: false,
-        retweetRefId: undefined,
-        mentions: mentionedUserIds, // Add mentioned user IDs
+        uuid: postUuid,
+        detectedMentions: mentions
+      })
+
+      // Backend automatically detects @username mentions from content
+      // No need to extract and send mentions separately
+      const postData: any = {
+        userId,
+        content: content.trim(),
+      }
+
+      // Only add mediaUrl if it exists
+      if (mediaUrl) {
+        postData.mediaUrl = mediaUrl
       }
 
       console.log('🚀 About to call createPost with data:', postData)
+      console.log('📝 Content contains @mentions:', mentions.length > 0 ? mentions : 'none')
       const response = await createPost(postData)
       console.log('✅ createPost completed successfully', response)
+      console.log('📬 Check backend for mention notifications for:', mentions.map(m => m.username).join(', '))
 
       // Always create post token if wallet is connected
       if (isConnected) {

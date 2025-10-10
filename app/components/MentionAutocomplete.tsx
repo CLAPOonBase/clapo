@@ -16,6 +16,7 @@ interface MentionAutocompleteProps {
   onSelect: (user: User) => void;
   onClose: () => void;
   position: { top: number; left: number };
+  zIndex?: number;
 }
 
 export default function MentionAutocomplete({
@@ -23,6 +24,7 @@ export default function MentionAutocomplete({
   onSelect,
   onClose,
   position,
+  zIndex = 50,
 }: MentionAutocompleteProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -31,19 +33,24 @@ export default function MentionAutocomplete({
 
   // Search for users
   useEffect(() => {
+    console.log('🔍 MentionAutocomplete: searchText changed:', searchText);
+
     const searchUsers = async () => {
       if (searchText.length < 1) {
+        console.log('⚠️ Search text too short, clearing users');
         setUsers([]);
         return;
       }
 
+      console.log('🔎 Searching for users with query:', searchText);
       setLoading(true);
       try {
         const response = await apiService.searchUsers(searchText, 5, 0);
+        console.log('✅ User search response:', response);
         setUsers(response.users || []);
         setSelectedIndex(0);
       } catch (error) {
-        console.error('Error searching users:', error);
+        console.error('❌ Error searching users:', error);
         setUsers([]);
       } finally {
         setLoading(false);
@@ -92,17 +99,23 @@ export default function MentionAutocomplete({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
-  if (!searchText && !users.length) return null;
+  if (!searchText && !users.length) {
+    console.log('🚫 Not rendering: no searchText or users');
+    return null;
+  }
+
+  console.log('🎨 Rendering MentionAutocomplete at position:', position);
 
   return (
     <div
       ref={containerRef}
-      className="fixed z-50 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl overflow-hidden"
+      className="fixed bg-gray-800 border border-gray-700 rounded-lg shadow-2xl overflow-hidden"
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,
         minWidth: '250px',
         maxWidth: '300px',
+        zIndex: zIndex,
       }}
     >
       {loading ? (
