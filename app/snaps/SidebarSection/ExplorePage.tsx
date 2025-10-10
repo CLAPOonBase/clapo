@@ -1,8 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Search, TrendingUp, Users, MessageSquare, Droplet, FolderOpen, Megaphone, Heart, Share2, Video, Clock, ArrowUp } from "lucide-react"
+import { Search, TrendingUp, Users, MessageSquare, Droplet, FolderOpen, Megaphone, Heart, Share2, Video, Clock, ArrowUp, Trophy, Mail } from "lucide-react"
+import { getLeaderboard } from "@/app/lib/reputationApi"
+import { LeaderboardEntry } from "@/app/types/api"
+import ReputationBadge from "@/app/components/ReputationBadge"
+import Image from "next/image"
+import { apiService } from "@/app/lib/api"
+import { useRouter } from "next/navigation"
 
 const mockCreators = [
   {
@@ -440,6 +446,7 @@ const mockCampaigns = [
 
 const tabs = [
   { key: "creators", label: "Top Creators", icon: Users },
+  { key: "users", label: "Top Users", icon: Trophy },
   { key: "posts", label: "Top Posts", icon: TrendingUp },
   { key: "chatrooms", label: "Top Chatrooms", icon: MessageSquare },
   { key: "videos", label: "Videos", icon: Video },
@@ -449,8 +456,120 @@ const tabs = [
 ]
 
 export default function ExplorePage() {
+  const router = useRouter()
+  const searchRef = useRef<HTMLDivElement>(null)
+
   const [activeTab, setActiveTab] = useState("creators")
   const [query, setQuery] = useState("")
+  const [topUsers, setTopUsers] = useState<LeaderboardEntry[]>([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
+  const [usersError, setUsersError] = useState<string | null>(null)
+
+  // Global user search states
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [showSearchResults, setShowSearchResults] = useState(false)
+
+  useEffect(() => {
+    console.log('🔄 Active tab changed to:', activeTab)
+    if (activeTab === "users") {
+      console.log('👥 Users tab activated, fetching data...')
+      fetchTopUsers()
+    }
+  }, [activeTab])
+
+  // Global user search with debounce
+  useEffect(() => {
+    const searchUsers = async () => {
+      if (query.trim().length < 2) {
+        setSearchResults([])
+        setShowSearchResults(false)
+        return
+      }
+
+      setSearchLoading(true)
+      try {
+        const response = await apiService.searchUsers(query, 10, 0)
+        setSearchResults(response.users || [])
+        setShowSearchResults(true)
+      } catch (error) {
+        console.error('Search error:', error)
+        setSearchResults([])
+      } finally {
+        setSearchLoading(false)
+      }
+    }
+
+    const debounceTimer = setTimeout(searchUsers, 300)
+    return () => clearTimeout(debounceTimer)
+  }, [query])
+
+  // Close search results when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchResults(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleUserClick = (userId: string) => {
+    setShowSearchResults(false)
+    setQuery("")
+    router.push(`/snaps/profile/${userId}`)
+  }
+
+  const handleMessageUser = async (userId: string) => {
+    const currentUserId = localStorage.getItem('userId')
+    if (!currentUserId) {
+      console.error('No current user found')
+      return
+    }
+
+    try {
+      await apiService.createMessageThread({
+        creatorId: currentUserId,
+        targetUserId: userId
+      })
+      router.push('/snaps/messages')
+    } catch (error) {
+      console.error('Error creating message thread:', error)
+    }
+  }
+
+  const fetchTopUsers = async () => {
+    try {
+      setLoadingUsers(true)
+      setUsersError(null)
+      console.log('🔍 Fetching top users...')
+      const response: any = await getLeaderboard(50, 0)
+      console.log('✅ Leaderboard response:', response)
+
+      // API returns { success: true, users: [...] }
+      if (response.success && response.users && Array.isArray(response.users)) {
+        console.log('📈 Users count:', response.users.length)
+        setTopUsers(response.users)
+      } else {
+        console.warn('⚠️ Invalid response format:', response)
+        setUsersError('Invalid response format from API')
+        setTopUsers([])
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch top users:', error)
+      setUsersError(error instanceof Error ? error.message : 'Failed to load users')
+      setTopUsers([])
+    } finally {
+      setLoadingUsers(false)
+    }
+  }
+
+  const filteredUsers = topUsers.filter(
+    (user) =>
+      user.username.toLowerCase().includes(query.toLowerCase())
+  )
 
   const filteredCreators = mockCreators.filter(
     (creator) =>
@@ -495,6 +614,112 @@ export default function ExplorePage() {
   )
 
   const renderContent = () => {
+    if (activeTab === "users") {
+      if (loadingUsers) {
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="bg-black rounded-2xl p-4 border border-gray-700 animate-pulse">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-gray-700"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-700 rounded w-24"></div>
+                    <div className="h-3 bg-gray-700 rounded w-16"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      }
+      if (usersError) {
+        return (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-20"
+          >
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 max-w-md mx-auto">
+              <p className="text-red-400 text-sm mb-4">{usersError}</p>
+              <button
+                onClick={fetchTopUsers}
+                className="px-4 py-2 bg-white text-black text-xs font-semibold rounded-full hover:bg-gray-200 transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          </motion.div>
+        )
+      }
+      if (filteredUsers.length === 0) {
+        return (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-20 text-gray-400"
+          >
+            <Trophy size={48} className="mx-auto mb-4 opacity-50" />
+            <p className="text-sm">
+              {topUsers.length === 0 ? 'No users found in leaderboard' : 'No results match your search'}
+            </p>
+          </motion.div>
+        )
+      }
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {filteredUsers.map((user) => (
+            <motion.div
+              key={user.user_id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-black rounded-2xl p-4 border border-gray-700 hover:border-gray-600 transition-all duration-300"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <Image
+                  src={user.avatar_url || '/4.png'}
+                  alt={user.username}
+                  width={48}
+                  height={48}
+                  className="w-12 h-12 rounded-full object-cover border-2 border-gray-600"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/4.png';
+                  }}
+                />
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-white text-sm truncate">{user.username}</h3>
+                  <p className="text-gray-400 text-xs">Rank #{user.rank}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3 mb-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400 text-xs">REPUTATION</span>
+                  <ReputationBadge
+                    tier={user.tier}
+                    score={user.score}
+                    size="sm"
+                    showScore={false}
+                    showLabel={true}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400">SCORE</span>
+                  <span className="text-white font-bold">{user.score}</span>
+                </div>
+              </div>
+
+              <div className="pt-3 mt-3 border-t border-gray-700">
+                <button className="w-full px-4 py-2 bg-white text-black text-xs font-semibold rounded-full hover:bg-gray-200 transition-colors">
+                  Buy Shares
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )
+    }
+
     if (activeTab === "creators") {
       if (filteredCreators.length === 0) return renderNoResults()
       return (
@@ -875,7 +1100,7 @@ export default function ExplorePage() {
     <div className="min-h-screen bg-black text-white p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Search Bar */}
-        <div className="relative">
+        <div className="relative" ref={searchRef}>
           <div className="border border-[#3A07F4] rounded-full p-1 ring-0">
             <div className="bg-black rounded-full flex items-center px-2 py-1">
               <Search className="text-gray-400 mr-3" size={24} />
@@ -883,11 +1108,75 @@ export default function ExplorePage() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="SEARCH"
+                placeholder="SEARCH USERS"
                 className="w-full bg-transparent text-white text-xl font-bold placeholder-gray-400 outline-none tracking-wider"
               />
             </div>
           </div>
+
+          {/* Search Results Dropdown */}
+          {showSearchResults && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute top-full mt-2 w-full bg-black border border-gray-700 rounded-2xl shadow-xl overflow-hidden z-50"
+            >
+              {searchLoading ? (
+                <div className="p-4 text-center text-gray-400">
+                  Searching...
+                </div>
+              ) : searchResults.length > 0 ? (
+                <div className="max-h-96 overflow-y-auto">
+                  {searchResults.map((user) => (
+                    <div
+                      key={user.id}
+                      className="p-3 hover:bg-gray-900 transition-colors border-b border-gray-800 last:border-b-0"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Image
+                          src={user.avatar_url || '/4.png'}
+                          alt={user.username}
+                          width={40}
+                          height={40}
+                          className="w-10 h-10 rounded-full object-cover cursor-pointer"
+                          onClick={() => handleUserClick(user.id)}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = '/4.png';
+                          }}
+                        />
+                        <div
+                          className="flex-1 min-w-0 cursor-pointer"
+                          onClick={() => handleUserClick(user.id)}
+                        >
+                          <p className="font-semibold text-white text-sm truncate hover:text-blue-400 transition-colors">
+                            {user.username}
+                          </p>
+                          {user.bio && (
+                            <p className="text-gray-400 text-xs truncate">{user.bio}</p>
+                          )}
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleMessageUser(user.id)
+                          }}
+                          className="flex-shrink-0 p-2 bg-gray-800 hover:bg-gray-700 rounded-full transition-colors"
+                          title="Send message"
+                        >
+                          <Mail size={16} className="text-white" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 text-center text-gray-400">
+                  No users found
+                </div>
+              )}
+            </motion.div>
+          )}
         </div>
 
         {/* Tabs */}

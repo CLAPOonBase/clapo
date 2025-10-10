@@ -4,12 +4,13 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
-import { User, Users, MapPin, Calendar, Link, Image as ImageIcon, Star } from 'lucide-react'
+import { User, Users, MapPin, Calendar, Link, Image as ImageIcon, Star, Mail } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useApi } from '@/app/Context/ApiProvider'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { giveReputation } from '@/app/lib/reputationApi'
 import ReputationBadge from '@/app/components/ReputationBadge'
+import { apiService } from '@/app/lib/api'
 
 interface UserProfileHoverProps {
   userId: string
@@ -196,6 +197,21 @@ export function UserProfileHover({
     }
   }
 
+  const handleMessage = async () => {
+    if (!currentUserId || isOwnProfile) return
+
+    try {
+      await apiService.createMessageThread({
+        creatorId: currentUserId,
+        targetUserId: userId
+      })
+      router.push('/snaps/messages')
+      setShowProfile(false)
+    } catch (error) {
+      console.error('Error creating message thread:', error)
+    }
+  }
+
   const getPositionClasses = () => {
     switch (position) {
       case 'top':
@@ -322,6 +338,16 @@ export function UserProfileHover({
                     <div className="flex items-center justify-center space-x-2">
                       <Users className="w-4 h-4" />
                       <span>{isFollowing ? 'Following' : 'Follow'}</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={handleMessage}
+                    className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-full transition-all duration-200"
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      <Mail className="w-4 h-4" />
+                      <span>Message</span>
                     </div>
                   </button>
 
