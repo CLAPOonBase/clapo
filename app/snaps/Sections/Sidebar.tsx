@@ -1,5 +1,5 @@
 "use client";
-import { Home, Bell, User, MessageCircle, Activity, Blocks, TrendingUp, Menu, X, Telescope, Wallet, Lock, Settings, LogOut } from "lucide-react";
+import { Home, Bell, User, MessageCircle, Activity, Blocks, TrendingUp, Menu, X, Telescope, Wallet, Lock, Settings, LogOut, PersonStandingIcon } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -454,6 +454,12 @@ const handleNavClick = (value: PageKey) => {
                     EXPLORE MORE
                   </h3>
 
+                  <button
+                    onClick={() => setActiveDialog("x")}
+                  className="w-full px-4 py-3 rounded-3xl bg-[#1A1A1A] border-2 border-[#6E54FF] hover:bg-[#2A2A2A] transition-all duration-200 flex items-center justify-center">
+                    <PersonStandingIcon/>
+                  </button>
+
                   <div className="space-y-2">
                     {bottomNavItems.map((item) => (
                       <button
@@ -497,8 +503,8 @@ const handleNavClick = (value: PageKey) => {
       onClick={() => setActiveDialog(null)}
     >
       <div onClick={(e) => e.stopPropagation()}>
-        {activeDialog === "x" && <SignInPage close={() => setActiveDialog(null)} />}
-        {activeDialog === "wallet" && <SignInPage close={() => setActiveDialog(null)} />}
+        {activeDialog === "x" && <SignInPage/>}
+        {activeDialog === "wallet" && <SignInPage/>}
         {activeDialog === "createPost" && <SnapComposer close={() => setActiveDialog(null)} />}
       </div>
     </motion.div>
