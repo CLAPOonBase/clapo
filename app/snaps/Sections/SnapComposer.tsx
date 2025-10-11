@@ -460,36 +460,38 @@ export function SnapComposer({ close }: { close: () => void }) {
         onClose={handleCloseToast}
       />
       
-      {/* Dialog Container */}
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        transition={{ duration: 0.3 }}
-        className="bg-black border-2 border-gray-700/70 rounded-xl w-full max-w-2xl shadow-custom relative p-4"
-      >
-        {/* Header with Close Button */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{
-              backgroundColor: "#6E54FF",
-              boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-            }}>
-              <SendHorizonal className="w-5 h-5 text-white" />
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        {/* Dialog Container */}
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="bg-black border-2 border-gray-700/70 rounded-xl w-full max-w-2xl shadow-custom relative p-4"
+        >
+          {/* Header with Close Button */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{
+                backgroundColor: "#6E54FF",
+                boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+              }}>
+                <SendHorizonal className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-white">Create a Snap</h3>
+                <p className="text-sm text-gray-400">Share what's happening</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-xl font-semibold text-white">Create a Snap</h3>
-              <p className="text-sm text-gray-400">Share what's happening</p>
-            </div>
+            <button
+              onClick={close}
+              disabled={isSubmitting}
+              className="w-8 h-8 rounded-full bg-gray-700/50 hover:bg-gray-600/50 flex items-center justify-center transition-colors disabled:opacity-50"
+            >
+              <X className="w-4 h-4 text-gray-400" />
+            </button>
           </div>
-          <button
-            onClick={close}
-            disabled={isSubmitting}
-            className="w-8 h-8 rounded-full bg-gray-700/50 hover:bg-gray-600/50 flex items-center justify-center transition-colors disabled:opacity-50"
-          >
-            <X className="w-4 h-4 text-gray-400" />
-          </button>
-        </div>
 
         {/* Dialog Content */}
         <div className="space-y-4">
@@ -581,16 +583,17 @@ export function SnapComposer({ close }: { close: () => void }) {
           </div>
         </div>
 
-        {/* Mention Autocomplete */}
-        {showMentionAutocomplete && (
-          <MentionAutocomplete
-            searchText={mentionSearch}
-            onSelect={handleMentionSelect}
-            onClose={() => setShowMentionAutocomplete(false)}
-            position={mentionPosition}
-          />
-        )}
-      </motion.div>
+          {/* Mention Autocomplete */}
+          {showMentionAutocomplete && (
+            <MentionAutocomplete
+              searchText={mentionSearch}
+              onSelect={handleMentionSelect}
+              onClose={() => setShowMentionAutocomplete(false)}
+              position={mentionPosition}
+            />
+          )}
+        </motion.div>
+      </div>
     </>
   )
 }
