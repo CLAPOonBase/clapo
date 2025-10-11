@@ -178,7 +178,7 @@ export default function Navbar() {
             onClick={closeDialog}
           >
             <div onClick={(e) => e.stopPropagation()}>
-              <SignInPage close={closeDialog} />
+              <SignInPage />
             </div>
           </motion.div>
         )}
