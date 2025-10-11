@@ -1,4 +1,5 @@
 import { useRouter } from 'next/navigation';
+import { renderTextWithMentions } from '@/app/lib/mentionUtils';
 
 interface MessageItemProps {
   message: {
@@ -18,12 +19,40 @@ interface MessageItemProps {
 
 export const MessageItem = ({ 
   message, 
-  isOwnMessage, 
-  showAvatar = false, 
+  isOwnMessage,
+  showAvatar = false,
   isLastInGroup = false,
-  isFirstInGroup = false 
+  isFirstInGroup = false
 }: MessageItemProps) => {
   const router = useRouter();
+
+  // Handle mention click navigation
+  const handleMentionClick = async (userId: string, username: string) => {
+    if (userId) {
+      // We have the user ID, navigate directly
+      router.push(`/snaps/profile/${userId}`)
+    } else {
+      // We don't have the user ID, search for the user by username
+      try {
+        console.log('Searching for user:', username)
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'}/users/search?q=${username}&limit=1`)
+        const data = await response.json()
+        
+        if (data.users && data.users.length > 0) {
+          const user = data.users.find((u: any) => u.username === username)
+          if (user) {
+            router.push(`/snaps/profile/${user.id}`)
+            return
+          }
+        }
+        
+        // User not found
+        console.log(`User ${username} not found`)
+      } catch (error) {
+        console.error('Error finding user:', error)
+      }
+    }
+  }
 
   const handleUserClick = (userId: string) => {
     // Store current page state and scroll position
@@ -124,7 +153,11 @@ export const MessageItem = ({
             <p className={`text-base leading-relaxed break-words whitespace-pre-wrap ${
               message.media_url ? 'px-4 py-2' : ''
             }`}>
-              {message.content}
+              {renderTextWithMentions(
+                message.content,
+                undefined,
+                handleMentionClick
+              )}
             </p>
           )}
 

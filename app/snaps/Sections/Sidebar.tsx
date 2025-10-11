@@ -1,5 +1,5 @@
 "use client";
-import { Home, Bell, User, MessageCircle, Activity, Blocks, TrendingUp, Menu, X, Telescope, Wallet, Lock, Settings, LogOut } from "lucide-react";
+import { Home, Bell, User, MessageCircle, Activity, Blocks, TrendingUp, Menu, X, Telescope, Wallet, Lock, Settings, LogOut, AtSign } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -9,7 +9,7 @@ import { useSession } from "next-auth/react";
 import SignInPage from "@/app/SignIn/SignInPage";
 import { SnapComposer } from "./SnapComposer";
 
-type PageKey = "home" | "wallet" | "explore" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks";
+type PageKey = "home" | "wallet" | "explore" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks" | "mentions";
 
 type SidebarProps = {
   setCurrentPage: (page: PageKey) => void;
@@ -116,6 +116,14 @@ export default function Sidebar({
       value: "notifications",
       icon: <Bell className="w-6 h-6" />,
       activeIcon: <Bell className="w-6 h-6 text-white" />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+    {
+      label: "My Mentions",
+      value: "mentions",
+      icon: <AtSign className="w-6 h-6" />,
+      activeIcon: <AtSign className="w-6 h-6 text-white" />,
       showOnMobile: true,
       showOnDesktop: true
     },

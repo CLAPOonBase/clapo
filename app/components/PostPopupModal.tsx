@@ -5,6 +5,8 @@ import Image from 'next/image'
 import { X, Heart, MessageCircle, Share2, Eye, MoreHorizontal, Send } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useApi } from '../Context/ApiProvider'
+import { renderTextWithMentions } from '@/app/lib/mentionUtils'
+import { useRouter } from 'next/navigation'
 
 interface PostPopupModalProps {
   post: any
@@ -15,6 +17,7 @@ interface PostPopupModalProps {
 export const PostPopupModal = ({ post, isOpen, onClose }: PostPopupModalProps) => {
   const { data: session } = useSession()
   const { likePost, unlikePost, commentPost, retweetPost, bookmarkPost, unbookmarkPost } = useApi()
+  const router = useRouter()
   
   const [isLiked, setIsLiked] = useState(false)
   const [isRetweeted, setIsRetweeted] = useState(false)
@@ -99,7 +102,7 @@ export const PostPopupModal = ({ post, isOpen, onClose }: PostPopupModalProps) =
     setIsSubmittingComment(true)
     try {
       const response = await commentPost(post.id, {
-        commenterId: currentUserId,
+        userId: currentUserId,
         content: commentText.trim()
       })
       
@@ -369,7 +372,32 @@ export const PostPopupModal = ({ post, isOpen, onClose }: PostPopupModalProps) =
                               {formatTimeAgo(comment.created_at)}
                             </span>
                           </div>
-                          <p className="text-white text-sm">{comment.content}</p>
+                          <p className="text-white text-sm">
+                            {renderTextWithMentions(
+                              comment.content,
+                              undefined,
+                              async (userId, username) => {
+                                if (userId) {
+                                  router.push(`/snaps/profile/${userId}`)
+                                } else {
+                                  try {
+                                    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'}/users/search?q=${username}&limit=1`)
+                                    const data = await response.json()
+                                    
+                                    if (data.users && data.users.length > 0) {
+                                      const user = data.users.find((u: any) => u.username === username)
+                                      if (user) {
+                                        router.push(`/snaps/profile/${user.id}`)
+                                        return
+                                      }
+                                    }
+                                  } catch (error) {
+                                    console.error('Error finding user:', error)
+                                  }
+                                }
+                              }
+                            )}
+                          </p>
                         </div>
                       </div>
                     </div>

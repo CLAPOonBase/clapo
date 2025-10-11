@@ -535,8 +535,26 @@ const handleImageClick = (e: React.MouseEvent) => {
                 {renderTextWithMentions(
                   displayedText,
                   isApiPost ? post.mentions : undefined,
-                  (userId, username) => {
-                    router.push(`/snaps/profile/${userId}`)
+                  async (userId, username) => {
+                    if (userId) {
+                      router.push(`/snaps/profile/${userId}`)
+                    } else {
+                      try {
+                        console.log('Searching for user:', username)
+                        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'}/users/search?q=${username}&limit=1`)
+                        const data = await response.json()
+                        
+                        if (data.users && data.users.length > 0) {
+                          const user = data.users.find((u: any) => u.username === username)
+                          if (user) {
+                            router.push(`/snaps/profile/${user.id}`)
+                            return
+                          }
+                        }
+                      } catch (error) {
+                        console.error('Error finding user:', error)
+                      }
+                    }
                   }
                 )}
               </p>
@@ -696,7 +714,33 @@ const handleImageClick = (e: React.MouseEvent) => {
                                   {formatCommentTime(comment.created_at)}
                                 </span>
                               </div>
-                              <p className="text-sm text-secondary">{comment.content}</p>
+                              <p className="text-sm text-secondary">
+                                {renderTextWithMentions(
+                                  comment.content,
+                                  undefined,
+                                  async (userId, username) => {
+                                    if (userId) {
+                                      router.push(`/snaps/profile/${userId}`)
+                                    } else {
+                                      try {
+                                        console.log('Searching for user:', username)
+                                        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'}/users/search?q=${username}&limit=1`)
+                                        const data = await response.json()
+                                        
+                                        if (data.users && data.users.length > 0) {
+                                          const user = data.users.find((u: any) => u.username === username)
+                                          if (user) {
+                                            router.push(`/snaps/profile/${user.id}`)
+                                            return
+                                          }
+                                        }
+                                      } catch (error) {
+                                        console.error('Error finding user:', error)
+                                      }
+                                    }
+                                  }
+                                )}
+                              </p>
                             </div>
                           </div>
                         </div>

@@ -3,6 +3,8 @@
 import React, { useState, useRef } from 'react';
 import { Camera, Video, X, Send, Upload } from 'lucide-react';
 import { useStories } from '../hooks/useStories';
+import { getMentionTriggerInfo, replaceMentionText } from '../lib/mentionUtils';
+import MentionAutocomplete from './MentionAutocomplete';
 
 interface StoryUploadProps {
   onClose: () => void;
@@ -17,7 +19,66 @@ export const StoryUpload: React.FC<StoryUploadProps> = ({ onClose }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   
+  // Mention state
+  const [showMentionAutocomplete, setShowMentionAutocomplete] = useState(false);
+  const [mentionSearch, setMentionSearch] = useState('');
+  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [mentionStartPos, setMentionStartPos] = useState(0);
+  const captionRef = useRef<HTMLTextAreaElement>(null);
+  
   const { createStory } = useStories();
+
+  // Handle caption change and mention detection
+  const handleCaptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    const newCursorPosition = e.target.selectionStart || 0;
+
+    setCaption(newContent);
+    setCursorPosition(newCursorPosition);
+
+    // Check for mention trigger
+    const mentionInfo = getMentionTriggerInfo(newContent, newCursorPosition);
+
+    if (mentionInfo && mentionInfo.triggered) {
+      setShowMentionAutocomplete(true);
+      setMentionSearch(mentionInfo.searchText);
+      setMentionStartPos(mentionInfo.startPos);
+
+      // Calculate position for autocomplete dropdown
+      if (captionRef.current) {
+        const rect = captionRef.current.getBoundingClientRect();
+        setMentionPosition({
+          top: rect.top - 250, // Show above input
+          left: rect.left,
+        });
+      }
+    } else {
+      setShowMentionAutocomplete(false);
+    }
+  };
+
+  // Handle mention selection
+  const handleMentionSelect = (user: { id: string; username: string }) => {
+    const { newText, newCursorPosition } = replaceMentionText(
+      caption,
+      mentionStartPos,
+      cursorPosition,
+      user.username
+    );
+
+    setCaption(newText);
+    setShowMentionAutocomplete(false);
+
+    // Set cursor position
+    setTimeout(() => {
+      if (captionRef.current) {
+        captionRef.current.selectionStart = newCursorPosition;
+        captionRef.current.selectionEnd = newCursorPosition;
+        captionRef.current.focus();
+      }
+    }, 0);
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -212,9 +273,10 @@ const handleUpload = async () => {
                 Caption (optional)
               </label>
               <textarea
+                ref={captionRef}
                 value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-                placeholder="Add a caption to your story..."
+                onChange={handleCaptionChange}
+                placeholder="Add a caption to your story... Use @username to mention someone"
                 className="w-full px-3 py-2.5 bg-black border-2 border-gray-700/70 text-white rounded-xl focus:border-[#6E54FF]/50 focus:outline-none transition-all duration-200 resize-none placeholder:text-gray-500"
                 rows={3}
                 maxLength={150}
@@ -257,6 +319,17 @@ const handleUpload = async () => {
               </button>
             </div>
           </div>
+        )}
+        
+        {/* Mention Autocomplete */}
+        {showMentionAutocomplete && (
+          <MentionAutocomplete
+            searchText={mentionSearch}
+            onSelect={handleMentionSelect}
+            onClose={() => setShowMentionAutocomplete(false)}
+            position={mentionPosition}
+            zIndex={60}
+          />
         )}
       </div>
     </div>
