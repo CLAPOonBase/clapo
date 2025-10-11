@@ -146,10 +146,13 @@ function SignInPage() {
   const handleXConnect = async () => {
     setIsConnectingX(true);
     try {
-      await signIn("twitter");
+      // Sign in with Twitter/X - will auto-create account and redirect to homepage
+      await signIn("twitter", {
+        callbackUrl: '/',
+        redirect: true
+      });
     } catch (error) {
       console.error("X sign in error:", error);
-    } finally {
       setIsConnectingX(false);
     }
   };

@@ -18,13 +18,14 @@ export default function SignIn() {
     setIsLoading(true);
     setError('');
     try {
-      const result = await signIn('twitter', { callbackUrl: '/' });
-      if (result?.error) {
-        setError('Twitter sign-in failed');
-      }
+      // Sign in with Twitter - NextAuth will handle the redirect
+      await signIn('twitter', {
+        callbackUrl: '/',
+        redirect: true
+      });
     } catch (error) {
+      console.error('Twitter sign-in error:', error);
       setError('An error occurred during sign-in');
-    } finally {
       setIsLoading(false);
     }
   };

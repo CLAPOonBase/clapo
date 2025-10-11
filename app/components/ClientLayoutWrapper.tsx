@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import PasswordSetupModal from './PasswordSetupModal';
+import { useRouter } from 'next/navigation';
 
 interface ClientLayoutWrapperProps {
   children: React.ReactNode;
@@ -10,8 +10,8 @@ interface ClientLayoutWrapperProps {
 
 export default function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
   const { data: session, status } = useSession();
-  const [showPasswordSetup, setShowPasswordSetup] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const router = useRouter();
 
   // Detect mobile device
   useEffect(() => {
@@ -26,43 +26,16 @@ export default function ClientLayoutWrapper({ children }: ClientLayoutWrapperPro
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Password setup modal logic
+  // Redirect to homepage after successful authentication
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      setShowPasswordSetup(false);
-      return;
+    if (status === 'authenticated' && session?.dbUser) {
+      console.log('✅ User authenticated with dbUser, redirecting to homepage');
+      // Only redirect if we're on an auth page
+      if (window.location.pathname.includes('/auth/') || window.location.pathname.includes('/SignIn')) {
+        router.push('/');
+      }
     }
+  }, [session?.dbUser, status, router]);
 
-    if (
-      status === 'authenticated' &&
-      session?.needsPasswordSetup === true &&
-      session?.provider === 'twitter' &&
-      session?.twitterData &&
-      !session?.dbUser
-    ) {
-      setShowPasswordSetup(true);
-    } else {
-      setShowPasswordSetup(false);
-    }
-  }, [session?.needsPasswordSetup, session?.provider, session?.twitterData, session?.dbUser, status]);
-
-  const handlePasswordComplete = async () => {
-    setShowPasswordSetup(false);
-  };
-
-  const handlePasswordSkip = () => {
-    setShowPasswordSetup(false);
-  };
-
-
-  return (
-    <>
-      {children}
-      <PasswordSetupModal
-        isOpen={showPasswordSetup}
-        onClose={handlePasswordSkip}
-        onComplete={handlePasswordComplete}
-      />
-    </>
-  );
+  return <>{children}</>;
 }

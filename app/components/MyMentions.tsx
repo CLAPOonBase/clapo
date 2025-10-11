@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { apiService } from '../lib/api'
 import { useSession } from 'next-auth/react'
 import { renderTextWithMentions } from '../lib/mentionUtils'
-import { AtSign, MessageCircle, Image, Calendar, User } from 'lucide-react'
+import { MessageCircle, Image as ImageIcon, Calendar, User } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
 // Fallback date formatting function
@@ -114,11 +114,11 @@ export default function MyMentions({ userId }: MyMentionsProps) {
       case 'post':
         return <MessageCircle className="w-4 h-4" />
       case 'comment':
-        return <AtSign className="w-4 h-4" />
+        return <MessageCircle className="w-4 h-4" />
       case 'story':
-        return <Image className="w-4 h-4" />
+        return <ImageIcon className="w-4 h-4" />
       default:
-        return <AtSign className="w-4 h-4" />
+        return <MessageCircle className="w-4 h-4" />
     }
   }
 
@@ -212,7 +212,7 @@ export default function MyMentions({ userId }: MyMentionsProps) {
 
       {mentions.length === 0 && !loading ? (
         <div className="text-center py-12">
-          <AtSign className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-300 mb-2">
             No mentions yet
           </h3>

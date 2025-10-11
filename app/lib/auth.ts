@@ -61,12 +61,12 @@ export const authOptions: NextAuthOptions = {
         try {
           if (twitterUsername) {
             const searchResponse = await apiService.searchUsers(twitterUsername, 1, 0);
-            
+
             if (searchResponse.users.length === 0) {
               try {
                 const directResponse = await fetch(`http://server.blazeswap.io/api/snaps/users/search?q=${encodeURIComponent(twitterUsername)}&limit=10&offset=0`);
                 const directData = await directResponse.json();
-                
+
                 if (directData.users && directData.users.length > 0) {
                   const existingUser = directData.users.find(u => u.username === twitterUsername);
                   if (existingUser) {
@@ -87,8 +87,8 @@ export const authOptions: NextAuthOptions = {
                 console.error('Direct fetch failed:', directError);
               }
             }
-            
-            const existingUser = searchResponse.users.find(u => 
+
+            const existingUser = searchResponse.users.find(u =>
               u.username === twitterUsername
             );
 
@@ -105,15 +105,61 @@ export const authOptions: NextAuthOptions = {
               user.needsPasswordSetup = false;
               return true;
             } else {
-              user.provider = 'twitter';
-              user.needsPasswordSetup = true;
-              user.twitterData = {
-                username: twitterUsername,
-                email: user.email || `${twitterUsername}@twitter.com`,
-                bio: (profile as any)?.description || '',
-                avatarUrl: user.image || ''
-              };
-              return true;
+              // User doesn't exist - auto-create account with random password
+              console.log('🔍 Creating new account for Twitter user:', twitterUsername);
+              try {
+                // Generate a secure random password
+                const randomPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12);
+
+                const signupData = {
+                  username: twitterUsername,
+                  email: user.email || `${twitterUsername}@twitter.clapo.app`,
+                  password: randomPassword,
+                  bio: (profile as any)?.data?.description || (profile as any)?.description || 'Twitter user on Clapo',
+                  avatarUrl: user.image || (profile as any)?.data?.profile_image_url || ''
+                };
+
+                console.log('🔍 Attempting to create account with:', {
+                  username: signupData.username,
+                  email: signupData.email,
+                  bio: signupData.bio,
+                  hasAvatar: !!signupData.avatarUrl
+                });
+
+                const signupResponse = await apiService.signup(signupData);
+
+                if (signupResponse && signupResponse.user && signupResponse.user.id) {
+                  console.log('✅ Successfully created account:', signupResponse.user.id);
+
+                  // Fetch complete user profile
+                  try {
+                    const profileResponse = await apiService.getUserProfile(signupResponse.user.id);
+                    user.dbUser = profileResponse.profile;
+                  } catch (profileError) {
+                    console.error('Failed to fetch profile, using signup data:', profileError);
+                    user.dbUser = signupResponse.user;
+                  }
+
+                  user.provider = 'twitter';
+                  user.needsPasswordSetup = false;
+                  return true;
+                } else {
+                  console.error('❌ Signup response missing user data');
+                  throw new Error('Failed to create user account');
+                }
+              } catch (signupError) {
+                console.error('❌ Failed to auto-create account:', signupError);
+                // Fallback to old flow if auto-creation fails
+                user.provider = 'twitter';
+                user.needsPasswordSetup = true;
+                user.twitterData = {
+                  username: twitterUsername,
+                  email: user.email || `${twitterUsername}@twitter.com`,
+                  bio: (profile as any)?.description || '',
+                  avatarUrl: user.image || ''
+                };
+                return true;
+              }
             }
           } else {
             user.provider = 'twitter';
@@ -121,7 +167,7 @@ export const authOptions: NextAuthOptions = {
             return true;
           }
         } catch (error) {
-          console.error('Error checking existing user:', error);
+          console.error('Error in Twitter sign-in:', error);
           user.provider = 'twitter';
           user.needsPasswordSetup = true;
           user.twitterData = {
