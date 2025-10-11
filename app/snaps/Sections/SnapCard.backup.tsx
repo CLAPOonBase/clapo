@@ -2,7 +2,7 @@
 // @ts-nocheck
 'use client'
 import React, { useState, useEffect, useRef } from 'react'
-import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume2, Paperclip, Smile, Send, ExternalLink, Blocks, Triangle, Repeat, HandMetal } from 'lucide-react'
+import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume2, Paperclip, Smile, Send, ExternalLink, Blocks, Triangle, Repeat } from 'lucide-react'
 import { Post, ApiPost } from '@/app/types'
 import { useApi } from '../../Context/ApiProvider'
 import { useSession } from 'next-auth/react'
@@ -466,276 +466,308 @@ const handleImageClick = (e: React.MouseEvent) => {
   return (
     <>
       <div
-        className="border-2 border-gray-700/70 rounded-xl mt-4 bg-black cursor-pointer"
+        className="shadow-custom border-2 border-gray-700/70 rounded-xl mt-4 p-4 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
         onClick={handleCardClick}
       >
-        {/* Instagram-style Header */}
-        <div className="flex items-center justify-between p-3">
-          <div className="flex items-center gap-3">
-            <UserProfileHover
-              userId={isApiPost ? post.user_id.toString() : post.id.toString()}
-              username={postAuthor}
-              avatarUrl={postAvatar}
-              position="bottom"
-            >
-              <div className="flex items-center gap-2 cursor-pointer group" onClick={(e) => e.stopPropagation()}>
-                <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
-                  {postAvatar ? (
-                    <img
-                      src={postAvatar}
-                      alt={postAuthor}
-                      className="w-full h-full object-cover"
-                      onError={e => {
-                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${postAuthor}`
-                      }}
+        <div className="flex flex-col ">
+          {/* Header Section */}
+          <div className='flex items-center space-x-3'>
+            <div className="flex flex-1 min-w-0 items-center justify-between">
+              <div className="flex flex-1 min-w-0 items-center justify-between">
+                <div className="flex flex-col min-w-0">
+                  <UserProfileHover
+                    userId={isApiPost ? post.user_id.toString() : post.id.toString()}
+                    username={postAuthor}
+                    avatarUrl={postAvatar}
+                    position="bottom"
+                  >
+                    <div className="flex items-center space-x-2 group cursor-pointer">
+                      {/* Avatar */}
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden">
+                        {postAvatar ? (
+                          <img
+                            src={postAvatar}
+                            alt={postAuthor}
+                            className="w-full h-full object-cover bg-gray-200"
+                            onError={e => {
+                              e.currentTarget.src = `https://ui-avatars.com/api/?name=${postAuthor}`
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-indigo-500 flex items-center justify-center text-sm font-semibold text-white">
+                            {postAuthor?.substring(0, 2)?.toUpperCase() || 'U'}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Username */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex min-w-0 items-center flex-wrap gap-x-1 text-sm">
+                          <span className="font-semibold text-white truncate hover:text-blue-500 transition-colors group-hover:underline">
+                            {postAuthor}
+                          </span>
+                          {authorReputation !== undefined && (
+                            <ReputationBadge
+                              score={authorReputation}
+                              tier={authorReputationTier}
+                              size="sm"
+                              showScore={false}
+                            />
+                          )}
+                          <span className="text-gray-400">•</span>
+                          <span className="text-secondary truncate">{postHandle}</span>
+                        </div>
+
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <ExternalLink className="w-4 h-4 text-blue-500" />
+                        </div>
+                      </div>
+                    </div>
+                  </UserProfileHover>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                {post._isNewlyCreated && (
+                  <span className="px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-full animate-pulse">
+                    NEW
+                  </span>
+                )}
+                <span className="text-secondary text-sm">{postTime}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Content Section */}
+          <div className="ml-12">
+            <div className="">
+              <p className="text-white text-base leading-relaxed whitespace-pre-wrap break-words">
+                {renderTextWithMentions(
+                  displayedText,
+                  isApiPost ? post.mentions : undefined,
+                  (userId, username) => {
+                    router.push(`/snaps/profile/${userId}`)
+                  }
+                )}
+              </p>
+              
+              {isLong && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setExpanded(prev => !prev)
+                  }}
+                  className="text-blue-500 hover:text-blue-400 hover:underline text-sm font-medium transition-colors mt-1"
+                >
+                  {expanded ? "Show less" : "Show more"}
+                </button>
+              )}
+
+              {/* Media Section */}
+              {postImage && (
+                <div className="overflow-hidden mt-1">
+                  {/\.(jpg|jpeg|png|gif|webp)$/i.test(postImage) ? (
+                    <div className="relative group inline-block">
+                      <img 
+                        src={postImage} 
+                        alt="Post content" 
+                        className="rounded-2xl max-h-80 w-auto object-cover cursor-pointer hover:opacity-95 transition-opacity duration-200"
+                      />
+                    </div>
+                  ) : /\.(mp4|webm|ogg|mov)$/i.test(postImage) ? (
+                    <video 
+                      src={postImage} 
+                      autoPlay 
+                      muted 
+                      loop 
+                      playsInline
+                      controls
+                      className="w-auto max-h-80 bg-black rounded-lg"
+                      onClick={(e) => e.stopPropagation()}
                     />
+                  ) : /\.(mp3|wav|ogg|m4a)$/i.test(postImage) ? (
+                    <div className="bg-black p-3 flex items-center space-x-3 rounded-lg">
+                      <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <Volume2 className="w-4 h-4 text-indigo-600" />
+                      </div>
+                      <audio src={postImage} controls className="flex-1" />
+                    </div>
                   ) : (
-                    <div className="w-full h-full bg-gray-700 flex items-center justify-center text-sm font-semibold text-white">
-                      {postAuthor?.substring(0, 2)?.toUpperCase() || 'U'}
+                    <div className="bg-black p-3 text-center rounded-lg">
+                      <p className="text-gray-400 text-sm mb-2">Media file</p>
+                      <a href={postImage} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 text-sm font-medium">
+                        View media
+                      </a>
                     </div>
                   )}
                 </div>
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-white text-sm group-hover:text-gray-300 transition-colors">
-                      {postAuthor}
-                    </span>
-                    {authorReputation !== undefined && (
-                      <ReputationBadge
-                        score={authorReputation}
-                        tier={authorReputationTier}
-                        size="sm"
-                        showScore={false}
-                      />
-                    )}
-                  </div>
-                  <span className="text-gray-400 text-xs">{postTime}</span>
-                </div>
-              </div>
-            </UserProfileHover>
-          </div>
-        </div>
-
-        {/* Main Post Content */}
-        {postContent && (
-          <div className="px-3 pb-3">
-            <p className="text-white text-base leading-relaxed">
-              {renderTextWithMentions(
-                displayedText,
-                isApiPost ? post.mentions : undefined,
-                (userId, username) => {
-                  router.push(`/snaps/profile/${userId}`)
-                }
-              )}
-            </p>
-            {isLong && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setExpanded(prev => !prev)
-                }}
-                className="text-gray-400 hover:text-gray-300 text-sm mt-1"
-              >
-                {expanded ? "less" : "more"}
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Image/Media Section */}
-        {postImage && (
-          <div className="px-3 pb-3">
-            <div className="border border-gray-700/50 rounded-2xl overflow-hidden">
-              {/\.(jpg|jpeg|png|gif|webp)$/i.test(postImage) ? (
-                <img
-                  src={postImage}
-                  alt="Post content"
-                  className="w-full object-cover cursor-pointer"
-                  style={{ maxHeight: '500px' }}
-                  onClick={handleImageClick}
-                />
-              ) : /\.(mp4|webm|ogg|mov)$/i.test(postImage) ? (
-                <video
-                  src={postImage}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  controls
-                  className="w-full object-cover"
-                  style={{ maxHeight: '500px' }}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              ) : /\.(mp3|wav|ogg|m4a)$/i.test(postImage) ? (
-                <div className="bg-black p-6 flex items-center justify-center">
-                  <audio src={postImage} controls className="w-full" />
-                </div>
-              ) : (
-                <div className="bg-black p-6 text-center">
-                  <p className="text-gray-400 text-sm mb-2">Media file</p>
-                  <a href={postImage} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 text-sm font-medium">
-                    View media
-                  </a>
-                </div>
               )}
             </div>
-          </div>
-        )}
 
-        {/* Action Buttons */}
-        <div className="px-3 pt-2 pb-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <button
-                onClick={e => {
-                  e.stopPropagation()
-                  handleLike()
-                }}
-                disabled={isLoading.like || !currentUserId}
-                className="transition-transform hover:scale-110 disabled:opacity-50 flex items-center gap-1.5"
-              >
-                <HandMetal className={`w-5 h-5 ${userEngagement.liked ? 'text-white' : 'text-gray-400'} transition-all`} style={{ strokeWidth: userEngagement.liked ? 2.5 : 2 }} />
-                <span className="text-xs text-gray-400">{localEngagement.likes}</span>
-              </button>
-              <button
-                onClick={toggleCommentDropdown}
-                className="transition-transform hover:scale-110 flex items-center gap-1.5"
-              >
-                <MessageCircle className={`w-5 h-5 text-gray-400 transition-all`} />
-                <span className="text-xs text-gray-400">{localEngagement.comments}</span>
-              </button>
-              <button
-                onClick={e => {
-                  e.stopPropagation()
-                  handleRetweet()
-                }}
-                disabled={isLoading.retweet || !currentUserId || userEngagement.retweeted}
-                className="transition-transform hover:scale-110 disabled:opacity-50 flex items-center gap-1.5"
-              >
-                <Repeat className={`w-5 h-5 rotate-90 ${userEngagement.retweeted ? 'text-white' : 'text-gray-400'} transition-all`} style={{ strokeWidth: userEngagement.retweeted ? 2.5 : 2 }} />
-                <span className="text-xs text-gray-400">{localEngagement.retweets}</span>
-              </button>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className='flex items-center gap-1 cursor-pointer' onClick={(e) => {
-                e.stopPropagation()
-                setShowTokenTrading(true)
-              }}>
-                <Triangle className={`w-4 h-4 text-green-500 ${priceLoading ? 'opacity-50' : ''}`} />
-                <span className={`text-xs text-green-500 font-medium ${priceLoading ? 'opacity-50' : ''}`}>
-                  {priceLoading ? '...' : `$${postTokenPrice.toFixed(2)}`}
-                </span>
-              </div>
-              <button
-                onClick={e => {
-                  e.stopPropagation()
-                  handleBookmark()
-                }}
-                disabled={isLoading.bookmark || !currentUserId}
-                className="transition-transform hover:scale-110 disabled:opacity-50"
-              >
-                <Bookmark className={`w-5 h-5 ${userEngagement.bookmarked ? 'fill-white text-white' : 'text-gray-400'} transition-all`} />
-              </button>
-            </div>
-          </div>
-        </div>
+            {/* Engagement Actions */}
+            <div className="flex items-center justify-between pt-3">
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={e => {
+                    e.stopPropagation()
+                    handleLike()
+                  }}
+                  disabled={isLoading.like || !currentUserId}
+                  className={`flex items-center space-x-1 text-gray-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.liked ? 'text-white opacity-70' : 'opacity-60'}`}
+                >
+                  <Heart className={`w-4 h-4 transition-all duration-200 ${userEngagement.liked ? 'fill-white scale-105' : ''}`} />
+                  <span className="text-xs font-medium">{localEngagement.likes}</span>
+                </button>
 
-        {/* Comments Dropdown */}
-        <AnimatePresence>
-          {commentDropdownOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="px-3 pb-3 border-t border-gray-700/70 pt-3 mt-1"
-            >
-              <div className="max-h-56 overflow-y-auto space-y-3 mb-3">
-                {comments.length > 0 ? (
-                  comments.slice(0, visibleCount).map((comment) => (
-                    <div key={comment.id} className="flex gap-2.5">
-                      <img
-                        src={comment.avatar_url || `https://ui-avatars.com/api/?name=${comment.username}`}
-                        alt={comment.username}
-                        className="w-7 h-7 rounded-full flex-shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm">
-                          <span className="font-semibold text-white mr-2">{comment.username}</span>
-                          <span className="text-gray-400">{comment.content}</span>
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          {formatCommentTime(comment.created_at)}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-sm text-center py-4">
-                    No comments yet. Be the first to comment!
-                  </p>
-                )}
+                <button
+                  onClick={toggleCommentDropdown}
+                  className={`flex items-center space-x-1 transition-colors ${
+                    commentDropdownOpen
+                      ? 'text-white opacity-70'
+                      : 'text-gray-500 hover:text-white opacity-60'
+                  }`}
+                >
+                  <MessageCircle className={`w-4 h-4 ${commentDropdownOpen ? 'fill-white' : ''}`} />
+                  <span className="text-xs font-medium">{localEngagement.comments}</span>
+                </button>
 
-                {visibleCount < comments.length && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setVisibleCount((prev) => prev + 8)
-                    }}
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
-                  >
-                    View more comments
-                  </button>
-                )}
+                <button
+                  onClick={e => {
+                    e.stopPropagation()
+                    handleRetweet()
+                  }}
+                  disabled={isLoading.retweet || !currentUserId || userEngagement.retweeted}
+                  className={`flex items-center space-x-1 text-gray-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.retweeted ? 'text-white opacity-70' : 'opacity-60'}`}
+                >
+                  <Repeat className={`w-4 h-4 transition-all duration-200 rotate-90 ${userEngagement.retweeted ? 'text-white fill-white scale-105' : ''}`} />
+                  <span className="text-xs font-medium">{localEngagement.retweets}</span>
+                </button>
               </div>
 
-              {/* Add Comment Input */}
-              <div className="pt-3">
-                <form onSubmit={handleCommentSubmit} className="flex items-center gap-2">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full overflow-hidden">
-                    {profile?.avatar_url ? (
-                      <img
-                        src={profile.avatar_url}
-                        alt="Your avatar"
-                        className="w-full h-full object-cover"
-                      />
+
+<div className='flex items-center space-x-4'>
+  {/* Post Token Price Display */}
+ <div className='flex items-center space-x-1 cursor-pointer' onClick={() => setShowTokenTrading(true)}>
+                  <Triangle className={`w-5 h-5 text-green-500 transition-all duration-200 ${priceLoading ? 'opacity-50' : ''}`} />
+                  <span className={`text-sm text-green-500 font-medium ${priceLoading ? 'opacity-50' : ''}`}>
+                    {priceLoading ? '...' : `$${postTokenPrice.toFixed(2)}`}
+                  </span>
+                </div>
+
+                <button
+                  onClick={e => {
+                    e.stopPropagation()
+                    handleBookmark()
+                  }}
+                  disabled={isLoading.bookmark || !currentUserId}
+                  className={`flex items-center space-x-1 text-gray-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${userEngagement.bookmarked ? 'text-white opacity-70' : 'opacity-60'}`}
+                >
+                  <Bookmark className={`w-4 h-4 transition-all duration-200 ${userEngagement.bookmarked ? 'fill-white scale-105' : ''}`} />
+                  <span className="text-xs hidden sm:block font-medium">{localEngagement.bookmarks}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Comments Dropdown */}
+            <AnimatePresence>
+              {commentDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="mt-3 border border-gray-700/70 rounded-xl p-3 bg-black"
+                >
+                  {/* Comments List */}
+                  <div className="max-h-56 overflow-y-auto space-y-3 mb-3">
+                    {comments.length > 0 ? (
+                      comments.slice(0, visibleCount).map((comment) => (
+                        <div key={comment.id} className="flex gap-2.5">
+                          <img
+                            src={comment.avatar_url || `https://ui-avatars.com/api/?name=${comment.username}`}
+                            alt={comment.username}
+                            className="w-7 h-7 rounded-full flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm">
+                              <span className="font-semibold text-white mr-2">{comment.username}</span>
+                              <span className="text-gray-400">{comment.content}</span>
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {formatCommentTime(comment.created_at)}
+                            </div>
+                          </div>
+                        </div>
+                      ))
                     ) : (
-                      <div className="w-full h-full bg-gray-700 flex items-center justify-center text-xs font-semibold text-white">
-                        {session?.dbUser?.username?.substring(0, 2)?.toUpperCase() || 'U'}
-                      </div>
+                      <p className="text-gray-500 text-sm text-center py-4">
+                        No comments yet. Be the first to comment!
+                      </p>
+                    )}
+
+                    {visibleCount < comments.length && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setVisibleCount((prev) => prev + 8)
+                        }}
+                        className="text-sm text-gray-400 hover:text-white transition-colors"
+                      >
+                        View more comments
+                      </button>
                     )}
                   </div>
-                  <div className="flex-1 flex items-center bg-transparent rounded-full px-1 py-0.5 border border-gray-700/50">
-                    <input
-                      type="text"
-                      placeholder="Add a comment..."
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      disabled={isLoading.comment || !currentUserId}
-                      className="flex-1 px-3 py-1.5 bg-transparent text-sm text-white rounded-full focus:outline-none transition-all duration-200 placeholder:text-gray-500 disabled:opacity-50"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <button
-                      type="submit"
-                      disabled={!commentText.trim() || isLoading.comment || !currentUserId}
-                      className="p-1.5 bg-[#6E54FF] hover:bg-[#5940cc] rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mr-0.5 flex-shrink-0"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {isLoading.comment ? (
-                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Send className="w-3.5 h-3.5 text-white" />
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
 
-      {/* Modals - Image Modal */}
+                  {/* Comment Input */}
+                  <div className="border-t border-gray-700/70 pt-3">
+                    <form onSubmit={handleCommentSubmit} className="flex items-center gap-2">
+                      <div className="flex-shrink-0 w-7 h-7 rounded-full overflow-hidden">
+                        {profile?.avatar_url ? (
+                          <img
+                            src={profile.avatar_url}
+                            alt="Your avatar"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-700 flex items-center justify-center text-xs font-semibold text-white">
+                            {session?.dbUser?.username?.substring(0, 2)?.toUpperCase() || 'U'}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 flex items-center bg-transparent rounded-full px-1 py-1 border border-gray-700/50">
+                        <input
+                          type="text"
+                          placeholder="Add a comment..."
+                          value={commentText}
+                          onChange={(e) => setCommentText(e.target.value)}
+                          disabled={isLoading.comment || !currentUserId}
+                          className="flex-1 px-4 py-2 bg-transparent text-sm text-white rounded-full focus:outline-none transition-all duration-200 placeholder:text-gray-500 disabled:opacity-50"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <button
+                          type="submit"
+                          disabled={!commentText.trim() || isLoading.comment || !currentUserId}
+                          className="p-2 bg-[#6E54FF] hover:bg-[#5940cc] rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mr-1 flex-shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {isLoading.comment ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Send className="w-4 h-4 text-white" />
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+      
+
+      {/* Fixed Image Modal */}
       <AnimatePresence>
         {showImageModal && postImage && (
           <motion.div 

@@ -107,7 +107,7 @@ export async function getLeaderboard(
 ): Promise<LeaderboardResponse> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/reputation/leaderboard/top?limit=${limit}&offset=${offset}`,
+      `${API_BASE_URL}/reputation/leaderboard?limit=${limit}&offset=${offset}`,
       {
         method: 'GET',
         headers: {

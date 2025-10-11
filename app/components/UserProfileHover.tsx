@@ -4,12 +4,13 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
-import { User, Users, MapPin, Calendar, Link, Image as ImageIcon, Star } from 'lucide-react'
+import { User, Users, MapPin, Calendar, Link, Image as ImageIcon, Star, Mail } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useApi } from '@/app/Context/ApiProvider'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { giveReputation } from '@/app/lib/reputationApi'
 import ReputationBadge from '@/app/components/ReputationBadge'
+import { apiService } from '@/app/lib/api'
 
 interface UserProfileHoverProps {
   userId: string
@@ -196,18 +197,33 @@ export function UserProfileHover({
     }
   }
 
+  const handleMessage = async () => {
+    if (!currentUserId || isOwnProfile) return
+
+    try {
+      await apiService.createMessageThread({
+        creatorId: currentUserId,
+        targetUserId: userId
+      })
+      router.push('/snaps/messages')
+      setShowProfile(false)
+    } catch (error) {
+      console.error('Error creating message thread:', error)
+    }
+  }
+
   const getPositionClasses = () => {
     switch (position) {
       case 'top':
-        return 'bottom-full left-1/2 transform -translate-x-1/2 mb-2'
+        return 'bottom-full left-0 mb-2'
       case 'bottom':
-        return 'top-full left-1/2 transform -translate-x-1/2 mt-2'
+        return 'top-full left-0 mt-2'
       case 'left':
         return 'right-full top-1/2 transform -translate-y-1/2 mr-2'
       case 'right':
         return 'left-full top-1/2 transform -translate-y-1/2 ml-2'
       default:
-        return 'top-full left-1/2 transform -translate-x-1/2 mt-2'
+        return 'top-full left-0 mt-2'
     }
   }
 
@@ -313,14 +329,14 @@ export function UserProfileHover({
                 <div className="px-4 pb-4 space-y-2">
                   <button
                     onClick={handleFollowToggle}
-                    className="w-full py-2 text-white text-sm font-medium rounded-full transition-all duration-200"
+                    className="w-full py-1.5 text-white text-xs font-medium rounded-full transition-all duration-200"
                     style={{
                       backgroundColor: isFollowing ? "#6B7280" : "#6E54FF",
                       boxShadow: isFollowing ? "none" : "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
                     }}
                   >
-                    <div className="flex items-center justify-center space-x-2">
-                      <Users className="w-4 h-4" />
+                    <div className="flex items-center justify-center space-x-1.5">
+                      <Users className="w-3.5 h-3.5" />
                       <span>{isFollowing ? 'Following' : 'Follow'}</span>
                     </div>
                   </button>
@@ -328,10 +344,10 @@ export function UserProfileHover({
                   <button
                     onClick={handleGiveRep}
                     disabled={isGivingRep}
-                    className="w-full py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm font-medium rounded-full transition-all duration-200"
+                    className="w-full py-1.5 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-xs font-medium rounded-full transition-all duration-200"
                   >
-                    <div className="flex items-center justify-center space-x-2">
-                      <Star className="w-4 h-4" />
+                    <div className="flex items-center justify-center space-x-1.5">
+                      <Star className="w-3.5 h-3.5" />
                       <span>{isGivingRep ? 'Giving Rep...' : 'Give Reputation'}</span>
                     </div>
                   </button>
