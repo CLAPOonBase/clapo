@@ -126,7 +126,7 @@ export function UserProfileModal({
     
     try {
       if (isFollowing) {
-        await unfollowUser(userId, { followerId: currentUserId })
+        await unfollowUser(userId, { userId: currentUserId })
         setIsFollowing(false)
         if (userProfile) {
           setUserProfile({
@@ -135,7 +135,7 @@ export function UserProfileModal({
           })
         }
       } else {
-        await followUser(userId, { followerId: currentUserId })
+        await followUser(userId, { userId: currentUserId })
         setIsFollowing(true)
         if (userProfile) {
           setUserProfile({

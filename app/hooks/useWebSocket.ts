@@ -60,7 +60,7 @@ export const useWebSocket = (
   const [isConnected, setIsConnected] = useState(false);
   const mockIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const {
-    url = 'https://server.blazeswap.io',
+    url = 'http://server.blazeswap.io',
     transports = ['websocket'],
     autoConnect = true
   } = config;

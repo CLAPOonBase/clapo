@@ -6,6 +6,8 @@ import { useStories } from "@/app/hooks/useStories";
 import { StoryUpload } from "./StoryUpload";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
+import { renderTextWithMentions } from "@/app/lib/mentionUtils";
+import { useRouter } from "next/navigation";
 
 type Story = {
   id: string;
@@ -37,6 +39,7 @@ type GroupedStory = {
 const Stories: React.FC = () => {
   const { data: session } = useSession();
   const { stories, loading, error, fetchFollowingStories, recordStoryView, getStoryViewers } = useStories();
+  const router = useRouter();
   const [currentUserIndex, setCurrentUserIndex] = useState<number>(0);
   const [currentStoryIndex, setCurrentStoryIndex] = useState<number>(0);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -558,7 +561,30 @@ const goToNextStory = () => {
                   transition={{ delay: 0.5 }}
                 >
                   <p className="text-white text-sm text-center bg-black/60 backdrop-blur-sm px-4 py-2 rounded-2xl">
-                    {currentStory.caption}
+                    {renderTextWithMentions(
+                      currentStory.caption,
+                      undefined,
+                      async (userId, username) => {
+                        if (userId) {
+                          router.push(`/snaps/profile/${userId}`)
+                        } else {
+                          try {
+                            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'}/users/search?q=${username}&limit=1`)
+                            const data = await response.json()
+                            
+                            if (data.users && data.users.length > 0) {
+                              const user = data.users.find((u: any) => u.username === username)
+                              if (user) {
+                                router.push(`/snaps/profile/${user.id}`)
+                                return
+                              }
+                            }
+                          } catch (error) {
+                            console.error('Error finding user:', error)
+                          }
+                        }
+                      }
+                    )}
                   </p>
                 </motion.div>
               )}

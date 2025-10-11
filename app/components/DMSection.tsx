@@ -42,7 +42,7 @@ export const DMSection = ({
   useEffect(() => {
     const fetchFriends = async () => {
       try {
-        const response = await fetch('https://server.blazeswap.io/api/snaps/friends');
+        const response = await fetch('http://server.blazeswap.io/api/snaps/friends');
         const data = await response.json();
         if (data.friends) {
           const friendIds = new Set<string>(data.friends.map((friend: any) => String(friend.id)));
@@ -80,7 +80,7 @@ export const DMSection = ({
     setShowSearchResults(true);
     try {
       const response = await fetch(
-        `https://server.blazeswap.io/api/snaps/users/search?q=${encodeURIComponent(query)}`
+        `http://server.blazeswap.io/api/snaps/users/search?q=${encodeURIComponent(query)}`
       );
       const data = await response.json();
       if (data.users) {
@@ -125,7 +125,7 @@ export const DMSection = ({
   const handleAddFriend = async (userId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const response = await fetch('https://server.blazeswap.io/api/snaps/friends/add', {
+      const response = await fetch('http://server.blazeswap.io/api/snaps/friends/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ friendId: userId })

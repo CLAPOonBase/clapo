@@ -300,7 +300,7 @@ export function SnapComposer({ close }: { close: () => void }) {
       console.log('📝 Content contains @mentions:', mentions.length > 0 ? mentions : 'none')
       const response = await createPost(postData)
       console.log('✅ createPost completed successfully', response)
-      console.log('📬 Check backend for mention notifications for:', mentions.map(m => m.username).join(', '))
+      console.log('📬 Check backend for mention notifications for:', mentions.join(', '))
 
       // Always create post token if wallet is connected
       if (isConnected) {

@@ -13,6 +13,7 @@ import { useCreatorToken } from '@/app/hooks/useCreatorToken'
 import { generateCreatorTokenUUID } from '@/app/lib/uuid'
 import CreatorTokenTrading from '@/app/components/CreatorTokenTrading'
 import ReputationBadge from '@/app/components/ReputationBadge'
+import { renderTextWithMentions } from '@/app/lib/mentionUtils'
 
 interface UserProfile {
   id: string
@@ -75,6 +76,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
     | "bookmarks"
     | "share"
     | "search"
+    | "mentions"
   >("home");  
   
   // Message state
@@ -315,7 +317,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
 
     try {
       if (isFollowing) {
-        await unfollowUser(userId, { followerId: currentUserId })
+        await unfollowUser(userId, { userId: currentUserId })
         setIsFollowing(false)
         if (userProfile) {
           setUserProfile({
@@ -324,7 +326,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
           })
         }
       } else {
-        await followUser(userId, { followerId: currentUserId })
+        await followUser(userId, { userId: currentUserId })
         setIsFollowing(true)
         if (userProfile) {
           setUserProfile({
@@ -679,7 +681,31 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
                       <div className="ml-12">
                         <div className="">
                           <p className="text-white text-base leading-relaxed whitespace-pre-wrap break-words">
-                            {post.content}
+                            {renderTextWithMentions(
+                              post.content,
+                              undefined,
+                              async (userId, username) => {
+                                if (userId) {
+                                  router.push(`/snaps/profile/${userId}`)
+                                } else {
+                                  try {
+                                    console.log('Searching for user:', username)
+                                    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'}/users/search?q=${username}&limit=1`)
+                                    const data = await response.json()
+                                    
+                                    if (data.users && data.users.length > 0) {
+                                      const user = data.users.find((u: any) => u.username === username)
+                                      if (user) {
+                                        router.push(`/snaps/profile/${user.id}`)
+                                        return
+                                      }
+                                    }
+                                  } catch (error) {
+                                    console.error('Error finding user:', error)
+                                  }
+                                }
+                              }
+                            )}
                           </p>
 
                           {/* Media Section */}

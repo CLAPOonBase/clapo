@@ -611,6 +611,105 @@ class ApiService {
       throw error
     }
   }
+
+  // Mention-related API methods
+  async getAllUserMentions(userId: string, limit: number = 20, offset: number = 0): Promise<{
+    message: string;
+    mentions: Array<{
+      id: string;
+      content_type: 'post' | 'comment' | 'story';
+      content_id: string;
+      content_text: string;
+      mentioned_at: string;
+      created_at: string;
+      mentioner_username: string;
+      mentioner_avatar: string;
+      mentioner_id: string;
+      original_content: string;
+      content_author: string;
+      content_created_at: string;
+    }>;
+  }> {
+    try {
+      const params = new URLSearchParams({
+        limit: limit.toString(),
+        offset: offset.toString(),
+      })
+      const response = await this.request(`/users/${userId}/mentions/all?${params}`)
+      return response as {
+        message: string;
+        mentions: Array<{
+          id: string;
+          content_type: 'post' | 'comment' | 'story';
+          content_id: string;
+          content_text: string;
+          mentioned_at: string;
+          created_at: string;
+          mentioner_username: string;
+          mentioner_avatar: string;
+          mentioner_id: string;
+          original_content: string;
+          content_author: string;
+          content_created_at: string;
+        }>;
+      }
+    } catch (error) {
+      console.error('Error fetching user mentions:', error)
+      throw error
+    }
+  }
+
+  async getUserMentions(userId: string, limit: number = 20, offset: number = 0): Promise<{
+    message: string;
+    posts: Array<{
+      id: string;
+      user_id: string;
+      content: string;
+      media_url: string;
+      created_at: string;
+      username: string;
+      avatar_url: string;
+      view_count: number;
+      like_count: number;
+      comment_count: number;
+      retweet_count: number;
+      mentions: Array<{
+        user_id: string;
+        username: string;
+      }>;
+    }>;
+  }> {
+    try {
+      const params = new URLSearchParams({
+        limit: limit.toString(),
+        offset: offset.toString(),
+      })
+      const response = await this.request(`/users/${userId}/mentions?${params}`)
+      return response as {
+        message: string;
+        posts: Array<{
+          id: string;
+          user_id: string;
+          content: string;
+          media_url: string;
+          created_at: string;
+          username: string;
+          avatar_url: string;
+          view_count: number;
+          like_count: number;
+          comment_count: number;
+          retweet_count: number;
+          mentions: Array<{
+            user_id: string;
+            username: string;
+          }>;
+        }>;
+      }
+    } catch (error) {
+      console.error('Error fetching user post mentions:', error)
+      throw error
+    }
+  }
 }
 
 export const apiService = new ApiService()

@@ -25,6 +25,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import SharePage from "./SidebarSection/SharePage";
 import { X } from "lucide-react";
 import Stories from "../components/Story";
+import MyMentions from "../components/MyMentions";
 
 function SocialFeedPageContent() {
   const [activeTab, setActiveTab] = useState<"FOR YOU" | "FOLLOWING">(
@@ -230,6 +231,8 @@ function SocialFeedPageContent() {
         </div>
       case "notifications":
         return <div className="w-full max-w-3xl mx-auto mt-6 "> <NotificationPage/></div>
+      case "mentions":
+        return <div className="w-full max-w-3xl mx-auto mt-6 "> <MyMentions/></div>
       case "likes":
         return allPosts.length > 0 ? (
           <SnapCard

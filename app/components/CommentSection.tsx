@@ -8,7 +8,8 @@ import { useApi } from '../Context/ApiProvider'
 import { useSession } from 'next-auth/react'
 import ReputationBadge from './ReputationBadge'
 import MentionAutocomplete from './MentionAutocomplete'
-import { getMentionTriggerInfo, replaceMentionText } from '@/app/lib/mentionUtils'
+import { getMentionTriggerInfo, replaceMentionText, renderTextWithMentions } from '@/app/lib/mentionUtils'
+import { useRouter } from 'next/navigation'
 
 interface CommentSectionProps {
   post: ApiPost
@@ -30,6 +31,7 @@ export default function CommentSection({ post, onClose, onCommentAdded }: Commen
   const [comments, setComments] = useState(post.comments || [])
   const { commentPost } = useApi()
   const { data: session } = useSession()
+  const router = useRouter()
 
   // Mention state
   const [showMentionAutocomplete, setShowMentionAutocomplete] = useState(false)
@@ -47,6 +49,34 @@ export default function CommentSection({ post, onClose, onCommentAdded }: Commen
     if (diffInHours < 24) return `${diffInHours}h ago`
     if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`
     return date.toLocaleDateString()
+  }
+
+  // Handle mention click navigation
+  const handleMentionClick = async (userId: string, username: string) => {
+    if (userId) {
+      // We have the user ID, navigate directly
+      router.push(`/snaps/profile/${userId}`)
+    } else {
+      // We don't have the user ID, search for the user by username
+      try {
+        console.log('Searching for user:', username)
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'}/users/search?q=${username}&limit=1`)
+        const data = await response.json()
+        
+        if (data.users && data.users.length > 0) {
+          const user = data.users.find((u: any) => u.username === username)
+          if (user) {
+            router.push(`/snaps/profile/${user.id}`)
+            return
+          }
+        }
+        
+        // User not found
+        console.log(`User ${username} not found`)
+      } catch (error) {
+        console.error('Error finding user:', error)
+      }
+    }
   }
 
   // Handle content change and mention detection
@@ -201,7 +231,13 @@ export default function CommentSection({ post, onClose, onCommentAdded }: Commen
                     )}
                     <span className="text-xs text-gray-400">{formatDate(comment.created_at)}</span>
                   </div>
-                  <p className="text-sm text-gray-300">{comment.content}</p>
+                  <p className="text-sm text-gray-300">
+                    {renderTextWithMentions(
+                      comment.content,
+                      undefined,
+                      handleMentionClick
+                    )}
+                  </p>
                 </div>
               </div>
             ))

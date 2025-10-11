@@ -75,15 +75,29 @@ export function renderTextWithMentions(
             e.stopPropagation();
             onMentionClick?.(mentionData.user_id, username);
           }}
-          className="text-blue-400 hover:text-blue-300 cursor-pointer font-medium"
+          className="text-blue-400 hover:text-blue-300 cursor-pointer font-medium underline"
+          style={{ cursor: 'pointer' }}
+          title={`View ${username}'s profile`}
         >
           @{username}
         </span>
       );
     } else {
-      // Mention without user data (just style it)
+      // Mention without user data - make it clickable but show a message
       parts.push(
-        <span key={`mention-${key++}`} className="text-blue-400 font-medium">
+        <span 
+          key={`mention-${key++}`} 
+          className="text-blue-400 font-medium underline cursor-pointer"
+          style={{ cursor: 'pointer' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onMentionClick) {
+              // Try to find user by username - this will be handled by the parent component
+              onMentionClick('', username);
+            }
+          }}
+          title={`@${username}`}
+        >
           @{username}
         </span>
       );
@@ -107,6 +121,45 @@ export function isValidUsername(username: string): boolean {
   // Username should be alphanumeric and underscore, 3-20 characters
   const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
   return usernameRegex.test(username);
+}
+
+/**
+ * Resolve usernames to user data for mentions
+ */
+export async function resolveMentionsFromText(
+  text: string,
+  apiService: any
+): Promise<Array<{ username: string; user_id: string }>> {
+  const usernames = extractMentions(text);
+  if (usernames.length === 0) return [];
+
+  try {
+    // Get user data for all mentioned usernames
+    const userPromises = usernames.map(async (username) => {
+      try {
+        const user = await apiService.searchUsers(username, 1);
+        if (user.users && user.users.length > 0) {
+          const foundUser = user.users.find((u: any) => u.username === username);
+          if (foundUser) {
+            return {
+              username: foundUser.username,
+              user_id: foundUser.id
+            };
+          }
+        }
+        return null;
+      } catch (error) {
+        console.error(`Error fetching user ${username}:`, error);
+        return null;
+      }
+    });
+
+    const results = await Promise.all(userPromises);
+    return results.filter((result): result is { username: string; user_id: string } => result !== null);
+  } catch (error) {
+    console.error('Error resolving mentions:', error);
+    return [];
+  }
 }
 
 /**
