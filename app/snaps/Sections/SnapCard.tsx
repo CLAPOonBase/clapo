@@ -2,7 +2,7 @@
 // @ts-nocheck
 'use client'
 import React, { useState, useEffect, useRef } from 'react'
-import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume2, Paperclip, Smile, Send, ExternalLink, Blocks, Triangle, Repeat, HandMetal } from 'lucide-react'
+import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume2, Paperclip, Smile, Send, ExternalLink, Blocks, Triangle, Repeat, HandMetal, Share2, HandHeart } from 'lucide-react'
 import { Post, ApiPost } from '@/app/types'
 import { useApi } from '../../Context/ApiProvider'
 import { useSession } from 'next-auth/react'
@@ -466,176 +466,202 @@ const handleImageClick = (e: React.MouseEvent) => {
   return (
     <>
       <div
-        className="border-2 border-gray-700/70 rounded-xl mt-4 bg-black cursor-pointer"
+        className="border-2 border-gray-700/70 rounded-xl mt-4 bg-black cursor-pointer hover:bg-gray-900/30 transition-colors"
         onClick={handleCardClick}
       >
-        {/* Instagram-style Header */}
-        <div className="flex items-center justify-between p-3">
-          <div className="flex items-center gap-3">
+        {/* Twitter-style Layout */}
+        <div className="flex gap-3 p-4">
+          {/* Left: Avatar */}
+          <div className="flex-shrink-0">
             <UserProfileHover
               userId={isApiPost ? post.user_id.toString() : post.id.toString()}
               username={postAuthor}
               avatarUrl={postAvatar}
               position="bottom"
             >
-              <div className="flex items-center gap-2 cursor-pointer group" onClick={(e) => e.stopPropagation()}>
-                <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
-                  {postAvatar ? (
-                    <img
-                      src={postAvatar}
-                      alt={postAuthor}
-                      className="w-full h-full object-cover"
-                      onError={e => {
-                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${postAuthor}`
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gray-700 flex items-center justify-center text-sm font-semibold text-white">
-                      {postAuthor?.substring(0, 2)?.toUpperCase() || 'U'}
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-white text-sm group-hover:text-gray-300 transition-colors">
-                      {postAuthor}
-                    </span>
-                    {authorReputation !== undefined && (
-                      <ReputationBadge
-                        score={authorReputation}
-                        tier={authorReputationTier}
-                        size="sm"
-                        showScore={false}
-                      />
-                    )}
+              <div className="w-10 h-10 rounded-full overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                {postAvatar ? (
+                  <img
+                    src={postAvatar}
+                    alt={postAuthor}
+                    className="w-full h-full object-cover"
+                    onError={e => {
+                      e.currentTarget.src = `https://ui-avatars.com/api/?name=${postAuthor}`
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-700 flex items-center justify-center text-sm font-semibold text-white">
+                    {postAuthor?.substring(0, 2)?.toUpperCase() || 'U'}
                   </div>
-                  <span className="text-gray-400 text-xs">{postTime}</span>
-                </div>
+                )}
               </div>
             </UserProfileHover>
           </div>
-        </div>
 
-        {/* Main Post Content */}
-        {postContent && (
-          <div className="px-3 pb-3">
-            <p className="text-white text-base leading-relaxed">
-              {renderTextWithMentions(
-                displayedText,
-                isApiPost ? post.mentions : undefined,
-                (userId, username) => {
-                  router.push(`/snaps/profile/${userId}`)
-                }
-              )}
-            </p>
-            {isLong && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setExpanded(prev => !prev)
-                }}
-                className="text-gray-400 hover:text-gray-300 text-sm mt-1"
+          {/* Right: Content */}
+          <div className="flex-1 min-w-0">
+            {/* Header */}
+            <div className="flex items-center gap-2 mb-1">
+              <UserProfileHover
+                userId={isApiPost ? post.user_id.toString() : post.id.toString()}
+                username={postAuthor}
+                avatarUrl={postAvatar}
+                position="bottom"
               >
-                {expanded ? "less" : "more"}
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Image/Media Section */}
-        {postImage && (
-          <div className="px-3 pb-3">
-            <div className="border border-gray-700/50 rounded-2xl overflow-hidden">
-              {/\.(jpg|jpeg|png|gif|webp)$/i.test(postImage) ? (
-                <img
-                  src={postImage}
-                  alt="Post content"
-                  className="w-full object-cover cursor-pointer"
-                  style={{ maxHeight: '500px' }}
-                  onClick={handleImageClick}
-                />
-              ) : /\.(mp4|webm|ogg|mov)$/i.test(postImage) ? (
-                <video
-                  src={postImage}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  controls
-                  className="w-full object-cover"
-                  style={{ maxHeight: '500px' }}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              ) : /\.(mp3|wav|ogg|m4a)$/i.test(postImage) ? (
-                <div className="bg-black p-6 flex items-center justify-center">
-                  <audio src={postImage} controls className="w-full" />
-                </div>
-              ) : (
-                <div className="bg-black p-6 text-center">
-                  <p className="text-gray-400 text-sm mb-2">Media file</p>
-                  <a href={postImage} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 text-sm font-medium">
-                    View media
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="px-3 pt-2 pb-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <button
-                onClick={e => {
-                  e.stopPropagation()
-                  handleLike()
-                }}
-                disabled={isLoading.like || !currentUserId}
-                className="transition-transform hover:scale-110 disabled:opacity-50 flex items-center gap-1.5"
-              >
-                <HandMetal className={`w-5 h-5 ${userEngagement.liked ? 'text-white' : 'text-gray-400'} transition-all`} style={{ strokeWidth: userEngagement.liked ? 2.5 : 2 }} />
-                <span className="text-xs text-gray-400">{localEngagement.likes}</span>
-              </button>
-              <button
-                onClick={toggleCommentDropdown}
-                className="transition-transform hover:scale-110 flex items-center gap-1.5"
-              >
-                <MessageCircle className={`w-5 h-5 text-gray-400 transition-all`} />
-                <span className="text-xs text-gray-400">{localEngagement.comments}</span>
-              </button>
-              <button
-                onClick={e => {
-                  e.stopPropagation()
-                  handleRetweet()
-                }}
-                disabled={isLoading.retweet || !currentUserId || userEngagement.retweeted}
-                className="transition-transform hover:scale-110 disabled:opacity-50 flex items-center gap-1.5"
-              >
-                <Repeat className={`w-5 h-5 rotate-90 ${userEngagement.retweeted ? 'text-white' : 'text-gray-400'} transition-all`} style={{ strokeWidth: userEngagement.retweeted ? 2.5 : 2 }} />
-                <span className="text-xs text-gray-400">{localEngagement.retweets}</span>
-              </button>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className='flex items-center gap-1 cursor-pointer' onClick={(e) => {
-                e.stopPropagation()
-                setShowTokenTrading(true)
-              }}>
-                <Triangle className={`w-4 h-4 text-green-500 ${priceLoading ? 'opacity-50' : ''}`} />
-                <span className={`text-xs text-green-500 font-medium ${priceLoading ? 'opacity-50' : ''}`}>
-                  {priceLoading ? '...' : `$${postTokenPrice.toFixed(2)}`}
+                <span className="font-semibold text-white text-sm hover:underline cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                  {postAuthor}
                 </span>
+              </UserProfileHover>
+              {authorReputation !== undefined && (
+                <ReputationBadge
+                  score={authorReputation}
+                  tier={authorReputationTier}
+                  size="sm"
+                  showScore={false}
+                />
+              )}
+              <span className="text-gray-500 text-sm">·</span>
+              <span className="text-gray-500 text-sm">{postTime}</span>
+            </div>
+
+            {/* Post Content */}
+            {postContent && (
+              <div className="mb-3">
+                <p className="text-white text-[15px] leading-normal whitespace-pre-wrap">
+                  {renderTextWithMentions(
+                    displayedText,
+                    isApiPost ? post.mentions : undefined,
+                    (userId, username) => {
+                      router.push(`/snaps/profile/${userId}`)
+                    }
+                  )}
+                </p>
+                {isLong && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setExpanded(prev => !prev)
+                    }}
+                    className="text-blue-400 hover:text-blue-300 text-[15px] mt-1"
+                  >
+                    {expanded ? "Show less" : "Show more"}
+                  </button>
+                )}
               </div>
-              <button
-                onClick={e => {
-                  e.stopPropagation()
-                  handleBookmark()
-                }}
-                disabled={isLoading.bookmark || !currentUserId}
-                className="transition-transform hover:scale-110 disabled:opacity-50"
-              >
-                <Bookmark className={`w-5 h-5 ${userEngagement.bookmarked ? 'fill-white text-white' : 'text-gray-400'} transition-all`} />
-              </button>
+            )}
+
+            {/* Media Section - Twitter Style */}
+            {postImage && (
+              <div className="mb-3">
+                <div className="border border-gray-700/50 rounded-2xl overflow-hidden bg-black flex items-center justify-center max-h-[506px]">
+                  {/\.(jpg|jpeg|png|gif|webp)$/i.test(postImage) ? (
+                    <img
+                      src={postImage}
+                      alt="Post content"
+                      className="w-full h-auto object-contain cursor-pointer max-h-[506px]"
+                      onClick={handleImageClick}
+                    />
+                  ) : /\.(mp4|webm|ogg|mov)$/i.test(postImage) ? (
+                    <video
+                      src={postImage}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      controls
+                      className="w-full h-auto object-contain max-h-[506px]"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : /\.(mp3|wav|ogg|m4a)$/i.test(postImage) ? (
+                    <div className="bg-gray-900 p-4 flex items-center justify-center w-full">
+                      <audio src={postImage} controls className="w-full" />
+                    </div>
+                  ) : (
+                    <div className="bg-gray-900 p-4 text-center w-full">
+                      <p className="text-gray-400 text-sm mb-2">Media file</p>
+                      <a href={postImage} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 text-sm font-medium">
+                        View media
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons - Twitter Style */}
+            <div className="flex items-center justify-between mt-2 -ml-2">
+              {/* Left: Main actions close together */}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={e => {
+                    e.stopPropagation()
+                    handleLike()
+                  }}
+                  disabled={isLoading.like || !currentUserId}
+                  className={`flex items-center gap-1.5 transition-colors group disabled:opacity-50 ${userEngagement.liked ? 'text-pink-500' : 'text-gray-500 hover:text-pink-500'}`}
+                >
+                  <div className="p-2 rounded-full group-hover:bg-pink-500/10 transition-colors">
+                    <HandMetal className={`w-[18px] h-[18px]`} style={{ strokeWidth: userEngagement.liked ? 2.5 : 2 }} />
+                  </div>
+                  <span className="text-xs">{localEngagement.likes}</span>
+                </button>
+
+                <button
+                  onClick={e => {
+                    e.stopPropagation()
+                    toggleCommentDropdown(e)
+                  }}
+                  className="flex items-center gap-1.5 text-gray-500 hover:text-blue-400 transition-colors group"
+                >
+                  <div className="p-2 rounded-full group-hover:bg-blue-400/10 transition-colors">
+                    <MessageCircle className="w-[18px] h-[18px]" />
+                  </div>
+                  <span className="text-xs">{localEngagement.comments}</span>
+                </button>
+
+                <button
+                  onClick={e => {
+                    e.stopPropagation()
+                    handleRetweet()
+                  }}
+                  disabled={isLoading.retweet || !currentUserId || userEngagement.retweeted}
+                  className={`flex items-center gap-1.5 transition-colors group disabled:opacity-50 ${userEngagement.retweeted ? 'text-green-500' : 'text-gray-500 hover:text-green-500'}`}
+                >
+                  <div className="p-2 rounded-full group-hover:bg-green-500/10 transition-colors">
+                    <Repeat className="w-[18px] h-[18px] rotate-90" />
+                  </div>
+                  <span className="text-xs">{localEngagement.retweets}</span>
+                </button>
+              </div>
+
+              {/* Right: Price and Share */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={e => {
+                    e.stopPropagation()
+                    setShowTokenTrading(true)
+                  }}
+                  className="flex items-center gap-1 text-green-500 hover:text-green-400 transition-colors px-2"
+                >
+                  <Triangle className={`w-[14px] h-[14px] ${priceLoading ? 'opacity-50' : ''}`} />
+                  <span className={`text-xs font-medium ${priceLoading ? 'opacity-50' : ''}`}>
+                    {priceLoading ? '...' : `$${postTokenPrice.toFixed(2)}`}
+                  </span>
+                </button>
+
+                <button
+                  onClick={e => {
+                    e.stopPropagation()
+                    handleBookmark()
+                  }}
+                  disabled={isLoading.bookmark || !currentUserId}
+                  className={`transition-colors group disabled:opacity-50 ${userEngagement.bookmarked ? 'text-blue-400' : 'text-gray-500 hover:text-blue-400'}`}
+                >
+                  <div className="p-2 rounded-full group-hover:bg-blue-400/10 transition-colors">
+                    <Share2 className="w-[18px] h-[18px]" />
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -648,7 +674,7 @@ const handleImageClick = (e: React.MouseEvent) => {
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="px-3 pb-3 border-t border-gray-700/70 pt-3 mt-1"
+              className="px-4 pb-4 border-t border-gray-700/70 pt-3"
             >
               <div className="max-h-56 overflow-y-auto space-y-3 mb-3">
                 {comments.length > 0 ? (
