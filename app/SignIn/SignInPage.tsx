@@ -1,21 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { X, ArrowLeft, ArrowRight, Check, Mail, AtSign, User, Hash, Users, Sparkles, Camera } from 'lucide-react';
-import Image from 'next/image';
-import { signIn, signOut, useSession } from 'next-auth/react';
+import { X, ArrowLeft, ArrowRight, Check, Mail, AtSign, User, Hash, Users, Sparkles, Wallet, Camera } from 'lucide-react';
+import { usePrivy } from '@privy-io/react-auth';
 
 type FlowState = 
   | "initial" 
   | "choice"
-  | "individual-email"
-  | "individual-otp"
-  | "individual-name-username" // Combined step
+  | "individual-name-username"
   | "individual-displayname"
   | "individual-topics"
   | "individual-follow"
-  | "community-email"
-  | "community-otp"
   | "community-id"
   | "community-name"
   | "community-type"
@@ -43,8 +38,6 @@ const communityTypes = [
 function SignInPage() {
   const [flowState, setFlowState] = useState<FlowState>("initial");
   const [formData, setFormData] = useState({
-    email: "",
-    otp: "",
     name: "",
     username: "",
     displayName: "",
@@ -54,16 +47,12 @@ function SignInPage() {
     communityName: "",
     communityType: ""
   });
-  const [otpTimer, setOtpTimer] = useState(0);
-  const [isOtpSent, setIsOtpSent] = useState(false);
-  const [isConnectingX, setIsConnectingX] = useState(false);
 
-  const { data: session, status } = useSession();
+  const { login, logout, authenticated, user, ready } = usePrivy();
 
   // Generate random username from name
   const generateUsername = (name: string) => {
     if (!name) return "";
-    
     const baseName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
     const randomNum = Math.floor(Math.random() * 10000);
     return `${baseName}${randomNum}`;
@@ -77,94 +66,63 @@ function SignInPage() {
     }
   }, [formData.name, flowState]);
 
-  // OTP timer effect
+  // Check if user is new and needs profile completion
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (otpTimer > 0) {
-      interval = setInterval(() => {
-        setOtpTimer(prev => prev - 1);
-      }, 1000);
+    if (authenticated && user && flowState === "initial") {
+      // Check if user has completed profile
+      const profileKey = `profile_completed_${user.id}`;
+      const hasCompletedProfile = localStorage.getItem(profileKey);
+      
+      if (!hasCompletedProfile) {
+        // New user needs to complete profile
+        setFlowState("choice");
+      } else {
+        // Returning user - you can redirect to app here
+        console.log("Returning user detected, redirect to app");
+        // window.location.href = '/dashboard';
+      }
     }
-    return () => clearInterval(interval);
-  }, [otpTimer]);
+  }, [authenticated, user, flowState]);
 
   const handleBack = () => {
     const backMap: Record<string, FlowState> = {
       "choice": "initial",
-      "individual-email": "choice",
-      "individual-otp": "individual-email",
-      "individual-name-username": "individual-otp",
+      "individual-name-username": "choice",
       "individual-displayname": "individual-name-username",
       "individual-topics": "individual-displayname",
       "individual-follow": "individual-topics",
-      "community-email": "choice",
-      "community-otp": "community-email",
-      "community-id": "community-otp",
+      "community-id": "choice",
       "community-name": "community-id",
       "community-type": "community-name"
     };
     setFlowState(backMap[flowState] || "initial");
   };
 
-  const sendOtp = async () => {
-    // Simulate OTP sending
-    console.log(`Sending OTP to ${formData.email}`);
-    setIsOtpSent(true);
-    setOtpTimer(60); // 60 seconds timer
-    
-    // In a real app, you would call your backend API here
-    // await fetch('/api/send-otp', {
-    //   method: 'POST',
-    //   body: JSON.stringify({ email: formData.email }),
-    //   headers: { 'Content-Type': 'application/json' }
-    // });
-  };
-
-  const verifyOtp = async () => {
-    // Simulate OTP verification
-    console.log(`Verifying OTP: ${formData.otp}`);
-    
-    // In a real app, you would call your backend API here
-    // const response = await fetch('/api/verify-otp', {
-    //   method: 'POST',
-    //   body: JSON.stringify({ email: formData.email, otp: formData.otp }),
-    //   headers: { 'Content-Type': 'application/json' }
-    // });
-    
-    // For demo purposes, always succeed if OTP is 6 digits
-    if (formData.otp.length === 6) {
-      if (flowState === "individual-otp") {
-        setFlowState("individual-name-username");
-      } else if (flowState === "community-otp") {
-        setFlowState("community-id");
-      }
-    } else {
-      alert("Please enter a valid 6-digit OTP");
+  const handlePrivyLogin = async () => {
+    try {
+      await login();
+    } catch (error) {
+      console.error("Privy login error:", error);
     }
   };
 
-  const handleXConnect = async () => {
-    setIsConnectingX(true);
+  const handlePrivyLogout = async () => {
     try {
-      // Sign in with Twitter/X - will auto-create account and redirect to homepage
-      await signIn("twitter", {
-        callbackUrl: '/',
-        redirect: true
+      await logout();
+      setFlowState("initial");
+      // Clear all form data
+      setFormData({
+        name: "",
+        username: "",
+        displayName: "",
+        topics: [],
+        following: [],
+        communityId: "",
+        communityName: "",
+        communityType: ""
       });
     } catch (error) {
-      console.error("X sign in error:", error);
-      setIsConnectingX(false);
-    }
-  };
-
-  const handleXDisconnect = async () => {
-    setIsConnectingX(true);
-    try {
-      await signOut();
-    } catch (error) {
-      console.error("X sign out error:", error);
-    } finally {
-      setIsConnectingX(false);
+      console.error("Privy logout error:", error);
     }
   };
 
@@ -186,63 +144,129 @@ function SignInPage() {
     }));
   };
 
+  const handleComplete = async () => {
+    if (!user) return;
+
+    // Prepare complete profile data
+    const profileData = {
+      // Privy Authentication Data
+      privyId: user.id,
+      email: user.email?.address || null,
+      wallet: user.wallet?.address || null,
+      phone: user.phone?.number || null,
+      
+      // Social Connections
+      twitter: user.twitter?.username || null,
+      discord: user.discord?.username || null,
+      github: user.github?.username || null,
+      google: user.google?.email || null,
+      
+      // User Profile Data
+      name: formData.name || null,
+      username: formData.username || null,
+      displayName: formData.displayName || null,
+      
+      // Preferences
+      topics: formData.topics || [],
+      following: formData.following || [],
+      
+      // Community Data (if applicable)
+      communityId: formData.communityId || null,
+      communityName: formData.communityName || null,
+      communityType: formData.communityType || null,
+      
+      // Metadata
+      accountType: formData.username ? 'individual' : 'community',
+      createdAt: new Date().toISOString(),
+      lastUpdated: new Date().toISOString()
+    };
+
+    // Console log for API integration reference
+    console.log("=================================");
+    console.log("📦 COMPLETE PROFILE DATA FOR API");
+    console.log("=================================");
+    console.log(JSON.stringify(profileData, null, 2));
+    console.log("=================================");
+    console.log("💾 Use this object structure for your API endpoint");
+    console.log("=================================");
+
+    try {
+      // Save to localStorage instead of API
+      localStorage.setItem(`profile_completed_${user.id}`, 'true');
+      localStorage.setItem(`user_profile_${user.id}`, JSON.stringify(profileData));
+      
+      // Also save as latest user for easy access
+      localStorage.setItem('latest_user_profile', JSON.stringify(profileData));
+      
+      console.log("✅ Profile saved to localStorage successfully!");
+      console.log("Key: user_profile_" + user.id);
+      
+      setFlowState("success");
+      
+    } catch (error) {
+      console.error("❌ Error saving to localStorage:", error);
+      alert("Failed to save profile. Please try again.");
+    }
+  };
+
   const handleClose = () => {
-    console.log("Close modal");
+    // Navigate to landing page
+    window.location.href = '/';
+    // Or if using Next.js router:
+    // import { useRouter } from 'next/navigation';
+    // const router = useRouter();
+    // router.push('/');
   };
 
   const getStepInfo = () => {
     const stepMap: Record<string, string> = {
-      "individual-email": "Step 1 of 5",
-      "individual-otp": "Step 2 of 5",
-      "individual-name-username": "Step 3 of 5",
-      "individual-displayname": "Step 4 of 5",
-      "individual-topics": "Step 5 of 5",
+      "individual-name-username": "Step 1 of 4",
+      "individual-displayname": "Step 2 of 4",
+      "individual-topics": "Step 3 of 4",
       "individual-follow": "Final Step",
-      "community-email": "Step 1 of 5",
-      "community-otp": "Step 2 of 5",
-      "community-id": "Step 3 of 5",
-      "community-name": "Step 4 of 5",
-      "community-type": "Step 5 of 5"
+      "community-id": "Step 1 of 3",
+      "community-name": "Step 2 of 3",
+      "community-type": "Step 3 of 3"
     };
     return stepMap[flowState] || "";
   };
 
-  // X/Twitter Icon Component
-  const XIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-    <svg 
-      viewBox="0 0 24 24" 
-      className={className}
-      fill="currentColor"
-    >
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-    </svg>
-  );
+  const getAuthProviderText = () => {
+    if (!user) return "";
+    
+    if (user.email?.address) return "Email";
+    if (user.wallet?.address) return "Wallet";
+    if (user.twitter?.username) return "Twitter";
+    if (user.discord?.username) return "Discord";
+    if (user.github?.username) return "GitHub";
+    if (user.phone?.number) return "Phone";
+    
+    return "Privy";
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-black border-2 border-gray-700/70 rounded-xl w-full max-w-5xl shadow-custom flex overflow-hidden">
+        <div className="bg-black border-2 border-gray-700/70 rounded-xl w-full max-w-5xl shadow-2xl flex overflow-hidden">
           
           {/* Left Side - Illustration/Branding */}
-          <div style={{
-                backgroundColor: "#6E54FF",
-                boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-              }} className="hidden lg:flex lg:w-1/2 relative p-12 items-center justify-center bg-gradient-to-br from-[#4F47EB]/20 to-[#3B32C7]/20 border-r-2 border-gray-700/70">
+          <div 
+            style={{
+              backgroundColor: "#6E54FF",
+              boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+            }} 
+            className="hidden lg:flex lg:w-1/2 relative p-12 items-center justify-center bg-gradient-to-br from-[#4F47EB]/20 to-[#3B32C7]/20 border-r-2 border-gray-700/70"
+          >
             <div className="relative z-10 text-center">
-             <div className="mb-8">
-                <Image src="/clapo_log.png" alt="Main Illustration" width={400} height={400} />
-              </div>
-              <h2 className="text-3xl font-bold text-white mb-4"></h2>
-              Join, Create & Connect
-              <h1 className="text-4xl font-bold text-white mb-4">
-                Welcome to Clapo
-              </h1>
-              <p className="text-gray-400 text-lg leading-relaxed max-w-md">
+              <div className="mb-8 text-8xl">🎯</div>
+              <h2 className="text-3xl font-bold text-white mb-4">Join, Create & Connect</h2>
+              <h1 className="text-4xl font-bold text-white mb-4">Welcome to Clapo</h1>
+              <p className="text-gray-300 text-lg leading-relaxed max-w-md">
                 {flowState.includes("individual") 
                   ? "Join as an individual to connect with the community"
                   : flowState.includes("community")
                   ? "Create and manage your own community space"
-                  : "Connect your social accounts and wallet to unlock the full Web3 experience"}
+                  : "Connect your wallet and social accounts to unlock the full Web3 experience"}
               </p>
 
               <div className="absolute top-10 left-10 w-20 h-20 bg-[#6E54FF]/20 rounded-full blur-2xl"></div>
@@ -251,7 +275,7 @@ function SignInPage() {
           </div>
 
           {/* Right Side - Dynamic Content */}
-          <div className="flex-1 lg:w-1/2 p-8 lg:p-12 relative">
+          <div className="flex-1 lg:w-1/2 p-8 lg:p-12 relative overflow-y-auto max-h-screen">
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center space-x-3">
@@ -263,10 +287,13 @@ function SignInPage() {
                     <ArrowLeft className="w-4 h-4 text-gray-400" />
                   </button>
                 )}
-                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{
-                  backgroundColor: "#6E54FF",
-                  boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                }}>
+                <div 
+                  className="w-10 h-10 rounded-full flex items-center justify-center" 
+                  style={{
+                    backgroundColor: "#6E54FF",
+                    boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                  }}
+                >
                   {flowState === "success" ? (
                     <Check className="w-5 h-5 text-white" />
                   ) : (
@@ -293,36 +320,34 @@ function SignInPage() {
             </div>
 
             {/* Dynamic Content Based on Flow State */}
-            <div className="flex justify-center items-center h-full">
+            <div className="flex justify-center items-start min-h-[400px]">
               {/* Initial Screen */}
               {flowState === "initial" && (
-                <div className="text-center space-y-6">
+                <div className="text-center space-y-6 w-full">
                   <div>
                     <h2 className="text-2xl font-bold text-white mb-3">Join Clapo Today</h2>
-                    <p className="text-gray-400">Create your account to get started</p>
+                    <p className="text-gray-400">Create your account with Privy</p>
                   </div>
                   
-                  {/* Social Auth Buttons */}
+                  {/* Privy Auth */}
                   <div className="space-y-3">
-                    {session ? (
+                    {authenticated && user ? (
                       <div className="p-4 bg-gray-800/50 rounded-xl border border-gray-700">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center space-x-3">
-                            {session.user?.image && (
-                              <Image 
-                                src={session.user.image} 
-                                alt="Profile" 
-                                width={40} 
-                                height={40} 
-                                className="rounded-full"
-                              />
-                            )}
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
+                              {user.email?.address?.[0]?.toUpperCase() || 
+                               user.twitter?.username?.[0]?.toUpperCase() ||
+                               user.wallet?.address?.slice(0, 2).toUpperCase()}
+                            </div>
                             <div className="text-left">
-                              <p className="text-white font-semibold">
-                                {session.user?.name || 'X User'}
+                              <p className="text-white font-semibold text-sm">
+                                {user.email?.address || 
+                                 user.twitter?.username ||
+                                 `${user.wallet?.address?.slice(0, 6)}...${user.wallet?.address?.slice(-4)}`}
                               </p>
-                              <p className="text-gray-400 text-sm">
-                                @{session.user?.email?.split('@')[0] || 'xuser'}
+                              <p className="text-gray-400 text-xs">
+                                {getAuthProviderText()} Connected
                               </p>
                             </div>
                           </div>
@@ -331,107 +356,91 @@ function SignInPage() {
                           </div>
                         </div>
                         <button
-                          onClick={handleXDisconnect}
-                          disabled={isConnectingX}
+                          onClick={handlePrivyLogout}
                           className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-full transition-all duration-200 flex items-center justify-center"
                         >
-                          {isConnectingX ? (
-                            <>
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                              Disconnecting...
-                            </>
-                          ) : (
-                            <>
-                              <XIcon className="w-4 h-4 mr-2" />
-                              Disconnect X
-                            </>
-                          )}
+                          <X className="w-4 h-4 mr-2" />
+                          Disconnect
                         </button>
                       </div>
                     ) : (
                       <button
-                        onClick={handleXConnect}
-                        disabled={isConnectingX}
-                        className="w-full px-6 py-3 bg-black hover:bg-gray-900 text-white text-sm font-medium rounded-full border border-gray-700 transition-all duration-200 flex items-center justify-center"
+                        onClick={handlePrivyLogin}
+                        disabled={!ready}
+                        className="w-full px-6 py-4 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{
+                          backgroundColor: "#6E54FF",
+                          boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                        }}
                       >
-                        {isConnectingX ? (
+                        {!ready ? (
                           <>
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                            Connecting...
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2 inline-block"></div>
+                            Loading...
                           </>
                         ) : (
                           <>
-                            <XIcon className="w-5 h-5 mr-2" />
-                            Continue with X
+                            <Wallet className="w-5 h-5 mr-2 inline-block" />
+                            Connect with Privy
                           </>
                         )}
                       </button>
                     )}
-                    
-                    {(status === 'unauthenticated' || !session) && (
-                      <>
-                        <div className="relative my-4">
-                          <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-gray-600"></div>
-                          </div>
-                          <div className="relative flex justify-center text-sm">
-                            <span className="px-2 bg-black text-gray-400">or</span>
-                          </div>
-                        </div>
-                      </>
-                    )}
                   </div>
 
-                  <div className="space-y-4">
-                    <button
-                      onClick={() => setFlowState("choice")}
-                      disabled={status === 'loading'}
-                      className="w-full px-6 py-4 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{
-                        backgroundColor: "#6E54FF",
-                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                      }}
-                    >
-                      {session ? 'Continue with X Account' : 'Create Account with Email'}
-                    </button>
-                    
-                    {!session && (
-                      <button 
-                        className="w-full px-6 py-4 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-full border border-gray-600 transition-all duration-200"
+                  {authenticated && user && (
+                    <div className="space-y-4">
+                      <button
+                        onClick={() => setFlowState("choice")}
+                        className="w-full px-6 py-4 text-white text-sm font-medium rounded-full transition-all duration-200"
+                        style={{
+                          backgroundColor: "#6E54FF",
+                          boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                        }}
                       >
-                        Sign In
+                        Continue Setup <ArrowRight className="w-4 h-4 ml-2 inline-block" />
                       </button>
-                    )}
-                  </div>
-                  
-                  {session && (
-                    <div className="p-4 bg-blue-600/20 border border-blue-600/30 rounded-xl">
-                      <p className="text-sm text-blue-300">
-                        ✅ Successfully connected with X! Click continue to complete your profile.
-                      </p>
+                      
+                      <div className="p-4 bg-blue-600/20 border border-blue-600/30 rounded-xl">
+                        <p className="text-sm text-blue-300">
+                          ✅ Successfully connected! Complete your profile to continue.
+                        </p>
+                      </div>
                     </div>
                   )}
                   
-                  <p className="text-xs text-gray-400">
-                    Clapo is in development. You may encounter issues during signup.
-                  </p>
+                  <div className="pt-4 border-t border-gray-700">
+                    <p className="text-xs text-gray-400 mb-2">
+                      Powered by Privy • Secure & Decentralized
+                    </p>
+                    <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                      <span>📧 Email</span>
+                      <span>•</span>
+                      <span>🔗 Wallet</span>
+                      <span>•</span>
+                      <span>🔐 Social</span>
+                    </div>
+                  </div>
                 </div>
               )}
 
               {/* Choice Screen */}
               {flowState === "choice" && (
-                <div className="space-y-4">
+                <div className="space-y-4 w-full">
                   <p className="text-gray-400 text-center mb-6">How would you like to join Clapo?</p>
                   
                   <button
-                    onClick={() => setFlowState("individual-email")}
+                    onClick={() => setFlowState("individual-name-username")}
                     className="w-full p-6 bg-gray-700/30 hover:bg-gray-600/30 rounded-xl border border-gray-600/30 transition-all duration-200 text-left"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{
-                        backgroundColor: "#6E54FF",
-                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                      }}>
+                      <div 
+                        className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" 
+                        style={{
+                          backgroundColor: "#6E54FF",
+                          boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                        }}
+                      >
                         <User className="w-6 h-6 text-white" />
                       </div>
                       <div>
@@ -442,14 +451,17 @@ function SignInPage() {
                   </button>
 
                   <button
-                    onClick={() => setFlowState("community-email")}
+                    onClick={() => setFlowState("community-id")}
                     className="w-full p-6 bg-gray-700/30 hover:bg-gray-600/30 rounded-xl border border-gray-600/30 transition-all duration-200 text-left"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{
-                        backgroundColor: "#6E54FF",
-                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                      }}>
+                      <div 
+                        className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" 
+                        style={{
+                          backgroundColor: "#6E54FF",
+                          boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                        }}
+                      >
                         <Users className="w-6 h-6 text-white" />
                       </div>
                       <div>
@@ -461,109 +473,23 @@ function SignInPage() {
                 </div>
               )}
 
-              {/* Individual Flow - Email */}
-              {flowState === "individual-email" && (
-                <div className="space-y-6">
-                  <div className="text-center mb-6">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" style={{
-                      backgroundColor: "#6E54FF",
-                      boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                    }}>
-                      <Mail className="w-8 h-8 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">What's your email?</h2>
-                    <p className="text-gray-400 text-sm">We'll use this to keep you updated</p>
-                  </div>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-3 bg-black border-2 border-gray-700/70 text-white rounded-xl focus:border-[#6E54FF]/50 focus:outline-none transition-all duration-200 placeholder:text-gray-500"
-                    placeholder="you@example.com"
-                  />
-                  <button
-                    onClick={() => {
-                      sendOtp();
-                      setFlowState("individual-otp");
-                    }}
-                    disabled={!formData.email}
-                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    style={{
-                      backgroundColor: formData.email ? "#6E54FF" : "#6B7280",
-                      boxShadow: formData.email ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
-                    }}
-                  >
-                    Send OTP <ArrowRight className="w-4 h-4 ml-2" />
-                  </button>
-                </div>
-              )}
-
-              {/* Individual Flow - OTP Verification */}
-              {flowState === "individual-otp" && (
-                <div className="space-y-6">
-                  <div className="text-center mb-6">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" style={{
-                      backgroundColor: "#6E54FF",
-                      boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                    }}>
-                      <Mail className="w-8 h-8 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Enter OTP</h2>
-                    <p className="text-gray-400 text-sm">
-                      We sent a 6-digit code to {formData.email}
-                    </p>
-                    {otpTimer > 0 && (
-                      <p className="text-sm text-gray-400 mt-2">
-                        Resend in {otpTimer}s
-                      </p>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={formData.otp}
-                    onChange={(e) => setFormData({ ...formData, otp: e.target.value.replace(/\D/g, '') })}
-                    maxLength={6}
-                    className="w-full px-4 py-3 bg-black border-2 border-gray-700/70 text-white rounded-xl focus:border-[#6E54FF]/50 focus:outline-none transition-all duration-200 placeholder:text-gray-500 text-center text-2xl tracking-widest"
-                    placeholder="000000"
-                  />
-                  <div className="flex gap-4">
-                    <button
-                      onClick={sendOtp}
-                      disabled={otpTimer > 0}
-                      className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Resend OTP
-                    </button>
-                    <button
-                      onClick={verifyOtp}
-                      disabled={formData.otp.length !== 6}
-                      className="flex-1 px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                      style={{
-                        backgroundColor: formData.otp.length === 6 ? "#6E54FF" : "#6B7280",
-                        boxShadow: formData.otp.length === 6 ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
-                      }}
-                    >
-                      Verify OTP <ArrowRight className="w-4 h-4 ml-2" />
-                    </button>
-                  </div>
-                </div>
-              )}
-
               {/* Individual Flow - Combined Name & Username */}
               {flowState === "individual-name-username" && (
-                <div className="space-y-6">
+                <div className="space-y-6 w-full">
                   <div className="text-center mb-6">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" style={{
-                      backgroundColor: "#6E54FF",
-                      boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                    }}>
+                    <div 
+                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" 
+                      style={{
+                        backgroundColor: "#6E54FF",
+                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                      }}
+                    >
                       <User className="w-8 h-8 text-white" />
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-2">Tell us about yourself</h2>
                     <p className="text-gray-400 text-sm">We'll generate a username based on your name</p>
                   </div>
 
-                  {/* Name Input */}
                   <div className="space-y-2">
                     <label className="text-sm text-gray-400">Your full name</label>
                     <input
@@ -575,7 +501,6 @@ function SignInPage() {
                     />
                   </div>
 
-                  {/* Username Input */}
                   <div className="space-y-2">
                     <label className="text-sm text-gray-400">Username</label>
                     <div className="relative">
@@ -590,7 +515,7 @@ function SignInPage() {
                     </div>
                     {formData.name && (
                       <p className="text-xs text-gray-500">
-                        We generated this username for you. You can edit it.
+                        Auto-generated username. Feel free to edit it.
                       </p>
                     )}
                   </div>
@@ -611,12 +536,15 @@ function SignInPage() {
 
               {/* Individual Flow - Display Name */}
               {flowState === "individual-displayname" && (
-                <div className="space-y-6">
+                <div className="space-y-6 w-full">
                   <div className="text-center mb-6">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" style={{
-                      backgroundColor: "#6E54FF",
-                      boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                    }}>
+                    <div 
+                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" 
+                      style={{
+                        backgroundColor: "#6E54FF",
+                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                      }}
+                    >
                       <User className="w-8 h-8 text-white" />
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-2">What's your display name?</h2>
@@ -643,20 +571,23 @@ function SignInPage() {
                 </div>
               )}
 
-              {/* Individual Flow - Topics (Step 5) */}
+              {/* Individual Flow - Topics */}
               {flowState === "individual-topics" && (
-                <div className="space-y-6">
+                <div className="space-y-6 w-full">
                   <div className="text-center mb-6">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" style={{
-                      backgroundColor: "#6E54FF",
-                      boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                    }}>
+                    <div 
+                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" 
+                      style={{
+                        backgroundColor: "#6E54FF",
+                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                      }}
+                    >
                       <Sparkles className="w-8 h-8 text-white" />
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-2">What interests you?</h2>
                     <p className="text-gray-400 text-sm">Select at least 3 topics</p>
                   </div>
-                  <div className="flex flex-wrap gap-3 max-h-64 overflow-y-auto">
+                  <div className="flex flex-wrap gap-3 max-h-64 overflow-y-auto p-1">
                     {topics.map((topic) => (
                       <button
                         key={topic}
@@ -675,6 +606,9 @@ function SignInPage() {
                       </button>
                     ))}
                   </div>
+                  <div className="text-center text-sm text-gray-400">
+                    {formData.topics.length} of 3 selected
+                  </div>
                   <button
                     onClick={() => setFlowState("individual-follow")}
                     disabled={formData.topics.length < 3}
@@ -691,12 +625,15 @@ function SignInPage() {
 
               {/* Individual Flow - Follow */}
               {flowState === "individual-follow" && (
-                <div className="space-y-6">
+                <div className="space-y-6 w-full">
                   <div className="text-center mb-6">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" style={{
-                      backgroundColor: "#6E54FF",
-                      boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                    }}>
+                    <div 
+                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" 
+                      style={{
+                        backgroundColor: "#6E54FF",
+                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                      }}
+                    >
                       <Users className="w-8 h-8 text-white" />
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-2">Follow suggested users</h2>
@@ -709,10 +646,13 @@ function SignInPage() {
                         className="flex items-center justify-between p-4 bg-gray-700/30 border border-gray-600/30 rounded-xl"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center text-2xl" style={{
-                            backgroundColor: "#6E54FF",
-                            boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                          }}>
+                          <div 
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-2xl" 
+                            style={{
+                              backgroundColor: "#6E54FF",
+                              boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                            }}
+                          >
                             {user.avatar}
                           </div>
                           <div>
@@ -738,7 +678,7 @@ function SignInPage() {
                     ))}
                   </div>
                   <button
-                    onClick={() => setFlowState("success")}
+                    onClick={handleComplete}
                     className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 flex items-center justify-center"
                     style={{
                       backgroundColor: "#6E54FF",
@@ -750,66 +690,17 @@ function SignInPage() {
                 </div>
               )}
 
-           {/* Community Flow - OTP */}
-              {flowState === "community-otp" && (
-                <div className="space-y-6">
-                  <div className="text-center mb-6">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" style={{
-                      backgroundColor: "#6E54FF",
-                      boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                    }}>
-                      <Mail className="w-8 h-8 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Enter OTP</h2>
-                    <p className="text-gray-400 text-sm">
-                      We sent a 6-digit code to {formData.email}
-                    </p>
-                    {otpTimer > 0 && (
-                      <p className="text-sm text-gray-400 mt-2">
-                        Resend in {otpTimer}s
-                      </p>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    value={formData.otp}
-                    onChange={(e) => setFormData({ ...formData, otp: e.target.value.replace(/\D/g, '') })}
-                    maxLength={6}
-                    className="w-full px-4 py-3 bg-black border-2 border-gray-700/70 text-white rounded-xl focus:border-[#6E54FF]/50 focus:outline-none transition-all duration-200 placeholder:text-gray-500 text-center text-2xl tracking-widest"
-                    placeholder="000000"
-                  />
-                  <div className="flex gap-4">
-                    <button
-                      onClick={sendOtp}
-                      disabled={otpTimer > 0}
-                      className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Resend OTP
-                    </button>
-                    <button
-                      onClick={verifyOtp}
-                      disabled={formData.otp.length !== 6}
-                      className="flex-1 px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                      style={{
-                        backgroundColor: formData.otp.length === 6 ? "#6E54FF" : "#6B7280",
-                        boxShadow: formData.otp.length === 6 ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
-                      }}
-                    >
-                      Verify OTP <ArrowRight className="w-4 h-4 ml-2" />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Rest of the community flow remains the same */}
               {/* Community Flow - ID */}
               {flowState === "community-id" && (
-                <div className="space-y-6">
+                <div className="space-y-6 w-full">
                   <div className="text-center mb-6">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" style={{
-                      backgroundColor: "#6E54FF",
-                      boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                    }}>
+                    <div 
+                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" 
+                      style={{
+                        backgroundColor: "#6E54FF",
+                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                      }}
+                    >
                       <Hash className="w-8 h-8 text-white" />
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-2">Choose community ID</h2>
@@ -838,48 +729,115 @@ function SignInPage() {
                   </button>
                 </div>
               )}
-       {flowState === "community-email" && (
-                <div className="space-y-6">
+
+              {/* Community Flow - Name */}
+              {flowState === "community-name" && (
+                <div className="space-y-6 w-full">
                   <div className="text-center mb-6">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" style={{
-                      backgroundColor: "#6E54FF",
-                      boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                    }}>
-                      <Mail className="w-8 h-8 text-white" />
+                    <div 
+                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" 
+                      style={{
+                        backgroundColor: "#6E54FF",
+                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                      }}
+                    >
+                      <Users className="w-8 h-8 text-white" />
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Community contact email</h2>
-                    <p className="text-gray-400 text-sm">We'll use this for important updates</p>
+                    <h2 className="text-2xl font-bold text-white mb-2">Community name</h2>
+                    <p className="text-gray-400 text-sm">What should we call your community?</p>
                   </div>
                   <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    type="text"
+                    value={formData.communityName}
+                    onChange={(e) => setFormData({ ...formData, communityName: e.target.value })}
                     className="w-full px-4 py-3 bg-black border-2 border-gray-700/70 text-white rounded-xl focus:border-[#6E54FF]/50 focus:outline-none transition-all duration-200 placeholder:text-gray-500"
-                    placeholder="community@example.com"
+                    placeholder="My Awesome Community"
                   />
                   <button
-                    onClick={() => {
-                      sendOtp();
-                      setFlowState("community-otp");
-                    }}
-                    disabled={!formData.email}
+                    onClick={() => setFlowState("community-type")}
+                    disabled={!formData.communityName}
                     className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     style={{
-                      backgroundColor: formData.email ? "#6E54FF" : "#6B7280",
-                      boxShadow: formData.email ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
+                      backgroundColor: formData.communityName ? "#6E54FF" : "#6B7280",
+                      boxShadow: formData.communityName ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
                     }}
                   >
-                    Send OTP <ArrowRight className="w-4 h-4 ml-2" />
+                    Continue <ArrowRight className="w-4 h-4 ml-2" />
                   </button>
                 </div>
               )}
+
+              {/* Community Flow - Type */}
+              {flowState === "community-type" && (
+                <div className="space-y-6 w-full">
+                  <div className="text-center mb-6">
+                    <div 
+                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" 
+                      style={{
+                        backgroundColor: "#6E54FF",
+                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                      }}
+                    >
+                      <Users className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Community type</h2>
+                    <p className="text-gray-400 text-sm">Choose how you want to manage your community</p>
+                  </div>
+                  <div className="space-y-3">
+                    {communityTypes.map((type) => (
+                      <button
+                        key={type.id}
+                        onClick={() => setFormData({ ...formData, communityType: type.id })}
+                        className={`w-full p-4 rounded-xl border transition-all duration-200 text-left ${
+                          formData.communityType === type.id
+                            ? "border-[#6E54FF] bg-[#6E54FF]/10"
+                            : "border-gray-600/30 bg-gray-700/30 hover:bg-gray-600/30"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="text-white font-semibold mb-1">{type.name}</h3>
+                            <p className="text-gray-400 text-sm">{type.description}</p>
+                          </div>
+                          {formData.communityType === type.id && (
+                            <div 
+                              className="w-6 h-6 rounded-full flex items-center justify-center" 
+                              style={{
+                                backgroundColor: "#6E54FF",
+                                boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                              }}
+                            >
+                              <Check className="w-4 h-4 text-white" />
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={handleComplete}
+                    disabled={!formData.communityType}
+                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    style={{
+                      backgroundColor: formData.communityType ? "#6E54FF" : "#6B7280",
+                      boxShadow: formData.communityType ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
+                    }}
+                  >
+                    Complete Setup <Check className="w-4 h-4 ml-2" />
+                  </button>
+                </div>
+              )}
+
               {/* Success Screen */}
               {flowState === "success" && (
-                <div className="text-center space-y-6">
-                  <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center" style={{
-                    backgroundColor: "#10B981",
-                    boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(16, 185, 129, 0.50), 0px 0px 0px 1px #10B981"
-                  }}>
+                <div className="text-center space-y-6 w-full">
+                  <div 
+                    className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center" 
+                    style={{
+                      backgroundColor: "#10B981",
+                      boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(16, 185, 129, 0.50), 0px 0px 0px 1px #10B981"
+                    }}
+                  >
                     <Check className="w-10 h-10 text-white" />
                   </div>
                   <div>
@@ -897,29 +855,49 @@ function SignInPage() {
                     </p>
                     {formData.username && (
                       <div className="text-left space-y-2 text-sm text-gray-300">
+                        <p>• Name: {formData.name}</p>
+                        <p>• Display Name: {formData.displayName}</p>
                         <p>• Following {formData.following.length} users</p>
                         <p>• Interested in {formData.topics.length} topics</p>
-                        {session && (
-                          <p>• Connected with X: {session.user?.name}</p>
+                        {user && (
+                          <p>• Connected: {user.email?.address || `${user.wallet?.address?.slice(0, 6)}...${user.wallet?.address?.slice(-4)}`}</p>
                         )}
                       </div>
                     )}
                     {formData.communityId && (
                       <div className="text-left space-y-2 text-sm text-gray-300">
-                        <p>• Community Type: {communityTypes.find(t => t.id === formData.communityType)?.name}</p>
+                        <p>• Community ID: #{formData.communityId}</p>
+                        <p>• Name: {formData.communityName}</p>
+                        <p>• Type: {communityTypes.find(t => t.id === formData.communityType)?.name}</p>
                         <p>• Ready to add members</p>
+                        {user && (
+                          <p>• Admin: {user.email?.address || `${user.wallet?.address?.slice(0, 6)}...${user.wallet?.address?.slice(-4)}`}</p>
+                        )}
                       </div>
                     )}
                   </div>
                   <button
+                    onClick={() => {
+                      console.log("Profile completed successfully");
+                      // Navigate to landing page after successful setup
+                      window.location.href = '/';
+                      // Or using Next.js router:
+                      // router.push('/');
+                    }}
                     className="w-full px-6 py-4 text-white text-sm font-medium rounded-full transition-all duration-200"
                     style={{
                       backgroundColor: "#10B981",
                       boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(16, 185, 129, 0.50), 0px 0px 0px 1px #10B981"
                     }}
                   >
-                    Continue to App →
+                    Go to Landing Page →
                   </button>
+                  
+                  <div className="pt-4 border-t border-gray-700">
+                    <p className="text-xs text-gray-400">
+                      Profile saved successfully. You can now access all features.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
