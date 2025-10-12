@@ -17,6 +17,7 @@ export interface SignupResponse {
     email: string
     bio: string
     avatarUrl: string
+    avatar_url: string
     createdAt: string
   }
 }
@@ -142,6 +143,7 @@ export interface UserProfile {
   email: string
   bio: string
   avatarUrl: string
+  avatar_url: string
   createdAt: string
   followerCount: number
   followingCount: number
