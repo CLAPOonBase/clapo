@@ -1,19 +1,17 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft, Heart, MessageSquare, Share2, TrendingUp, Send, MoreVertical, Bookmark, X, Triangle, Repeat, HandMetal, Eye, ExternalLink } from "lucide-react"
+import { ArrowLeft, Heart, MessageSquare, Share2, TrendingUp, Send, MoreVertical, Bookmark, X, Triangle, Repeat, HandMetal, Eye } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { useApi } from '@/app/Context/ApiProvider'
-// import { useApi } from "@/app/Context/ApiProvider"
 import { useSession } from 'next-auth/react'
-import { Post, ApiPost } from '@/app/types'
-import ReputationBadge from '@/app/components/ReputationBadge'
-import { usePostTokenPrice } from '@/app/hooks/useGlobalPrice'
-import { renderTextWithMentions } from '@/app/lib/mentionUtils'
-import Toast from '@/app/components/Toast'
-import PostTokenTrading from '@/app/components/PostTokenTrading'
-import { UserProfileHover } from '@/app/components/UserProfileHover'
+
+const tabs = [
+  { key: "comments", label: "Comments" },
+  { key: "holders", label: "Holders" },
+  { key: "activity", label: "Activity" },
+  { key: "details", label: "Details" }
+]
 
 export default function PostDetailPage() {
   const params = useParams()
@@ -22,32 +20,17 @@ export default function PostDetailPage() {
   
   const [activeTab, setActiveTab] = useState("comments")
   const [comment, setComment] = useState("")
-  const [post, setPost] = useState<ApiPost | null>(null)
+  const [post, setPost] = useState<any>(null)
   const [comments, setComments] = useState<any[]>([])
   const [showImageModal, setShowImageModal] = useState(false)
-  const [isLoading, setIsLoading] = useState({ like: false, retweet: false, bookmark: false, comment: false })
-  const [toast, setToast] = useState<{ message: string; type: any } | null>(null)
-  const [showTokenTrading, setShowTokenTrading] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [visibleCount, setVisibleCount] = useState(5)
-  const [profile, setProfile] = useState<any | null>(null)
-  
-  const { 
-    likePost, 
-    unlikePost, 
-    retweetPost, 
-    bookmarkPost, 
-    unbookmarkPost, 
-    addComment, 
-    getPostComments,
-    getPostDetails,
-    getUserProfile,
-    state 
-  } = useApi()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   
   const { data: session } = useSession()
-  const currentUserId = session?.dbUser?.id
-  const currentUserAvatar = session?.dbUser?.avatar_url
+  const currentUserId = session?.dbUser?.id || 999
+  const currentUserAvatar = session?.dbUser?.avatar_url || "https://ui-avatars.com/api/?name=User&background=8B5CF6&color=fff"
   
   const [userEngagement, setUserEngagement] = useState({
     liked: false,
@@ -63,107 +46,52 @@ export default function PostDetailPage() {
     views: 0
   })
 
-  const tabs = [
-    { key: "comments", label: "Comments", count: localEngagement.comments },
-    { key: "holders", label: "Holders", count: 0 },
-    { key: "activity", label: "Activity", count: 0 },
-    { key: "details", label: "Details", count: 0 }
-  ]
-
-  const { price: postTokenPrice, loading: priceLoading } = usePostTokenPrice(postId)
-
   // Fetch post data
   useEffect(() => {
     const fetchPost = async () => {
+      setLoading(true)
+      setError(null)
+
       try {
-        if (getPostDetails) {
-          const postData = await getPostDetails(postId)
-          setPost(postData)
-          
-          // Initialize engagement counts
-          setLocalEngagement({
-            likes: postData.like_count || 0,
-            comments: postData.comment_count || 0,
-            retweets: postData.retweet_count || 0,
-            bookmarks: postData.bookmarks?.length || 0,
-            views: postData.view_count || 0
-          })
-          
-          // Initialize user engagement state
-          const isUserInLikes = postData.likes?.some(u => u.user_id === currentUserId)
-          const isUserInRetweets = postData.retweets?.some(u => u.user_id === currentUserId)
-          const isUserInBookmarks = postData.bookmarks?.some(u => u.user_id === currentUserId)
-          
-          setUserEngagement({
-            liked: isUserInLikes || false,
-            retweeted: isUserInRetweets || false,
-            bookmarked: isUserInBookmarks || false
-          })
-          
-          // Set comments
-          if (postData.comments) {
-            setComments(postData.comments)
-          }
+        if (!postId) {
+          throw new Error("Post ID not provided")
         }
-      } catch (error) {
-        console.error('Failed to fetch post:', error)
-        setToast({ message: 'Failed to load post', type: 'error' })
+
+        const response = await fetch(`http://localhost:3001/api/snaps/post/${postId}`)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch post: ${response.status}`)
+        }
+
+        const result = await response.json()
+        const postData = result.data
+
+        if (!postData) {
+          throw new Error("No post data returned")
+        }
+
+        setPost(postData)
+        setComments(postData.comments || [])
+        setLocalEngagement({
+          likes: postData.like_count || 0,
+          comments: postData.comment_count || 0,
+          retweets: postData.retweet_count || 0,
+          bookmarks: postData.bookmarks?.length || 0,
+          views: postData.view_count || 0
+        })
+      } catch (err: any) {
+        console.error("Error fetching post:", err)
+        setError(err.message || "Failed to load post")
+      } finally {
+        setLoading(false)
       }
     }
 
     if (postId) {
       fetchPost()
     }
-  }, [postId, currentUserId])
+  }, [postId])
 
-  // Fetch user profile
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (session?.dbUser?.id) {
-        try {
-          const profileData = await getUserProfile(session.dbUser.id)
-          setProfile(profileData.profile)
-        } catch (error) {
-          console.error('Failed to fetch profile:', error)
-        }
-      }
-    }
-
-    fetchProfile()
-  }, [session?.dbUser?.id])
-
-  // Fetch comments for active tab
-  useEffect(() => {
-    const fetchComments = async () => {
-      if (activeTab === "comments" && comments.length === 0 && getPostComments) {
-        try {
-          const fetchedComments = await getPostComments(postId)
-          setComments(fetchedComments || [])
-        } catch (error) {
-          console.error('Failed to load comments:', error)
-        }
-      }
-    }
-
-    fetchComments()
-  }, [activeTab, postId])
-
-  if (!post) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-[#6E54FF] border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
-
-  const postContent = post.content
-  const postImage = post.media_url
-  const postAuthor = post.username || 'Unknown'
-  const postHandle = `@${post.username || 'unknown'}`
-  const authorReputation = post.author_reputation
-  const authorReputationTier = post.author_reputation_tier
-  
-  const postAvatar = post.avatar_url
+  const postTokenPrice = 1.25
 
   const getRelativeTime = (dateString: string) => {
     const date = new Date(dateString)
@@ -182,8 +110,7 @@ export default function PostDetailPage() {
     const diffInYears = Math.floor(diffInMonths / 12)
     return `${diffInYears}y ago`
   }
-
-  const postTime = getRelativeTime(post.created_at)
+  
   const formatCommentTime = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -195,113 +122,49 @@ export default function PostDetailPage() {
     return `${Math.floor(diffInMinutes / 1440)}d`
   }
 
-  const handleLike = async () => {
-    if (!currentUserId || isLoading.like) return
-    
-    setIsLoading(prev => ({ ...prev, like: true }))
-    
-    try {
-      const currentLiked = userEngagement.liked
-      const currentCount = localEngagement.likes
-      
-      if (currentLiked) {
-        const newCount = Math.max(0, currentCount - 1)
-        setLocalEngagement(prev => ({ ...prev, likes: newCount }))
-        setUserEngagement(prev => ({ ...prev, liked: false }))
-        setToast({ message: 'Post unliked', type: 'unlike' })
-        await unlikePost(postId, currentUserId)
-      } else {
-        const newCount = currentCount + 1
-        setLocalEngagement(prev => ({ ...prev, likes: newCount }))
-        setUserEngagement(prev => ({ ...prev, liked: true }))
-        await likePost(postId, currentUserId)
-      }
-    } catch (error) {
-      console.error('Failed to handle like:', error)
-      setToast({ message: 'Failed to update like', type: 'error' })
-    } finally {
-      setIsLoading(prev => ({ ...prev, like: false }))
+  const handleLike = () => {
+    if (userEngagement.liked) {
+      setLocalEngagement(prev => ({ ...prev, likes: Math.max(0, prev.likes - 1) }))
+      setUserEngagement(prev => ({ ...prev, liked: false }))
+    } else {
+      setLocalEngagement(prev => ({ ...prev, likes: prev.likes + 1 }))
+      setUserEngagement(prev => ({ ...prev, liked: true }))
     }
   }
 
-  const handleRetweet = async () => {
-    if (!currentUserId || isLoading.retweet || userEngagement.retweeted) return
-    
-    setIsLoading(prev => ({ ...prev, retweet: true }))
-    
-    try {
-      const currentCount = localEngagement.retweets
-      const newCount = currentCount + 1
-      setLocalEngagement(prev => ({ ...prev, retweets: newCount }))
+  const handleRetweet = () => {
+    if (!userEngagement.retweeted) {
+      setLocalEngagement(prev => ({ ...prev, retweets: prev.retweets + 1 }))
       setUserEngagement(prev => ({ ...prev, retweeted: true }))
-      await retweetPost(postId, currentUserId)
-    } catch (error) {
-      console.error('Failed to retweet:', error)
-      setToast({ message: 'Failed to retweet', type: 'error' })
-    } finally {
-      setIsLoading(prev => ({ ...prev, retweet: false }))
     }
   }
 
-  const handleBookmark = async () => {
-    if (!currentUserId || isLoading.bookmark) return
-    
-    setIsLoading(prev => ({ ...prev, bookmark: true }))
-    
-    try {
-      const currentBookmarked = userEngagement.bookmarked
-      const currentCount = localEngagement.bookmarks
-      
-      if (currentBookmarked) {
-        const newCount = Math.max(0, currentCount - 1)
-        setLocalEngagement(prev => ({ ...prev, bookmarks: newCount }))
-        setUserEngagement(prev => ({ ...prev, bookmarked: false }))
-        await unbookmarkPost(postId, currentUserId)
-      } else {
-        const newCount = currentCount + 1
-        setLocalEngagement(prev => ({ ...prev, bookmarks: newCount }))
-        setUserEngagement(prev => ({ ...prev, bookmarked: true }))
-        await bookmarkPost(postId, currentUserId)
-      }
-    } catch (error) {
-      console.error('Failed to handle bookmark:', error)
-      setToast({ message: 'Failed to update bookmark', type: 'error' })
-    } finally {
-      setIsLoading(prev => ({ ...prev, bookmark: false }))
+  const handleBookmark = () => {
+    if (userEngagement.bookmarked) {
+      setLocalEngagement(prev => ({ ...prev, bookmarks: Math.max(0, prev.bookmarks - 1) }))
+      setUserEngagement(prev => ({ ...prev, bookmarked: false }))
+    } else {
+      setLocalEngagement(prev => ({ ...prev, bookmarks: prev.bookmarks + 1 }))
+      setUserEngagement(prev => ({ ...prev, bookmarked: true }))
     }
   }
 
-  const handleCommentSubmit = async (e?: React.FormEvent) => {
+  const handleCommentSubmit = (e?: React.FormEvent) => {
     e?.preventDefault()
-    if (!comment.trim() || !currentUserId || isLoading.comment) return
+    if (!comment.trim()) return
 
-    setIsLoading(prev => ({ ...prev, comment: true }))
-    
-    try {
-      const newComment = {
-        id: Date.now().toString(),
-        content: comment.trim(),
-        created_at: new Date().toISOString(),
-        user_id: currentUserId,
-        username: session?.dbUser?.username || 'Unknown',
-        avatar_url: currentUserAvatar
-      }
-
-      const updatedComments = [newComment, ...comments]
-      setComments(updatedComments)
-      setLocalEngagement(prev => ({ ...prev, comments: prev.comments + 1 }))
-      setComment('')
-      setToast({ message: 'Comment added', type: 'success' })
-
-      if (addComment) {
-        await addComment(postId, comment.trim(), currentUserId)
-      }
-    } catch (error) {
-      console.error('Failed to add comment:', error)
-      setToast({ message: 'Failed to add comment', type: 'error' })
-    } finally {
-      setIsLoading(prev => ({ ...prev, comment: false }))
+    const newComment = {
+      id: `c${Date.now()}`,
+      content: comment.trim(),
+      created_at: new Date().toISOString(),
+      user_id: currentUserId,
+      username: session?.dbUser?.username || 'current_user',
+      avatar_url: currentUserAvatar
     }
+
+    setComments([newComment, ...comments])
+    setLocalEngagement(prev => ({ ...prev, comments: prev.comments + 1 }))
+    setComment('')
   }
 
   const handleImageClick = (e: React.MouseEvent) => {
@@ -314,9 +177,59 @@ export default function PostDetailPage() {
     setShowImageModal(false)
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading post...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white flex items-center justify-center">
+        <div className="text-center p-8">
+          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <X className="w-8 h-8 text-red-400" />
+          </div>
+          <h2 className="text-xl font-bold mb-2">Error Loading Post</h2>
+          <p className="text-gray-400 mb-6">{error}</p>
+          <button 
+            onClick={() => router.back()}
+            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!post) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-400">Post not found</p>
+        </div>
+      </div>
+    )
+  }
+
+  const postContent = post.content
+  const postImage = post.media_url
+  const postAuthor = post.author_username || post.username
+  const postHandle = `@${postAuthor}`
+  const postAvatar = post.author_avatar || post.avatar_url || `https://ui-avatars.com/api/?name=${postAuthor}&background=6E54FF&color=fff`
+  const postTime = getRelativeTime(post.created_at)
+
   const words = postContent?.trim().split(/\s+/) || []
   const isLong = words.length > 50
   const displayedText = expanded ? postContent : words.slice(0, 50).join(" ") + (isLong ? "..." : "")
+
+  const hasImage = postImage && postImage.trim() !== ""
 
   return (
     <>
@@ -336,41 +249,38 @@ export default function PostDetailPage() {
             <span className="text-sm font-medium">Back</span>
           </motion.button>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-            {/* Left Side - Image */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1, duration: 0.4 }}
-              className="relative"
-            >
-              {postImage && (
+          <div className={`grid grid-cols-2 ${hasImage ? 'lg:grid-cols-2' : 'lg:grid-cols-1 max-w-3xl mx-auto'} gap-6 lg:gap-8`}>
+            {/* Left Side - Image or Content */}
+            {hasImage ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1, duration: 0.4 }}
+                className="relative"
+              >
                 <div className="aspect-square rounded-2xl overflow-hidden bg-gray-900 border-2 border-gray-800/50 shadow-2xl">
-                  {/\.(jpg|jpeg|png|gif|webp)$/i.test(postImage) ? (
-                    <img
-                      src={postImage}
-                      alt="Post content"
-                      className="w-full h-full object-cover cursor-pointer"
-                      onClick={handleImageClick}
-                    />
-                  ) : /\.(mp4|webm|ogg|mov)$/i.test(postImage) ? (
-                    <video
-                      src={postImage}
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                      controls
-                      className="w-full h-full object-cover"
-                    />
-                  ) : /\.(mp3|wav|ogg|m4a)$/i.test(postImage) ? (
-                    <div className="w-full h-full bg-gray-900 flex items-center justify-center p-8">
-                      <audio src={postImage} controls className="w-full" />
-                    </div>
-                  ) : null}
+                  <img
+                    src={postImage}
+                    alt="Post content"
+                    className="w-full h-full object-cover cursor-pointer"
+                    onClick={handleImageClick}
+                  />
                 </div>
-              )}
-            </motion.div>
+              </motion.div>
+            ) : (
+             <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1, duration: 0.4 }}
+                className="relative"
+              >
+                <div className="rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 border-2 border-gray-800/50 shadow-2xl p-8 min-h-[300px] flex items-center justify-center">
+                  <p className="text-gray-300 text-xl leading-relaxed whitespace-pre-wrap text-center">
+                    {postContent}
+                  </p>
+                </div>
+              </motion.div>
+            )}
 
             {/* Right Side - Details */}
             <motion.div
@@ -382,43 +292,20 @@ export default function PostDetailPage() {
               {/* Author Info */}
               <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-800/50">
                 <div className="flex items-center gap-3">
-                  <UserProfileHover
-                    userId={post.user_id.toString()}
-                    username={postAuthor}
-                    avatarUrl={postAvatar}
-                    position="bottom"
-                  >
-                    <div className="relative cursor-pointer">
-                      {postAvatar ? (
-                        <img
-                          src={postAvatar}
-                          alt={postAuthor}
-                          className="w-12 h-12 rounded-full object-cover border-2 border-gray-700"
-                          onError={e => {
-                            e.currentTarget.src = `https://ui-avatars.com/api/?name=${postAuthor}`
-                          }}
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-sm font-semibold text-white border-2 border-gray-700">
-                          {postAuthor?.substring(0, 2)?.toUpperCase() || 'U'}
-                        </div>
-                      )}
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-black"
-                        style={{ backgroundColor: "#10B981" }}
-                      />
-                    </div>
-                  </UserProfileHover>
+                  <div className="relative cursor-pointer">
+                    <img
+                      src={postAvatar}
+                      alt={postAuthor}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-gray-700"
+                    />
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-black bg-green-500" />
+                  </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="font-bold text-lg">{postAuthor}</h2>
-                      {authorReputation !== undefined && (
-                        <ReputationBadge
-                          score={authorReputation}
-                          tier={authorReputationTier}
-                          size="sm"
-                          showScore={false}
-                        />
-                      )}
+                      <div className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-semibold">
+                        Gold
+                      </div>
                     </div>
                     <p className="text-gray-400 text-sm">{postHandle} • {postTime}</p>
                   </div>
@@ -428,17 +315,11 @@ export default function PostDetailPage() {
                 </button>
               </div>
 
-              {/* Content */}
-              {postContent && (
+              {/* Content (only if image exists) */}
+              {hasImage && postContent && (
                 <div className="mb-6">
                   <p className="text-gray-300 text-base leading-relaxed whitespace-pre-wrap">
-                    {renderTextWithMentions(
-                      displayedText,
-                      undefined, // No mentions available from getPostDetails
-                      (userId, username) => {
-                        router.push(`/snaps/profile/${userId}`)
-                      }
-                    )}
+                    {displayedText}
                   </p>
                   {isLong && (
                     <button
@@ -487,7 +368,6 @@ export default function PostDetailPage() {
               <div className="flex gap-3 mb-6">
                 <button
                   onClick={handleLike}
-                  disabled={isLoading.like || !currentUserId}
                   className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
                     userEngagement.liked
                       ? "bg-gray-600/20 border-2 border-gray-600/50 text-gray-400"
@@ -499,7 +379,6 @@ export default function PostDetailPage() {
                 </button>
                 <button
                   onClick={handleBookmark}
-                  disabled={isLoading.bookmark || !currentUserId}
                   className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
                     userEngagement.bookmarked
                       ? "bg-blue-600/20 border-2 border-blue-600/50 text-blue-400"
@@ -511,7 +390,7 @@ export default function PostDetailPage() {
                 </button>
                 <button
                   onClick={handleRetweet}
-                  disabled={isLoading.retweet || !currentUserId || userEngagement.retweeted}
+                  disabled={userEngagement.retweeted}
                   className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
                     userEngagement.retweeted
                       ? "bg-green-600/20 border-2 border-green-600/50 text-green-400"
@@ -526,7 +405,6 @@ export default function PostDetailPage() {
               {/* Buy/Trade Button */}
               <div className="mb-6">
                 <button 
-                  onClick={() => setShowTokenTrading(true)}
                   className="w-full px-6 py-3 text-white font-bold rounded-xl transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2"
                   style={{
                     backgroundColor: "#10B981",
@@ -534,7 +412,7 @@ export default function PostDetailPage() {
                   }}
                 >
                   <Triangle size={16} />
-                  Trade Token • ${priceLoading ? '...' : postTokenPrice.toFixed(2)}
+                  Trade Token • ${postTokenPrice.toFixed(2)}
                 </button>
               </div>
 
@@ -555,9 +433,9 @@ export default function PostDetailPage() {
                     } : {}}
                   >
                     {tab.label}
-                    {tab.count !== undefined && (
+                    {tab.key === "comments" && (
                       <span className={`ml-1.5 text-xs ${activeTab === tab.key ? "text-white/80" : "text-gray-500"}`}>
-                        {tab.count}
+                        {localEngagement.comments}
                       </span>
                     )}
                   </button>
@@ -571,17 +449,11 @@ export default function PostDetailPage() {
                     {/* Add Comment */}
                     <form onSubmit={handleCommentSubmit} className="flex items-center gap-2 mb-4">
                       <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden">
-                        {profile?.avatar_url ? (
-                          <img
-                            src={profile.avatar_url}
-                            alt="Your avatar"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gray-700 flex items-center justify-center text-xs font-semibold text-white">
-                            {session?.dbUser?.username?.substring(0, 2)?.toUpperCase() || 'U'}
-                          </div>
-                        )}
+                        <img
+                          src={currentUserAvatar}
+                          alt="Your avatar"
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                       <div className="flex-1 flex items-center bg-transparent rounded-full px-1 py-0.5 border border-gray-700/50">
                         <input
@@ -589,22 +461,14 @@ export default function PostDetailPage() {
                           placeholder="Add a comment..."
                           value={comment}
                           onChange={(e) => setComment(e.target.value)}
-                          disabled={isLoading.comment || !currentUserId}
-                          className="flex-1 px-3 py-2 bg-transparent text-sm text-white rounded-full focus:outline-none transition-all duration-200 placeholder:text-gray-500 disabled:opacity-50"
+                          className="flex-1 px-3 py-2 bg-transparent text-sm text-white rounded-full focus:outline-none transition-all duration-200 placeholder:text-gray-500"
                         />
                         <button
                           type="submit"
-                          disabled={!comment.trim() || isLoading.comment || !currentUserId}
+                          disabled={!comment.trim()}
                           className="p-2 bg-[#6E54FF] hover:bg-[#5940cc] rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mr-0.5 flex-shrink-0"
-                          style={{
-                            boxShadow: comment.trim() ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50)" : "none"
-                          }}
                         >
-                          {isLoading.comment ? (
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <Send className="w-4 h-4 text-white" />
-                          )}
+                          <Send className="w-4 h-4 text-white" />
                         </button>
                       </div>
                     </form>
@@ -621,7 +485,7 @@ export default function PostDetailPage() {
                           >
                             <div className="flex gap-3">
                               <img
-                                src={comment.avatar_url || `https://ui-avatars.com/api/?name=${comment.username}`}
+                                src={comment.avatar_url}
                                 alt={comment.username}
                                 className="w-10 h-10 rounded-full object-cover border border-gray-700"
                               />
@@ -800,27 +664,6 @@ export default function PostDetailPage() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Post Token Trading Modal */}
-      {showTokenTrading && (
-        <PostTokenTrading
-          postId={postId}
-          postContent={postContent}
-          isOpen={showTokenTrading}
-          onClose={() => setShowTokenTrading(false)}
-        />
-      )}
-
-      {/* Toast Notifications */}
-      {toast && (
-        <Toast 
-          id="post-detail-toast" 
-          title="Notification" 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast(null)} 
-        />
-      )}
     </>
   )
 }
