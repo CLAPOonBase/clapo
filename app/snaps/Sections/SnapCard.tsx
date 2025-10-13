@@ -580,19 +580,28 @@ const handleImageClick = (e: React.MouseEvent) => {
             <div className="flex items-center justify-between mt-2 -ml-2">
               {/* Left: Main actions close together */}
               <div className="flex items-center gap-1">
-                <button
-                  onClick={e => {
-                    e.stopPropagation()
-                    handleLike()
-                  }}
-                  disabled={isLoading.like || !currentUserId}
-                  className={`flex items-center gap-1.5 transition-colors group disabled:opacity-50 ${userEngagement.liked ? 'text-pink-500' : 'text-gray-500 hover:text-pink-500'}`}
-                >
-                  <div className="p-2 rounded-full group-hover:bg-pink-500/10 transition-colors">
-                    <HandMetal className={`w-[18px] h-[18px]`} style={{ strokeWidth: userEngagement.liked ? 2.5 : 2 }} />
-                  </div>
-                  <span className="text-xs">{localEngagement.likes}</span>
-                </button>
+          <button
+  onClick={e => {
+    e.stopPropagation()
+    handleLike()
+  }}
+  disabled={isLoading.like || !currentUserId}
+  className={`flex items-center gap-0.5 transition-colors group disabled:opacity-50 ${
+    userEngagement.liked ? 'text-gray-400' : 'text-gray-500 hover:text-pink-500'
+  }`}
+>
+  <div className="p-2 rounded-full group-hover:bg-pink-500/10 transition-colors">
+    <HandMetal
+      className="w-[18px] h-[18px]"
+      style={{
+        // strokeWidth: userEngagement.liked ? 2.5 : 2,
+        fill: userEngagement.liked ? 'gray' : 'none',
+      }}
+    />
+  </div>
+  <span className="text-xs">{localEngagement.likes}</span>
+</button>
+
 
                 <button
                   onClick={e => {
