@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { useWalletContext } from '@/context/WalletContext';
 
 // Contract ABI for Post Token with UUID support
 const CONTRACT_ABI = [
-  // Create post with UUID
-  "function createPost(string memory uuid, string memory content, string memory imageUrl, uint256 _freebieCount, uint256 _quadraticDivisor) external returns (string memory)",
+  // Create post with UUID (freebieCount is now fixed at 0)
+  "function createPost(string memory uuid, string memory content, string memory imageUrl, uint256 freebieCount, uint256 _quadraticDivisor) external returns (string memory)",
   
-  // Buy/Sell functions
-  "function buyPostTokensByUuid(string memory uuid) external",
+  // Buy/Sell functions with multi-token support
+  "function buyPostTokensByUuid(string memory uuid, uint256 amount) external",
   "function sellPostTokensByUuid(string memory uuid, uint256 amount) external",
   
   // View functions
@@ -19,6 +19,10 @@ const CONTRACT_ABI = [
   "function getBuyPriceByUuid(string memory uuid) external view returns (uint256)",
   "function getSellPriceByUuid(string memory uuid) external view returns (uint256)",
   "function getFreebieSellPriceByUuid(string memory uuid) external view returns (uint256)",
+  
+  // Multi-token pricing functions
+  "function getBuyPriceForAmountByUuid(string memory uuid, uint256 amount) external view returns (uint256)",
+  "function getSellPayoutForAmountByUuid(string memory uuid, uint256 amount) external view returns (uint256)",
   "function canClaimFreebieByUuid(string memory uuid, address user) external view returns (bool)",
   "function getPostStatsByUuid(string memory uuid) external view returns (uint256 totalBuyers, uint256 payingBuyers, uint256 freebieClaimed, uint256 currentPrice, uint256 highestPrice, uint256 rewardPoolBalance, uint256 creatorFeeBalance, uint256 platformFeeBalance, uint256 liability, bool breakEven, uint256 totalSupply, uint256 circulatingSupply)",
   "function getUserPostPortfolioByUuid(string memory uuid, address user) external view returns (uint256 balance, uint256 totalBought, uint256 totalSold, uint256 totalFeesPaid, uint256 lastTransactionTime, bool hasFreebieFlag, uint256 transactionCount, uint256 netShares, uint256 currentValue)",
@@ -41,7 +45,7 @@ const CONTRACT_ABI = [
   "event PostTokensSold(uint256 indexed postId, address indexed seller, uint256 amount, uint256 payout, bool isFreebie, uint256 transactionId)"
 ];
 
-const CONTRACT_ADDRESS = "0xAb6E048829A7c7Cc9b9C5f31cb445237F2b2dC7e"; // Post Token contract deployed on Monad testnet
+const CONTRACT_ADDRESS = "0xdb61267b2b233A47bf56F551528CCB93f9788C6a"; // Post Token contract deployed on Monad testnet
 const MOCK_USDC_ADDRESS = "0x44aAAEeC1A83c30Fe5784Af49E6a38D3709Ee148";
 
 // ERC20 ABI for USDC approval
@@ -81,9 +85,6 @@ export interface UserPortfolio {
   currentValue: number;
 }
 
-// Cache for contract deployment status to avoid repeated RPC calls
-let contractDeploymentCache: { [address: string]: boolean } = {};
-
 export const usePostToken = () => {
   const { provider, signer, address, isConnecting, connect, disconnect } = useWalletContext();
   const [contract, setContract] = useState<ethers.Contract | null>(null);
@@ -94,41 +95,18 @@ export const usePostToken = () => {
     process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://testnet-rpc.monad.xyz'
   );
 
-  // Helper function to check if contract is deployed (with caching)
-  const isContractDeployed = async (contractAddress: string): Promise<boolean> => {
-    // Check cache first
-    if (contractDeploymentCache[contractAddress] !== undefined) {
-      return contractDeploymentCache[contractAddress];
-    }
-
-    try {
-      const code = await readOnlyProvider.getCode(contractAddress);
-      const isDeployed = code !== '0x';
-      // Cache the result
-      contractDeploymentCache[contractAddress] = isDeployed;
-      return isDeployed;
-    } catch (error) {
-      console.error('Error checking contract deployment:', error);
-      // Cache as false to avoid repeated failed calls
-      contractDeploymentCache[contractAddress] = false;
-      return false;
-    }
-  };
-
   // Derive isConnected from global wallet context
   const isConnected = !!signer && !!address;
 
   // Update contract when wallet connection changes
   useEffect(() => {
     if (signer && address) {
-      console.log('Setting up Post Token contract with global wallet context');
-      console.log('Wallet connected:', address);
-      console.log('Post Token Contract address:', CONTRACT_ADDRESS);
+      // Setting up Post Token contract with global wallet context
       
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
       setContract(contract);
     } else {
-      console.log('No wallet connection - clearing contract');
+      // Wallet disconnected, clearing contract
       setContract(null);
     }
   }, [signer, address]);
@@ -150,19 +128,18 @@ export const usePostToken = () => {
     disconnect();
   };
 
-  // Create post token
+  // Create post token (freebieCount is now fixed at 0)
   const createPostToken = async (
     uuid: string,
     content: string,
     imageUrl: string,
-    freebieCount: number = 3,
     quadraticDivisor: number = 1
   ) => {
     console.log('🚀 createPostToken called with:', {
       uuid,
       content: content.substring(0, 50) + '...',
       imageUrl,
-      freebieCount,
+      freebieCount: 0, // Fixed at 0 for post tokens
       quadraticDivisor,
       contractAddress: CONTRACT_ADDRESS,
       hasContract: !!contract,
@@ -180,7 +157,7 @@ export const usePostToken = () => {
       console.log('📝 Calling contract.createPost...');
       console.log('Contract method details:', {
         method: 'createPost',
-        params: [uuid, content, imageUrl, freebieCount, quadraticDivisor],
+        params: [uuid, content, imageUrl, quadraticDivisor],
         contractAddress: CONTRACT_ADDRESS,
         userAddress: address
       });
@@ -211,26 +188,13 @@ export const usePostToken = () => {
         uuid,
         content,
         imageUrl,
-        freebieCount,
+        0, // freebieCount - posts have 0 freebies
         quadraticDivisor
       );
 
-      console.log('✅ Transaction sent:', {
-        hash: tx.hash,
-        from: tx.from,
-        to: tx.to,
-        gasLimit: tx.gasLimit?.toString(),
-        gasPrice: tx.gasPrice?.toString()
-      });
+      // Transaction sent successfully
 
-      console.log('⏳ Waiting for transaction confirmation...');
       const receipt = await tx.wait();
-      console.log('🎉 Transaction confirmed:', {
-        hash: receipt.hash,
-        blockNumber: receipt.blockNumber,
-        gasUsed: receipt.gasUsed.toString(),
-        status: receipt.status
-      });
 
       // Create post token in backend database
       try {
@@ -240,13 +204,13 @@ export const usePostToken = () => {
           content: content,
           image_url: imageUrl,
           creator_address: address!,
-          freebie_count: freebieCount,
+          freebie_count: 0, // Fixed at 0 for post tokens
           quadratic_divisor: quadraticDivisor,
           total_supply: 100000 // Default total supply
         });
         
         if (backendResponse.success) {
-          console.log('✅ Post token created in backend database:', backendResponse.data?.uuid);
+          // Post token created in backend database
         } else {
           console.error('❌ Failed to create post token in backend:', backendResponse.message);
         }
@@ -350,29 +314,29 @@ export const usePostToken = () => {
     }
   };
 
-  // Buy shares
-  const buyShares = async (uuid: string, buyerUserId?: string) => {
+  // Buy shares (now supports multi-token buying)
+  const buyShares = async (uuid: string, amount: number = 1, buyerUserId?: string) => {
     if (!contract || !signer) {
       throw new Error('Contract not connected');
     }
 
     setLoading(true);
     try {
-      // First, get the current price to determine required USDC amount
-      const currentPrice = await getCurrentPrice(uuid);
-      console.log('Current price for buying shares:', currentPrice);
+      // First, get the total price for the amount to determine required USDC amount
+      const totalPrice = await getBuyPriceForAmount(uuid, amount);
+      console.log(`Total price for buying ${amount} shares:`, totalPrice);
       
       // Check and approve USDC allowance
-      await checkAndApproveUSDC(currentPrice);
+      await checkAndApproveUSDC(totalPrice);
       
       // Now proceed with the purchase
-      const tx = await contract.buyPostTokensByUuid(uuid);
+      const tx = await contract.buyPostTokensByUuid(uuid, amount);
       const receipt = await tx.wait();
       
       // Check if this was a freebie transaction by looking for FreebieClaimed event
       let isFreebie = false;
-      let actualPrice = currentPrice;
-      let actualTotalCost = currentPrice;
+      let actualPrice = totalPrice / amount; // Price per token
+      let actualTotalCost = totalPrice;
       
       if (receipt.logs) {
         for (const log of receipt.logs) {
@@ -411,7 +375,7 @@ export const usePostToken = () => {
           buyer_user_id: buyerUserId,
           post_token_uuid: uuid,
           transaction_type: 'BUY',
-          amount: 1,
+          amount: amount,
           price_per_token: actualPrice,
           total_cost: actualTotalCost,
           tx_hash: tx.hash,
@@ -483,24 +447,19 @@ export const usePostToken = () => {
   };
 
   // Get current price
-  const getCurrentPrice = async (uuid: string): Promise<number> => {
+  const getCurrentPrice = useCallback(async (uuid: string): Promise<number> => {
     if (!contract) {
       console.log('Contract not initialized yet, returning 0 price');
       return 0;
     }
 
     try {
-      // Check if contract is deployed using cached check
-      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
-      if (!deployed) {
-        console.log('Contract not deployed, returning 0 price');
-        return 0;
-      }
+      // Contract deployment is verified in configuration, no need to check here
 
       // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
-        console.log(`Post ${uuid} does not exist, returning 0 price`);
+        // Post does not exist, returning 0 price
         return 0;
       }
 
@@ -510,7 +469,7 @@ export const usePostToken = () => {
       console.error('Failed to get current price:', error);
       return 0;
     }
-  };
+  }, [contract]);
 
   // Get post stats
   const getPostStats = async (uuid: string): Promise<PostTokenStats | null> => {
@@ -520,17 +479,12 @@ export const usePostToken = () => {
     }
 
     try {
-      // Check if contract is deployed using cached check
-      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
-      if (!deployed) {
-        console.log('Contract not deployed, returning null stats');
-        return null;
-      }
+      // Contract deployment is verified in configuration, no need to check here
 
       // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
-        console.log(`Post ${uuid} does not exist, returning null stats`);
+        // Post does not exist, returning null stats
         return null;
       }
 
@@ -575,7 +529,23 @@ export const usePostToken = () => {
         netShares: Number(portfolio.netShares),
         currentValue: parseFloat(ethers.formatUnits(portfolio.currentValue, 6))
       };
-    } catch (error) {
+    } catch (error: any) {
+      // Handle "Post not found" errors gracefully
+      if (error.message?.includes('Post with this UUID not found') || 
+          error.reason?.includes('Post with this UUID not found')) {
+        // Post doesn't exist on blockchain yet, return empty portfolio
+        return {
+          balance: 0,
+          totalBought: 0,
+          totalSold: 0,
+          totalFeesPaid: 0,
+          lastTransactionTime: 0,
+          hasFreebieFlag: false,
+          transactionCount: 0,
+          netShares: 0,
+          currentValue: 0
+        };
+      }
       console.error('Failed to get user portfolio:', error);
       return null;
     }
@@ -589,17 +559,12 @@ export const usePostToken = () => {
     }
 
     try {
-      // Check if contract is deployed using cached check
-      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
-      if (!deployed) {
-        console.log('Contract not deployed, returning 0 freebies');
-        return 0;
-      }
+      // Contract deployment is verified in configuration, no need to check here
 
       // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
-        console.log(`Post ${uuid} does not exist, returning 0 freebies`);
+        // Post does not exist, returning 0 freebies
         return 0;
       }
 
@@ -612,24 +577,18 @@ export const usePostToken = () => {
   };
 
   // Get actual price (ignores freebie availability)
-  const getActualPrice = async (uuid: string): Promise<number> => {
+  const getActualPrice = useCallback(async (uuid: string): Promise<number> => {
     if (!contract) {
-      console.log('Contract not initialized yet, returning 0 actual price');
+      // Contract not initialized yet, returning 0 actual price
       return 0;
     }
 
     try {
-      // Check if contract is deployed using cached check
-      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
-      if (!deployed) {
-        console.log('Contract not deployed at address, returning 0 actual price');
-        return 0;
-      }
-
+      // Contract deployment is verified in configuration, no need to check here
       // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
-        console.log(`Post ${uuid} does not exist, returning 0 actual price`);
+        // Post does not exist, returning 0 actual price
         return 0;
       }
 
@@ -639,7 +598,7 @@ export const usePostToken = () => {
       console.error('Failed to get actual price:', error);
       return 0;
     }
-  };
+  }, [contract]);
 
   // Check if user can claim freebie
   const canClaimFreebie = async (uuid: string, userAddress: string): Promise<boolean> => {
@@ -654,17 +613,12 @@ export const usePostToken = () => {
     }
 
     try {
-      // Check if contract is deployed using cached check
-      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
-      if (!deployed) {
-        console.log('Contract not deployed, returning false');
-        return false;
-      }
+      // Contract deployment is verified in configuration, no need to check here
 
       // First check if post exists
       const exists = await contract.doesUuidExist(uuid);
       if (!exists) {
-        console.log(`Post ${uuid} does not exist, returning false for freebie eligibility`);
+        // Post does not exist, returning false for freebie eligibility
         return false;
       }
 
@@ -720,6 +674,56 @@ export const usePostToken = () => {
     }
   };
 
+  // Get buy price for multiple tokens
+  const getBuyPriceForAmount = useCallback(async (uuid: string, amount: number): Promise<number> => {
+    if (!contract) {
+      console.log('Contract not initialized yet, returning 0 price');
+      return 0;
+    }
+
+    try {
+      // Contract deployment is verified in configuration, no need to check here
+
+      // First check if post exists
+      const exists = await contract.doesUuidExist(uuid);
+      if (!exists) {
+        // Post does not exist, returning 0 price
+        return 0;
+      }
+
+      const price = await contract.getBuyPriceForAmountByUuid(uuid, amount);
+      return parseFloat(ethers.formatUnits(price, 6)); // Convert from wei to USDC
+    } catch (error) {
+      console.error('Failed to get buy price for amount:', error);
+      return 0;
+    }
+  }, [contract]);
+
+  // Get sell payout for multiple tokens
+  const getSellPayoutForAmount = useCallback(async (uuid: string, amount: number): Promise<number> => {
+    if (!contract) {
+      console.log('Contract not initialized yet, returning 0 payout');
+      return 0;
+    }
+
+    try {
+      // Contract deployment is verified in configuration, no need to check here
+
+      // First check if post exists
+      const exists = await contract.doesUuidExist(uuid);
+      if (!exists) {
+        // Post does not exist, returning 0 payout
+        return 0;
+      }
+
+      const payout = await contract.getSellPayoutForAmountByUuid(uuid, amount);
+      return parseFloat(ethers.formatUnits(payout, 6)); // Convert from wei to USDC
+    } catch (error) {
+      console.error('Failed to get sell payout for amount:', error);
+      return 0;
+    }
+  }, [contract]);
+
   // Check if post token exists
   const checkPostTokenExists = async (uuid: string): Promise<boolean> => {
     console.log(`🔍 checkPostTokenExists called for post: ${uuid}`);
@@ -736,12 +740,7 @@ export const usePostToken = () => {
     }
 
     try {
-      // Check if contract is deployed using cached check
-      const deployed = await isContractDeployed(CONTRACT_ADDRESS);
-      if (!deployed) {
-        console.log('Contract not deployed, returning false');
-        return false;
-      }
+      // Contract deployment is verified in configuration, no need to check here
 
       console.log(`📞 Calling contract.doesUuidExist(${uuid})...`);
       // Use the safe function that doesn't revert
@@ -779,6 +778,8 @@ export const usePostToken = () => {
     sellShares,
     getCurrentPrice,
     getActualPrice,
+    getBuyPriceForAmount,
+    getSellPayoutForAmount,
     getPostStats,
     getUserPortfolio,
     getRemainingFreebies,

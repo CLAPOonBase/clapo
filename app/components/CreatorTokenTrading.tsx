@@ -31,6 +31,7 @@ export default function CreatorTokenTrading({
   const [remainingFreebies, setRemainingFreebies] = useState(0);
   const [userCanClaimFreebie, setUserCanClaimFreebie] = useState(false);
   const [actualPrice, setActualPrice] = useState(0);
+  const [totalCost, setTotalCost] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -51,6 +52,8 @@ export default function CreatorTokenTrading({
     sellCreatorTokens, 
     getCurrentPrice, 
     getActualPrice,
+    getBuyPriceForAmount,
+    getSellPayoutForAmount,
     getCreatorStats, 
     getUserPortfolio, 
     getRemainingFreebies,
@@ -174,8 +177,8 @@ export default function CreatorTokenTrading({
     setSuccess(null);
 
     try {
-      await buyCreatorTokens(creatorUuid, session?.dbUser?.id);
-      setSuccess('Successfully bought creator tokens!');
+      await buyCreatorTokens(creatorUuid, amount, session?.dbUser?.id);
+      setSuccess(`Successfully bought ${amount} creator tokens!`);
       await loadCreatorTokenData(); // Refresh data
     } catch (err: any) {
       setError(err.message || 'Failed to buy creator tokens');
@@ -323,6 +326,24 @@ export default function CreatorTokenTrading({
       resetAccessTokenState();
     }
   }, [activeTab]);
+
+  // Calculate total cost when amount changes
+  useEffect(() => {
+    const calculateTotalCost = async () => {
+      if (creatorUuid && amount > 0) {
+        try {
+          const cost = await getBuyPriceForAmount(creatorUuid, amount);
+          setTotalCost(cost);
+        } catch (error) {
+          console.error('Failed to calculate total cost:', error);
+          // Fallback to flat pricing if quadratic pricing fails
+          setTotalCost(currentPrice * amount);
+        }
+      }
+    };
+
+    calculateTotalCost();
+  }, [amount, creatorUuid, getBuyPriceForAmount, currentPrice]);
 
   if (!isOpen) return null;
 
@@ -631,7 +652,7 @@ export default function CreatorTokenTrading({
                    <div className="flex justify-between items-center">
                      <span className="text-gray-400 text-sm">Total cost</span>
                      <span className="text-white text-lg font-bold tracking-tight">
-                       {userCanClaimFreebie && remainingFreebies > 0 ? 'FREE' : formatPrice(currentPrice * amount)}
+                       {userCanClaimFreebie && remainingFreebies > 0 ? 'FREE' : formatPrice(totalCost)}
                      </span>
                    </div>
                  </div>

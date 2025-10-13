@@ -29,7 +29,7 @@ export default function ClientLayoutWrapper({ children }: ClientLayoutWrapperPro
   // Redirect to homepage after successful authentication
   useEffect(() => {
     if (status === 'authenticated' && session?.dbUser) {
-      console.log('✅ User authenticated with dbUser, redirecting to homepage');
+      // User authenticated, redirecting to homepage
       // Only redirect if we're on an auth page
       if (window.location.pathname.includes('/auth/') || window.location.pathname.includes('/SignIn')) {
         router.push('/');

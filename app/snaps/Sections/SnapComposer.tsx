@@ -107,7 +107,7 @@ export function SnapComposer({ close }: { close: () => void }) {
     fetchProfile()
   }, [session?.dbUser?.id, getUserProfile])
 
-  console.log("profile", profile)
+  // Profile data loaded
   
   const [uploadedMedia, setUploadedMedia] = useState<{
     url: string
@@ -289,6 +289,7 @@ export function SnapComposer({ close }: { close: () => void }) {
       const postData: any = {
         userId,
         content: content.trim(),
+        uuid: postUuid, // Add the UUID to ensure consistency
       }
 
       // Only add mediaUrl if it exists
@@ -313,7 +314,7 @@ export function SnapComposer({ close }: { close: () => void }) {
             freebieCount,
             quadraticDivisor
           )
-          console.log('✅ Post token created successfully, TX:', tokenTxHash)
+          // Post token created successfully
           showSuccessToast(`Snap posted and token created! TX: ${tokenTxHash.slice(0, 10)}...`)
         } catch (tokenError) {
           console.error('Failed to create post token:', tokenError)

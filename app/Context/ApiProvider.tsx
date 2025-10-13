@@ -553,9 +553,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_LOADING', payload: true })
       const response = await apiService.getPosts(targetUserId, 150, 0)
 
-      // Debug: Log raw API response
-      console.log('🌐 Raw API Response from getPosts:', response)
-      console.log('📝 First post from API:', response.posts?.[0])
+      // Debug logging removed for cleaner console
 
       const currentPosts = state.posts.posts
       const newPostsFromAPI = response.posts
