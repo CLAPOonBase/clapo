@@ -40,7 +40,7 @@ export default function PostDetailPage() {
     unbookmarkPost, 
     addComment, 
     getPostComments,
-    getPostById,
+    getPostDetails,
     getUserProfile,
     state 
   } = useApi()
@@ -63,14 +63,21 @@ export default function PostDetailPage() {
     views: 0
   })
 
+  const tabs = [
+    { key: "comments", label: "Comments", count: localEngagement.comments },
+    { key: "holders", label: "Holders", count: 0 },
+    { key: "activity", label: "Activity", count: 0 },
+    { key: "details", label: "Details", count: 0 }
+  ]
+
   const { price: postTokenPrice, loading: priceLoading } = usePostTokenPrice(postId)
 
   // Fetch post data
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        if (getPostById) {
-          const postData = await getPostById(postId)
+        if (getPostDetails) {
+          const postData = await getPostDetails(postId)
           setPost(postData)
           
           // Initialize engagement counts
@@ -427,7 +434,7 @@ export default function PostDetailPage() {
                   <p className="text-gray-300 text-base leading-relaxed whitespace-pre-wrap">
                     {renderTextWithMentions(
                       displayedText,
-                      post.mentions,
+                      undefined, // No mentions available from getPostDetails
                       (userId, username) => {
                         router.push(`/snaps/profile/${userId}`)
                       }

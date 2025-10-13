@@ -122,7 +122,7 @@ export function CreatorTokenDisplay({ userId, username, avatarUrl, isOwnProfile 
 
     setTrading(true)
     try {
-      await buyCreatorTokens(tokenUuid, session?.dbUser?.id)
+      await buyCreatorTokens(tokenUuid, 1, session?.dbUser?.id)
       // Refresh data after successful purchase
       await refreshData()
     } catch (error) {

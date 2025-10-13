@@ -123,11 +123,12 @@ export const useCreatorToken = () => {
       const setupContract = async () => {
         try {
           const contract = new ethers.Contract(CREATOR_TOKEN_ADDRESS, CREATOR_TOKEN_ABI, signer);
+          const signerAddress = await signer.getAddress();
           console.log('🔍 Contract creation details:', {
             contractAddress: CREATOR_TOKEN_ADDRESS,
             hasContract: !!contract,
             abiLength: CREATOR_TOKEN_ABI.length,
-            signerAddress: signer.address,
+            signerAddress: signerAddress,
             providerNetwork: signer.provider ? 'has provider' : 'no provider'
           });
           

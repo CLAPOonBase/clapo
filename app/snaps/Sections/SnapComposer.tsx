@@ -311,7 +311,6 @@ export function SnapComposer({ close }: { close: () => void }) {
             postUuid, // Use the SAME UUID
             content.trim(),
             mediaUrl || '',
-            freebieCount,
             quadraticDivisor
           )
           // Post token created successfully

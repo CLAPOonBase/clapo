@@ -404,6 +404,10 @@ class ApiService {
     return this.request<CommentResponse[]>(`/posts/${postId}/comments`)
   }
 
+  async getPostDetails(postId: string): Promise<any> {
+    return this.request<any>(`/posts/${postId}`)
+  }
+
   async retweetPost(postId: string, data: LikePostRequest): Promise<RetweetResponse> {
     return this.request<RetweetResponse>(`/posts/${postId}/retweet`, {
       method: 'POST',

@@ -111,7 +111,7 @@ export function AccessTokenClaim({ userId, username, avatarUrl }: AccessTokenCla
       await claimAccessToken(accessToken.trim())
       
       // Then, claim the freebie through the smart contract
-      await buyCreatorTokens(creatorTokenUuid, session?.dbUser?.id)
+      await buyCreatorTokens(creatorTokenUuid, 1, session?.dbUser?.id)
       
       // Reset form
       setAccessToken('')

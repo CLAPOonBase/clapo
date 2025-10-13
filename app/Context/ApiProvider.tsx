@@ -414,6 +414,7 @@ interface ApiContextType {
   commentPost: (postId: string, data: CommentRequest) => Promise<any>
   addComment: (postId: string, content: string, userId: string) => Promise<any>
   getPostComments: (postId: string) => Promise<CommentResponse[]>
+  getPostDetails: (postId: string) => Promise<any>
   getUserProfile: (userId: string) => Promise<any>
   updateUserProfile: (userId: string, data: UpdateProfileRequest) => Promise<any>
   fetchNotifications: (userId: string) => Promise<void>
@@ -726,6 +727,16 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const getPostDetails = useCallback(async (postId: string) => {
+    try {
+      const response = await apiService.getPostDetails(postId)
+      return response.post // The API returns { message, post }
+    } catch (error) {
+      console.error('Failed to get post details:', error)
+      throw error
+    }
+  }, [])
+
   const fetchNotifications = useCallback(async (userId?: string) => {
     const targetUserId = userId || getCurrentUserId()
     if (!targetUserId) return
@@ -1023,6 +1034,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     commentPost,
     addComment,
     getPostComments,
+    getPostDetails,
     followUser,
     unfollowUser,
     getUserProfile,
