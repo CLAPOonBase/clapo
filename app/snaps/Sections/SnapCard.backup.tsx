@@ -57,17 +57,7 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   const authorReputation = isApiPost ? post.author_reputation : undefined
   const authorReputationTier = isApiPost ? post.author_reputation_tier : undefined
 
-  // Debug: Log reputation data and full post object
-  if (isApiPost) {
-    console.log(`🔍 Post ${postId} - Author: ${postAuthor}`)
-    console.log('📊 Reputation Data:', {
-      score: authorReputation,
-      tier: authorReputationTier,
-      hasScore: authorReputation !== undefined,
-      hasTier: authorReputationTier !== undefined
-    })
-    console.log('📦 Full Post Object:', post)
-  }
+  // Debug logging removed for cleaner console
   const getRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -97,7 +87,6 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   const postAvatar = isApiPost ? post.avatar_url : undefined
   const currentUserId = session?.dbUser?.id
   const currentUserAvatar = session?.dbUser?.avatar_url
-  console.log("Current User Avatar:", session.dbUser.avatar_url);
   const [profile, setProfile] = useState<any | null>(null)
 const [loading, setLoading] = useState(false)
   const { getUserProfile, getUserFollowers, getUserFollowing, followUser, unfollowUser } = useApi()

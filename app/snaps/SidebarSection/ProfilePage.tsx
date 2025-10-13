@@ -25,7 +25,7 @@ type Tab = "Posts" | "Activity" | "Followers"
 export function ProfilePage({ user, posts }: Props) {
   const { data: session } = useSession()
   const { getUserProfile, updateUserProfile, getUserFollowers, getUserFollowing } = useApi()
-  const { createCreatorToken, checkCreatorExists, isConnected, connectWallet, isConnecting } = useCreatorToken()
+  const { createCreatorToken, checkCreatorExists, isConnected, connectWallet, isConnecting, address, switchToMonadTestnet } = useCreatorToken()
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>("Posts")
@@ -36,7 +36,7 @@ export function ProfilePage({ user, posts }: Props) {
   // Creator token creation state
   const [tokenName, setTokenName] = useState('')
   const [tokenDescription, setTokenDescription] = useState('')
-  const [freebieCount, setFreebieCount] = useState(1)
+  // freebieCount is now fixed at 50 in the contract
   const [quadraticDivisor, setQuadraticDivisor] = useState(1)
   const [isCreatingToken, setIsCreatingToken] = useState(false)
   
@@ -74,29 +74,73 @@ export function ProfilePage({ user, posts }: Props) {
     fetchProfile()
   }, [session?.dbUser?.id, getUserProfile])
 
-  // Check if creator token exists
+  // Check if creator token exists with debouncing
   useEffect(() => {
-    const checkTokenExists = async () => {
-      if (session?.dbUser?.id) {
-        try {
-          setCheckingTokenExists(true)
-          const tokenUuid = generateCreatorTokenUUID(session.dbUser.id)
-          const exists = await checkCreatorExists(tokenUuid)
-          setCreatorTokenExists(exists)
-          if (exists) {
-            setCreatorTokenUserId(session.dbUser.id)
+    console.log('🔍 ProfilePage useEffect triggered with:', {
+      'session?.dbUser?.id': session?.dbUser?.id,
+      'isConnected': isConnected,
+      'address': address,
+      'checkCreatorExists': typeof checkCreatorExists
+    });
+    
+    console.log('🔍 ProfilePage: useEffect dependencies check:', {
+      'hasUserId': !!session?.dbUser?.id,
+      'isConnected': isConnected,
+      'hasAddress': !!address,
+      'hasCheckFunction': typeof checkCreatorExists === 'function'
+    });
+    
+    // Debounce the check to prevent rapid calls
+    const timeoutId = setTimeout(() => {
+      const checkTokenExists = async () => {
+        if (session?.dbUser?.id && isConnected && address) {
+          try {
+            console.log('🔍 ProfilePage: Starting creator token existence check');
+            console.log('🔍 ProfilePage: User ID:', session.dbUser.id);
+            console.log('🔍 ProfilePage: Wallet connected:', isConnected);
+            console.log('🔍 ProfilePage: Wallet address:', address);
+            
+            setCheckingTokenExists(true)
+            const tokenUuid = generateCreatorTokenUUID(session.dbUser.id)
+            console.log('🔍 ProfilePage: Generated UUID:', tokenUuid);
+            
+            console.log('🔍 ProfilePage: Calling checkCreatorExists (direct token details approach)...');
+            const exists = await checkCreatorExists(tokenUuid)
+            console.log('🔍 ProfilePage: checkCreatorExists result:', exists);
+            
+            setCreatorTokenExists(exists)
+            if (exists) {
+              setCreatorTokenUserId(session.dbUser.id)
+              console.log('✅ ProfilePage: Creator token exists, setting state');
+            } else {
+              console.log('❌ ProfilePage: Creator token does not exist - will show create button');
+            }
+          } catch (error) {
+            console.error('❌ ProfilePage: Failed to check creator token existence:', error)
+            console.error('❌ ProfilePage: Error details:', {
+              message: error.message,
+              code: error.code,
+              reason: error.reason
+            });
+            setCreatorTokenExists(false)
+          } finally {
+            setCheckingTokenExists(false)
           }
-        } catch (error) {
-          console.error('Failed to check creator token existence:', error)
-          setCreatorTokenExists(false)
-        } finally {
-          setCheckingTokenExists(false)
+        } else {
+          console.log('❌ ProfilePage: Conditions not met for token check:', {
+            'hasUserId': !!session?.dbUser?.id,
+            'isConnected': isConnected,
+            'hasAddress': !!address
+          });
         }
       }
-    }
 
-    checkTokenExists()
-  }, [session?.dbUser?.id, checkCreatorExists])
+      checkTokenExists()
+    }, 500); // 500ms debounce delay
+
+    // Cleanup timeout on unmount or dependency change
+    return () => clearTimeout(timeoutId);
+  }, [session?.dbUser?.id, isConnected, address, checkCreatorExists]) // Now safe to include checkCreatorExists
 
   const handleUpdateProfile = async (updateData: { username?: string; bio?: string; avatarUrl?: string }) => {
     if (!session?.dbUser?.id) return
@@ -169,16 +213,15 @@ export function ProfilePage({ user, posts }: Props) {
 
     setIsCreatingToken(true)
     try {
-      // Generate ONE UUID that will be used for everything
-      const creatorUuid = crypto.randomUUID()
-      console.log('🎯 Generated consistent UUID for creator token:', creatorUuid)
+      // Use the user ID directly as the UUID (consistent with generateCreatorTokenUUID)
+      const creatorUuid = session?.dbUser?.id || ''
+      console.log('🎯 Using user ID as creator token UUID:', creatorUuid)
       
       const tokenTxHash = await createCreatorToken(
-        creatorUuid, // Use the SAME UUID
+        creatorUuid, // Use the user ID directly
         tokenName.trim(),
         profile?.avatar_url || '',
         tokenDescription.trim(),
-        freebieCount,
         quadraticDivisor,
         session?.dbUser?.id // Pass user ID for updating creator_token_uuid field
       )
@@ -187,7 +230,6 @@ export function ProfilePage({ user, posts }: Props) {
       
       setTokenName('')
       setTokenDescription('')
-      setFreebieCount(100)
       setQuadraticDivisor(1)
       setShowCreateTokenModal(false)
       
@@ -967,21 +1009,7 @@ export function ProfilePage({ user, posts }: Props) {
               </div>
 
               {/* Token Parameters */}
-              <div className="grid grid-cols-2 gap-4">
-                {/* Freebie Count */}
-                <div>
-                  <label className="block text-gray-400 text-sm font-bold tracking-wide mb-2">FREE SHARES</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="1000"
-                    value={freebieCount}
-                    onChange={(e) => setFreebieCount(parseInt(e.target.value) || 1)}
-                    className="w-full px-4 py-3 bg-black/50 backdrop-blur-sm border-2 border-gray-700/70 rounded-2xl text-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="1"
-                  />
-                </div>
-                
+              <div>
                 {/* Quadratic Divisor */}
                 <div>
                   <label className="block text-gray-400 text-sm font-bold tracking-wide mb-2">PRICE CURVE</label>
@@ -1003,7 +1031,7 @@ export function ProfilePage({ user, posts }: Props) {
                   Uses quadratic pricing: Price = (Tokens Held)² / {quadraticDivisor}
                 </p>
                 <p className="text-gray-400 text-xs font-medium">
-                  {freebieCount} free shares available. Lower divisor = steeper price curve.
+                  50 free shares available (fixed). Lower divisor = steeper price curve.
                 </p>
               </div>
 

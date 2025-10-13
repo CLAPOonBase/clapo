@@ -1,4 +1,5 @@
 import { Contract, ethers } from "ethers";
+import { getContractConfig, isContractDeployed } from '@/app/config/contracts';
 
 // Contract ABI
 const CONTRACT_ABI = [
@@ -88,6 +89,7 @@ export class SmartContractService {
     }
   }
 
+
   // Check USDC status
   async checkUSDCStatus(): Promise<USDCStatus> {
     try {
@@ -95,12 +97,18 @@ export class SmartContractService {
       console.log('Checking USDC status for address:', userAddress);
       console.log('USDC contract address:', USDC_CONTRACT_ADDRESS);
       
-      // First check if the USDC contract exists
-      const code = await this.provider.getCode(USDC_CONTRACT_ADDRESS);
-      if (code === '0x') {
-        throw new Error(`USDC contract not found at address ${USDC_CONTRACT_ADDRESS}. This might be the wrong network or contract address.`);
+      // Check USDC contract deployment status using configuration (avoid RPC calls)
+      const usdcConfig = getContractConfig('MOCK_USDC');
+      if (!usdcConfig || !isContractDeployed('MOCK_USDC')) {
+        throw new Error(`USDC contract configuration not found or not deployed. Please check contract configuration.`);
       }
-      console.log('USDC contract code found, length:', code.length);
+      
+      // Verify the configured address matches the expected address
+      if (usdcConfig.address !== USDC_CONTRACT_ADDRESS) {
+        throw new Error(`USDC contract address mismatch. Expected: ${USDC_CONTRACT_ADDRESS}, Configured: ${usdcConfig.address}`);
+      }
+      
+      console.log('USDC contract validated from configuration:', usdcConfig.address);
       
       // Check if user address is valid
       if (!userAddress || userAddress === '0x0000000000000000000000000000000000000000') {

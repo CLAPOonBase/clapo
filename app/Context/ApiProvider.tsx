@@ -414,6 +414,7 @@ interface ApiContextType {
   commentPost: (postId: string, data: CommentRequest) => Promise<any>
   addComment: (postId: string, content: string, userId: string) => Promise<any>
   getPostComments: (postId: string) => Promise<CommentResponse[]>
+  getPostDetails: (postId: string) => Promise<any>
   getUserProfile: (userId: string) => Promise<any>
   getPostDetails: (id: string) => Promise<any>
   updateUserProfile: (userId: string, data: UpdateProfileRequest) => Promise<any>
@@ -554,9 +555,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_LOADING', payload: true })
       const response = await apiService.getPosts(targetUserId, 150, 0)
 
-      // Debug: Log raw API response
-      console.log('🌐 Raw API Response from getPosts:', response)
-      console.log('📝 First post from API:', response.posts?.[0])
+      // Debug logging removed for cleaner console
 
       const currentPosts = state.posts.posts
       const newPostsFromAPI = response.posts
@@ -725,6 +724,16 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       return response
     } catch (error) {
       console.error('Failed to get post comments:', error)
+      throw error
+    }
+  }, [])
+
+  const getPostDetails = useCallback(async (postId: string) => {
+    try {
+      const response = await apiService.getPostDetails(postId)
+      return response.post // The API returns { message, post }
+    } catch (error) {
+      console.error('Failed to get post details:', error)
       throw error
     }
   }, [])
@@ -1026,6 +1035,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     commentPost,
     addComment,
     getPostComments,
+    getPostDetails,
     followUser,
     unfollowUser,
     getUserProfile,

@@ -163,6 +163,13 @@ export default function Sidebar({
 
 
 const handleNavClick = (value: PageKey) => {
+  // Navigate to wallet page route if wallet is clicked
+  if (value === 'wallet') {
+    router.push('/snaps/wallet');
+    setIsMobileSidebarOpen(false);
+    return;
+  }
+
   if (window.location.pathname !== '/') {
     router.push('/');
     setTimeout(() => {

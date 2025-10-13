@@ -140,13 +140,7 @@ class TokenApiService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`
-    console.log('🔍 Token API Request:', {
-      baseUrl: this.baseUrl,
-      endpoint,
-      fullUrl: url,
-      method: options.method || 'GET',
-      body: options.body
-    })
+    // Debug logging removed for cleaner console
     
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -166,13 +160,7 @@ class TokenApiService {
     }
 
     try {
-      console.log('🚀 Making fetch request to:', url)
       const response = await fetch(url, config)
-      console.log('📡 Response received:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
-      })
       
       if (!response.ok) {
         const errorText = await response.text()
@@ -181,7 +169,7 @@ class TokenApiService {
       }
 
       const responseData = await response.json()
-      console.log('✅ Response data:', responseData)
+      // Response data logged for debugging
       return responseData
     } catch (error) {
       console.error('❌ Request failed:', error)

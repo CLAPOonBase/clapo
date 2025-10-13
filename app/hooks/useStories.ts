@@ -15,13 +15,11 @@ export const useStories = () => {
       return;
     }
     
-    console.log('Fetching stories for user:', session.dbUser.id);
     setLoading(true);
     setError(null);
     
     try {
       const storiesData = await StoriesApiService.getFollowingStories(session.dbUser.id, limit);
-      console.log('Stories fetched:', storiesData);
       setStories(storiesData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch stories');

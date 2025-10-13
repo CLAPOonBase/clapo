@@ -58,14 +58,7 @@ class ApiService {
     authToken?: string
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`
-    console.log('🔍 API Request:', {
-      baseUrl: this.baseUrl,
-      endpoint,
-      fullUrl: url,
-      method: options.method || 'GET',
-      body: options.body,
-      hasAuthToken: !!authToken
-    })
+    // Debug logging removed for cleaner console
     
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -89,13 +82,7 @@ class ApiService {
     }
 
     try {
-      console.log('🚀 Making fetch request to:', url)
       const response = await fetch(url, config)
-      console.log('📡 Response received:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
-      })
       
       if (!response.ok) {
         const errorText = await response.text()
@@ -116,7 +103,7 @@ class ApiService {
       }
 
       const responseData = await response.json()
-      console.log('✅ Response data:', responseData)
+      // Response data logged for debugging
       return responseData
     } catch (error) {
       console.error('❌ Request failed:', error)
@@ -150,9 +137,7 @@ class ApiService {
   }
 
   async getUserProfile(userId: string): Promise<ProfileResponse> {
-    console.log('🔍 API Service: Getting user profile for userId:', userId)
     const response = await this.request<ProfileResponse>(`/users/${userId}/profile/posts`);
-    console.log('🔍 API Service: Raw response from getUserProfile:', response)
     return response;
   }
 
@@ -417,6 +402,10 @@ class ApiService {
 
   async getPostComments(postId: string): Promise<CommentResponse[]> {
     return this.request<CommentResponse[]>(`/posts/${postId}/comments`)
+  }
+
+  async getPostDetails(postId: string): Promise<any> {
+    return this.request<any>(`/posts/${postId}`)
   }
 
   async retweetPost(postId: string, data: LikePostRequest): Promise<RetweetResponse> {

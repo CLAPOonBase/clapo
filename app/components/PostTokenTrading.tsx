@@ -23,6 +23,7 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
   const [remainingFreebies, setRemainingFreebies] = useState(0);
   const [userCanClaimFreebie, setUserCanClaimFreebie] = useState(false);
   const [actualPrice, setActualPrice] = useState(0);
+  const [totalCost, setTotalCost] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -36,6 +37,8 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
     sellShares, 
     getCurrentPrice, 
     getActualPrice,
+    getBuyPriceForAmount,
+    getSellPayoutForAmount,
     getPostStats, 
     getUserPortfolio, 
     getRemainingFreebies,
@@ -56,6 +59,25 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
       loadPostTokenData();
     }
   }, [isOpen, postId]);
+
+  // Calculate total cost when amount changes
+  useEffect(() => {
+    const calculateTotalCost = async () => {
+      if (postId && amount > 0) {
+        try {
+          const tokenUuid = await getPostTokenUuid();
+          const cost = await getBuyPriceForAmount(tokenUuid, amount);
+          setTotalCost(cost);
+        } catch (error) {
+          console.error('Failed to calculate total cost:', error);
+          // Fallback to flat pricing if quadratic pricing fails
+          setTotalCost(currentPrice * amount);
+        }
+      }
+    };
+
+    calculateTotalCost();
+  }, [amount, postId, getBuyPriceForAmount, currentPrice]);
 
   // Helper function to get the correct post token UUID
   const getPostTokenUuid = async (): Promise<string> => {
@@ -85,24 +107,24 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
       setRemainingFreebies(freebies);
       setUserCanClaimFreebie(canClaim);
       
-      // Debug logging
-      console.log('PostTokenTrading Debug:', {
-        postId,
-        price,
-        actualPriceValue,
-        freebies,
-        canClaim,
-        userAddress,
-        stats: postStats
-      });
+      // Debug logging removed for cleaner console
 
       // Load user portfolio if connected
       if (userAddress) {
         const userPortfolio = await getUserPortfolio(tokenUuid, userAddress);
         setPortfolio(userPortfolio);
       }
-    } catch (err) {
-      setError('Failed to load post token data');
+    } catch (err: any) {
+      // Handle specific error cases
+      if (err.message?.includes('Post with this UUID not found') || 
+          err.reason?.includes('Post with this UUID not found')) {
+        // Post doesn't exist on blockchain yet, show appropriate message
+        setError('Post token not yet created on blockchain. Please wait or create the token first.');
+      } else if (err.message?.includes('Contract not connected')) {
+        setError('Please connect your wallet to view post token data');
+      } else {
+        setError('Failed to load post token data');
+      }
       console.error('Error loading post token data:', err);
     } finally {
       setIsLoading(false);
@@ -121,8 +143,8 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
 
     try {
       const tokenUuid = await getPostTokenUuid();
-      await buyShares(tokenUuid, session?.dbUser?.id);
-      setSuccess('Successfully bought shares!');
+      await buyShares(tokenUuid, amount, session?.dbUser?.id);
+      setSuccess(`Successfully bought ${amount} shares!`);
       await loadPostTokenData(); // Refresh data
     } catch (err: any) {
       setError(err.message || 'Failed to buy shares');
@@ -369,7 +391,7 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                    <div className="flex justify-between items-center">
                      <span className="text-gray-400 text-sm">Total cost</span>
                      <span className="text-white text-lg font-bold tracking-tight">
-                       {userCanClaimFreebie && remainingFreebies > 0 ? 'FREE' : formatPrice(currentPrice * amount)}
+                       {userCanClaimFreebie && remainingFreebies > 0 ? 'FREE' : formatPrice(totalCost)}
                      </span>
                    </div>
                       <div className="flex justify-between items-center">

@@ -19,7 +19,7 @@ export const usePostTokenPrice = (postId: string) => {
         setLoading(true);
         setError(null);
         
-        const tokenUuid = `post-${postId}`;
+        const tokenUuid = postId; // postId is already the UUID
         
         // Try to get the actual price first, fallback to current price
         let postPrice = 0;
