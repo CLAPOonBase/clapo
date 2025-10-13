@@ -415,6 +415,7 @@ interface ApiContextType {
   addComment: (postId: string, content: string, userId: string) => Promise<any>
   getPostComments: (postId: string) => Promise<CommentResponse[]>
   getUserProfile: (userId: string) => Promise<any>
+  getPostDetails: (id: string) => Promise<any>
   updateUserProfile: (userId: string, data: UpdateProfileRequest) => Promise<any>
   fetchNotifications: (userId: string) => Promise<void>
   fetchEnhancedNotifications: (userId: string) => Promise<void>
