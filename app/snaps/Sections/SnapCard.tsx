@@ -513,30 +513,44 @@ const handleImageClick = (e: React.MouseEvent) => {
             </div>
 
             {/* Post Content */}
-            {postContent && (
-              <div className="mb-3">
-                <p className="text-white text-[15px] leading-normal whitespace-pre-wrap">
-                  {renderTextWithMentions(
-                    displayedText,
-                    isApiPost ? post.mentions : undefined,
-                    (userId, username) => {
-                      router.push(`/snaps/profile/${userId}`)
-                    }
-                  )}
-                </p>
-                {isLong && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setExpanded(prev => !prev)
-                    }}
-                    className="text-blue-400 hover:text-blue-300 text-[15px] mt-1"
-                  >
-                    {expanded ? "Show less" : "Show more"}
-                  </button>
-                )}
-              </div>
-            )}
+          {postContent && (
+  <div className="mb-3">
+    <div
+      className={`${
+        !postImage
+          ? "bg-gradient-to-br from-gray-800/50  to-gray-900/50 mt-2 border border-gray-700/50 rounded-2xl px-4 py-6 h-96 w-auto flex items-center justify-center text-center"
+          : ""
+      }`}
+    >
+      <p
+        className={`text-white text-[15px] leading-normal whitespace-pre-wrap ${
+          !postImage ? "text-xl" : ""
+        }`}
+      >
+        {renderTextWithMentions(
+          displayedText,
+          isApiPost ? post.mentions : undefined,
+          (userId, username) => {
+            router.push(`/snaps/profile/${userId}`)
+          }
+        )}
+      </p>
+    </div>
+
+    {isLong && (
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          setExpanded(prev => !prev)
+        }}
+        className="text-blue-400 hover:text-blue-300 text-[15px] mt-1"
+      >
+        {expanded ? "Show less" : "Show more"}
+      </button>
+    )}
+  </div>
+)}
+
 
             {/* Media Section - Twitter Style */}
             {postImage && (

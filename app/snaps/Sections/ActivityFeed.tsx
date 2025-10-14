@@ -89,7 +89,7 @@ export default function UserActivityFeed({ username, limit = 10 }: UserActivityF
   if (loading && activities.length === 0) {
     return (
       <div className="text-white">
-        <div className="max-h-72 overflow-y-auto">
+        <div className="max-h-72 overflow-y-auto text-wrap break-words pr-2 ">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex items-start p-4">
               <div className="w-8 h-8 bg-gray-600 rounded-full mr-3 flex-shrink-0 animate-pulse" />
