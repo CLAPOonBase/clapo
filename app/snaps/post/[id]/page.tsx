@@ -1,10 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Heart, MessageSquare, Share2, TrendingUp, Send, MoreVertical, Bookmark, X, Triangle, Repeat, HandMetal, Eye } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useSession } from 'next-auth/react'
+// import { useApi } from '../../Context/ApiProvider'
+import { useApi } from "@/app/Context/ApiProvider"
+import { usePostTokenPrice } from '@/app/hooks/useGlobalPrice'
 
 const tabs = [
   { key: "comments", label: "Comments" },
@@ -27,9 +30,13 @@ export default function PostDetailPage() {
   const [visibleCount, setVisibleCount] = useState(5)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showTokenTrading, setShowTokenTrading] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: any } | null>(null)
+  const [isLoading, setIsLoading] = useState({ like: false, retweet: false, bookmark: false, comment: false })
+  const hasInitialized = useRef(false)
   
   const { data: session } = useSession()
-  const currentUserId = session?.dbUser?.id || 999
+  const currentUserId = session?.dbUser?.id
   const currentUserAvatar = session?.dbUser?.avatar_url || "https://ui-avatars.com/api/?name=User&background=8B5CF6&color=fff"
   
   const [userEngagement, setUserEngagement] = useState({
@@ -45,6 +52,31 @@ export default function PostDetailPage() {
     bookmarks: 0,
     views: 0
   })
+
+  const [postTokenPrice, setPostTokenPrice] = useState(1.25)
+  const [priceLoading, setPriceLoading] = useState(true)
+
+  // Fetch post token price
+  useEffect(() => {
+    const fetchTokenPrice = async () => {
+      if (!postId) return
+      
+      setPriceLoading(true)
+      try {
+        const response = await fetch(`http://localhost:3001/api/snaps/post/${postId}/token-price`)
+        if (response.ok) {
+          const data = await response.json()
+          setPostTokenPrice(data.price || 1.25)
+        }
+      } catch (error) {
+        console.error('Failed to fetch token price:', error)
+      } finally {
+        setPriceLoading(false)
+      }
+    }
+
+    fetchTokenPrice()
+  }, [postId])
 
   // Fetch post data
   useEffect(() => {
@@ -71,13 +103,36 @@ export default function PostDetailPage() {
 
         setPost(postData)
         setComments(postData.comments || [])
+        
+        const initialLikes = postData.like_count || 0
+        const initialComments = postData.comment_count || 0
+        const initialRetweets = postData.retweet_count || 0
+        const initialBookmarks = postData.bookmarks?.length || 0
+        const initialViews = postData.view_count || 0
+
         setLocalEngagement({
-          likes: postData.like_count || 0,
-          comments: postData.comment_count || 0,
-          retweets: postData.retweet_count || 0,
-          bookmarks: postData.bookmarks?.length || 0,
-          views: postData.view_count || 0
+          likes: initialLikes,
+          comments: initialComments,
+          retweets: initialRetweets,
+          bookmarks: initialBookmarks,
+          views: initialViews
         })
+
+        // Check user engagement
+        const isUserInLikes = postData.likes?.some((u: any) => u.user_id === currentUserId)
+        const isUserInRetweets = postData.retweets?.some((u: any) => u.user_id === currentUserId)
+        const isUserInBookmarks = postData.bookmarks?.some((u: any) => u.user_id === currentUserId)
+
+        setUserEngagement({
+          liked: isUserInLikes || false,
+          retweeted: isUserInRetweets || false,
+          bookmarked: isUserInBookmarks || false
+        })
+
+        // Track view
+        if (currentUserId) {
+          handleView()
+        }
       } catch (err: any) {
         console.error("Error fetching post:", err)
         setError(err.message || "Failed to load post")
@@ -89,9 +144,199 @@ export default function PostDetailPage() {
     if (postId) {
       fetchPost()
     }
-  }, [postId])
+  }, [postId, currentUserId])
 
-  const postTokenPrice = 1.25
+  const handleView = async () => {
+    if (!currentUserId) return
+    
+    try {
+      await fetch(`http://localhost:3001/api/snaps/post/${postId}/view`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUserId })
+      })
+    } catch (error) {
+      console.error('Failed to track view:', error)
+    }
+  }
+
+  const handleLike = async () => {
+    if (!currentUserId || isLoading.like) return
+    
+    setIsLoading(prev => ({ ...prev, like: true }))
+    
+    try {
+      const currentLiked = userEngagement.liked
+      const currentCount = localEngagement.likes
+      
+      if (currentLiked) {
+        const newCount = Math.max(0, currentCount - 1)
+        setLocalEngagement(prev => ({ ...prev, likes: newCount }))
+        setUserEngagement(prev => ({ ...prev, liked: false }))
+        setToast({ message: 'Post unliked', type: 'unlike' })
+        
+        await fetch(`http://localhost:3001/api/snaps/post/${postId}/unlike`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUserId })
+        })
+      } else {
+        const newCount = currentCount + 1
+        setLocalEngagement(prev => ({ ...prev, likes: newCount }))
+        setUserEngagement(prev => ({ ...prev, liked: true }))
+        
+        await fetch(`http://localhost:3001/api/snaps/post/${postId}/like`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUserId })
+        })
+      }
+    } catch (error) {
+      console.error('Failed to handle like:', error)
+      
+      const currentLiked = userEngagement.liked
+      const currentCount = localEngagement.likes
+      
+      if (currentLiked) {
+        setLocalEngagement(prev => ({ ...prev, likes: currentCount + 1 }))
+        setUserEngagement(prev => ({ ...prev, liked: true }))
+      } else {
+        setLocalEngagement(prev => ({ ...prev, likes: Math.max(0, currentCount - 1) }))
+        setUserEngagement(prev => ({ ...prev, liked: false }))
+      }
+      setToast({ message: 'Failed to update like', type: 'error' })
+    } finally {
+      setIsLoading(prev => ({ ...prev, like: false }))
+    }
+  }
+
+  const handleRetweet = async () => {
+    if (!currentUserId || isLoading.retweet || userEngagement.retweeted) return
+    
+    setIsLoading(prev => ({ ...prev, retweet: true }))
+    
+    try {
+      const currentCount = localEngagement.retweets
+      const newCount = currentCount + 1
+      
+      setLocalEngagement(prev => ({ ...prev, retweets: newCount }))
+      setUserEngagement(prev => ({ ...prev, retweeted: true }))
+      
+      await fetch(`http://localhost:3001/api/snaps/post/${postId}/retweet`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUserId })
+      })
+      
+      setToast({ message: 'Post shared', type: 'success' })
+    } catch (error) {
+      console.error('Failed to retweet:', error)
+      
+      const currentCount = localEngagement.retweets
+      setLocalEngagement(prev => ({ ...prev, retweets: Math.max(0, currentCount - 1) }))
+      setUserEngagement(prev => ({ ...prev, retweeted: false }))
+      setToast({ message: 'Failed to share post', type: 'error' })
+    } finally {
+      setIsLoading(prev => ({ ...prev, retweet: false }))
+    }
+  }
+
+  const handleBookmark = async () => {
+    if (!currentUserId || isLoading.bookmark) return
+    
+    setIsLoading(prev => ({ ...prev, bookmark: true }))
+    
+    try {
+      const currentBookmarked = userEngagement.bookmarked
+      const currentCount = localEngagement.bookmarks
+      
+      if (currentBookmarked) {
+        const newCount = Math.max(0, currentCount - 1)
+        setLocalEngagement(prev => ({ ...prev, bookmarks: newCount }))
+        setUserEngagement(prev => ({ ...prev, bookmarked: false }))
+        
+        await fetch(`http://localhost:3001/api/snaps/post/${postId}/unbookmark`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUserId })
+        })
+        
+        setToast({ message: 'Bookmark removed', type: 'info' })
+      } else {
+        const newCount = currentCount + 1
+        setLocalEngagement(prev => ({ ...prev, bookmarks: newCount }))
+        setUserEngagement(prev => ({ ...prev, bookmarked: true }))
+        
+        await fetch(`http://localhost:3001/api/snaps/post/${postId}/bookmark`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUserId })
+        })
+        
+        setToast({ message: 'Post bookmarked', type: 'success' })
+      }
+    } catch (error) {
+      console.error('Failed to handle bookmark:', error)
+      
+      const currentBookmarked = userEngagement.bookmarked
+      const currentCount = localEngagement.bookmarks
+      
+      if (currentBookmarked) {
+        setLocalEngagement(prev => ({ ...prev, bookmarks: currentCount + 1 }))
+        setUserEngagement(prev => ({ ...prev, bookmarked: true }))
+      } else {
+        setLocalEngagement(prev => ({ ...prev, bookmarks: Math.max(0, currentCount - 1) }))
+        setUserEngagement(prev => ({ ...prev, bookmarked: false }))
+      }
+      setToast({ message: 'Failed to update bookmark', type: 'error' })
+    } finally {
+      setIsLoading(prev => ({ ...prev, bookmark: false }))
+    }
+  }
+
+  const handleCommentSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    if (!comment.trim() || !currentUserId || isLoading.comment) return
+
+    setIsLoading(prev => ({ ...prev, comment: true }))
+    const currentCommentCount = localEngagement.comments
+    
+    try {
+      const newComment = {
+        id: Date.now().toString(),
+        content: comment.trim(),
+        created_at: new Date().toISOString(),
+        user_id: currentUserId,
+        username: session?.dbUser?.username || 'Unknown',
+        avatar_url: currentUserAvatar
+      }
+
+      const updatedComments = [newComment, ...comments]
+      const newCommentCount = updatedComments.length
+      
+      setComments(updatedComments)
+      setLocalEngagement(prev => ({ ...prev, comments: newCommentCount }))
+      setComment('')
+      setToast({ message: 'Comment added', type: 'success' })
+
+      await fetch(`http://localhost:3001/api/snaps/post/${postId}/comment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          userId: currentUserId, 
+          content: comment.trim() 
+        })
+      })
+    } catch (error) {
+      setComments(comments)
+      setLocalEngagement(prev => ({ ...prev, comments: currentCommentCount }))
+      setComment(comment)
+      setToast({ message: 'Failed to add comment', type: 'error' })
+      console.error('Failed to add comment:', error)
+    } finally {
+      setIsLoading(prev => ({ ...prev, comment: false }))
+    }
+  }
 
   const getRelativeTime = (dateString: string) => {
     const date = new Date(dateString)
@@ -122,51 +367,6 @@ export default function PostDetailPage() {
     return `${Math.floor(diffInMinutes / 1440)}d`
   }
 
-  const handleLike = () => {
-    if (userEngagement.liked) {
-      setLocalEngagement(prev => ({ ...prev, likes: Math.max(0, prev.likes - 1) }))
-      setUserEngagement(prev => ({ ...prev, liked: false }))
-    } else {
-      setLocalEngagement(prev => ({ ...prev, likes: prev.likes + 1 }))
-      setUserEngagement(prev => ({ ...prev, liked: true }))
-    }
-  }
-
-  const handleRetweet = () => {
-    if (!userEngagement.retweeted) {
-      setLocalEngagement(prev => ({ ...prev, retweets: prev.retweets + 1 }))
-      setUserEngagement(prev => ({ ...prev, retweeted: true }))
-    }
-  }
-
-  const handleBookmark = () => {
-    if (userEngagement.bookmarked) {
-      setLocalEngagement(prev => ({ ...prev, bookmarks: Math.max(0, prev.bookmarks - 1) }))
-      setUserEngagement(prev => ({ ...prev, bookmarked: false }))
-    } else {
-      setLocalEngagement(prev => ({ ...prev, bookmarks: prev.bookmarks + 1 }))
-      setUserEngagement(prev => ({ ...prev, bookmarked: true }))
-    }
-  }
-
-  const handleCommentSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault()
-    if (!comment.trim()) return
-
-    const newComment = {
-      id: `c${Date.now()}`,
-      content: comment.trim(),
-      created_at: new Date().toISOString(),
-      user_id: currentUserId,
-      username: session?.dbUser?.username || 'current_user',
-      avatar_url: currentUserAvatar
-    }
-
-    setComments([newComment, ...comments])
-    setLocalEngagement(prev => ({ ...prev, comments: prev.comments + 1 }))
-    setComment('')
-  }
-
   const handleImageClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -176,6 +376,28 @@ export default function PostDetailPage() {
   const handleModalClose = () => {
     setShowImageModal(false)
   }
+
+  // Toast Component
+  const Toast = ({ message, type, onClose }: any) => (
+    <motion.div
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -50 }}
+      className="fixed top-4 right-4 z-[10000] bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 shadow-xl flex items-center gap-3"
+    >
+      <span className="text-white text-sm">{message}</span>
+      <button onClick={onClose} className="text-gray-400 hover:text-white">
+        <X size={16} />
+      </button>
+    </motion.div>
+  )
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast])
 
   if (loading) {
     return (
@@ -233,6 +455,10 @@ export default function PostDetailPage() {
 
   return (
     <>
+      <AnimatePresence>
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      </AnimatePresence>
+
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white">
         <div className="max-w-7xl mx-auto px-4 py-6 lg:py-8">
           {/* Back Button */}
@@ -249,7 +475,7 @@ export default function PostDetailPage() {
             <span className="text-sm font-medium">Back</span>
           </motion.button>
 
-          <div className={`grid grid-cols-2 ${hasImage ? 'lg:grid-cols-2' : 'lg:grid-cols-1 max-w-3xl mx-auto'} gap-6 lg:gap-8`}>
+          <div className={`grid grid-cols-1 ${hasImage ? 'lg:grid-cols-2' : 'lg:grid-cols-2'} gap-6 lg:gap-8`}>
             {/* Left Side - Image or Content */}
             {hasImage ? (
               <motion.div
@@ -274,7 +500,7 @@ export default function PostDetailPage() {
                 transition={{ delay: 0.1, duration: 0.4 }}
                 className="relative"
               >
-                <div className="rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 border-2 border-gray-800/50 shadow-2xl p-8 min-h-[300px] flex items-center justify-center">
+                <div className="rounded-2xl h-full bg-gradient-to-br from-gray-800/50 to-gray-900/50 border-2 border-gray-800/50 shadow-2xl p-8 min-h-[300px] flex items-center justify-center">
                   <p className="text-gray-300 text-xl leading-relaxed whitespace-pre-wrap text-center">
                     {postContent}
                   </p>
@@ -303,9 +529,15 @@ export default function PostDetailPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="font-bold text-lg">{postAuthor}</h2>
-                      <div className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-semibold">
-                        Gold
-                      </div>
+                      {post.author_reputation_tier && (
+                        <div className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          post.author_reputation_tier === 'gold' ? 'bg-yellow-500/20 text-yellow-400' :
+                          post.author_reputation_tier === 'silver' ? 'bg-gray-400/20 text-gray-300' :
+                          'bg-orange-500/20 text-orange-400'
+                        }`}>
+                          {post.author_reputation_tier.charAt(0).toUpperCase() + post.author_reputation_tier.slice(1)}
+                        </div>
+                      )}
                     </div>
                     <p className="text-gray-400 text-sm">{postHandle} • {postTime}</p>
                   </div>
@@ -368,51 +600,73 @@ export default function PostDetailPage() {
               <div className="flex gap-3 mb-6">
                 <button
                   onClick={handleLike}
-                  className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
+                  disabled={isLoading.like || !currentUserId}
+                  className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                     userEngagement.liked
                       ? "bg-gray-600/20 border-2 border-gray-600/50 text-gray-400"
                       : "bg-gray-800/50 border-2 border-gray-700/30 text-gray-300 hover:border-gray-600/50"
                   }`}
                 >
-                  <HandMetal size={16} className={userEngagement.liked ? "fill-current" : ""} />
-                  {userEngagement.liked ? "Liked" : "Like"}
+                  {isLoading.like ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <HandMetal size={16} className={userEngagement.liked ? "fill-current" : ""} />
+                      {userEngagement.liked ? "Liked" : "Like"}
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={handleBookmark}
-                  className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
+                  disabled={isLoading.bookmark || !currentUserId}
+                  className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                     userEngagement.bookmarked
                       ? "bg-blue-600/20 border-2 border-blue-600/50 text-blue-400"
                       : "bg-gray-800/50 border-2 border-gray-700/30 text-gray-300 hover:border-gray-600/50"
                   }`}
                 >
-                  <Bookmark size={16} className={userEngagement.bookmarked ? "fill-current" : ""} />
-                  {userEngagement.bookmarked ? "Saved" : "Save"}
+                  {isLoading.bookmark ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Bookmark size={16} className={userEngagement.bookmarked ? "fill-current" : ""} />
+                      {userEngagement.bookmarked ? "Saved" : "Save"}
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={handleRetweet}
-                  disabled={userEngagement.retweeted}
-                  className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
+                  disabled={isLoading.retweet || !currentUserId || userEngagement.retweeted}
+                  className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                     userEngagement.retweeted
                       ? "bg-green-600/20 border-2 border-green-600/50 text-green-400"
                       : "bg-gray-800/50 border-2 border-gray-700/30 text-gray-300 hover:border-gray-600/50"
                   }`}
                 >
-                  <Repeat size={16} className="rotate-90" />
-                  {userEngagement.retweeted ? "Shared" : "Share"}
+                  {isLoading.retweet ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Repeat size={16} className="rotate-90" />
+                      {userEngagement.retweeted ? "Shared" : "Share"}
+                    </>
+                  )}
                 </button>
               </div>
 
               {/* Buy/Trade Button */}
               <div className="mb-6">
                 <button 
-                  className="w-full px-6 py-3 text-white font-bold rounded-xl transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2"
+                  onClick={() => setShowTokenTrading(true)}
+                  disabled={priceLoading}
+                  className="w-full px-6 py-3 text-white font-bold rounded-xl transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     backgroundColor: "#10B981",
                     boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(16, 185, 129, 0.50), 0px 0px 0px 1px #10B981"
                   }}
                 >
                   <Triangle size={16} />
-                  Trade Token • ${postTokenPrice.toFixed(2)}
+                  {priceLoading ? 'Loading...' : `Trade Token • ${postTokenPrice.toFixed(2)}`}
                 </button>
               </div>
 
@@ -461,14 +715,19 @@ export default function PostDetailPage() {
                           placeholder="Add a comment..."
                           value={comment}
                           onChange={(e) => setComment(e.target.value)}
-                          className="flex-1 px-3 py-2 bg-transparent text-sm text-white rounded-full focus:outline-none transition-all duration-200 placeholder:text-gray-500"
+                          disabled={isLoading.comment || !currentUserId}
+                          className="flex-1 px-3 py-2 bg-transparent text-sm text-white rounded-full focus:outline-none transition-all duration-200 placeholder:text-gray-500 disabled:opacity-50"
                         />
                         <button
                           type="submit"
-                          disabled={!comment.trim()}
+                          disabled={!comment.trim() || isLoading.comment || !currentUserId}
                           className="p-2 bg-[#6E54FF] hover:bg-[#5940cc] rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mr-0.5 flex-shrink-0"
                         >
-                          <Send className="w-4 h-4 text-white" />
+                          {isLoading.comment ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Send className="w-4 h-4 text-white" />
+                          )}
                         </button>
                       </div>
                     </form>
@@ -485,7 +744,7 @@ export default function PostDetailPage() {
                           >
                             <div className="flex gap-3">
                               <img
-                                src={comment.avatar_url}
+                                src={comment.avatar_url || `https://ui-avatars.com/api/?name=${comment.username}`}
                                 alt={comment.username}
                                 className="w-10 h-10 rounded-full object-cover border border-gray-700"
                               />
@@ -661,6 +920,69 @@ export default function PostDetailPage() {
                 transition={{ duration: 0.2 }}
               />
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Token Trading Modal */}
+      <AnimatePresence>
+        {showTokenTrading && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[9999] p-4" 
+            onClick={() => setShowTokenTrading(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 max-w-md w-full border-2 border-gray-700/50"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-white">Trade Post Token</h3>
+                <button 
+                  onClick={() => setShowTokenTrading(false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-700/30">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-400 text-sm">Current Price</span>
+                    <span className="text-white font-bold text-lg">${postTokenPrice.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400 text-sm">24h Change</span>
+                    <span className="text-green-400 font-semibold text-sm">+12.5%</span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <button className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-2">
+                    <Triangle size={16} />
+                    Buy Token
+                  </button>
+                  <button className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-2">
+                    <Triangle size={16} className="rotate-180" />
+                    Sell Token
+                  </button>
+                </div>
+
+                <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-700/30">
+                  <p className="text-gray-400 text-xs text-center">
+                    Trading tokens helps support content creators and earns you potential returns
+                  </p>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
