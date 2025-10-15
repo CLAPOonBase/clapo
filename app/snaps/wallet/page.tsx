@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { Wallet, TrendingUp, TrendingDown, DollarSign, Users, FileText, Copy, Check, ExternalLink, RefreshCw } from 'lucide-react'
+import { Wallet, TrendingUp, TrendingDown, DollarSign, Users, FileText, Copy, Check, ExternalLink, RefreshCw, Shield, LogIn } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWalletContext } from '@/context/WalletContext'
-import WalletConnectButton from '@/app/components/WalletConnectButton'
 import Sidebar from '@/app/snaps/Sections/Sidebar'
 import { useRouter } from 'next/navigation'
+import { usePrivy } from '@privy-io/react-auth'
+import { tokenApiService } from '@/app/lib/tokenApi'
 
 interface PostHolding {
   postId: string
@@ -33,60 +34,17 @@ interface CreatorHolding {
 
 export default function WalletPage() {
   const { data: session } = useSession()
-  const { address, isConnecting, connect, disconnect, getETHBalance } = useWalletContext()
-  const [ethBalance, setEthBalance] = useState<string>('0')
+  const { address, getETHBalance } = useWalletContext()
+  const { authenticated, user, ready: privyReady, login } = usePrivy()
+  const [monBalance, setMonBalance] = useState<string>('0')
   const [isLoadingBalance, setIsLoadingBalance] = useState(false)
-  const [copiedAddress, setCopiedAddress] = useState(false)
+  const [copiedPrivyAddress, setCopiedPrivyAddress] = useState(false)
   const [activeTab, setActiveTab] = useState<'posts' | 'creators'>('posts')
   const [currentPage, setCurrentPage] = useState<'wallet'>('wallet')
+  const [postHoldings, setPostHoldings] = useState<PostHolding[]>([])
+  const [creatorHoldings, setCreatorHoldings] = useState<CreatorHolding[]>([])
+  const [isLoadingHoldings, setIsLoadingHoldings] = useState(false)
   const router = useRouter()
-
-  // Mock data - replace with actual API calls
-  const [postHoldings] = useState<PostHolding[]>([
-    {
-      postId: '1',
-      postContent: 'This is the future of social media...',
-      postAuthor: '@crypto_trader',
-      shares: 100,
-      currentPrice: 2.45,
-      totalValue: 245,
-      profitLoss: 45,
-      profitLossPercentage: 22.5
-    },
-    {
-      postId: '2',
-      postContent: 'Breaking: Major announcement coming...',
-      postAuthor: '@tech_insider',
-      shares: 50,
-      currentPrice: 1.80,
-      totalValue: 90,
-      profitLoss: -10,
-      profitLossPercentage: -10
-    },
-  ])
-
-  const [creatorHoldings] = useState<CreatorHolding[]>([
-    {
-      creatorId: '1',
-      creatorName: 'CryptoTrader',
-      creatorAvatar: 'https://ui-avatars.com/api/?name=CryptoTrader',
-      shares: 200,
-      currentPrice: 5.50,
-      totalValue: 1100,
-      profitLoss: 300,
-      profitLossPercentage: 37.5
-    },
-    {
-      creatorId: '2',
-      creatorName: 'TechInsider',
-      creatorAvatar: 'https://ui-avatars.com/api/?name=TechInsider',
-      shares: 150,
-      currentPrice: 3.20,
-      totalValue: 480,
-      profitLoss: -20,
-      profitLossPercentage: -4
-    },
-  ])
 
   const totalPortfolioValue =
     postHoldings.reduce((acc, holding) => acc + holding.totalValue, 0) +
@@ -96,29 +54,120 @@ export default function WalletPage() {
     postHoldings.reduce((acc, holding) => acc + holding.profitLoss, 0) +
     creatorHoldings.reduce((acc, holding) => acc + holding.profitLoss, 0)
 
+  // Fetch wallet balance
   useEffect(() => {
     const fetchBalance = async () => {
-      if (address) {
+      console.log('🔍 Fetch balance check:', { authenticated, address, privyReady })
+
+      if (authenticated && address && privyReady) {
         setIsLoadingBalance(true)
         try {
+          console.log('🔍 Attempting to fetch balance for address:', address)
           const balance = await getETHBalance()
-          setEthBalance(parseFloat(balance).toFixed(4))
+          console.log('✅ Balance fetched:', balance)
+          setMonBalance(parseFloat(balance).toFixed(4))
         } catch (error) {
-          console.error('Failed to fetch ETH balance:', error)
+          console.error('❌ Failed to fetch MON balance:', error)
         } finally {
           setIsLoadingBalance(false)
         }
+      } else {
+        console.log('⚠️ Not ready to fetch balance')
+        setMonBalance('0')
       }
     }
 
     fetchBalance()
-  }, [address, getETHBalance])
+  }, [authenticated, address, getETHBalance, privyReady])
 
-  const copyAddress = () => {
-    if (address) {
-      navigator.clipboard.writeText(address)
-      setCopiedAddress(true)
-      setTimeout(() => setCopiedAddress(false), 2000)
+  // Fetch portfolio holdings
+  useEffect(() => {
+    const fetchHoldings = async () => {
+      if (!authenticated || !address) {
+        setPostHoldings([])
+        setCreatorHoldings([])
+        return
+      }
+
+      setIsLoadingHoldings(true)
+      try {
+        console.log('🔍 Fetching holdings for address:', address)
+
+        // Fetch post token holdings
+        const postHoldingsResponse = await tokenApiService.getUserPostTokenHoldings(address)
+        console.log('📊 Post holdings response:', postHoldingsResponse)
+
+        // Fetch creator token holdings
+        const creatorHoldingsResponse = await tokenApiService.getUserCreatorTokenHoldings(address)
+        console.log('📊 Creator holdings response:', creatorHoldingsResponse)
+
+        // Transform post holdings data
+        if (postHoldingsResponse.success && postHoldingsResponse.data) {
+          const transformedPostHoldings: PostHolding[] = postHoldingsResponse.data.map((holding: any) => {
+            const currentPrice = parseFloat(holding.current_price || '0')
+            const shares = holding.balance || 0
+            const averageBuyPrice = parseFloat(holding.average_buy_price || '0')
+            const totalValue = currentPrice * shares
+            const totalCost = averageBuyPrice * shares
+            const profitLoss = totalValue - totalCost
+            const profitLossPercentage = totalCost > 0 ? (profitLoss / totalCost) * 100 : 0
+
+            return {
+              postId: holding.post_token_uuid,
+              postContent: holding.content || 'No content available',
+              postAuthor: holding.creator_username || holding.creator_address?.slice(0, 10) || 'Unknown',
+              shares,
+              currentPrice,
+              totalValue,
+              profitLoss,
+              profitLossPercentage
+            }
+          })
+          setPostHoldings(transformedPostHoldings)
+        }
+
+        // Transform creator holdings data
+        if (creatorHoldingsResponse.success && creatorHoldingsResponse.data) {
+          const transformedCreatorHoldings: CreatorHolding[] = creatorHoldingsResponse.data.map((holding: any) => {
+            const currentPrice = parseFloat(holding.current_price || '0')
+            const shares = holding.balance || 0
+            const averageBuyPrice = parseFloat(holding.average_buy_price || '0')
+            const totalValue = currentPrice * shares
+            const totalCost = averageBuyPrice * shares
+            const profitLoss = totalValue - totalCost
+            const profitLossPercentage = totalCost > 0 ? (profitLoss / totalCost) * 100 : 0
+
+            return {
+              creatorId: holding.creator_token_uuid,
+              creatorName: holding.name || 'Unknown Creator',
+              creatorAvatar: holding.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(holding.name || 'Unknown')}`,
+              shares,
+              currentPrice,
+              totalValue,
+              profitLoss,
+              profitLossPercentage
+            }
+          })
+          setCreatorHoldings(transformedCreatorHoldings)
+        }
+
+        console.log('✅ Holdings fetched successfully')
+      } catch (error) {
+        console.error('❌ Failed to fetch holdings:', error)
+      } finally {
+        setIsLoadingHoldings(false)
+      }
+    }
+
+    fetchHoldings()
+  }, [authenticated, address])
+
+  const copyPrivyAddress = () => {
+    const privyWalletAddress = user?.wallet?.address
+    if (privyWalletAddress) {
+      navigator.clipboard.writeText(privyWalletAddress)
+      setCopiedPrivyAddress(true)
+      setTimeout(() => setCopiedPrivyAddress(false), 2000)
     }
   }
 
@@ -196,13 +245,15 @@ export default function WalletPage() {
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl font-bold text-white">{walletTitle}</h1>
-            <WalletConnectButton
-              onConnect={connect}
-              isConnecting={isConnecting}
-              isConnected={!!address}
-              address={address || undefined}
-              onDisconnect={disconnect}
-            />
+            {!authenticated && (
+              <button
+                onClick={login}
+                className="flex items-center gap-2 px-6 py-3 bg-[#6e54ff] hover:bg-[#5a43e0] text-white rounded-xl font-semibold transition-all duration-200 shadow-lg shadow-[#6e54ff]/20"
+              >
+                <LogIn size={20} />
+                Connect Privy Wallet
+              </button>
+            )}
           </div>
 
           <motion.div
@@ -236,18 +287,18 @@ export default function WalletPage() {
                 </div>
               </div>
               <div>
-                <p className="text-gray-400 text-sm mb-1">Wallet Balance (ETH)</p>
+                <p className="text-gray-400 text-sm mb-1">Wallet Balance (MON)</p>
                 <div className="flex items-center gap-2">
                   <p className="text-3xl font-bold">
-                    {isLoadingBalance ? '...' : ethBalance}
+                    {!authenticated ? '0.0000' : isLoadingBalance ? '...' : monBalance}
                   </p>
-                  {address && (
+                  {authenticated && address && (
                     <button
                       onClick={async () => {
                         setIsLoadingBalance(true)
                         try {
                           const balance = await getETHBalance()
-                          setEthBalance(parseFloat(balance).toFixed(4))
+                          setMonBalance(parseFloat(balance).toFixed(4))
                         } catch (error) {
                           console.error('Failed to refresh balance:', error)
                         } finally {
@@ -264,49 +315,96 @@ export default function WalletPage() {
             </div>
           </motion.div>
 
-          {address && (
+          {authenticated && user?.wallet?.address && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
+              transition={{ duration: 0.3, delay: 0.15 }}
               className="bg-black border-2 border-gray-700/70 rounded-2xl p-6 shadow-xl shadow-black/20"
             >
               <div className="flex items-center gap-2 mb-6">
                 <div className="bg-gray-700/30 border-2 border-[#6e54ff] rounded-xl px-3 py-1.5 flex items-center gap-2">
-                  <Wallet className="w-4 h-4 text-[#6e54ff]" />
-                  <h2 className="text-sm font-semibold text-gray-200">Connected Wallet</h2>
+                  <Shield className="w-4 h-4 text-[#6e54ff]" />
+                  <h2 className="text-sm font-semibold text-gray-200">Privy Wallet</h2>
                 </div>
               </div>
-              <div className="flex items-center justify-between bg-black/30 border border-gray-700/50 rounded-xl p-4 hover:border-[#6e54ff]/50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                    <Wallet className="w-5 h-5 text-white" />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between bg-black/30 border border-gray-700/50 rounded-xl p-4 hover:border-[#6e54ff]/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                      <Shield className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-400">Embedded Wallet</p>
+                      <p className="font-mono text-sm">{`${user.wallet.address.slice(0, 10)}...${user.wallet.address.slice(-8)}`}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-400">Wallet Address</p>
-                    <p className="font-mono text-sm">{`${address.slice(0, 10)}...${address.slice(-8)}`}</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={copyPrivyAddress}
+                      className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
+                    >
+                      {copiedPrivyAddress ? (
+                        <Check className="w-4 h-4 text-green-400" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-gray-400" />
+                      )}
+                    </button>
+                    <a
+                      href={`https://testnet.monadexplorer.com/address/${user.wallet.address}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
+                      title="View on Monad Testnet Explorer"
+                    >
+                      <ExternalLink className="w-4 h-4 text-gray-400" />
+                    </a>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={copyAddress}
-                    className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
-                  >
-                    {copiedAddress ? (
-                      <Check className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <Copy className="w-4 h-4 text-gray-400" />
-                    )}
-                  </button>
-                  <a
-                    href={`https://etherscan.io/address/${address}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
-                  >
-                    <ExternalLink className="w-4 h-4 text-gray-400" />
-                  </a>
-                </div>
+                {user.email?.address && (
+                  <div className="flex items-center gap-3 bg-black/30 border border-gray-700/50 rounded-xl p-4">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+                      {user.email.address[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-400">Connected Email</p>
+                      <p className="text-sm">{user.email.address}</p>
+                    </div>
+                  </div>
+                )}
+                {user.twitter?.username && (
+                  <div className="flex items-center gap-3 bg-black/30 border border-gray-700/50 rounded-xl p-4">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                      𝕏
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-400">Connected Twitter</p>
+                      <p className="text-sm">@{user.twitter.username}</p>
+                    </div>
+                  </div>
+                )}
+                {user.discord?.username && (
+                  <div className="flex items-center gap-3 bg-black/30 border border-gray-700/50 rounded-xl p-4">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
+                      D
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-400">Connected Discord</p>
+                      <p className="text-sm">{user.discord.username}</p>
+                    </div>
+                  </div>
+                )}
+                {user.github?.username && (
+                  <div className="flex items-center gap-3 bg-black/30 border border-gray-700/50 rounded-xl p-4">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-white font-bold text-sm">
+                      GH
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-400">Connected GitHub</p>
+                      <p className="text-sm">{user.github.username}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
