@@ -487,14 +487,14 @@ export default function PostDetailPage() {
           </motion.button>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-            {/* Left Side - Image or Text-only Post */}
+            {/* Left Side - Image */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1, duration: 0.4 }}
               className="relative"
             >
-              {postImage ? (
+              {postImage && (
                 <div className="aspect-square rounded-2xl overflow-hidden bg-black border-2 border-gray-700/70 shadow-2xl hover:border-gray-600/70 transition-all duration-300">
                   {/\.(jpg|jpeg|png|gif|webp)$/i.test(postImage) ? (
                     <img
@@ -518,18 +518,6 @@ export default function PostDetailPage() {
                       <audio src={postImage} controls className="w-full" />
                     </div>
                   ) : null}
-                </div>
-              ) : (
-                <div className="aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-700/50 shadow-2xl flex items-center justify-center p-8 text-center">
-                  <p className="text-white text-xl leading-relaxed whitespace-pre-wrap">
-                    {renderTextWithMentions(
-                      displayedText,
-                      undefined,
-                      (userId, username) => {
-                        router.push(`/snaps/profile/${userId}`)
-                      }
-                    )}
-                  </p>
                 </div>
               )}
             </motion.div>
@@ -594,8 +582,8 @@ export default function PostDetailPage() {
                 </motion.button>
               </div>
 
-              {/* Content - Only show here if there's media (otherwise it's on the left) */}
-              {postContent && postImage && (
+              {/* Content */}
+              {postContent && (
                 <div className="mb-6">
                   <p className="text-gray-300 text-base leading-relaxed whitespace-pre-wrap">
                     {renderTextWithMentions(
@@ -662,19 +650,19 @@ export default function PostDetailPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2 mb-6">
+              <div className="flex gap-3 mb-6">
                 <motion.button
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleLike}
                   disabled={isLoading.like || !currentUserId}
-                  className={`flex-1 py-2 rounded-xl font-medium text-xs transition-all duration-200 flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`flex-1 py-3.5 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                     userEngagement.liked
                       ? "bg-white text-black border-2 border-white shadow-lg"
                       : "bg-transparent border-2 border-gray-700 text-gray-300 hover:border-white hover:bg-white hover:text-black"
                   }`}
                 >
-                  <HandMetal size={16} className={userEngagement.liked ? "fill-current" : ""} strokeWidth={2.5} />
+                  <HandMetal size={18} className={userEngagement.liked ? "fill-current" : ""} strokeWidth={2.5} />
                   <span className="font-semibold">{userEngagement.liked ? "Liked" : "Like"}</span>
                 </motion.button>
                 <motion.button
@@ -682,13 +670,13 @@ export default function PostDetailPage() {
                   whileTap={{ scale: 0.98 }}
                   onClick={handleBookmark}
                   disabled={isLoading.bookmark || !currentUserId}
-                  className={`flex-1 py-2 rounded-xl font-medium text-xs transition-all duration-200 flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`flex-1 py-3.5 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                     userEngagement.bookmarked
                       ? "bg-white text-black border-2 border-white shadow-lg"
                       : "bg-transparent border-2 border-gray-700 text-gray-300 hover:border-white hover:bg-white hover:text-black"
                   }`}
                 >
-                  <Bookmark size={16} className={userEngagement.bookmarked ? "fill-current" : ""} strokeWidth={2.5} />
+                  <Bookmark size={18} className={userEngagement.bookmarked ? "fill-current" : ""} strokeWidth={2.5} />
                   <span className="font-semibold">{userEngagement.bookmarked ? "Saved" : "Save"}</span>
                 </motion.button>
                 <motion.button
@@ -696,13 +684,13 @@ export default function PostDetailPage() {
                   whileTap={{ scale: 0.98 }}
                   onClick={handleRetweet}
                   disabled={isLoading.retweet || !currentUserId || userEngagement.retweeted}
-                  className={`flex-1 py-2 rounded-xl font-medium text-xs transition-all duration-200 flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`flex-1 py-3.5 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                     userEngagement.retweeted
                       ? "bg-white text-black border-2 border-white shadow-lg"
                       : "bg-transparent border-2 border-gray-700 text-gray-300 hover:border-white hover:bg-white hover:text-black"
                   }`}
                 >
-                  <Repeat size={16} className="rotate-90" strokeWidth={2.5} />
+                  <Repeat size={18} className="rotate-90" strokeWidth={2.5} />
                   <span className="font-semibold">{userEngagement.retweeted ? "Shared" : "Share"}</span>
                 </motion.button>
               </div>
@@ -713,58 +701,36 @@ export default function PostDetailPage() {
                   whileHover={{ y: -2, boxShadow: "0 10px 30px -10px rgba(110, 84, 255, 0.5)" }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setShowTokenTrading(true)}
-                  className="w-full px-4 py-2.5 bg-[#6E54FF] text-white font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 relative overflow-hidden group border-2 border-[#6E54FF] shadow-lg"
+                  className="w-full px-6 py-4 bg-[#6E54FF] text-white font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-3 relative overflow-hidden group border-2 border-[#6E54FF] shadow-lg"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
-                  <Triangle size={16} className="relative z-10" strokeWidth={2.5} />
-                  <span className="relative z-10 text-sm">Trade Token • ${priceLoading ? '...' : postTokenPrice.toFixed(2)}</span>
+                  <Triangle size={20} className="relative z-10" strokeWidth={2.5} />
+                  <span className="relative z-10 text-base">Trade Token • ${priceLoading ? '...' : postTokenPrice.toFixed(2)}</span>
                 </motion.button>
               </div>
 
               {/* Tabs */}
-              <div className="bg-gray-700/50 rounded-full mb-6 p-0.5">
-                <div className="flex justify-around bg-black m-0.5 p-1 items-center rounded-full relative">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.key}
-                      onClick={() => setActiveTab(tab.key)}
-                      className={`p-2 my-1 font-semibold w-full relative z-10 text-xs sm:text-sm ${
-                        activeTab === tab.key ? "text-white" : "text-gray-400"
-                      }`}
-                    >
-                      {tab.label}
-                      {tab.count !== undefined && tab.count > 0 && (
-                        <span className="ml-1 text-xs">
-                          {tab.count}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-
-                  <motion.div
-                    className="absolute rounded-full"
-                    style={{
-                      height: "40px",
-                      boxShadow:
-                        "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
-                      backgroundColor: "#6E54FF",
-                      margin: "6px",
-                    }}
-                    initial={false}
-                    animate={{
-                      left:
-                        activeTab === "comments"
-                          ? "0%"
-                          : activeTab === "holders"
-                          ? "calc(25% + 0px)"
-                          : activeTab === "activity"
-                          ? "calc(50% + 0px)"
-                          : "calc(75% + 0px)",
-                      width: "calc(25% - 6px)",
-                    }}
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                  />
-                </div>
+              <div className="flex gap-2 mb-6 p-1 bg-transparent rounded-xl">
+                {tabs.map((tab) => (
+                  <motion.button
+                    key={tab.key}
+                    whileHover={{ y: activeTab !== tab.key ? -2 : 0 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`flex-1 px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-300 border-2 ${
+                      activeTab === tab.key
+                        ? "bg-white text-black border-white shadow-lg"
+                        : "bg-transparent text-gray-400 border-gray-700 hover:text-white hover:border-white"
+                    }`}
+                  >
+                    {tab.label}
+                    {tab.count !== undefined && tab.count > 0 && (
+                      <span className={`ml-1.5 text-xs font-bold ${activeTab === tab.key ? "text-black/70" : "text-gray-500"}`}>
+                        {tab.count}
+                      </span>
+                    )}
+                  </motion.button>
+                ))}
               </div>
 
               {/* Tab Content */}
