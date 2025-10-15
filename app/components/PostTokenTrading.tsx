@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, TrendingUp, TrendingDown, DollarSign, Users, Gift, Triangle } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { usePostToken, PostTokenStats, UserPortfolio } from '../hooks/usePostToken';
 import { useSession } from 'next-auth/react';
 import WalletConnectButton from './WalletConnectButton';
@@ -191,14 +192,14 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
   if (!isOpen) return null;
 
   const modalContent = (
-    <div 
-      className="fixed inset-0 bg-black/80 flex items-center justify-center p-4"
-      style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        bottom: 0, 
+    <div
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         zIndex: 999999,
         display: 'flex',
         alignItems: 'center',
@@ -210,23 +211,33 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
         }
       }}
     >
-      <div 
-        className="bg-black/90 backdrop-blur-sm rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border-2 border-gray-700/70"
-        style={{ 
-          position: 'relative', 
+      {/* Ambient background effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-20 left-20 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-20 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl" />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ duration: 0.3 }}
+        className="bg-black border-2 border-gray-700/70 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl relative"
+        style={{
+          position: 'relative',
           zIndex: 1000000,
           margin: 'auto'
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b-2 border-gray-700/70">
-  <span></span>
+        <div className="flex items-center justify-between p-4 border-b-2 border-gray-700/70">
+          <h2 className="text-lg font-bold text-white">Trade Token</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-800/50 "
+            className="p-2 hover:bg-gray-800/50 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-gray-400" />
+            <X className="w-5 h-5 text-gray-400 hover:text-white transition-colors" />
           </button>
         </div>
 
@@ -325,28 +336,41 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
           )} */}
 
           {/* Trading Tabs */}
-          <div className='bg-gray-700/70 p-1 rounded-full'>
-            <div className="flex bg-black backdrop-blur-sm rounded-full p-1">
+          <div className="bg-gray-700/50 rounded-full p-0.5">
+            <div className="flex justify-around bg-black m-0.5 p-1 items-center rounded-full relative">
               <button
                 onClick={() => setActiveTab('buy')}
-                className={`flex-1 py-2 px-4 rounded-full text-sm font-bold tracking-tight transition-colors ${
-                  activeTab === 'buy'
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+                className={`p-2 my-1 font-semibold w-full relative z-10 text-sm ${
+                  activeTab === 'buy' ? "text-white" : "text-gray-400"
                 }`}
               >
                 Buy
               </button>
               <button
                 onClick={() => setActiveTab('sell')}
-                className={`flex-1 py-2 px-4 rounded-full text-sm font-bold tracking-tight transition-colors ${
-                  activeTab === 'sell'
-                    ? 'bg-red-600 text-white shadow-lg'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+                className={`p-2 my-1 font-semibold w-full relative z-10 text-sm ${
+                  activeTab === 'sell' ? "text-white" : "text-gray-400"
                 }`}
               >
                 Sell
               </button>
+
+              <motion.div
+                className="absolute rounded-full"
+                style={{
+                  height: "40px",
+                  boxShadow:
+                    "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
+                  backgroundColor: "#6E54FF",
+                  margin: "6px",
+                }}
+                initial={false}
+                animate={{
+                  left: activeTab === 'buy' ? "0%" : "calc(50% + 0px)",
+                  width: "calc(50% - 6px)",
+                }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              />
             </div>
           </div>
 
@@ -355,8 +379,8 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
             {activeTab === 'buy' ? (
               <div className="space-y-4">
                  <div>
-                   <label className="block text-gray-400 text-sm font-bold tracking-wide mb-2">
-                     AMOUNT TO BUY
+                   <label className="block text-gray-400 text-sm font-semibold mb-2">
+                     Amount to Buy
                    </label>
                    <input
                      type="number"
@@ -364,42 +388,40 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                      value={userCanClaimFreebie && remainingFreebies > 0 ? 1 : amount}
                      onChange={(e) => setAmount(parseInt(e.target.value) || 1)}
                      disabled={userCanClaimFreebie && remainingFreebies > 0}
-                     className={`w-full px-4 py-3 bg-black/50 border-2 border-gray-700 backdrop-blur-sm rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium ${
+                     className={`w-full px-4 py-3 bg-black border-2 border-gray-700/70 rounded-xl text-white focus:outline-none focus:border-[#6E54FF] transition-colors font-medium ${
                        userCanClaimFreebie && remainingFreebies > 0 ? 'opacity-50 cursor-not-allowed' : ''
                      }`}
                    />
                    {userCanClaimFreebie && remainingFreebies > 0 && (
-                     <p className="text-green-400 text-xs mt-1 font-medium">
+                     <p className="text-[#6E54FF] text-xs mt-2 font-medium">
                        You can only claim 1 free share
                      </p>
                    )}
                  </div>
-                
-                 <div className="bg-black/50 backdrop-blur-sm rounded-2xl p-4">
-                   <div className="flex justify-between items-center mb-2">
+
+                 <div className="bg-black border-2 border-gray-700/70 rounded-xl p-4 space-y-3">
+                   <div className="flex justify-between items-center">
                      <span className="text-gray-400 text-sm">Price per share</span>
                      <span className="text-white text-sm font-bold">
                        {userCanClaimFreebie && remainingFreebies > 0 ? 'FREE' : formatPrice(currentPrice)}
                      </span>
                    </div>
                    {userCanClaimFreebie && remainingFreebies > 0 && actualPrice > 0 && (
-                     <div className="flex justify-between items-center mb-2">
+                     <div className="flex justify-between items-center">
                        <span className="text-gray-500 text-xs">Actual price</span>
                        <span className="text-gray-500 text-xs">{formatPrice(actualPrice)}</span>
                      </div>
                    )}
-                   <div className="flex justify-between items-center">
+                   <div className="flex justify-between items-center pt-2 border-t border-gray-700/50">
                      <span className="text-gray-400 text-sm">Total cost</span>
                      <span className="text-white text-lg font-bold tracking-tight">
                        {userCanClaimFreebie && remainingFreebies > 0 ? 'FREE' : formatPrice(totalCost)}
                      </span>
                    </div>
-                      <div className="flex justify-between items-center">
-                     <span className="text-gray-400 text-sm">Your Porfolio</span>
+                   <div className="flex justify-between items-center pt-2 border-t border-gray-700/50">
+                     <span className="text-gray-400 text-sm">Your Portfolio</span>
                      <span className="text-white text-lg font-bold tracking-tight">
-                      {/* user portfolio balance i want  */}
                         {portfolio ? formatPrice(portfolio.currentValue) : '$0.0000'}
-                        
                      </span>
                    </div>
                  </div>
@@ -414,29 +436,31 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                     className="w-full py-3 font-bold tracking-tight rounded-2xl border-2 border-blue-500/30"
                   />
                 ) : (
-                  <button
+                  <motion.button
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={handleBuy}
                     disabled={loading || (!userCanClaimFreebie && remainingFreebies > 0)}
-                    className={`w-full py-3 font-bold tracking-tight rounded-2xl transition-colors border-2 ${
+                    className={`w-full py-3 font-bold tracking-tight rounded-xl transition-all duration-200 border-2 shadow-lg ${
                       userCanClaimFreebie && remainingFreebies > 0
-                        ? 'bg-green-600 hover:bg-green-700 text-white border-green-500/30'
+                        ? 'bg-[#6E54FF] hover:bg-[#5940cc] text-white border-[#6E54FF]'
                         : !userCanClaimFreebie && remainingFreebies > 0
                         ? 'bg-gray-600 text-gray-400 cursor-not-allowed border-gray-700/50'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white border-blue-500/30'
-                    } ${loading ? 'disabled:bg-black disabled:cursor-not-allowed disabled:border-gray-700/50' : ''}`}
+                        : 'bg-[#6E54FF] hover:bg-[#5940cc] text-white border-[#6E54FF]'
+                    } ${loading ? 'disabled:bg-gray-800 disabled:cursor-not-allowed disabled:border-gray-700/50' : ''}`}
                   >
-                    {loading ? 'Processing...' : 
+                    {loading ? 'Processing...' :
                      userCanClaimFreebie && remainingFreebies > 0 ? 'Claim Free Share' :
                      !userCanClaimFreebie && remainingFreebies > 0 ? 'Already Claimed Freebie' :
                      'Buy Shares'}
-                  </button>
+                  </motion.button>
                 )}
               </div>
             ) : (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-gray-400 text-sm font-bold tracking-wide mb-2">
-                    AMOUNT TO SELL
+                  <label className="block text-gray-400 text-sm font-semibold mb-2">
+                    Amount to Sell
                   </label>
                   <input
                     type="number"
@@ -444,21 +468,21 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                     max={portfolio?.balance || 0}
                     value={amount}
                     onChange={(e) => setAmount(parseInt(e.target.value) || 1)}
-                    className="w-full px-4 py-3 bg-black/50 border-2 border-gray-700 backdrop-blur-sm rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 font-medium"
+                    className="w-full px-4 py-3 bg-black border-2 border-gray-700/70 rounded-xl text-white focus:outline-none focus:border-[#6E54FF] transition-colors font-medium"
                   />
                   {portfolio && (
-                    <p className="text-gray-500 text-xs mt-1 font-medium">
+                    <p className="text-gray-500 text-xs mt-2 font-medium">
                       Max: {portfolio.balance} shares
                     </p>
                   )}
                 </div>
-                
-                 <div className="bg-black/50 backdrop-blur-sm rounded-2xl p-4">
-                   <div className="flex justify-between items-center mb-2">
+
+                 <div className="bg-black border-2 border-gray-700/70 rounded-xl p-4 space-y-3">
+                   <div className="flex justify-between items-center">
                      <span className="text-gray-400 text-sm">Price per share</span>
                      <span className="text-white text-sm font-bold">{formatPrice(actualPrice)}</span>
                    </div>
-                   <div className="flex justify-between items-center">
+                   <div className="flex justify-between items-center pt-2 border-t border-gray-700/50">
                      <span className="text-gray-400 text-sm">You'll receive</span>
                      <span className="text-white text-lg font-bold tracking-tight">
                        {formatPrice(actualPrice * amount * 0.75)} {/* Assuming 25% fees */}
@@ -476,19 +500,21 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
                     className="w-full py-3 font-bold tracking-tight rounded-2xl border-2 border-red-500/30"
                   />
                 ) : (
-                  <button
+                  <motion.button
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={handleSell}
                     disabled={loading || !portfolio || portfolio.balance < amount || remainingFreebies > 0}
-                    className={`w-full py-3 font-bold tracking-tight rounded-2xl transition-colors border-2 ${
+                    className={`w-full py-3 font-bold tracking-tight rounded-xl transition-all duration-200 border-2 shadow-lg ${
                       remainingFreebies > 0
                         ? 'bg-gray-600 text-gray-400 cursor-not-allowed border-gray-700/50'
-                        : 'bg-red-600 hover:bg-red-700 text-white border-red-500/30'
-                    } ${loading || !portfolio || portfolio.balance < amount ? 'disabled:bg-black disabled:cursor-not-allowed disabled:border-gray-700/50' : ''}`}
+                        : 'bg-[#6E54FF] hover:bg-[#5940cc] text-white border-[#6E54FF]'
+                    } ${loading || !portfolio || portfolio.balance < amount ? 'disabled:bg-gray-800 disabled:cursor-not-allowed disabled:border-gray-700/50' : ''}`}
                   >
-                    {loading ? 'Processing...' : 
+                    {loading ? 'Processing...' :
                      remainingFreebies > 0 ? 'Cannot sell until all freebies claimed' :
                      'Sell Shares'}
-                  </button>
+                  </motion.button>
                 )}
               </div>
             )}
@@ -496,27 +522,39 @@ export default function PostTokenTrading({ postId, postContent, isOpen, onClose 
 
           {/* Messages */}
           {error && (
-            <div className="bg-red-900/20 backdrop-blur-sm border-2 border-red-500/30 rounded-2xl p-3">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-900/20 border-2 border-red-500/30 rounded-xl p-4"
+            >
               <p className="text-red-400 text-sm font-medium">{error}</p>
-            </div>
+            </motion.div>
           )}
 
           {success && (
-            <div className="bg-green-900/20 backdrop-blur-sm border-2 border-green-500/30 rounded-2xl p-3">
-              <p className="text-green-400 text-sm font-medium">{success}</p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-[#6E54FF]/10 border-2 border-[#6E54FF]/30 rounded-xl p-4"
+            >
+              <p className="text-[#6E54FF] text-sm font-medium">{success}</p>
+            </motion.div>
           )}
 
           {/* Connection Status */}
           {!isConnected && (
-            <div className="bg-yellow-900/20 backdrop-blur-sm border-2 border-yellow-500/30 rounded-2xl p-3">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-yellow-900/20 border-2 border-yellow-500/30 rounded-xl p-4"
+            >
               <p className="text-yellow-400 text-sm font-medium">
                 Please connect your wallet to trade post tokens
               </p>
-            </div>
+            </motion.div>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 

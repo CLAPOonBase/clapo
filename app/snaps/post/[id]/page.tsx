@@ -722,27 +722,49 @@ export default function PostDetailPage() {
               </div>
 
               {/* Tabs */}
-              <div className="flex gap-2 mb-6 p-1 bg-transparent rounded-xl">
-                {tabs.map((tab) => (
-                  <motion.button
-                    key={tab.key}
-                    whileHover={{ y: activeTab !== tab.key ? -2 : 0 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`flex-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-300 border-2 ${
-                      activeTab === tab.key
-                        ? "bg-white text-black border-white shadow-lg"
-                        : "bg-transparent text-gray-400 border-gray-700 hover:text-white hover:border-white"
-                    }`}
-                  >
-                    {tab.label}
-                    {tab.count !== undefined && tab.count > 0 && (
-                      <span className={`ml-1.5 text-xs font-bold ${activeTab === tab.key ? "text-black/70" : "text-gray-500"}`}>
-                        {tab.count}
-                      </span>
-                    )}
-                  </motion.button>
-                ))}
+              <div className="bg-gray-700/50 rounded-full mb-6 p-0.5">
+                <div className="flex justify-around bg-black m-0.5 p-1 items-center rounded-full relative">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setActiveTab(tab.key)}
+                      className={`p-2 my-1 font-semibold w-full relative z-10 text-xs sm:text-sm ${
+                        activeTab === tab.key ? "text-white" : "text-gray-400"
+                      }`}
+                    >
+                      {tab.label}
+                      {tab.count !== undefined && tab.count > 0 && (
+                        <span className="ml-1 text-xs">
+                          {tab.count}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+
+                  <motion.div
+                    className="absolute rounded-full"
+                    style={{
+                      height: "40px",
+                      boxShadow:
+                        "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
+                      backgroundColor: "#6E54FF",
+                      margin: "6px",
+                    }}
+                    initial={false}
+                    animate={{
+                      left:
+                        activeTab === "comments"
+                          ? "0%"
+                          : activeTab === "holders"
+                          ? "calc(25% + 0px)"
+                          : activeTab === "activity"
+                          ? "calc(50% + 0px)"
+                          : "calc(75% + 0px)",
+                      width: "calc(25% - 6px)",
+                    }}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                </div>
               </div>
 
               {/* Tab Content */}
