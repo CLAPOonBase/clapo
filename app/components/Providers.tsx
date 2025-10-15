@@ -63,8 +63,9 @@ export default function Providers({ children }: ProvidersProps) {
         config={{
           appearance: { theme: 'dark' },
           embeddedWallets: {
-            createOnLogin: 'users-without-wallets',
-            requireUserPasswordOnCreate: false
+            ethereum: {
+              createOnLogin: 'users-without-wallets',
+            }
           },
           defaultChain: monadTestnet,
           supportedChains: [monadTestnet]
