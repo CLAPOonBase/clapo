@@ -11,6 +11,9 @@ interface ProvidersProps {
   children: React.ReactNode;
 }
 
+// NOTE: SessionProvider is kept for backward compatibility with existing credential-based logins.
+// All new authentication should use Privy (PrivyProvider below).
+
 const monadTestnet = defineChain({
   id: 10143,
   name: 'Monad Testnet',

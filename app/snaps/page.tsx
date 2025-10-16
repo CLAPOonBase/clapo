@@ -3,6 +3,7 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useSession, signIn } from "next-auth/react";
+import { usePrivy } from "@privy-io/react-auth";
 import { useSearchParams } from "next/navigation";
 import Sidebar from "./Sections/Sidebar";
 import { SnapComposer } from "./Sections/SnapComposer";
@@ -55,8 +56,10 @@ function SocialFeedPageContent() {
   const [retweeted, setRetweeted] = useState<Set<number>>(new Set());
   const [bookmarked, setBookmarked] = useState<Set<number>>(new Set());
   const [hasInitializedData, setHasInitializedData] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const { data: session, status } = useSession();
+  const { authenticated: privyAuthenticated, user: privyUser, ready: privyReady } = usePrivy();
   const {
     state,
     fetchPosts,
@@ -164,35 +167,80 @@ function SocialFeedPageContent() {
     };
   }, []);
 
+  // Fetch user data from Privy and load posts
   useEffect(() => {
-    if (
-      status === "authenticated" &&
-      session?.dbUser?.id &&
-      !hasInitializedData
-    ) {
-      fetchPosts(session.dbUser.id);
-      fetchNotifications(session.dbUser.id);
-      fetchActivities(session.dbUser.id);
-      setHasInitializedData(true);
-    }
+    const initializeData = async () => {
+      // Handle NextAuth session
+      if (status === "authenticated" && session?.dbUser?.id && !hasInitializedData) {
+        console.log("📊 Loading data for NextAuth user:", session.dbUser.id);
+        setCurrentUserId(session.dbUser.id);
+        fetchPosts(session.dbUser.id);
+        fetchNotifications(session.dbUser.id);
+        fetchActivities(session.dbUser.id);
+        setHasInitializedData(true);
+        return;
+      }
 
-    if (status === "unauthenticated") {
-      setHasInitializedData(false);
-    }
-  }, [session, status, hasInitializedData]);
+      // Handle Privy authentication
+      if (privyAuthenticated && privyUser && privyReady && !hasInitializedData) {
+        console.log("📊 Loading data for Privy user:", privyUser.id);
+        try {
+          // Fetch user from backend using Privy ID
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${privyUser.id}`
+          );
+          const data = await response.json();
+
+          if (data.exists && data.user?.id) {
+            console.log("✅ Found user in backend:", data.user.id);
+            setCurrentUserId(data.user.id);
+            fetchPosts(data.user.id);
+            fetchNotifications(data.user.id);
+            fetchActivities(data.user.id);
+            setHasInitializedData(true);
+          } else {
+            console.log("❌ User not found in backend, redirecting to signup");
+            window.location.href = '/SignIn';
+          }
+        } catch (error) {
+          console.error("❌ Error fetching Privy user:", error);
+        }
+        return;
+      }
+
+      if (status === "unauthenticated" && !privyAuthenticated) {
+        setHasInitializedData(false);
+      }
+    };
+
+    initializeData();
+  }, [session, status, privyAuthenticated, privyUser, privyReady, hasInitializedData]);
 
   // Removed auto-refresh to prevent NEW posts from disappearing
   // Users can manually refresh when they want to see the latest posts
 
   const loadFollowingFeed = async () => {
-    if (!session?.dbUser?.id || isLoadingFollowing) return;
+    // Support both NextAuth and Privy users
+    const userId = session?.dbUser?.id || currentUserId;
+    console.log("🔍 loadFollowingFeed called with userId:", userId, {
+      sessionUserId: session?.dbUser?.id,
+      currentUserId,
+      isLoadingFollowing
+    });
+
+    if (!userId || isLoadingFollowing) {
+      console.log("❌ Cannot load following feed - no userId or already loading");
+      return;
+    }
 
     setIsLoadingFollowing(true);
     try {
-      const response = await getFollowingFeed(session.dbUser.id, 50, 0);
+      console.log("📡 Fetching following feed for user:", userId);
+      const response = await getFollowingFeed(userId, 50, 0);
+      console.log("✅ Following feed response:", response);
       setFollowingPosts(response.posts || []);
     } catch (error) {
-      console.error("Failed to load following feed:", error);
+      console.error("❌ Failed to load following feed:", error);
     } finally {
       setIsLoadingFollowing(false);
     }
@@ -580,7 +628,7 @@ function SocialFeedPageContent() {
                       ))
                     ) : (
                       <div className="text-center py-8 text-gray-500">
-                        {status === "authenticated"
+                        {(status === "authenticated" || privyAuthenticated)
                           ? "No posts from people you follow yet. Try following some users!"
                           : "Sign in to see posts"}
                       </div>
@@ -596,7 +644,7 @@ function SocialFeedPageContent() {
     }
   };
 
-  if (status === "loading") {
+  if (status === "loading" || !privyReady) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <LoadingSpinner size="w-12 h-12" />
@@ -604,79 +652,30 @@ function SocialFeedPageContent() {
     );
   }
 
-  // Don't render main content if session is not authenticated or dbUser is not loaded
-  if (status === "unauthenticated" || !session?.dbUser) {
-    console.log("🔍 Session state:", {
-      status,
-      hasSession: !!session,
+  // Check authentication: Either NextAuth OR Privy
+  const isAuthenticated = (status === "authenticated" && session?.dbUser) || privyAuthenticated;
+
+  // Don't render main content if user is not authenticated
+  if (!isAuthenticated) {
+    console.log("🔍 Auth state:", {
+      nextAuthStatus: status,
+      hasNextAuthSession: !!session,
       hasDbUser: !!session?.dbUser,
+      privyAuthenticated,
+      privyReady,
+      hasPrivyUser: !!privyUser
     });
+
+    // Redirect to SignIn page for Privy authentication
+    console.log("🚀 Redirecting unauthenticated user to /SignIn");
+    if (typeof window !== 'undefined') {
+      window.location.href = '/SignIn';
+    }
+
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 0 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-      >
-        <div className="flex-col md:flex-row lg:ml-52 text-white flex">
-         <div className=" lg:block">
-           <Sidebar 
-            currentPage={currentPage} 
-            setCurrentPage={setCurrentPage}
-            onNavigateToOpinio={handleNavigateToOpinio}
-            onNavigateToSnaps={handleNavigateToSnaps}
-          />
-         </div>
-          <div className="flex-1 ml-0 md:ml-4 mr-2 md:mr-6 rounded-md px-2 mt-20 md:mt-0">
-            <div className="bg-[#1A1A1A] rounded-2xl border border-gray-800 overflow-hidden">
-              <div className="flex flex-col lg:flex-row min-h-[400px] sm:min-h-[550px]">
-                {/* Left Side - Hero Image */}
-                <div
-                  className="lg:w-full relative px-4 py-2 text-white 
-                shadow-[inset_0px_1px_0.5px_rgba(255,255,255,0.5),0px_1px_2px_rgba(26,19,161,0.5),0px_0px_0px_1px_#4F47EB] 
-                bg-gradient-to-r from-[#4F47EB] to-[#3B32C7] rounded-lg m-2"
-                >
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent z-10 rounded-lg" />
-
-                  {/* Background Pattern */}
-                  <div className="absolute inset-0 opacity-20 rounded-lg">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,rgba(255,255,255,0.2)_0%,transparent_50%)]" />
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_75%,rgba(255,255,255,0.1)_0%,transparent_50%)]" />
-                  </div>
-
-                  {/* Content on Image */}
-                  <div className="relative z-20 flex flex-col justify-center items-center p-4 sm:p-8 lg:p-12 text-center h-full">
-                    <div className="mb-4 sm:mb-6">
-                      <Image
-                        src="/connect_log.png"
-                        alt="Clapo Illustration"
-                        width={300}
-                        height={300}
-                        className="w-auto h-32 sm:h-48 lg:h-64 object-contain"
-                      />
-                    </div>
-                    <div className="text-center lg:text-left mb-6 sm:mb-8">
-                      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-3 sm:mb-4">
-                        Get Started
-                      </h1>
-                      <p className="text-gray-400 text-sm sm:text-base leading-relaxed px-2 mb-6">
-                        Sign in to start posting, engaging with others, and
-                        exploring the Web3 social experience.
-                      </p>
-                      <button
-                        onClick={() => signIn("twitter")}
-                        className="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-bold shadow-lg text-sm sm:text-base"
-                      >
-                        Connect X
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+      <div className="flex justify-center items-center min-h-screen">
+        <LoadingSpinner size="w-12 h-12" />
+      </div>
     );
   }
 
@@ -719,10 +718,10 @@ function SocialFeedPageContent() {
         </div>
 
         {/* Right Sidebar - Only visible at 2xl breakpoint */}
-        {currentPage !== "messages" && currentPage !== "share" && currentPage !=="explore" && session?.dbUser && (
+        {currentPage !== "messages" && currentPage !== "share" && currentPage !=="explore" && (session?.dbUser || currentUserId) && (
           <div
             className="hidden md:block lg:block xl:block 2xl:block w-[340px] h-screen sticky top-0"
-           
+
           >
             <div className="p-6">
               {/* Recent Activity */}
@@ -734,7 +733,7 @@ function SocialFeedPageContent() {
                               text-xs font-medium text-gray-200">
                   Recent Activity
                 </span>
-                <UserActivityFeed userId={session.dbUser.id} />
+                <UserActivityFeed userId={session?.dbUser?.id || currentUserId} />
               </div>
 
               {/* Invite Button */}

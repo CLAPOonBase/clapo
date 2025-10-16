@@ -401,6 +401,7 @@ interface ApiContextType {
   dispatch: React.Dispatch<Action>
   login: (username: string, password: string) => Promise<void>
   signup: (userData: unknown) => Promise<void>
+  signupWithPrivy: (privyData: unknown) => Promise<any>
   logout: () => void
   fetchPosts: (userId: string) => Promise<void>
   createPost: (postData: unknown) => Promise<CreatePostResponse>
@@ -522,6 +523,51 @@ export function ApiProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_USER', payload: response.user as ApiUser })
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Signup failed' })
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false })
+    }
+  }
+
+  const signupWithPrivy = async (privyData: any) => {
+    dispatch({ type: 'SET_LOADING', payload: true })
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/signup/privy`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(privyData),
+        }
+      )
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        const errorMessage = data.message?.message || data.message || 'Failed to create account'
+        throw new Error(errorMessage)
+      }
+
+      // Update state with new user
+      if (data.user) {
+        const apiUser: ApiUser = {
+          id: data.user.id,
+          username: data.user.username,
+          email: data.user.email,
+          bio: data.user.bio || '',
+          avatarUrl: data.user.avatar_url || data.user.avatarUrl,
+          createdAt: data.user.created_at || data.user.createdAt,
+          followerCount: data.user.follower_count || 0,
+          followingCount: data.user.following_count || 0,
+        }
+        dispatch({ type: 'SET_USER', payload: apiUser })
+      }
+
+      return data
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Signup failed' })
+      throw error
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false })
     }
@@ -1023,6 +1069,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     dispatch,
     login,
     signup,
+    signupWithPrivy,
     logout,
     fetchPosts,
     createPost,

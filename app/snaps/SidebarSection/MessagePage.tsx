@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { usePrivy } from '@privy-io/react-auth';
 import { useApi } from '../../Context/ApiProvider';
 import { MessageCircle, Users, Plus, Search, ChevronDown, Hash, Dot, ArrowLeft, UserPlus, MessageSquare, Eye, Clock, User } from 'lucide-react';
 import { useSocket } from '../../hooks/useSocket';
@@ -15,23 +16,52 @@ import { ChatHeader } from '@/app/components/ChatHeader';
 import { CommunityMembersSidebar } from '@/app/components/CommunityMembersSidebar';
 
 export default function MessagePage() {
-  const { data: session } = useSession();
-  const { 
-    state, 
+  const { data: session, status } = useSession();
+  const { authenticated: privyAuthenticated, user: privyUser, ready: privyReady } = usePrivy();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const {
+    state,
     dispatch,
-    getMessageThreads, 
-    getThreadMessages, 
-    sendMessage, 
-    getCommunities, 
+    getMessageThreads,
+    getThreadMessages,
+    sendMessage,
+    getCommunities,
     getUserCommunities,
-    joinCommunity, 
+    joinCommunity,
     createCommunity,
     getCommunityMessages,
     sendCommunityMessage
   } = useApi();
-  
+
+  // Initialize currentUserId from either NextAuth or Privy
+  useEffect(() => {
+    const initializeUser = async () => {
+      if (status === "authenticated" && session?.dbUser?.id) {
+        console.log("📊 Loading messages for NextAuth user:", session.dbUser.id);
+        setCurrentUserId(session.dbUser.id);
+        return;
+      }
+      if (privyAuthenticated && privyUser && privyReady) {
+        console.log("📊 Loading messages for Privy user:", privyUser.id);
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${privyUser.id}`
+          );
+          const data = await response.json();
+          if (data.exists && data.user?.id) {
+            console.log("✅ Found user in backend:", data.user.id);
+            setCurrentUserId(data.user.id);
+          }
+        } catch (error) {
+          console.error("❌ Error fetching Privy user:", error);
+        }
+      }
+    };
+    initializeUser();
+  }, [session, status, privyAuthenticated, privyUser, privyReady]);
+
   const handleStartChatWithUser = async (user: { id: string; username: string }) => {
-    if (!session?.dbUser?.id) return
+    if (!currentUserId) return
 
     try {
       const response = await fetch('http://server.blazeswap.io/api/snaps/messages/direct-thread', {
@@ -40,19 +70,19 @@ export default function MessagePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId1: session.dbUser.id,
+          userId1: currentUserId,
           userId2: user.id
         }),
       })
-      
+
       const threadResponse = await response.json()
-      
+
       const thread = threadResponse?.thread || threadResponse?.data?.thread || threadResponse?.data || threadResponse
-      
+
       if (thread && thread.id) {
         setSelectedThread(thread.id)
         await getThreadMessages(thread.id)
-        await getMessageThreads(session.dbUser.id)
+        await getMessageThreads(currentUserId)
         setDmSection('threads')
         // On mobile, show chat view when a thread is selected
         setMobileView('chat')
@@ -104,17 +134,17 @@ export default function MessagePage() {
 
   // Fixed: Using the same logic from ChatHeader to get the other user
   const getOtherUser = (thread: any) => {
-    if (!thread || !session?.dbUser?.id) return null;
+    if (!thread || !currentUserId) return null;
     if (thread.isGroup) return null;
     return thread.participants?.find(
-      (p: any) => p.user_id !== session.dbUser.id
+      (p: any) => p.user_id !== currentUserId
     );
   };
 
   // Fixed: Update selected user profile based on current thread or community
   useEffect(() => {
     if (currentThread && currentThread.participants) {
-      const otherUser = currentThread.participants.find(p => p.user_id !== session?.dbUser?.id);
+      const otherUser = currentThread.participants.find(p => p.user_id !== currentUserId);
       if (otherUser) {
         setSelectedUserProfile({
           username: otherUser.username,
@@ -129,7 +159,7 @@ export default function MessagePage() {
       } else {
         // Fallback if no other user found
         const firstParticipant = currentThread.participants?.[0];
-        if (firstParticipant && firstParticipant.user_id !== session?.dbUser?.id) {
+        if (firstParticipant && firstParticipant.user_id !== currentUserId) {
           setSelectedUserProfile({
             username: firstParticipant.username || firstParticipant.name,
             name: firstParticipant.name || firstParticipant.username || firstParticipant.name || 'User',
@@ -160,7 +190,7 @@ export default function MessagePage() {
  else {
       setSelectedUserProfile(null);
     }
-  }, [currentThread, currentCommunity, session?.dbUser?.id]);
+  }, [currentThread, currentCommunity, currentUserId]);
 
   // Debug logging for messages
   useEffect(() => {
@@ -175,11 +205,11 @@ export default function MessagePage() {
   }, [activeTab, selectedCommunity, selectedThread, state.communityMessages, currentMessages]);
 
   useEffect(() => {
-    if (session?.dbUser?.id) {
+    if (currentUserId) {
       getCommunities();
-      getMessageThreads(session.dbUser.id);
+      getMessageThreads(currentUserId);
     }
-  }, [session?.dbUser?.id, getCommunities, getMessageThreads]);
+  }, [currentUserId, getCommunities, getMessageThreads]);
 
   // Handle navigation from user profile to start a conversation
   useEffect(() => {
@@ -192,7 +222,7 @@ export default function MessagePage() {
   }, [state.messageThreads]);
 
   const handleSendMessage = async (content: string, mediaUrl?: string) => {
-    if (!session?.dbUser?.id) return;
+    if (!currentUserId) return;
 
     if (activeTab === 'dms' && selectedThread) {
       await handleSendDMMessage(content, mediaUrl);
@@ -202,7 +232,7 @@ export default function MessagePage() {
   };
 
   const handleSendDMMessage = async (content: string, mediaUrl?: string) => {
-    if (!selectedThread || !socket) return;
+    if (!selectedThread || !socket || !currentUserId) return;
 
     console.log('🔍 handleSendDMMessage called:', { content, mediaUrl, threadId: selectedThread });
 
@@ -210,7 +240,7 @@ export default function MessagePage() {
       if (isConnected) {
         console.log('📡 Sending via WebSocket');
         (socket as any).emit('send_dm_message', {
-          userId: session.dbUser.id,
+          userId: currentUserId,
           content,
           mediaUrl,
           threadId: selectedThread
@@ -219,7 +249,7 @@ export default function MessagePage() {
           if (!response.success) {
             console.log('⚠️ WebSocket failed, falling back to REST API');
             await sendMessage(selectedThread, {
-              senderId: session.dbUser.id,
+              senderId: currentUserId,
               content,
               mediaUrl
             });
@@ -229,7 +259,7 @@ export default function MessagePage() {
       } else {
         console.log('🌐 Sending via REST API (no WebSocket)');
         await sendMessage(selectedThread, {
-          senderId: session.dbUser.id,
+          senderId: currentUserId,
           content,
           mediaUrl
         });
@@ -244,15 +274,15 @@ export default function MessagePage() {
   const [newCommunityDescription, setNewCommunityDescription] = useState('')
 
   const handleCreateCommunity = async () => {
-    if (!session?.dbUser?.id || !newCommunityName.trim() || !newCommunityDescription.trim()) return
+    if (!currentUserId || !newCommunityName.trim() || !newCommunityDescription.trim()) return
 
     try {
       await createCommunity({
         name: newCommunityName.trim(),
         description: newCommunityDescription.trim(),
-        creatorId: session.dbUser.id
+        creatorId: currentUserId
       })
-      
+
       setShowCreateCommunityModal(false)
       setNewCommunityName('')
       setNewCommunityDescription('')
@@ -263,15 +293,15 @@ export default function MessagePage() {
   }
 
   const handleSendCommunityMessage = async (content: string, mediaUrl?: string) => {
-    if (!selectedCommunity || !session?.dbUser?.id) return;
+    if (!selectedCommunity || !currentUserId) return;
 
-    console.log('🔍 Sending community message:', { content, mediaUrl, communityId: selectedCommunity, userId: session.dbUser.id });
+    console.log('🔍 Sending community message:', { content, mediaUrl, communityId: selectedCommunity, userId: currentUserId });
 
     try {
       if (isConnected && socket) {
         console.log('🔍 Using WebSocket for real-time message');
         (socket as any).emit('send_community_message', {
-          userId: session.dbUser.id,
+          userId: currentUserId,
           content,
           mediaUrl,
           communityId: selectedCommunity
@@ -280,7 +310,7 @@ export default function MessagePage() {
           if (!response.success) {
             console.log('🔍 Falling back to REST API');
             await sendCommunityMessage(selectedCommunity, {
-              senderId: session.dbUser.id,
+              senderId: currentUserId,
               content,
               mediaUrl
             });
@@ -290,7 +320,7 @@ export default function MessagePage() {
       } else {
         console.log('🔍 Using REST API for message');
         await sendCommunityMessage(selectedCommunity, {
-          senderId: session.dbUser.id,
+          senderId: currentUserId,
           content,
           mediaUrl
         });
@@ -303,10 +333,10 @@ export default function MessagePage() {
   };
 
   const handleJoinCommunity = async (communityId: string) => {
-    if (!session?.dbUser?.id) return
+    if (!currentUserId) return
 
     try {
-      await joinCommunity(communityId, { userId: session.dbUser.id })
+      await joinCommunity(communityId, { userId: currentUserId })
       getCommunities()
     } catch (error) {
       console.error('Failed to join community:', error)
@@ -452,9 +482,9 @@ export default function MessagePage() {
             </div>
           </div>
 
-          <MessageList 
-            messages={currentMessages} 
-            currentUserId={session?.dbUser?.id} 
+          <MessageList
+            messages={currentMessages}
+            currentUserId={currentUserId}
           />
 
           <div className="p-4 absolute bottom-52 bg-black w-full">
@@ -523,7 +553,7 @@ export default function MessagePage() {
 
     <MessageList
       messages={currentMessages}
-      currentUserId={session?.dbUser?.id}
+      currentUserId={currentUserId}
     />
 
     <div className="px-5 py-3 bg-black border-t-2 border-gray-700/70">
@@ -673,10 +703,10 @@ export default function MessagePage() {
         </div>
       </div>
 
-      <CreateCommunityModal 
+      <CreateCommunityModal
         show={showCreateCommunityModal}
         onClose={() => setShowCreateCommunityModal(false)}
-        creatorId={session?.dbUser?.id || ''}
+        creatorId={currentUserId || ''}
         onCreated={handleCreateCommunity}
       />
     </div>

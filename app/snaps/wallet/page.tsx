@@ -179,7 +179,10 @@ export default function WalletPage() {
     router.push('/snaps')
   }
 
-  if (!session) {
+  // Check authentication: Either NextAuth OR Privy
+  const isAuthenticated = session?.dbUser || authenticated;
+
+  if (!isAuthenticated && privyReady) {
     return (
       <div className="flex min-h-screen bg-black text-white">
         <div className="hidden lg:block">
@@ -204,14 +207,21 @@ export default function WalletPage() {
           <div className="text-center">
             <Wallet className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-2xl font-bold mb-2">Wallet Access Required</h2>
-            <p className="text-gray-400">Please sign in to view your wallet</p>
+            <p className="text-gray-400 mb-4">Please sign in to view your wallet</p>
+            <button
+              onClick={login}
+              className="flex items-center gap-2 px-6 py-3 bg-[#6e54ff] hover:bg-[#5a43e0] text-white rounded-xl text-sm font-semibold transition-all duration-200 shadow-lg shadow-[#6e54ff]/20 mx-auto"
+            >
+              <LogIn size={18} />
+              Sign In with Privy
+            </button>
           </div>
         </div>
       </div>
     )
   }
 
-  const username = session?.dbUser?.username || 'User'
+  const username = session?.dbUser?.username || user?.email?.address || user?.twitter?.username || 'User'
   const walletTitle = `${username}'s Wallet`
 
   return (
