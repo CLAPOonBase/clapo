@@ -179,7 +179,10 @@ export default function WalletPage() {
     router.push('/snaps')
   }
 
-  if (!session) {
+  // Check authentication: Either NextAuth OR Privy
+  const isAuthenticated = session?.dbUser || authenticated;
+
+  if (!isAuthenticated && privyReady) {
     return (
       <div className="flex min-h-screen bg-black text-white">
         <div className="hidden lg:block">
@@ -204,14 +207,21 @@ export default function WalletPage() {
           <div className="text-center">
             <Wallet className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-2xl font-bold mb-2">Wallet Access Required</h2>
-            <p className="text-gray-400">Please sign in to view your wallet</p>
+            <p className="text-gray-400 mb-4">Please sign in to view your wallet</p>
+            <button
+              onClick={login}
+              className="flex items-center gap-2 px-6 py-3 bg-[#6e54ff] hover:bg-[#5a43e0] text-white rounded-xl text-sm font-semibold transition-all duration-200 shadow-lg shadow-[#6e54ff]/20 mx-auto"
+            >
+              <LogIn size={18} />
+              Sign In with Privy
+            </button>
           </div>
         </div>
       </div>
     )
   }
 
-  const username = session?.dbUser?.username || 'User'
+  const username = session?.dbUser?.username || user?.email?.address || user?.twitter?.username || 'User'
   const walletTitle = `${username}'s Wallet`
 
   return (
@@ -244,13 +254,13 @@ export default function WalletPage() {
       <div className="flex-1 p-4 md:p-6 lg:p-8 pt-20 lg:pt-8 relative z-10">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold text-white">{walletTitle}</h1>
+            <h1 className="text-2xl font-bold text-white">{walletTitle}</h1>
             {!authenticated && (
               <button
                 onClick={login}
-                className="flex items-center gap-2 px-6 py-3 bg-[#6e54ff] hover:bg-[#5a43e0] text-white rounded-xl font-semibold transition-all duration-200 shadow-lg shadow-[#6e54ff]/20"
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#6e54ff] hover:bg-[#5a43e0] text-white rounded-xl text-sm font-semibold transition-all duration-200 shadow-lg shadow-[#6e54ff]/20"
               >
-                <LogIn size={20} />
+                <LogIn size={18} />
                 Connect Privy Wallet
               </button>
             )}
@@ -270,26 +280,26 @@ export default function WalletPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <p className="text-gray-400 text-sm mb-1">Total Portfolio Value</p>
-                <p className="text-3xl font-bold">${totalPortfolioValue.toFixed(2)}</p>
+                <p className="text-gray-400 text-xs font-semibold mb-1">TOTAL PORTFOLIO VALUE</p>
+                <p className="text-2xl font-bold">${totalPortfolioValue.toFixed(2)}</p>
               </div>
               <div>
-                <p className="text-gray-400 text-sm mb-1">Total Profit/Loss</p>
+                <p className="text-gray-400 text-xs font-semibold mb-1">TOTAL PROFIT/LOSS</p>
                 <div className="flex items-center gap-2">
-                  <p className={`text-3xl font-bold ${totalProfitLoss >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <p className={`text-2xl font-bold ${totalProfitLoss >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                     ${Math.abs(totalProfitLoss).toFixed(2)}
                   </p>
                   {totalProfitLoss >= 0 ? (
-                    <TrendingUp className="w-6 h-6 text-green-400" />
+                    <TrendingUp className="w-5 h-5 text-green-400" />
                   ) : (
-                    <TrendingDown className="w-6 h-6 text-red-400" />
+                    <TrendingDown className="w-5 h-5 text-red-400" />
                   )}
                 </div>
               </div>
               <div>
-                <p className="text-gray-400 text-sm mb-1">Wallet Balance (MON)</p>
+                <p className="text-gray-400 text-xs font-semibold mb-1">WALLET BALANCE (MON)</p>
                 <div className="flex items-center gap-2">
-                  <p className="text-3xl font-bold">
+                  <p className="text-2xl font-bold">
                     {!authenticated ? '0.0000' : isLoadingBalance ? '...' : monBalance}
                   </p>
                   {authenticated && address && (

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { X, User, Users, MapPin, Calendar, Link, Grid, Heart, MessageCircle, Share2, Image as ImageIcon, Eye, ArrowLeft, MessageSquare, Volume2, TrendingUp, Repeat2, Triangle, Bookmark } from 'lucide-react'
 import { useSession } from 'next-auth/react'
+import { usePrivy } from '@privy-io/react-auth'
 import { useApi } from '@/app/Context/ApiProvider'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../Sections/Sidebar'
@@ -106,13 +107,41 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
   const [showTradingModal, setShowTradingModal] = useState(false)
   
   const { data: session, status } = useSession()
+  const { authenticated: privyAuthenticated, user: privyUser, ready: privyReady } = usePrivy()
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const { getUserProfile, getUserFollowers, getUserFollowing, followUser, unfollowUser } = useApi()
   const { checkCreatorExists, isConnected, address } = useCreatorToken()
   const router = useRouter()
-  
-  const currentUserId = session?.dbUser?.id
+
   const isOwnProfile = currentUserId === userId
   const isSessionLoading = status === 'loading'
+
+  // Initialize currentUserId from either NextAuth or Privy
+  useEffect(() => {
+    const initializeUser = async () => {
+      if (status === "authenticated" && session?.dbUser?.id) {
+        console.log("📊 Profile page - NextAuth user:", session.dbUser.id);
+        setCurrentUserId(session.dbUser.id);
+        return;
+      }
+      if (privyAuthenticated && privyUser && privyReady) {
+        console.log("📊 Profile page - Privy user:", privyUser.id);
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${privyUser.id}`
+          );
+          const data = await response.json();
+          if (data.exists && data.user?.id) {
+            console.log("✅ Found user in backend:", data.user.id);
+            setCurrentUserId(data.user.id);
+          }
+        } catch (error) {
+          console.error("❌ Error fetching Privy user:", error);
+        }
+      }
+    };
+    initializeUser();
+  }, [session, status, privyAuthenticated, privyUser, privyReady])
 
   useEffect(() => {
     if (userId) {
@@ -121,10 +150,11 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
   }, [userId])
 
   useEffect(() => {
-    if (!isOwnProfile && currentUserId && userProfile && session?.dbUser && !isSessionLoading) {
+    if (!isOwnProfile && currentUserId && userProfile && !isSessionLoading) {
+      console.log("🔍 Checking follow status - currentUserId:", currentUserId, "targetUserId:", userId);
       checkFollowStatus()
     }
-  }, [currentUserId, isOwnProfile, userProfile, session?.dbUser, isSessionLoading])
+  }, [currentUserId, isOwnProfile, userProfile, isSessionLoading])
 
   useEffect(() => {
     if (userId) {
@@ -317,7 +347,8 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
 
     try {
       if (isFollowing) {
-        await unfollowUser(userId, { userId: currentUserId })
+        console.log("🔄 Unfollowing user:", userId, "from:", currentUserId);
+        await unfollowUser(userId, { followerId: currentUserId })
         setIsFollowing(false)
         if (userProfile) {
           setUserProfile({
@@ -326,7 +357,8 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
           })
         }
       } else {
-        await followUser(userId, { userId: currentUserId })
+        console.log("🔄 Following user:", userId, "from:", currentUserId);
+        await followUser(userId, { followerId: currentUserId })
         setIsFollowing(true)
         if (userProfile) {
           setUserProfile({

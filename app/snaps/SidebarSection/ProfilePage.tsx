@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { User, Post } from "@/app/types"
 import { Ellipsis, Eye, Heart, MessageCircle, Repeat2, Bookmark, ThumbsUp, FileText, X, Grid, Users, Volume2, Share2, Triangle } from "lucide-react"
 import { useSession } from "next-auth/react"
+import { usePrivy } from "@privy-io/react-auth"
 import { useApi } from "../../Context/ApiProvider"
 import { UpdateProfileModal } from "@/app/components/UpdateProfileModal"
 import { useCreatorToken } from "@/app/hooks/useCreatorToken"
@@ -23,8 +24,10 @@ type Props = {
 type Tab = "Posts" | "Activity" | "Followers"
 
 export function ProfilePage({ user, posts }: Props) {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
+  const { authenticated: privyAuthenticated, user: privyUser, ready: privyReady } = usePrivy()
   const { getUserProfile, updateUserProfile, getUserFollowers, getUserFollowing } = useApi()
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const { createCreatorToken, checkCreatorExists, isConnected, connectWallet, isConnecting, address, switchToMonadTestnet } = useCreatorToken()
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -54,12 +57,47 @@ export function ProfilePage({ user, posts }: Props) {
   const [showFollowingList, setShowFollowingList] = useState(false)
   const [showReputationHistory, setShowReputationHistory] = useState(false)
 
+  // Initialize user ID from either NextAuth or Privy
+  useEffect(() => {
+    const initializeUser = async () => {
+      // Handle NextAuth session
+      if (status === "authenticated" && session?.dbUser?.id) {
+        console.log("📊 Loading profile for NextAuth user:", session.dbUser.id);
+        setCurrentUserId(session.dbUser.id);
+        return;
+      }
+
+      // Handle Privy authentication
+      if (privyAuthenticated && privyUser && privyReady) {
+        console.log("📊 Loading profile for Privy user:", privyUser.id);
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${privyUser.id}`
+          );
+          const data = await response.json();
+
+          if (data.exists && data.user?.id) {
+            console.log("✅ Found user in backend:", data.user.id);
+            setCurrentUserId(data.user.id);
+          } else {
+            console.log("❌ User not found in backend");
+          }
+        } catch (error) {
+          console.error("❌ Error fetching Privy user:", error);
+        }
+      }
+    };
+
+    initializeUser();
+  }, [session, status, privyAuthenticated, privyUser, privyReady]);
+
+  // Fetch profile using currentUserId
   useEffect(() => {
     const fetchProfile = async () => {
-      if (session?.dbUser?.id) {
+      if (currentUserId) {
         try {
           setLoading(true)
-          const profileData = await getUserProfile(session.dbUser.id)
+          const profileData = await getUserProfile(currentUserId)
           console.log('🔍 Profile data from backend:', profileData)
           console.log('🔍 Avatar URL from backend:', profileData.profile?.avatar_url)
           setProfile(profileData.profile)
@@ -72,7 +110,7 @@ export function ProfilePage({ user, posts }: Props) {
     }
 
     fetchProfile()
-  }, [session?.dbUser?.id, getUserProfile])
+  }, [currentUserId, getUserProfile])
 
   // Check if creator token exists with debouncing
   useEffect(() => {
@@ -93,24 +131,24 @@ export function ProfilePage({ user, posts }: Props) {
     // Debounce the check to prevent rapid calls
     const timeoutId = setTimeout(() => {
       const checkTokenExists = async () => {
-        if (session?.dbUser?.id && isConnected && address) {
+        if (currentUserId && isConnected && address) {
           try {
             console.log('🔍 ProfilePage: Starting creator token existence check');
-            console.log('🔍 ProfilePage: User ID:', session.dbUser.id);
+            console.log('🔍 ProfilePage: User ID:', currentUserId);
             console.log('🔍 ProfilePage: Wallet connected:', isConnected);
             console.log('🔍 ProfilePage: Wallet address:', address);
-            
+
             setCheckingTokenExists(true)
-            const tokenUuid = generateCreatorTokenUUID(session.dbUser.id)
+            const tokenUuid = generateCreatorTokenUUID(currentUserId)
             console.log('🔍 ProfilePage: Generated UUID:', tokenUuid);
-            
+
             console.log('🔍 ProfilePage: Calling checkCreatorExists (direct token details approach)...');
             const exists = await checkCreatorExists(tokenUuid)
             console.log('🔍 ProfilePage: checkCreatorExists result:', exists);
-            
+
             setCreatorTokenExists(exists)
             if (exists) {
-              setCreatorTokenUserId(session.dbUser.id)
+              setCreatorTokenUserId(currentUserId)
               console.log('✅ ProfilePage: Creator token exists, setting state');
             } else {
               console.log('❌ ProfilePage: Creator token does not exist - will show create button');
@@ -128,7 +166,7 @@ export function ProfilePage({ user, posts }: Props) {
           }
         } else {
           console.log('❌ ProfilePage: Conditions not met for token check:', {
-            'hasUserId': !!session?.dbUser?.id,
+            'hasUserId': !!currentUserId,
             'isConnected': isConnected,
             'hasAddress': !!address
           });
@@ -140,16 +178,16 @@ export function ProfilePage({ user, posts }: Props) {
 
     // Cleanup timeout on unmount or dependency change
     return () => clearTimeout(timeoutId);
-  }, [session?.dbUser?.id, isConnected, address, checkCreatorExists]) // Now safe to include checkCreatorExists
+  }, [currentUserId, isConnected, address, checkCreatorExists]) // Now safe to include checkCreatorExists
 
   const handleUpdateProfile = async (updateData: { username?: string; bio?: string; avatarUrl?: string }) => {
-    if (!session?.dbUser?.id) return
+    if (!currentUserId) return
 
     try {
       console.log('🔍 Updating profile with data:', updateData)
-      const response = await updateUserProfile(session.dbUser.id, updateData)
+      const response = await updateUserProfile(currentUserId, updateData)
       console.log('🔍 Update response:', response)
-      
+
       if (response.profile) {
         console.log('🔍 Setting new profile:', response.profile)
         setProfile(response.profile)
@@ -162,11 +200,11 @@ export function ProfilePage({ user, posts }: Props) {
   }
 
   const loadFollowersList = async () => {
-    if (isLoadingFollowers || !session?.dbUser?.id) return
-    
+    if (isLoadingFollowers || !currentUserId) return
+
     setIsLoadingFollowers(true)
     try {
-      const response = await getUserFollowers(session.dbUser.id, 100, 0)
+      const response = await getUserFollowers(currentUserId, 100, 0)
       setFollowersList(response?.followers || [])
     } catch (error) {
       console.error('Failed to load followers:', error)
@@ -176,11 +214,11 @@ export function ProfilePage({ user, posts }: Props) {
   }
 
   const loadFollowingList = async () => {
-    if (isLoadingFollowing || !session?.dbUser?.id) return
-    
+    if (isLoadingFollowing || !currentUserId) return
+
     setIsLoadingFollowing(true)
     try {
-      const response = await getUserFollowing(session.dbUser.id, 100, 0)
+      const response = await getUserFollowing(currentUserId, 100, 0)
       setFollowingList(response?.following || [])
     } catch (error) {
       console.error('Failed to load following:', error)
@@ -214,27 +252,27 @@ export function ProfilePage({ user, posts }: Props) {
     setIsCreatingToken(true)
     try {
       // Use the user ID directly as the UUID (consistent with generateCreatorTokenUUID)
-      const creatorUuid = session?.dbUser?.id || ''
+      const creatorUuid = currentUserId || ''
       console.log('🎯 Using user ID as creator token UUID:', creatorUuid)
-      
+
       const tokenTxHash = await createCreatorToken(
         creatorUuid, // Use the user ID directly
         tokenName.trim(),
         profile?.avatar_url || '',
         tokenDescription.trim(),
         quadraticDivisor,
-        session?.dbUser?.id // Pass user ID for updating creator_token_uuid field
+        currentUserId // Pass user ID for updating creator_token_uuid field
       )
-      
+
       alert(`Creator token created successfully! TX: ${tokenTxHash.slice(0, 10)}...`)
-      
+
       setTokenName('')
       setTokenDescription('')
       setQuadraticDivisor(1)
       setShowCreateTokenModal(false)
-      
+
       setCreatorTokenExists(true)
-      setCreatorTokenUserId(session?.dbUser?.id || null)
+      setCreatorTokenUserId(currentUserId || null)
       
     } catch (error) {
       console.error('Failed to create creator token:', error)
@@ -1060,7 +1098,7 @@ export function ProfilePage({ user, posts }: Props) {
       {/* Creator Token Trading Modal */}
       {showTradingModal && profile && (
         <CreatorTokenTrading
-          creatorUuid={session?.dbUser?.id}
+          creatorUuid={currentUserId}
           creatorName={profile.username}
           creatorImageUrl={profile.avatar_url}
           isOpen={showTradingModal}
@@ -1069,11 +1107,11 @@ export function ProfilePage({ user, posts }: Props) {
       )}
 
       {/* Reputation History Modal */}
-      {showReputationHistory && session?.dbUser?.id && (
+      {showReputationHistory && currentUserId && (
         <ReputationHistoryModal
           isOpen={showReputationHistory}
           onClose={() => setShowReputationHistory(false)}
-          userId={session.dbUser.id}
+          userId={currentUserId}
           username={profile?.username || ''}
         />
       )}
