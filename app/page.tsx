@@ -1,8 +1,6 @@
 "use client";
 import { JSX, useEffect, useState } from "react";
 import SocialFeedPage from "./snaps/page";
-import { PrivyProvider } from "@privy-io/react-auth";
-
 
 type PageKey =
   | "home"
@@ -22,24 +20,10 @@ interface NavItem {
 }
 
 export default function HomePage() {
-
   return (
     <div>
-      <PrivyProvider
-          appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}
-          config={{
-            appearance: { theme: 'dark' },
-            embeddedWallets: {
-          ethereum: {
-            createOnLogin: 'users-without-wallets'
-          }
-        }
-          }}
-        >
-  <SocialFeedPage />
-        </PrivyProvider>
+      <SocialFeedPage />
       {/* <FloatingDock items={navItems} defaultActive="home" /> */}
-    
     </div>
   );
 }

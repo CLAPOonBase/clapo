@@ -6,6 +6,7 @@ import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume
 import { Post, ApiPost } from '@/app/types'
 import { useApi } from '../../Context/ApiProvider'
 import { useSession } from 'next-auth/react'
+import { usePrivy } from '@privy-io/react-auth'
 import EngagementDetails from '../../components/EngagementDetails'
 import CommentSection from '../../components/CommentSection'
 import Toast from '../../components/Toast'
@@ -45,8 +46,34 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
   
 
   const { likePost, unlikePost, retweetPost, bookmarkPost, unbookmarkPost, viewPost, addComment, getPostComments, state } = useApi()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
+  const { authenticated: privyAuthenticated, user: privyUser, ready: privyReady } = usePrivy()
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const router = useRouter()
+
+  // Initialize currentUserId from either NextAuth or Privy
+  useEffect(() => {
+    const initializeUser = async () => {
+      if (status === "authenticated" && session?.dbUser?.id) {
+        setCurrentUserId(session.dbUser.id);
+        return;
+      }
+      if (privyAuthenticated && privyUser && privyReady) {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${privyUser.id}`
+          );
+          const data = await response.json();
+          if (data.exists && data.user?.id) {
+            setCurrentUserId(data.user.id);
+          }
+        } catch (error) {
+          console.error("❌ Error fetching Privy user:", error);
+        }
+      }
+    };
+    initializeUser();
+  }, [session, status, privyAuthenticated, privyUser, privyReady]);
 
   const isApiPost = 'user_id' in post
   const postId = post.id.toString()
@@ -85,8 +112,7 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
     ? getRelativeTime(post.created_at)
     : (post.time || 'Unknown')
   const postAvatar = isApiPost ? post.avatar_url : undefined
-  const currentUserId = session?.dbUser?.id
-  const currentUserAvatar = session?.dbUser?.avatar_url
+  const currentUserAvatar = session?.dbUser?.avatar_url || privyUser?.email?.address
   const [profile, setProfile] = useState<any | null>(null)
 const [loading, setLoading] = useState(false)
   const { getUserProfile, getUserFollowers, getUserFollowing, followUser, unfollowUser } = useApi()
@@ -117,10 +143,10 @@ const toggleCommentDropdown = async (e: React.MouseEvent) => {
 }
 useEffect(() => {
   const fetchProfile = async () => {
-    if (session?.dbUser?.id) {
+    if (currentUserId) {
       try {
         setLoading(true)
-        const profileData = await getUserProfile(session.dbUser.id)
+        const profileData = await getUserProfile(currentUserId)
         setProfile(profileData.profile)
       } catch (error) {
         console.error('Failed to fetch profile:', error)
@@ -131,7 +157,7 @@ useEffect(() => {
   }
 
   fetchProfile()
-}, [session?.dbUser?.id, getUserProfile])
+}, [currentUserId, getUserProfile])
 
 
   const isUserInLikes = isApiPost && post.likes?.some(u => u.user_id === currentUserId)
@@ -513,30 +539,44 @@ const handleImageClick = (e: React.MouseEvent) => {
             </div>
 
             {/* Post Content */}
-            {postContent && (
-              <div className="mb-3">
-                <p className="text-white text-[15px] leading-normal whitespace-pre-wrap">
-                  {renderTextWithMentions(
-                    displayedText,
-                    isApiPost ? post.mentions : undefined,
-                    (userId, username) => {
-                      router.push(`/snaps/profile/${userId}`)
-                    }
-                  )}
-                </p>
-                {isLong && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setExpanded(prev => !prev)
-                    }}
-                    className="text-blue-400 hover:text-blue-300 text-[15px] mt-1"
-                  >
-                    {expanded ? "Show less" : "Show more"}
-                  </button>
-                )}
-              </div>
-            )}
+          {postContent && (
+  <div className="mb-3">
+    <div
+      className={`${
+        !postImage
+          ? "bg-gradient-to-br from-gray-800/50  to-gray-900/50 mt-2 border border-gray-700/50 rounded-2xl px-4 py-6 h-96 w-auto flex items-center justify-center text-center"
+          : ""
+      }`}
+    >
+      <p
+        className={`text-white text-[15px] leading-normal whitespace-pre-wrap ${
+          !postImage ? "text-xl" : ""
+        }`}
+      >
+        {renderTextWithMentions(
+          displayedText,
+          isApiPost ? post.mentions : undefined,
+          (userId, username) => {
+            router.push(`/snaps/profile/${userId}`)
+          }
+        )}
+      </p>
+    </div>
+
+    {isLong && (
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          setExpanded(prev => !prev)
+        }}
+        className="text-blue-400 hover:text-blue-300 text-[15px] mt-1"
+      >
+        {expanded ? "Show less" : "Show more"}
+      </button>
+    )}
+  </div>
+)}
+
 
             {/* Media Section - Twitter Style */}
             {postImage && (

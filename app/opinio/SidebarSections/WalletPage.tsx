@@ -32,32 +32,32 @@ const WalletPage = () => {
   const [activeTab, setActiveTab] = useState<keyof typeof tabs>('earnings');
 
   return (
-    <div className="space-y-6 px-4 sm:px-6 md:px-10 text-left">
+    <div className="space-y-4 px-4 sm:px-6 md:px-10 text-left">
       <div className="flex flex-col xl:flex-row gap-4 w-full">
         <div className="flex-1 space-y-4">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="bg-[#1A1A1A] p-4 rounded-xl text-sm border border-[#2A2A2A] shadow-custom"
+            className="bg-black border-2 border-gray-700/70 p-4 rounded-xl"
           >
-            <p className="text-[#999]">HEY, {user.walletAddress}</p>
-            <p className="text-[#666]">Welcome back! Here’s what’s trending in the markets.</p>
+            <p className="text-gray-400 text-xs font-semibold mb-1">HEY, {user.walletAddress}</p>
+            <p className="text-gray-500 text-xs">Welcome back! Here's what's trending in the markets.</p>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="bg-[#1A1A1A] rounded-xl p-6 space-y-4 border border-[#2A2A2A] shadow-custom"
+            className="bg-black border-2 border-gray-700/70 rounded-xl p-5 space-y-4"
           >
-            <div className="flex space-x-4 text-sm">
+            <div className="flex space-x-6 text-xs">
               {Object.entries(tabs).map(([key, label]) => (
                 <button
                   key={key}
                   onClick={() => setActiveTab(key as keyof typeof tabs)}
-                  className={`pb-2 transition-colors ${
-                    activeTab === key ? 'text-white border-b-2 border-[#6E54FF]' : 'text-[#888]'
+                  className={`pb-2 transition-all font-semibold ${
+                    activeTab === key ? 'text-white border-b-2 border-[#6E54FF]' : 'text-gray-400 hover:text-gray-300'
                   }`}
                 >
                   {label}
@@ -71,9 +71,9 @@ const WalletPage = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                <p className="text-[#aaa] text-xs">EARNING</p>
-                <p className="text-3xl font-bold">${user.earnings.amount.toLocaleString()}</p>
-                <p className="text-green-500 text-sm">{user.earnings.change}</p>
+                <p className="text-gray-400 text-xs font-semibold mb-2">EARNINGS</p>
+                <p className="text-2xl font-bold text-white">${user.earnings.amount.toLocaleString()}</p>
+                <p className="text-[#6E54FF] text-sm font-medium mt-1">{user.earnings.change}</p>
               </motion.div>
             )}
           </motion.div>
@@ -83,19 +83,27 @@ const WalletPage = () => {
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-[#1A1A1A] rounded-xl p-6 w-full xl:w-1/2 text-center border border-[#2A2A2A] shadow-custom"
+          className="bg-black border-2 border-gray-700/70 rounded-xl p-5 w-full xl:w-1/2 text-center"
         >
-          <p className="text-[#888] text-xs">TOTAL BALANCE</p>
-          <p className="text-4xl font-bold">${user.totalBalance.toLocaleString()}</p>
-          <p className="text-[#888] text-sm">{user.depositRate}</p>
+          <p className="text-gray-400 text-xs font-semibold mb-2">TOTAL BALANCE</p>
+          <p className="text-3xl font-bold text-white mb-1">${user.totalBalance.toLocaleString()}</p>
+          <p className="text-gray-400 text-sm">{user.depositRate}</p>
 
-          <div className="flex flex-col sm:flex-row gap-4 mt-4">
-            <button className="w-full bg-[#2A2A2A] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#3A3A3A] transition-colors border border-[#2A2A2A]">
-              DEPOSIT
-            </button>
-            <button className="w-full bg-[#6E54FF] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#836EF9] transition-colors shadow-[0px_1px_0.5px_0px_rgba(255,255,255,0.33)_inset,0px_1px_2px_0px_rgba(26,19,161,0.50),0px_0px_0px_1px_#4F47EB]">
-              WITHDRAW
-            </button>
+          <div className="flex flex-col sm:flex-row gap-3 mt-5">
+            <motion.button
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full bg-transparent border-2 border-gray-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:border-white hover:bg-white hover:text-black transition-all"
+            >
+              Deposit
+            </motion.button>
+            <motion.button
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full bg-[#6E54FF] hover:bg-[#5940cc] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 border-[#6E54FF] shadow-lg"
+            >
+              Withdraw
+            </motion.button>
           </div>
         </motion.div>
       </div>
@@ -104,11 +112,11 @@ const WalletPage = () => {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-[#1A1A1A] rounded-xl p-6 space-y-4 border border-[#2A2A2A] shadow-custom"
+        className="bg-black border-2 border-gray-700/70 rounded-xl p-5 space-y-4"
       >
         <div className="flex justify-between items-center">
-          <p className="text-sm text-[#aaa]">TRANSACTION</p>
-          <span className="bg-[#333] text-xs px-3 py-1 rounded-full">LAST MONTH</span>
+          <p className="text-xs text-gray-400 font-semibold">TRANSACTIONS</p>
+          <span className="bg-gray-800 text-xs px-3 py-1 rounded-full text-gray-400 font-medium">LAST MONTH</span>
         </div>
 
         {transactions.map((tx) => (
@@ -117,20 +125,20 @@ const WalletPage = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 * tx.id }}
-            className="flex items-center justify-between border-t border-[#333] pt-4 mt-4"
+            className="flex items-center justify-between border-t-2 border-gray-700/50 pt-4 mt-4 hover:bg-gray-900/30 transition-colors p-3 rounded-lg"
           >
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full bg-[#666] flex items-center justify-center text-white text-sm">
+              <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-lg">
                 🤖
               </div>
               <div>
-                <p className="text-sm">{tx.question}</p>
-                <p className="text-xs text-[#777]">Posted on {tx.date}</p>
+                <p className="text-sm text-white font-medium">{tx.question}</p>
+                <p className="text-xs text-gray-500">Posted on {tx.date}</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <p className="text-sm font-medium">${tx.amount.toFixed(2)}</p>
-              <span className="flex items-center text-xs bg-green-700 text-white px-2 py-1 rounded-full">
+            <div className="flex items-center space-x-3">
+              <p className="text-sm font-semibold text-white">${tx.amount.toFixed(2)}</p>
+              <span className="flex items-center text-xs bg-[#6E54FF]/20 text-[#6E54FF] px-2 py-1 rounded-full font-medium">
                 <CheckCircle2 className="mr-1" size={12} />
                 {tx.status}
               </span>

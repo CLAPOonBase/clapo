@@ -3,6 +3,7 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useSession, signIn } from "next-auth/react";
+import { usePrivy } from "@privy-io/react-auth";
 import { useSearchParams } from "next/navigation";
 import Sidebar from "./Sections/Sidebar";
 import { SnapComposer } from "./Sections/SnapComposer";
@@ -26,6 +27,7 @@ import SharePage from "./SidebarSection/SharePage";
 import { X } from "lucide-react";
 import Stories from "../components/Story";
 import MyMentions from "../components/MyMentions";
+import { apiService } from "../lib/api";
 
 function SocialFeedPageContent() {
   const [activeTab, setActiveTab] = useState<"FOR YOU" | "FOLLOWING">(
@@ -47,13 +49,17 @@ function SocialFeedPageContent() {
   >("home");
   const [followingPosts, setFollowingPosts] = useState<any[]>([]);
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(false);
+  const [topUsers, setTopUsers] = useState<any[]>([]);
+  const [isLoadingTopUsers, setIsLoadingTopUsers] = useState(false);
 
   const [liked, setLiked] = useState<Set<number>>(new Set());
   const [retweeted, setRetweeted] = useState<Set<number>>(new Set());
   const [bookmarked, setBookmarked] = useState<Set<number>>(new Set());
   const [hasInitializedData, setHasInitializedData] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const { data: session, status } = useSession();
+  const { authenticated: privyAuthenticated, user: privyUser, ready: privyReady } = usePrivy();
   const {
     state,
     fetchPosts,
@@ -161,39 +167,206 @@ function SocialFeedPageContent() {
     };
   }, []);
 
+  // Fetch user data from Privy and load posts
   useEffect(() => {
-    if (
-      status === "authenticated" &&
-      session?.dbUser?.id &&
-      !hasInitializedData
-    ) {
-      fetchPosts(session.dbUser.id);
-      fetchNotifications(session.dbUser.id);
-      fetchActivities(session.dbUser.id);
-      setHasInitializedData(true);
-    }
+    const initializeData = async () => {
+      // Handle NextAuth session
+      if (status === "authenticated" && session?.dbUser?.id && !hasInitializedData) {
+        console.log("📊 Loading data for NextAuth user:", session.dbUser.id);
+        setCurrentUserId(session.dbUser.id);
+        fetchPosts(session.dbUser.id);
+        fetchNotifications(session.dbUser.id);
+        fetchActivities(session.dbUser.id);
+        setHasInitializedData(true);
+        return;
+      }
 
-    if (status === "unauthenticated") {
-      setHasInitializedData(false);
-    }
-  }, [session, status, hasInitializedData]);
+      // Handle Privy authentication
+      if (privyAuthenticated && privyUser && privyReady && !hasInitializedData) {
+        console.log("📊 Loading data for Privy user:", privyUser.id);
+        try {
+          // Fetch user from backend using Privy ID
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${privyUser.id}`
+          );
+          const data = await response.json();
+
+          if (data.exists && data.user?.id) {
+            console.log("✅ Found user in backend:", data.user.id);
+            setCurrentUserId(data.user.id);
+            fetchPosts(data.user.id);
+            fetchNotifications(data.user.id);
+            fetchActivities(data.user.id);
+            setHasInitializedData(true);
+          } else {
+            console.log("❌ User not found in backend, redirecting to signup");
+            window.location.href = '/SignIn';
+          }
+        } catch (error) {
+          console.error("❌ Error fetching Privy user:", error);
+        }
+        return;
+      }
+
+      if (status === "unauthenticated" && !privyAuthenticated) {
+        setHasInitializedData(false);
+      }
+    };
+
+    initializeData();
+  }, [session, status, privyAuthenticated, privyUser, privyReady, hasInitializedData]);
 
   // Removed auto-refresh to prevent NEW posts from disappearing
   // Users can manually refresh when they want to see the latest posts
 
   const loadFollowingFeed = async () => {
-    if (!session?.dbUser?.id || isLoadingFollowing) return;
+    // Support both NextAuth and Privy users
+    const userId = session?.dbUser?.id || currentUserId;
+    console.log("🔍 loadFollowingFeed called with userId:", userId, {
+      sessionUserId: session?.dbUser?.id,
+      currentUserId,
+      isLoadingFollowing
+    });
+
+    if (!userId || isLoadingFollowing) {
+      console.log("❌ Cannot load following feed - no userId or already loading");
+      return;
+    }
 
     setIsLoadingFollowing(true);
     try {
-      const response = await getFollowingFeed(session.dbUser.id, 50, 0);
+      console.log("📡 Fetching following feed for user:", userId);
+      const response = await getFollowingFeed(userId, 50, 0);
+      console.log("✅ Following feed response:", response);
       setFollowingPosts(response.posts || []);
     } catch (error) {
-      console.error("Failed to load following feed:", error);
+      console.error("❌ Failed to load following feed:", error);
     } finally {
       setIsLoadingFollowing(false);
     }
   };
+
+  // Fetch top 5 users by reputation (with fallback to recent users)
+  useEffect(() => {
+    const fetchTopUsers = async () => {
+      setIsLoadingTopUsers(true);
+      try {
+        // Try to get users from reputation leaderboard first
+        try {
+          const response = await apiService.getReputationLeaderboard(5, 0);
+          console.log('📊 Reputation leaderboard response:', response);
+
+          if (response.users && Array.isArray(response.users) && response.users.length > 0) {
+            // Show users immediately with loading state for follower counts
+            const usersWithPlaceholder = response.users.map(user => ({
+              user_id: user.user_id,
+              username: user.username,
+              avatar_url: user.avatar_url,
+              score: user.score,
+              tier: user.tier,
+              followers_count: null, // null indicates loading
+              isReputationBased: true
+            }));
+            setTopUsers(usersWithPlaceholder);
+            setIsLoadingTopUsers(false);
+
+            // Fetch follower counts in background without blocking
+            response.users.forEach(async (user, index) => {
+              try {
+                const profileResponse = await apiService.getUserProfile(user.user_id);
+                const profile = profileResponse.profile as any;
+                const followers_count = profile?.followers_count || profile?.followerCount || 0;
+
+                // Update only this user's follower count
+                setTopUsers(prev => {
+                  const updated = [...prev];
+                  if (updated[index]?.user_id === user.user_id) {
+                    updated[index] = { ...updated[index], followers_count };
+                  }
+                  return updated;
+                });
+              } catch (error) {
+                console.warn(`Failed to fetch follower count for ${user.username}:`, error);
+                // Set to 0 on error
+                setTopUsers(prev => {
+                  const updated = [...prev];
+                  if (updated[index]?.user_id === user.user_id) {
+                    updated[index] = { ...updated[index], followers_count: 0 };
+                  }
+                  return updated;
+                });
+              }
+            });
+            return;
+          }
+        } catch (reputationError) {
+          console.warn('⚠️ Reputation leaderboard not available, using fallback:', reputationError);
+        }
+
+        // Fallback: Get recent/active users from search or other endpoint
+        console.log('📊 Using fallback: fetching suggested users...');
+
+        // Try to get some users - we'll search for common usernames or get from posts
+        const fallbackUsers: any[] = [];
+
+        // If we have posts, extract unique users from them
+        if (state.posts.posts.length > 0) {
+          const uniqueUsers = new Map();
+          state.posts.posts.forEach(post => {
+            if (post.user_id && post.username && !uniqueUsers.has(post.user_id)) {
+              uniqueUsers.set(post.user_id, {
+                user_id: post.user_id,
+                username: post.username,
+                avatar_url: post.avatar_url,
+                followers_count: null,
+                isReputationBased: false
+              });
+            }
+          });
+
+          // Take first 5 unique users
+          const usersArray = Array.from(uniqueUsers.values()).slice(0, 5);
+          setTopUsers(usersArray);
+          setIsLoadingTopUsers(false);
+
+          // Fetch follower counts in background
+          usersArray.forEach(async (user, index) => {
+            try {
+              const profileResponse = await apiService.getUserProfile(user.user_id);
+              const profile = profileResponse.profile as any;
+              const followers_count = profile?.followers_count || profile?.followerCount || 0;
+
+              setTopUsers(prev => {
+                const updated = [...prev];
+                if (updated[index]?.user_id === user.user_id) {
+                  updated[index] = { ...updated[index], followers_count };
+                }
+                return updated;
+              });
+            } catch (error) {
+              console.warn(`Failed to fetch follower count for ${user.username}:`, error);
+              setTopUsers(prev => {
+                const updated = [...prev];
+                if (updated[index]?.user_id === user.user_id) {
+                  updated[index] = { ...updated[index], followers_count: 0 };
+                }
+                return updated;
+              });
+            }
+          });
+        } else {
+          setIsLoadingTopUsers(false);
+        }
+
+      } catch (error) {
+        console.error("❌ Failed to load users:", error);
+        setTopUsers([]);
+        setIsLoadingTopUsers(false);
+      }
+    };
+
+    fetchTopUsers();
+  }, [state.posts.posts]);
 
   const handleTabChange = (tab: "FOR YOU" | "FOLLOWING") => {
     setActiveTab(tab);
@@ -455,7 +628,7 @@ function SocialFeedPageContent() {
                       ))
                     ) : (
                       <div className="text-center py-8 text-gray-500">
-                        {status === "authenticated"
+                        {(status === "authenticated" || privyAuthenticated)
                           ? "No posts from people you follow yet. Try following some users!"
                           : "Sign in to see posts"}
                       </div>
@@ -471,7 +644,7 @@ function SocialFeedPageContent() {
     }
   };
 
-  if (status === "loading") {
+  if (status === "loading" || !privyReady) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <LoadingSpinner size="w-12 h-12" />
@@ -479,79 +652,30 @@ function SocialFeedPageContent() {
     );
   }
 
-  // Don't render main content if session is not authenticated or dbUser is not loaded
-  if (status === "unauthenticated" || !session?.dbUser) {
-    console.log("🔍 Session state:", {
-      status,
-      hasSession: !!session,
+  // Check authentication: Either NextAuth OR Privy
+  const isAuthenticated = (status === "authenticated" && session?.dbUser) || privyAuthenticated;
+
+  // Don't render main content if user is not authenticated
+  if (!isAuthenticated) {
+    console.log("🔍 Auth state:", {
+      nextAuthStatus: status,
+      hasNextAuthSession: !!session,
       hasDbUser: !!session?.dbUser,
+      privyAuthenticated,
+      privyReady,
+      hasPrivyUser: !!privyUser
     });
+
+    // Redirect to SignIn page for Privy authentication
+    console.log("🚀 Redirecting unauthenticated user to /SignIn");
+    if (typeof window !== 'undefined') {
+      window.location.href = '/SignIn';
+    }
+
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 0 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-      >
-        <div className="flex-col md:flex-row lg:ml-52 text-white flex">
-         <div className=" lg:block">
-           <Sidebar 
-            currentPage={currentPage} 
-            setCurrentPage={setCurrentPage}
-            onNavigateToOpinio={handleNavigateToOpinio}
-            onNavigateToSnaps={handleNavigateToSnaps}
-          />
-         </div>
-          <div className="flex-1 ml-0 md:ml-4 mr-2 md:mr-6 rounded-md px-2 mt-20 md:mt-0">
-            <div className="bg-[#1A1A1A] rounded-2xl border border-gray-800 overflow-hidden">
-              <div className="flex flex-col lg:flex-row min-h-[400px] sm:min-h-[550px]">
-                {/* Left Side - Hero Image */}
-                <div
-                  className="lg:w-full relative px-4 py-2 text-white 
-                shadow-[inset_0px_1px_0.5px_rgba(255,255,255,0.5),0px_1px_2px_rgba(26,19,161,0.5),0px_0px_0px_1px_#4F47EB] 
-                bg-gradient-to-r from-[#4F47EB] to-[#3B32C7] rounded-lg m-2"
-                >
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent z-10 rounded-lg" />
-
-                  {/* Background Pattern */}
-                  <div className="absolute inset-0 opacity-20 rounded-lg">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,rgba(255,255,255,0.2)_0%,transparent_50%)]" />
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_75%,rgba(255,255,255,0.1)_0%,transparent_50%)]" />
-                  </div>
-
-                  {/* Content on Image */}
-                  <div className="relative z-20 flex flex-col justify-center items-center p-4 sm:p-8 lg:p-12 text-center h-full">
-                    <div className="mb-4 sm:mb-6">
-                      <Image
-                        src="/connect_log.png"
-                        alt="Clapo Illustration"
-                        width={300}
-                        height={300}
-                        className="w-auto h-32 sm:h-48 lg:h-64 object-contain"
-                      />
-                    </div>
-                    <div className="text-center lg:text-left mb-6 sm:mb-8">
-                      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-3 sm:mb-4">
-                        Get Started
-                      </h1>
-                      <p className="text-gray-400 text-sm sm:text-base leading-relaxed px-2 mb-6">
-                        Sign in to start posting, engaging with others, and
-                        exploring the Web3 social experience.
-                      </p>
-                      <button
-                        onClick={() => signIn("twitter")}
-                        className="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-bold shadow-lg text-sm sm:text-base"
-                      >
-                        Connect X
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+      <div className="flex justify-center items-center min-h-screen">
+        <LoadingSpinner size="w-12 h-12" />
+      </div>
     );
   }
 
@@ -594,10 +718,10 @@ function SocialFeedPageContent() {
         </div>
 
         {/* Right Sidebar - Only visible at 2xl breakpoint */}
-        {currentPage !== "messages" && currentPage !== "share" && currentPage !=="explore" && session?.dbUser && (
+        {currentPage !== "messages" && currentPage !== "share" && currentPage !=="explore" && (session?.dbUser || currentUserId) && (
           <div
             className="hidden md:block lg:block xl:block 2xl:block w-[340px] h-screen sticky top-0"
-           
+
           >
             <div className="p-6">
               {/* Recent Activity */}
@@ -609,7 +733,7 @@ function SocialFeedPageContent() {
                               text-xs font-medium text-gray-200">
                   Recent Activity
                 </span>
-                <UserActivityFeed userId={session.dbUser.id} />
+                <UserActivityFeed userId={session?.dbUser?.id || currentUserId} />
               </div>
 
               {/* Invite Button */}
@@ -637,34 +761,58 @@ function SocialFeedPageContent() {
                   Followers Suggestions
                 </span>
 
-                {/* Sample Followers List */}
+                {/* Top Users by Reputation */}
                 <div className="flex-1 w-full p-3 overflow-y-auto">
-                  <div className="space-y-3">
-                    {[
-                      { id: 1, username: 'alextech', followers: 1240, avatar: 'https://robohash.org/alextech.png?size=100x100' },
-                      { id: 2, username: 'sarah_dev', followers: 856, avatar: 'https://robohash.org/sarah.png?size=100x100' },
-                      { id: 3, username: 'crypto_mike', followers: 2100, avatar: 'https://robohash.org/mike.png?size=100x100' },
-                      { id: 4, username: 'designpro', followers: 567, avatar: 'https://robohash.org/designpro.png?size=100x100' },
-                      { id: 5, username: 'blockchain_bob', followers: 1890, avatar: 'https://robohash.org/bob.png?size=100x100' }
-                    ].map((user) => (
-                      <div key={user.id} className="flex items-center justify-between p-2 hover:bg-gray-700/20 rounded-lg transition-colors">
-                        <div className="flex items-center space-x-3">
-                          <img
-                            src={user.avatar}
-                            alt={user.username}
-                            className="w-10 h-10 rounded-full object-cover border border-gray-600/30"
-                          />
-                          <div className="flex flex-col">
-                            <span className="text-xs font-medium text-white">{user.username}</span>
-                            <span className="text-xs text-gray-400">{user.followers.toLocaleString()} followers</span>
+                  {isLoadingTopUsers ? (
+                    <div className="flex justify-center items-center py-8">
+                      <LoadingSpinner size="w-8 h-8" />
+                    </div>
+                  ) : topUsers.length > 0 ? (
+                    <div className="space-y-3">
+                      {topUsers.map((user, index) => (
+                        <div key={user.user_id} className="flex items-center justify-between p-2 hover:bg-gray-700/20 rounded-lg transition-colors">
+                          <div className="flex items-center space-x-3">
+                            <div className="relative">
+                              <img
+                                src={user.avatar_url || `https://robohash.org/${user.username}.png?size=100x100`}
+                                alt={user.username}
+                                className="w-10 h-10 rounded-full object-cover border border-gray-600/30"
+                              />
+                              {user.isReputationBased && index < 3 && (
+                                <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-xs font-bold text-white shadow-lg">
+                                  {index + 1}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium text-white">{user.username}</span>
+                              <span className="text-xs text-gray-400">
+                                {user.followers_count === null ? (
+                                  <span className="animate-pulse">Loading...</span>
+                                ) : (
+                                  `${user.followers_count || 0} ${user.followers_count === 1 ? 'follower' : 'followers'}`
+                                )}
+                              </span>
+                            </div>
                           </div>
+                          <button
+                            onClick={() => {
+                              // Navigate to user profile
+                              window.location.href = `/snaps/profile/${user.user_id}`;
+                            }}
+                            className="bg-[#6e54ff] hover:bg-[#5940cc] text-white text-xs px-3 py-1 rounded-lg transition-colors"
+                          >
+                            View
+                          </button>
                         </div>
-                        <button className="bg-[#6e54ff] hover:bg-[#5940cc] text-white text-xs px-3 py-1 rounded-lg transition-colors">
-                          Follow
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500 text-sm">
+                      <p className="mb-2">Unable to load top users</p>
+                      <p className="text-xs">Check console for details</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -1,13 +1,8 @@
 "use client";
 
-declare global {
-  interface Window {
-    ethereum?: any;
-  }
-}
-
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { BrowserProvider, ethers, Contract, formatUnits } from "ethers";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 
 const ERC20_ABI = [
   "function balanceOf(address owner) view returns (uint256)",
@@ -58,26 +53,67 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [address, setAddress] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
-  const connect = async () => {
-    if (window.ethereum) {
-      try {
-        setIsConnecting(true);
-        const _provider = new BrowserProvider(window.ethereum);
-        await _provider.send("eth_requestAccounts", []);
-        const _signer = await _provider.getSigner();
-        const _address = await _signer.getAddress();
+  const { login, authenticated, user } = usePrivy();
+  const { wallets } = useWallets();
 
-        setProvider(_provider);
-        setSigner(_signer);
-        setAddress(_address);
-      } catch (error) {
-        console.error("Failed to connect wallet:", error);
-        alert("Failed to connect wallet. Please try again.");
-      } finally {
-        setIsConnecting(false);
+  // Initialize provider and signer when Privy wallet is available
+  useEffect(() => {
+    const initializePrivyWallet = async () => {
+      console.log('🔍 WalletContext: Initialize check', { authenticated, walletsCount: wallets.length, user });
+
+      if (authenticated && wallets.length > 0) {
+        try {
+          const embeddedWallet = wallets.find(wallet => wallet.walletClientType === 'privy');
+
+          if (!embeddedWallet) {
+            console.error('❌ WalletContext: No Privy embedded wallet found');
+            console.log('Available wallets:', wallets.map(w => ({ type: w.walletClientType, address: w.address })));
+            return;
+          }
+
+          console.log('🔍 WalletContext: Found Privy wallet:', embeddedWallet);
+          console.log('🔍 WalletContext: Wallet address:', embeddedWallet.address);
+
+          // Switch to Monad Testnet (chain ID 10143)
+          console.log('🔍 WalletContext: Switching to chain 10143...');
+          await embeddedWallet.switchChain(10143);
+
+          console.log('🔍 WalletContext: Getting Ethers provider from Privy wallet...');
+          // Use the wallet's getEthereumProvider method
+          const ethereumProvider = await embeddedWallet.getEthereumProvider();
+          const _provider = new BrowserProvider(ethereumProvider);
+          const _signer = await _provider.getSigner();
+          const _address = await _signer.getAddress();
+
+          console.log('✅ WalletContext: Privy wallet initialized', { address: _address });
+          setProvider(_provider);
+          setSigner(_signer);
+          setAddress(_address);
+        } catch (error) {
+          console.error("❌ WalletContext: Failed to initialize Privy wallet:", error);
+          console.error("Error details:", error);
+        }
+      } else {
+        // Clear state if not authenticated
+        console.log('⚠️ WalletContext: Clearing wallet state');
+        setProvider(null);
+        setSigner(null);
+        setAddress(null);
       }
-    } else {
-      alert("MetaMask not found! Please install MetaMask to use this feature.");
+    };
+
+    initializePrivyWallet();
+  }, [authenticated, wallets, user]);
+
+  const connect = async () => {
+    try {
+      setIsConnecting(true);
+      await login();
+    } catch (error) {
+      console.error("Failed to connect with Privy:", error);
+      alert("Failed to connect wallet. Please try again.");
+    } finally {
+      setIsConnecting(false);
     }
   };
 
@@ -120,15 +156,22 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getETHBalance = async (): Promise<string> => {
+    console.log('🔍 getETHBalance called', { provider: !!provider, address });
+
     if (!provider || !address) {
+      console.error('❌ getETHBalance: Wallet not connected', { provider: !!provider, address });
       throw new Error("Wallet not connected");
     }
 
     try {
+      console.log('🔍 getETHBalance: Fetching balance for address:', address);
       const balance = await provider.getBalance(address);
-      return formatUnits(balance, 18); 
+      console.log('🔍 getETHBalance: Raw balance:', balance.toString());
+      const formatted = formatUnits(balance, 18);
+      console.log('✅ getETHBalance: Formatted balance:', formatted);
+      return formatted;
     } catch (error) {
-      console.error("Error fetching ETH balance:", error);
+      console.error("❌ getETHBalance: Error fetching balance:", error);
       throw error;
     }
   };

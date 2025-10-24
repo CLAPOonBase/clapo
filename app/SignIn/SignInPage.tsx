@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { X, ArrowLeft, ArrowRight, Check, Mail, AtSign, User, Hash, Users, Sparkles, Wallet, Camera } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, Check, Mail, AtSign, User, Hash, Users, Sparkles, Wallet, Camera, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { usePrivy } from '@privy-io/react-auth';
 
 type FlowState = 
@@ -47,6 +47,12 @@ function SignInPage() {
     communityName: "",
     communityType: ""
   });
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [checkingExistingUser, setCheckingExistingUser] = useState(false);
 
   const { login, logout, authenticated, user, ready } = usePrivy();
 
@@ -66,23 +72,94 @@ function SignInPage() {
     }
   }, [formData.name, flowState]);
 
+  // Check username availability with debouncing
+  useEffect(() => {
+    if (!formData.username || formData.username.length < 3) {
+      setUsernameAvailable(null);
+      setCheckingUsername(false);
+      return;
+    }
+
+    setCheckingUsername(true);
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/users/check-username/${formData.username}`
+        );
+        const data = await response.json();
+        setUsernameAvailable(data.available);
+      } catch (error) {
+        console.error('Error checking username:', error);
+        // If endpoint doesn't exist yet, assume available
+        setUsernameAvailable(true);
+      } finally {
+        setCheckingUsername(false);
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(timeoutId);
+      setCheckingUsername(false);
+    };
+  }, [formData.username]);
+
   // Check if user is new and needs profile completion
   useEffect(() => {
-    if (authenticated && user && flowState === "initial") {
-      // Check if user has completed profile
-      const profileKey = `profile_completed_${user.id}`;
-      const hasCompletedProfile = localStorage.getItem(profileKey);
-      
-      if (!hasCompletedProfile) {
-        // New user needs to complete profile
-        setFlowState("choice");
-      } else {
-        // Returning user - you can redirect to app here
-        console.log("Returning user detected, redirect to app");
-        // window.location.href = '/dashboard';
+    if (authenticated && user && ready) {
+      console.log("🔍 User authenticated:", {
+        privyId: user.id,
+        email: user.email?.address,
+        flowState: flowState,
+        ready: ready
+      });
+
+      // Only check when on initial screen or success screen
+      if (flowState === "initial" || flowState === "success") {
+        // Check if user exists in backend
+        const checkExistingUser = async () => {
+          setCheckingExistingUser(true);
+          try {
+            console.log("🌐 Checking user in backend:", user.id);
+            const response = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${user.id}`
+            );
+            const data = await response.json();
+            console.log("📦 Backend response:", data);
+
+            if (data.exists && data.user?.hasCompletedOnboarding) {
+              // Existing user - redirect immediately
+              console.log("✅ Returning user detected, redirecting immediately...");
+              setIsRedirecting(true);
+              console.log("🚀 Redirecting now to /snaps");
+              window.location.href = '/snaps';
+            } else if (flowState === "initial") {
+              // New user - show onboarding
+              console.log("🆕 New user detected, showing onboarding");
+              setCheckingExistingUser(false);
+              setFlowState("choice");
+            }
+          } catch (error) {
+            console.error('❌ Error checking user:', error);
+            // Fallback to localStorage check if API fails
+            const profileKey = `profile_completed_${user.id}`;
+            const hasCompletedProfile = localStorage.getItem(profileKey);
+
+            if (hasCompletedProfile) {
+              console.log("✅ Returning user detected (localStorage), redirecting...");
+              setIsRedirecting(true);
+              window.location.href = '/snaps';
+            } else if (flowState === "initial") {
+              console.log("🆕 New user detected (localStorage), showing onboarding");
+              setCheckingExistingUser(false);
+              setFlowState("choice");
+            }
+          }
+        };
+
+        checkExistingUser();
       }
     }
-  }, [authenticated, user, flowState]);
+  }, [authenticated, user, ready, flowState]);
 
   const handleBack = () => {
     const backMap: Record<string, FlowState> = {
@@ -147,65 +224,82 @@ function SignInPage() {
   const handleComplete = async () => {
     if (!user) return;
 
+    setIsSubmitting(true);
+    setSubmitError(null);
+
     // Prepare complete profile data
-    const profileData = {
+    const isIndividual = formData.username && !formData.communityId;
+
+    const profileData: any = {
       // Privy Authentication Data
       privyId: user.id,
       email: user.email?.address || null,
       wallet: user.wallet?.address || null,
       phone: user.phone?.number || null,
-      
+
       // Social Connections
       twitter: user.twitter?.username || null,
       discord: user.discord?.username || null,
       github: user.github?.username || null,
       google: user.google?.email || null,
-      
-      // User Profile Data
-      name: formData.name || null,
-      username: formData.username || null,
-      displayName: formData.displayName || null,
-      
-      // Preferences
-      topics: formData.topics || [],
-      following: formData.following || [],
-      
-      // Community Data (if applicable)
-      communityId: formData.communityId || null,
-      communityName: formData.communityName || null,
-      communityType: formData.communityType || null,
-      
+
       // Metadata
-      accountType: formData.username ? 'individual' : 'community',
-      createdAt: new Date().toISOString(),
-      lastUpdated: new Date().toISOString()
+      accountType: isIndividual ? 'individual' : 'community',
     };
 
-    // Console log for API integration reference
-    console.log("=================================");
-    console.log("📦 COMPLETE PROFILE DATA FOR API");
-    console.log("=================================");
-    console.log(JSON.stringify(profileData, null, 2));
-    console.log("=================================");
-    console.log("💾 Use this object structure for your API endpoint");
-    console.log("=================================");
+    // Add individual-specific fields
+    if (isIndividual) {
+      profileData.username = formData.username;
+      profileData.displayName = formData.displayName || null;
+      profileData.topics = formData.topics || [];
+      profileData.following = formData.following || [];
+    }
+
+    // Add community-specific fields
+    if (!isIndividual && formData.communityId) {
+      profileData.communityId = formData.communityId;
+      profileData.communityName = formData.communityName;
+      profileData.communityType = formData.communityType || 'open';
+    }
+
+    console.log("📦 Submitting profile data to API:", profileData);
 
     try {
-      // Save to localStorage instead of API
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/signup/privy`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(profileData),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle backend error format
+        const errorMessage = data.message?.message || data.message || 'Failed to create account';
+        throw new Error(errorMessage);
+      }
+
+      // Save minimal data to localStorage for session
       localStorage.setItem(`profile_completed_${user.id}`, 'true');
-      localStorage.setItem(`user_profile_${user.id}`, JSON.stringify(profileData));
-      
-      // Also save as latest user for easy access
-      localStorage.setItem('latest_user_profile', JSON.stringify(profileData));
-      
-      console.log("✅ Profile saved to localStorage successfully!");
-      console.log("Key: user_profile_" + user.id);
-      
+      localStorage.setItem('latest_user_profile', JSON.stringify(data.user || profileData));
+
+      console.log("✅ Profile created successfully:", data);
       setFlowState("success");
-      
+
     } catch (error) {
-      console.error("❌ Error saving to localStorage:", error);
-      alert("Failed to save profile. Please try again.");
+      console.error("❌ Error creating account:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create account. Please try again.';
+      setSubmitError(errorMessage);
+
+      // Don't fallback to localStorage or proceed on real errors
+      // User should see the error and try again
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -388,7 +482,7 @@ function SignInPage() {
                     )}
                   </div>
 
-                  {authenticated && user && (
+                  {authenticated && user && !checkingExistingUser && (
                     <div className="space-y-4">
                       <button
                         onClick={() => setFlowState("choice")}
@@ -400,10 +494,21 @@ function SignInPage() {
                       >
                         Continue Setup <ArrowRight className="w-4 h-4 ml-2 inline-block" />
                       </button>
-                      
+
                       <div className="p-4 bg-blue-600/20 border border-blue-600/30 rounded-xl">
                         <p className="text-sm text-blue-300">
                           ✅ Successfully connected! Complete your profile to continue.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {checkingExistingUser && (
+                    <div className="p-4 bg-purple-600/20 border border-purple-600/30 rounded-xl">
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
+                        <p className="text-sm text-purple-300">
+                          Checking your account...
                         </p>
                       </div>
                     </div>
@@ -509,27 +614,65 @@ function SignInPage() {
                         type="text"
                         value={formData.username}
                         onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                        className="w-full pl-10 pr-4 py-3 bg-black border-2 border-gray-700/70 text-white rounded-xl focus:border-[#6E54FF]/50 focus:outline-none transition-all duration-200 placeholder:text-gray-500"
+                        className={`w-full pl-10 pr-12 py-3 bg-black border-2 text-white rounded-xl focus:outline-none transition-all duration-200 placeholder:text-gray-500 ${
+                          formData.username.length >= 3
+                            ? usernameAvailable === true
+                              ? 'border-green-500/50 focus:border-green-500/70'
+                              : usernameAvailable === false
+                              ? 'border-red-500/50 focus:border-red-500/70'
+                              : 'border-gray-700/70 focus:border-[#6E54FF]/50'
+                            : 'border-gray-700/70 focus:border-[#6E54FF]/50'
+                        }`}
                         placeholder="username"
                       />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                        {checkingUsername && (
+                          <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
+                        )}
+                        {!checkingUsername && usernameAvailable === true && formData.username.length >= 3 && (
+                          <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        )}
+                        {!checkingUsername && usernameAvailable === false && formData.username.length >= 3 && (
+                          <XCircle className="w-4 h-4 text-red-500" />
+                        )}
+                      </div>
                     </div>
-                    {formData.name && (
+                    {formData.name && !checkingUsername && (
                       <p className="text-xs text-gray-500">
                         Auto-generated username. Feel free to edit it.
+                      </p>
+                    )}
+                    {!checkingUsername && usernameAvailable === false && formData.username.length >= 3 && (
+                      <p className="text-xs text-red-400">
+                        Username is already taken. Please try another.
+                      </p>
+                    )}
+                    {!checkingUsername && usernameAvailable === true && formData.username.length >= 3 && (
+                      <p className="text-xs text-green-400">
+                        Username is available!
                       </p>
                     )}
                   </div>
                   
                   <button
                     onClick={() => setFlowState("individual-displayname")}
-                    disabled={!formData.name || !formData.username}
+                    disabled={!formData.name || !formData.username || usernameAvailable === false || checkingUsername}
                     className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     style={{
-                      backgroundColor: (formData.name && formData.username) ? "#6E54FF" : "#6B7280",
-                      boxShadow: (formData.name && formData.username) ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
+                      backgroundColor: (formData.name && formData.username && usernameAvailable !== false && !checkingUsername) ? "#6E54FF" : "#6B7280",
+                      boxShadow: (formData.name && formData.username && usernameAvailable !== false && !checkingUsername) ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
                     }}
                   >
-                    Continue <ArrowRight className="w-4 h-4 ml-2" />
+                    {checkingUsername ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Checking...
+                      </>
+                    ) : (
+                      <>
+                        Continue <ArrowRight className="w-4 h-4 ml-2" />
+                      </>
+                    )}
                   </button>
                 </div>
               )}
@@ -677,15 +820,30 @@ function SignInPage() {
                       </div>
                     ))}
                   </div>
+                  {submitError && (
+                    <div className="p-4 bg-red-600/20 border border-red-600/50 rounded-xl">
+                      <p className="text-sm text-red-300">{submitError}</p>
+                    </div>
+                  )}
                   <button
                     onClick={handleComplete}
-                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 flex items-center justify-center"
+                    disabled={isSubmitting}
+                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     style={{
                       backgroundColor: "#6E54FF",
                       boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
                     }}
                   >
-                    Complete Setup <Check className="w-4 h-4 ml-2" />
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Creating Account...
+                      </>
+                    ) : (
+                      <>
+                        Complete Setup <Check className="w-4 h-4 ml-2" />
+                      </>
+                    )}
                   </button>
                 </div>
               )}
@@ -814,16 +972,30 @@ function SignInPage() {
                       </button>
                     ))}
                   </div>
+                  {submitError && (
+                    <div className="p-4 bg-red-600/20 border border-red-600/50 rounded-xl">
+                      <p className="text-sm text-red-300">{submitError}</p>
+                    </div>
+                  )}
                   <button
                     onClick={handleComplete}
-                    disabled={!formData.communityType}
+                    disabled={!formData.communityType || isSubmitting}
                     className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     style={{
-                      backgroundColor: formData.communityType ? "#6E54FF" : "#6B7280",
-                      boxShadow: formData.communityType ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
+                      backgroundColor: formData.communityType && !isSubmitting ? "#6E54FF" : "#6B7280",
+                      boxShadow: formData.communityType && !isSubmitting ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
                     }}
                   >
-                    Complete Setup <Check className="w-4 h-4 ml-2" />
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Creating Community...
+                      </>
+                    ) : (
+                      <>
+                        Complete Setup <Check className="w-4 h-4 ml-2" />
+                      </>
+                    )}
                   </button>
                 </div>
               )}
@@ -831,8 +1003,16 @@ function SignInPage() {
               {/* Success Screen */}
               {flowState === "success" && (
                 <div className="text-center space-y-6 w-full">
-                  <div 
-                    className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center" 
+                  {isRedirecting && (
+                    <div className="p-4 bg-blue-600/20 border border-blue-600/50 rounded-xl mb-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
+                        <p className="text-sm text-blue-300">Redirecting to home page...</p>
+                      </div>
+                    </div>
+                  )}
+                  <div
+                    className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center"
                     style={{
                       backgroundColor: "#10B981",
                       boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(16, 185, 129, 0.50), 0px 0px 0px 1px #10B981"
@@ -878,13 +1058,13 @@ function SignInPage() {
                   </div>
                   <button
                     onClick={() => {
-                      console.log("Profile completed successfully");
-                      // Navigate to landing page after successful setup
-                      window.location.href = '/';
-                      // Or using Next.js router:
-                      // router.push('/');
+                      console.log("Profile completed successfully - redirecting to home");
+                      // Small delay to ensure everything is saved
+                      setTimeout(() => {
+                        window.location.href = '/';
+                      }, 300);
                     }}
-                    className="w-full px-6 py-4 text-white text-sm font-medium rounded-full transition-all duration-200"
+                    className="w-full px-6 py-4 text-white text-sm font-medium rounded-full transition-all duration-200 hover:bg-green-600 hover:scale-105 transform transition-transform"
                     style={{
                       backgroundColor: "#10B981",
                       boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(16, 185, 129, 0.50), 0px 0px 0px 1px #10B981"

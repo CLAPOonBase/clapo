@@ -6,6 +6,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { User, Users, MapPin, Calendar, Link, Image as ImageIcon, Star, Mail } from 'lucide-react'
 import { useSession } from 'next-auth/react'
+import { usePrivy } from '@privy-io/react-auth'
 import { useApi } from '@/app/Context/ApiProvider'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { giveReputation } from '@/app/lib/reputationApi'
@@ -59,14 +60,39 @@ export function UserProfileHover({
   const [isFollowing, setIsFollowing] = useState(false)
   const [isGivingRep, setIsGivingRep] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
+  const { authenticated: privyAuthenticated, user: privyUser, ready: privyReady } = usePrivy()
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const { getUserProfile, getUserFollowers, getUserFollowing, followUser, unfollowUser } = useApi()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  
-  const currentUserId = session?.dbUser?.id
+
   const isOwnProfile = currentUserId === userId
+
+  // Initialize currentUserId from either NextAuth or Privy
+  useEffect(() => {
+    const initializeUser = async () => {
+      if (status === "authenticated" && session?.dbUser?.id) {
+        setCurrentUserId(session.dbUser.id);
+        return;
+      }
+      if (privyAuthenticated && privyUser && privyReady) {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${privyUser.id}`
+          );
+          const data = await response.json();
+          if (data.exists && data.user?.id) {
+            setCurrentUserId(data.user.id);
+          }
+        } catch (error) {
+          console.error("❌ Error fetching Privy user:", error);
+        }
+      }
+    };
+    initializeUser();
+  }, [session, status, privyAuthenticated, privyUser, privyReady])
 
   useEffect(() => {
     return () => {
