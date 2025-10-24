@@ -348,7 +348,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
     try {
       if (isFollowing) {
         console.log("🔄 Unfollowing user:", userId, "from:", currentUserId);
-        await unfollowUser(userId, { followerId: currentUserId })
+        await unfollowUser(userId, { userId: currentUserId })
         setIsFollowing(false)
         if (userProfile) {
           setUserProfile({
@@ -358,7 +358,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
         }
       } else {
         console.log("🔄 Following user:", userId, "from:", currentUserId);
-        await followUser(userId, { followerId: currentUserId })
+        await followUser(userId, { userId: currentUserId })
         setIsFollowing(true)
         if (userProfile) {
           setUserProfile({
