@@ -1,0 +1,11 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/clapo-fe', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/clapo-fe']
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      ['run', 'deploy', 'clapo-fe', '--image', 'gcr.io/$PROJECT_ID/clapo-fe', '--region', 'asia-south1', '--platform', 'managed', '--allow-unauthenticated', '--port', '8080']
+images:
+  - 'gcr.io/$PROJECT_ID/clapo-fe'
