@@ -1,3 +1,6 @@
+// ============================================
+// FRONTEND: components/MediaUpload.tsx
+// ============================================
 import React, {
   useState,
   useRef,
@@ -26,14 +29,14 @@ export interface UploadedMedia {
 const MediaUpload = forwardRef<MediaUploadHandle, MediaUploadProps>(
   ({ onMediaUploaded, onMediaRemoved, userId, className = '' }, ref) => {
     const [acceptType, setAcceptType] = useState<'image' | 'video' | 'audio' | 'any'>('any')
-    const [inputKey, setInputKey] = useState(0) // to force re-render of <input>
+    const [inputKey, setInputKey] = useState(0)
     const [isUploading, setIsUploading] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     useImperativeHandle(ref, () => ({
       openFileDialog: (type = 'any') => {
         setAcceptType(type)
-        setInputKey((prev) => prev + 1) // reset input to apply new accept filter
+        setInputKey((prev) => prev + 1) 
         setTimeout(() => {
           fileInputRef.current?.click()
         }, 0)
@@ -56,31 +59,12 @@ const MediaUpload = forwardRef<MediaUploadHandle, MediaUploadProps>(
     const validateFile = (file: File): { isValid: boolean; error?: string } => {
       const maxSize = 100 * 1024 * 1024 // 100MB
       const allowedTypes = [
-        'image/jpeg',
-        'image/png',
-        'image/gif',
-        'image/webp',
-        'video/mp4',
-        'video/webm',
-        'video/ogg',
-        'video/avi',
-        'video/mkv',
-        'video/flv',
-        'video/wmv',
-        'video/m4v',
-        'video/3gp',
-        'video/ts',
-        'video/mts',
-        'video/m2ts',
-        'audio/mpeg',
-        'audio/wav',
-        'audio/ogg',
-        'audio/aac',
-        'audio/flac',
-        'audio/wma',
-        'audio/opus',
-        'audio/aiff',
-        'audio/pcm',
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        'video/mp4', 'video/webm', 'video/ogg', 'video/avi',
+        'video/mkv', 'video/flv', 'video/wmv', 'video/m4v',
+        'video/3gp', 'video/ts', 'video/mts', 'video/m2ts',
+        'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/aac',
+        'audio/flac', 'audio/wma', 'audio/opus', 'audio/aiff', 'audio/pcm',
       ]
 
       if (file.size > maxSize) {
@@ -161,7 +145,7 @@ const MediaUpload = forwardRef<MediaUploadHandle, MediaUploadProps>(
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
             <div className="bg-black rounded-lg p-6 text-center">
               <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-white">Uploading to S3...</p>
+              <p className="text-white">Uploading to Google Cloud Storage...</p>
             </div>
           </div>
         )}
