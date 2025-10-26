@@ -172,7 +172,7 @@ Should return: `{"available":true,"suggestions":[]}`
 
 ## Files to Review
 
-- `app/SignIn/SignInPage.tsx` - Main signup component
+- `app/SignIn/page.tsx` - Main signup component
 - `app/Context/ApiProvider.tsx` - API integration
 - `.env` - Environment configuration
 - `INTEGRATION_COMPLETE.md` - Full documentation

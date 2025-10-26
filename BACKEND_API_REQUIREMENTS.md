@@ -714,6 +714,6 @@ The backend needs to implement the 3 core endpoints to make the flow fully funct
 ## Contact & Support
 
 For questions about this implementation, please refer to:
-- Frontend code: `/app/SignIn/SignInPage.tsx`
+- Frontend code: `/app/SignIn/page.tsx`
 - API context: `/app/Context/ApiProvider.tsx`
 - This documentation: `/BACKEND_API_REQUIREMENTS.md`

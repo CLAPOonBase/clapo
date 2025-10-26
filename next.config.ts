@@ -16,6 +16,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "snappostmedia.s3.ap-southeast-1.amazonaws.com", pathname: "/**" },
       { protocol: "https", hostname: "storage.googleapis.com", pathname: "/**" },
       { protocol: "https", hostname: "www.adobe.com", pathname: "/**" },
+      { protocol: "https", hostname: "st4.depositphotos.com", pathname: "/**" },
+      
     ],
   },
 

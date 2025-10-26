@@ -15,7 +15,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001/api/snaps
 ```
 
 ### 2. SignInPage Component Updates
-**File:** `app/SignIn/SignInPage.tsx`
+**File:** `app/SignIn/page.tsx`
 
 #### Added Features:
 - ✅ Real-time username availability checking (debounced 500ms)
@@ -513,7 +513,7 @@ Check if user exists: GET /users/privy/{privyId}
 
 ### Frontend
 - ✅ `.env` - Updated API URL
-- ✅ `app/SignIn/SignInPage.tsx` - Full integration
+- ✅ `app/SignIn/page.tsx` - Full integration
 - ✅ `app/Context/ApiProvider.tsx` - Added signupWithPrivy()
 
 ### Documentation
