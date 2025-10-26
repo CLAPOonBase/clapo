@@ -6,7 +6,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useWalletContext } from "@/context/WalletContext";
 import { useSession } from "next-auth/react";
-import SignInPage from "@/app/SignIn/SignInPage";
+// import SignInPage from "@/app/SignIn";
+import SignInPage from "@/app/SignIn/page";
 import { SnapComposer } from "./SnapComposer";
 
 type PageKey = "home" | "wallet" | "explore" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks" | "mentions";
@@ -51,14 +52,15 @@ export default function Sidebar({
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const router = useRouter();
   const { connect, disconnect, address } = useWalletContext();
-  const { data: session } = useSession() as { data: ExtendedSession | null };
-
+  const { data: session } = useSession();
+  console.log("PROFILE PHOTO FROM SIDEVAR",session)
+  
   // Create a custom profile icon component that uses avatar if available
   const ProfileIcon = ({ isActive, className }: { isActive?: boolean; className?: string }) => {
-    if (session?.dbUser?.avatar_url) {
+    if (session?.user.image) {
       return (
         <Image
-          src={session.dbUser.avatar_url}
+          src={session?.user.image}
           alt="Profile"
           width={24}
           height={24}
