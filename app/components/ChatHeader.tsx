@@ -6,26 +6,35 @@ interface ChatHeaderProps {
   activeTab: 'dms' | 'communities';
   currentThread: any;
   currentCommunity: any;
-  session: any;
+  currentUserId?: string | null;
 }
 
 export const ChatHeader = ({
   activeTab,
   currentThread,
   currentCommunity,
-  session
+  currentUserId
 }: ChatHeaderProps) => {
   const [imageError, setImageError] = useState(false);
 
   const getOtherUser = (thread: any) => {
-    if (!thread || !session?.dbUser?.id) return null;
+    if (!thread || !currentUserId) return null;
     if (thread.isGroup) return null;
+
+    console.log('🔍 ChatHeader getOtherUser:', {
+      threadId: thread.id,
+      participants: thread.participants,
+      currentUserId
+    });
+
     return thread.participants?.find(
-      (p: any) => p.user_id !== session.dbUser.id
+      (p: any) => p.user_id !== currentUserId && p.user_id !== String(currentUserId)
     );
   };
 
   const otherUser = getOtherUser(currentThread);
+
+  console.log('🔍 ChatHeader otherUser:', otherUser);
 
   const getInitials = (name?: string) => {
     if (!name) return 'U';
@@ -40,15 +49,26 @@ export const ChatHeader = ({
         <div className="flex items-center space-x-3">
           {/* Avatar */}
           <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-500 ring-2 ring-gray-800 shadow-lg">
-            <img
-              src={
-                currentThread.isGroup
-                  ? 'https://robohash.org/group.png'
-                  : otherUser?.avatar_url || 'https://robohash.org/default.png'
-              }
-              alt="user avatar"
-              className="w-full h-full object-cover"
-            />
+            {currentThread.isGroup ? (
+              <img
+                src="https://robohash.org/group.png"
+                alt="group avatar"
+                className="w-full h-full object-cover"
+              />
+            ) : otherUser?.avatar_url || otherUser?.avatar ? (
+              <img
+                src={otherUser.avatar_url || otherUser.avatar}
+                alt={otherUser.username || 'user avatar'}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${otherUser?.username || 'User'}&background=random`;
+                }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-white font-bold text-sm bg-gradient-to-br from-purple-500 to-pink-500">
+                {getInitials(otherUser?.username || otherUser?.name)}
+              </div>
+            )}
             {/* Online status indicator */}
             <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-black"></div>
           </div>

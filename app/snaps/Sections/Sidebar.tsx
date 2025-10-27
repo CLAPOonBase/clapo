@@ -10,7 +10,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import SignInPage from "@/app/SignIn/page";
 import { SnapComposer } from "./SnapComposer";
 
-type PageKey = "home" | "wallet" | "explore" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks" | "mentions" | "munch";
+type PageKey = "home" | "wallet" | "explore" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks" | "munch";
 
 type SidebarProps = {
   setCurrentPage: (page: PageKey) => void;
@@ -116,14 +116,6 @@ export default function Sidebar({
       value: "notifications",
       icon: <Bell className="w-6 h-6" />,
       activeIcon: <Bell className="w-6 h-6 text-white" />,
-      showOnMobile: true,
-      showOnDesktop: true
-    },
-    {
-      label: "My Mentions",
-      value: "mentions",
-      icon: <AtSign className="w-6 h-6" />,
-      activeIcon: <AtSign className="w-6 h-6 text-white" />,
       showOnMobile: true,
       showOnDesktop: true
     },

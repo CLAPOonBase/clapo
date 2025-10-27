@@ -79,6 +79,17 @@ export const MessageList = ({ messages, currentUserId }: MessageListProps) => {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [newMessageCount, setNewMessageCount] = useState(0);
 
+  console.log('🔍 MessageList render:', {
+    messageCount: messages.length,
+    currentUserId,
+    messages: messages.map(m => ({
+      id: m.id,
+      sender_id: m.sender_id,
+      content: m.content?.substring(0, 20),
+      isOwnMessage: m.sender_id === currentUserId || String(m.sender_id) === String(currentUserId)
+    }))
+  });
+
   // Smooth scroll with Framer Motion
   const smoothScrollToBottom = () => {
     if (!messagesContainerRef.current) return;
@@ -151,7 +162,10 @@ export const MessageList = ({ messages, currentUserId }: MessageListProps) => {
               {/* Message */}
               <MessageItem
                 message={message}
-                isOwnMessage={message.sender_id === currentUserId}
+                isOwnMessage={
+                  message.sender_id === currentUserId ||
+                  String(message.sender_id) === String(currentUserId)
+                }
                 showAvatar={showAvatar}
                 isFirstInGroup={isFirstInGroup}
                 isLastInGroup={isLastInGroup}

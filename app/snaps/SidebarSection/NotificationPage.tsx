@@ -3,17 +3,65 @@
 "use client"
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { usePrivy } from '@privy-io/react-auth';
 import { useNotifications } from '../../hooks/useNotifications';
 import { EnhancedNotification } from '../../types/api';
 import { Bell, Heart, MessageCircle, UserPlus, AtSign, Eye, EyeOff, Check, Wifi, WifiOff, Bookmark, Users, AlertCircle, RefreshCw, CheckCheck, ExternalLink } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { PostPopupModal } from '../../components/PostPopupModal';
+import MyMentions from '../../components/MyMentions';
+import { motion } from 'framer-motion';
 
 const NotificationPage = () => {
   const { data: session } = useSession();
+  const { authenticated: privyAuthenticated, user: privyUser } = usePrivy();
   const router = useRouter();
-  const { 
+  const [activeTab, setActiveTab] = useState<'notifications' | 'mentions'>('notifications');
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Initialize currentUserId from either NextAuth or Privy
+  useEffect(() => {
+    const initUserId = async () => {
+      console.log('🔍 NotificationPage: Initializing user ID', {
+        hasSession: !!session,
+        sessionUserId: session?.dbUser?.id,
+        privyAuthenticated,
+        privyUserId: privyUser?.id
+      });
+
+      // Try NextAuth first
+      if (session?.dbUser?.id) {
+        console.log('✅ NotificationPage: Using NextAuth user ID:', session.dbUser.id);
+        setCurrentUserId(session.dbUser.id);
+        return;
+      }
+
+      // Try Privy if authenticated
+      if (privyAuthenticated && privyUser) {
+        try {
+          console.log('🔍 NotificationPage: Fetching Privy user from backend...');
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${privyUser.id}`
+          );
+          const data = await response.json();
+
+          if (data.exists && data.user?.id) {
+            console.log('✅ NotificationPage: Using Privy user ID:', data.user.id);
+            setCurrentUserId(data.user.id);
+          } else {
+            console.log('❌ NotificationPage: Privy user not found in backend');
+          }
+        } catch (error) {
+          console.error('❌ NotificationPage: Error fetching Privy user:', error);
+        }
+      }
+    };
+
+    initUserId();
+  }, [session, privyAuthenticated, privyUser]);
+
+  const {
     notifications,
     unreadCount,
     loading,
@@ -21,7 +69,7 @@ const NotificationPage = () => {
     markAsRead,
     markAllAsRead,
     getNotificationStats
-  } = useNotifications(session?.dbUser?.id);
+  } = useNotifications(currentUserId);
 
   const [showRead, setShowRead] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -171,13 +219,64 @@ const NotificationPage = () => {
 
   return (
     <div className="sticky flex flex-col rounded-2xl bg-black border border-[#2A2A2A]">
-      {/* Header */}
+      {/* Header with Tabs */}
       <div className="p-4 border-b border-[#2A2A2A]">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-bold text-white">
-            Notifications
-          </h2>
-          <div className="flex items-center space-x-2">
+        {/* Tabs */}
+        <div className="bg-gray-700/50 rounded-full mb-4 p-0.5">
+          <div className="flex justify-around bg-black m-0.5 p-1 items-center rounded-full relative">
+            {['notifications', 'mentions'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab as 'notifications' | 'mentions')}
+                className={`p-2 my-1 font-semibold w-full relative z-10 text-xs sm:text-sm flex items-center justify-center gap-2 ${
+                  activeTab === tab ? "text-white" : "text-gray-400"
+                }`}
+              >
+                {tab === 'notifications' ? (
+                  <>
+                    <Bell className="w-4 h-4" />
+                    <span>Notifications</span>
+                    {unreadCount > 0 && activeTab !== 'notifications' && (
+                      <span className="bg-[#6E54FF] text-white text-xs px-1.5 py-0.5 rounded-full">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <AtSign className="w-4 h-4" />
+                    <span>Mentions</span>
+                  </>
+                )}
+              </button>
+            ))}
+
+            <motion.div
+              className="absolute rounded-full"
+              style={{
+                height: "40px",
+                boxShadow:
+                  "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
+                backgroundColor: "#6E54FF",
+                margin: "6px",
+              }}
+              initial={false}
+              animate={{
+                left: activeTab === "notifications" ? "0%" : "calc(50% + 0px)",
+                width: "calc(50% - 6px)",
+              }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            />
+          </div>
+        </div>
+
+        {/* Action Buttons - Only show for notifications tab */}
+        {activeTab === 'notifications' && (
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-white">
+              All Notifications
+            </h2>
+            <div className="flex items-center space-x-2">
             {/* WebSocket Status */}
             <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs ${
               isConnected 
@@ -209,9 +308,10 @@ const NotificationPage = () => {
             </button>
           </div>
         </div>
+        )}
 
-        {/* Error Display */}
-        {error && (
+        {/* Error Display - Only show for notifications tab */}
+        {activeTab === 'notifications' && error && (
           <div className="mt-2 p-2 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center space-x-2 text-red-400 text-sm">
             <AlertCircle className="w-4 h-4" />
             <span>{error}</span>
@@ -219,8 +319,23 @@ const NotificationPage = () => {
         )}
       </div>
 
-      {/* Notifications List */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Content Area - Conditionally render based on active tab */}
+      {activeTab === 'mentions' ? (
+        <div className="flex-1 overflow-y-auto">
+          {currentUserId ? (
+            <MyMentions userId={currentUserId} />
+          ) : (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6E54FF] mx-auto mb-4"></div>
+                <p className="text-gray-400">Loading user data...</p>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Notifications List */
+        <div className="flex-1 overflow-y-auto">
         {filteredNotifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-gray-400">
             <Bell className="w-12 h-12 mb-2 opacity-50" />
@@ -360,7 +475,8 @@ const NotificationPage = () => {
             </div>
           ))
         )}
-      </div>
+        </div>
+      )}
 
       {/* Post Popup Modal */}
       <PostPopupModal

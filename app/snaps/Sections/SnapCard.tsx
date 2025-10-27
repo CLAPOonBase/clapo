@@ -75,16 +75,31 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
     initializeUser();
   }, [session, status, privyAuthenticated, privyUser, privyReady]);
 
-  const isApiPost = 'user_id' in post
-  const postId = post.id.toString()
-  const postContent = post.content
-  const postImage = isApiPost ? post.media_url : post.image
-  const postAuthor = isApiPost ? (post.username || 'Unknown') : (post.author || 'Unknown')
-  const postHandle = isApiPost ? `@${post.username || 'unknown'}` : (post.handle || '@unknown')
-  const authorReputation = isApiPost ? post.author_reputation : undefined
-  const authorReputationTier = isApiPost ? post.author_reputation_tier : undefined
+  // Check if it's an API post by multiple indicators
+  const isApiPost = 'user_id' in post || 'media_url' in post || ('username' in post && 'avatar_url' in post)
+  const postId = post.id?.toString() || ''
+  const postContent = post.content || ''
 
-  // Debug logging removed for cleaner console
+  // Handle media_url for both API posts and any object with media_url
+  const postImage = ('media_url' in post && post.media_url) ? post.media_url :
+                    ('image' in post && post.image) ? post.image : undefined
+
+  const postAuthor = ('username' in post && post.username) ? post.username :
+                     ('author' in post && post.author) ? post.author : 'Unknown'
+
+  const postHandle = ('username' in post && post.username) ? `@${post.username}` :
+                     ('handle' in post && post.handle) ? post.handle : '@unknown'
+
+  const authorReputation = ('author_reputation' in post) ? post.author_reputation : undefined
+  const authorReputationTier = ('author_reputation_tier' in post) ? post.author_reputation_tier : undefined
+
+  console.log('SnapCard computed:', {
+    postAuthor,
+    hasUsername: 'username' in post,
+    usernameValue: post.username,
+    postImage,
+    hasMediaUrl: 'media_url' in post
+  })
   const getRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -488,7 +503,7 @@ const handleImageClick = (e: React.MouseEvent) => {
           {/* Left: Avatar */}
           <div className="flex-shrink-0">
             <UserProfileHover
-              userId={isApiPost ? post.user_id.toString() : post.id.toString()}
+              userId={('user_id' in post && post.user_id) ? post.user_id.toString() : post.id.toString()}
               username={postAuthor}
               avatarUrl={postAvatar}
               position="bottom"
@@ -517,7 +532,7 @@ const handleImageClick = (e: React.MouseEvent) => {
             {/* Header */}
             <div className="flex items-center gap-2 mb-1">
               <UserProfileHover
-                userId={isApiPost ? post.user_id.toString() : post.id.toString()}
+                userId={('user_id' in post && post.user_id) ? post.user_id.toString() : post.id.toString()}
                 username={postAuthor}
                 avatarUrl={postAvatar}
                 position="bottom"
@@ -582,14 +597,14 @@ const handleImageClick = (e: React.MouseEvent) => {
             {postImage && (
               <div className="mb-3">
                 <div className="border border-gray-700/50 rounded-2xl overflow-hidden bg-black flex items-center justify-center max-h-[506px]">
-                  {/\.(jpg|jpeg|png|gif|webp)$/i.test(postImage) ? (
+                  {/\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff|ico)$/i.test(postImage) ? (
                     <img
                       src={postImage}
                       alt="Post content"
                       className="w-full h-auto object-contain cursor-pointer max-h-[506px]"
                       onClick={handleImageClick}
                     />
-                  ) : /\.(mp4|webm|ogg|mov)$/i.test(postImage) ? (
+                  ) : /\.(mp4|webm|ogg|mov|avi|mkv|flv|wmv|m4v|3gp|ts|mts|m2ts)$/i.test(postImage) ? (
                     <video
                       src={postImage}
                       autoPlay
@@ -600,7 +615,7 @@ const handleImageClick = (e: React.MouseEvent) => {
                       className="w-full h-auto object-contain max-h-[506px]"
                       onClick={(e) => e.stopPropagation()}
                     />
-                  ) : /\.(mp3|wav|ogg|m4a)$/i.test(postImage) ? (
+                  ) : /\.(mp3|wav|ogg|m4a|aac|flac|wma|opus|aiff|pcm)$/i.test(postImage) ? (
                     <div className="bg-gray-900 p-4 flex items-center justify-center w-full">
                       <audio src={postImage} controls className="w-full" />
                     </div>

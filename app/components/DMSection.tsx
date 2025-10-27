@@ -4,28 +4,29 @@ import { useRouter } from 'next/navigation';
 
 interface DMSectionProps {
   state: any;
-  session: any;
   selectedThread: string | null;
   onSelectThread: (threadId: string) => void;
   onStartChat: (user: any) => void;
   unreadCounts?: { [threadId: string]: number };
   lastMessages?: { [threadId: string]: any };
+  currentUserId?: string | null;
 }
 
 export const DMSection = ({
   state,
-  session,
   selectedThread,
   onSelectThread,
   onStartChat,
   unreadCounts = {},
-  lastMessages = {}
+  lastMessages = {},
+  currentUserId
 }: DMSectionProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [friends, setFriends] = useState<Set<string>>(new Set());
+  const [avatarErrors, setAvatarErrors] = useState<Set<string>>(new Set());
   const router = useRouter();
 
   const handleUserClick = (userId: string) => {
@@ -53,10 +54,10 @@ export const DMSection = ({
       }
     };
 
-    if (session?.dbUser?.id) {
+    if (currentUserId) {
       fetchFriends();
     }
-  }, [session?.dbUser?.id]);
+  }, [currentUserId]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -83,8 +84,10 @@ export const DMSection = ({
         `http://server.blazeswap.io/api/snaps/users/search?q=${encodeURIComponent(query)}`
       );
       const data = await response.json();
-      if (data.users) {
-        const filteredUsers = data.users.filter((user: any) => user.id !== session?.dbUser?.id);
+      if (data.users && currentUserId) {
+        const filteredUsers = data.users.filter((user: any) =>
+          user.id !== currentUserId && user.id !== String(currentUserId)
+        );
         setSearchResults(filteredUsers);
       }
     } catch (error) {
@@ -102,9 +105,24 @@ export const DMSection = ({
   };
 
   const getOtherUser = (thread: any) => {
-    if (!thread || !session?.dbUser?.id) return null;
+    if (!thread || !currentUserId) {
+      console.log('🔍 DMSection getOtherUser: Missing thread or userId', { thread, currentUserId });
+      return null;
+    }
     if (thread.isGroup) return null;
-    return thread.participants?.find((p: any) => p.user_id !== session.dbUser.id) || null;
+
+    const otherUser = thread.participants?.find(
+      (p: any) => p.user_id !== currentUserId && p.user_id !== String(currentUserId)
+    ) || null;
+
+    console.log('🔍 DMSection getOtherUser result:', {
+      threadId: thread.id,
+      currentUserId,
+      participants: thread.participants,
+      otherUser
+    });
+
+    return otherUser;
   };
 
   const formatLastMessageTime = (timestamp: string) => {
@@ -206,6 +224,22 @@ export const DMSection = ({
     const hasUnread = unreadCount > 0;
     const isSelected = selectedThread === thread.id;
 
+    // Debug log
+    console.log('🔍 ChatThreadCard rendering:', {
+      threadId: thread.id,
+      otherUser,
+      avatarUrl: otherUser?.avatar_url || otherUser?.avatar,
+      username: otherUser?.username
+    });
+
+    const avatarUrl = otherUser?.avatar_url || otherUser?.avatar;
+    const username = otherUser?.username || otherUser?.name || 'User';
+    const hasAvatarError = avatarErrors.has(thread.id);
+
+    const handleAvatarError = () => {
+      setAvatarErrors(prev => new Set(prev).add(thread.id));
+    };
+
     return (
       <div
         onClick={() => onSelectThread(thread.id)}
@@ -220,15 +254,20 @@ export const DMSection = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              if (!thread.isGroup && otherUser?.id) handleUserClick(otherUser.id);
+              if (!thread.isGroup && otherUser?.user_id) handleUserClick(otherUser.user_id);
             }}
-            className="relative w-9 h-9 rounded-full overflow-hidden bg-slate-600 hover:opacity-80 transition-opacity flex-shrink-0"
+            className="relative w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-pink-500 hover:opacity-80 transition-opacity flex-shrink-0"
           >
-            {otherUser?.avatar_url ? (
-              <img src={otherUser.avatar_url} alt={otherUser.username || "User"} className="w-full h-full object-cover" />
+            {avatarUrl && !hasAvatarError ? (
+              <img
+                src={avatarUrl}
+                alt={username}
+                className="w-full h-full object-cover"
+                onError={handleAvatarError}
+              />
             ) : (
               <div className="flex items-center justify-center w-full h-full text-white font-bold text-sm">
-                {otherUser?.username?.charAt(0)?.toUpperCase() || "U"}
+                {username.charAt(0).toUpperCase()}
               </div>
             )}
             {/* Online Status Indicator */}
@@ -238,19 +277,19 @@ export const DMSection = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (!thread.isGroup && otherUser?.id) handleUserClick(otherUser.id);
+                if (!thread.isGroup && otherUser?.user_id) handleUserClick(otherUser.user_id);
               }}
               className={`text-sm font-semibold truncate block text-left transition-colors ${
                 hasUnread ? "text-white" : "text-white"
-              } ${!thread.isGroup && otherUser?.id ? "hover:text-blue-300 hover:underline" : ""}`}
+              } ${!thread.isGroup && otherUser?.user_id ? "hover:text-blue-300 hover:underline" : ""}`}
             >
-              {thread.isGroup ? thread.name : otherUser?.username || "User"}
+              {thread.isGroup ? thread.name : username}
             </button>
             {lastMessage && (
               <div className={`text-sm truncate leading-tight mt-0.5 ${
                 hasUnread ? "text-slate-200 font-medium" : "text-slate-400"
               }`}>
-                {lastMessage.sender_id === session?.dbUser?.id ? "You: " : ""}
+                {lastMessage.sender_id === currentUserId || lastMessage.sender_id === String(currentUserId) ? "You: " : ""}
                 {truncateMessage(lastMessage.content, 30)}
               </div>
             )}

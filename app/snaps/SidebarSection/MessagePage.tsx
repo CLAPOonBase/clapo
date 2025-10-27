@@ -1,6 +1,5 @@
 "use client"
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useApi } from '../../Context/ApiProvider';
 import { MessageCircle, Users, Plus, Search, ChevronDown, Hash, Dot, ArrowLeft, UserPlus, MessageSquare, Eye, Clock, User } from 'lucide-react';
@@ -16,7 +15,6 @@ import { ChatHeader } from '@/app/components/ChatHeader';
 import { CommunityMembersSidebar } from '@/app/components/CommunityMembersSidebar';
 
 export default function MessagePage() {
-  const { data: session, status } = useSession();
   const { authenticated: privyAuthenticated, user: privyUser, ready: privyReady } = usePrivy();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const {
@@ -33,14 +31,9 @@ export default function MessagePage() {
     sendCommunityMessage
   } = useApi();
 
-  // Initialize currentUserId from either NextAuth or Privy
+  // Initialize currentUserId from Privy
   useEffect(() => {
     const initializeUser = async () => {
-      if (status === "authenticated" && session?.dbUser?.id) {
-        console.log("📊 Loading messages for NextAuth user:", session.dbUser.id);
-        setCurrentUserId(session.dbUser.id);
-        return;
-      }
       if (privyAuthenticated && privyUser && privyReady) {
         console.log("📊 Loading messages for Privy user:", privyUser.id);
         try {
@@ -51,6 +44,8 @@ export default function MessagePage() {
           if (data.exists && data.user?.id) {
             console.log("✅ Found user in backend:", data.user.id);
             setCurrentUserId(data.user.id);
+          } else {
+            console.log("❌ User not found in backend");
           }
         } catch (error) {
           console.error("❌ Error fetching Privy user:", error);
@@ -58,7 +53,7 @@ export default function MessagePage() {
       }
     };
     initializeUser();
-  }, [session, status, privyAuthenticated, privyUser, privyReady]);
+  }, [privyAuthenticated, privyUser, privyReady]);
 
   const handleStartChatWithUser = async (user: { id: string; username: string }) => {
     if (!currentUserId) return
@@ -107,30 +102,47 @@ export default function MessagePage() {
   const [mobileView, setMobileView] = useState<'sidebar' | 'chat'>('sidebar');
 
   const [selectedUserProfile, setSelectedUserProfile] = useState(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
 
   const { socket, isConnected } = useSocket(selectedThread, selectedCommunity);
 
   const currentThread = state.messageThreads?.find(t => t.id === selectedThread);
   const currentCommunity = state.communities?.find(c => c.id === selectedCommunity);
+
   const currentMessages = activeTab === 'dms'
-    ? (state.threadMessages[selectedThread || ''] || []).map((msg: any) => ({
-        id: msg.id,
-        sender_id: msg.sender_id ?? msg.senderId ?? '',
-        content: msg.content,
-        created_at: msg.created_at ?? msg.createdAt ?? '',
-        sender_username: msg.sender_username ?? msg.senderUsername,
-        sender_avatar: msg.sender_avatar ?? msg.senderAvatar,
-        media_url: msg.media_url ?? msg.mediaUrl,
-      }))
-    : (state.communityMessages[selectedCommunity || ''] || []).map((msg: any) => ({
-        id: msg.id,
-        sender_id: msg.sender_id ?? msg.senderId ?? '',
-        content: msg.content,
-        created_at: msg.created_at ?? msg.createdAt ?? '',
-        sender_username: msg.sender_username ?? msg.senderUsername,
-        sender_avatar: msg.sender_avatar ?? msg.senderAvatar,
-        media_url: msg.media_url ?? msg.mediaUrl,
-      }));
+    ? (state.threadMessages[selectedThread || ''] || []).map((msg: any) => {
+        console.log('🔍 Mapping DM message:', msg);
+        return {
+          id: msg.id,
+          sender_id: msg.sender_id ?? msg.senderId ?? msg.user_id ?? '',
+          content: msg.content,
+          created_at: msg.created_at ?? msg.createdAt ?? new Date().toISOString(),
+          sender_username: msg.sender_username ?? msg.senderUsername ?? msg.username ?? 'Unknown',
+          sender_avatar: msg.sender_avatar ?? msg.senderAvatar ?? msg.avatar_url ?? msg.avatar,
+          media_url: msg.media_url ?? msg.mediaUrl,
+        };
+      })
+    : (state.communityMessages[selectedCommunity || ''] || []).map((msg: any) => {
+        console.log('🔍 Mapping community message:', msg);
+        return {
+          id: msg.id,
+          sender_id: msg.sender_id ?? msg.senderId ?? msg.user_id ?? '',
+          content: msg.content,
+          created_at: msg.created_at ?? msg.createdAt ?? new Date().toISOString(),
+          sender_username: msg.sender_username ?? msg.senderUsername ?? msg.username ?? 'Unknown',
+          sender_avatar: msg.sender_avatar ?? msg.senderAvatar ?? msg.avatar_url ?? msg.avatar,
+          media_url: msg.media_url ?? msg.mediaUrl,
+        };
+      });
+
+  console.log('🔍 Final currentMessages:', {
+    activeTab,
+    selectedThread,
+    selectedCommunity,
+    rawMessages: activeTab === 'dms' ? state.threadMessages[selectedThread || ''] : state.communityMessages[selectedCommunity || ''],
+    mappedMessages: currentMessages,
+    count: currentMessages.length
+  });
 
   // Fixed: Using the same logic from ChatHeader to get the other user
   const getOtherUser = (thread: any) => {
@@ -143,13 +155,28 @@ export default function MessagePage() {
 
   // Fixed: Update selected user profile based on current thread or community
   useEffect(() => {
+    console.log('🔍 Updating selectedUserProfile:', {
+      currentThread,
+      participants: currentThread?.participants,
+      currentUserId,
+      currentCommunity
+    });
+
     if (currentThread && currentThread.participants) {
-      const otherUser = currentThread.participants.find(p => p.user_id !== currentUserId);
+      const otherUser = currentThread.participants.find(
+        (p: any) => p.user_id !== currentUserId && p.user_id !== String(currentUserId)
+      );
+
+      console.log('🔍 Found otherUser:', otherUser);
+
       if (otherUser) {
+        const avatarUrl = otherUser.avatar_url || otherUser.avatar || `/api/placeholder/100/100`;
+        console.log('🔍 Setting user profile with avatar:', avatarUrl);
+
         setSelectedUserProfile({
-          username: otherUser.username,
+          username: otherUser.username || otherUser.name,
           name: otherUser.name || otherUser.username,
-          avatar: otherUser.avatar_url || otherUser.avatar || '/4.png',
+          avatar: avatarUrl,
           bio: otherUser.bio || 'No bio available',
           status: 'online',
           lastSeen: otherUser.lastSeen || 'Recently',
@@ -159,11 +186,13 @@ export default function MessagePage() {
       } else {
         // Fallback if no other user found
         const firstParticipant = currentThread.participants?.[0];
-        if (firstParticipant && firstParticipant.user_id !== currentUserId) {
+        console.log('🔍 Using fallback participant:', firstParticipant);
+
+        if (firstParticipant && firstParticipant.user_id !== currentUserId && firstParticipant.user_id !== String(currentUserId)) {
           setSelectedUserProfile({
-            username: firstParticipant.username || firstParticipant.name,
-            name: firstParticipant.name || firstParticipant.username || firstParticipant.name || 'User',
-            avatar: firstParticipant.avatar || firstParticipant.avatar || 'https://robohash.org/default.png',
+            username: firstParticipant.username || firstParticipant.name || 'User',
+            name: firstParticipant.name || firstParticipant.username || 'User',
+            avatar: firstParticipant.avatar_url || firstParticipant.avatar || `https://ui-avatars.com/api/?name=${firstParticipant.username || 'User'}`,
             bio: firstParticipant.bio || 'No bio available',
             status: 'online',
             lastSeen: 'Recently',
@@ -171,23 +200,25 @@ export default function MessagePage() {
             type: 'user'
           });
         } else {
+          console.log('🔍 No valid participant found, setting null');
           setSelectedUserProfile(null);
         }
       }
-    }  else if (currentCommunity) {
-  setSelectedUserProfile({
-    username: currentCommunity.name,
-    name: currentCommunity.name,
-    avatar: currentCommunity.profile_picture_url || currentCommunity.creator_avatar || '/4.png',
-    bio: currentCommunity.description || 'No description available',
-    status: 'community',
-    members: currentCommunity.member_count || 0,
-    type: 'community',
-    createdBy: currentCommunity.creator_username || 'Unknown',
-    createdAt: currentCommunity.created_at || 'Recently'
-  });
-}
- else {
+    } else if (currentCommunity) {
+      console.log('🔍 Setting community profile');
+      setSelectedUserProfile({
+        username: currentCommunity.name,
+        name: currentCommunity.name,
+        avatar: currentCommunity.profile_picture_url || currentCommunity.creator_avatar || `https://ui-avatars.com/api/?name=${currentCommunity.name}`,
+        bio: currentCommunity.description || 'No description available',
+        status: 'community',
+        members: currentCommunity.member_count || 0,
+        type: 'community',
+        createdBy: currentCommunity.creator_username || 'Unknown',
+        createdAt: currentCommunity.created_at || 'Recently'
+      });
+    } else {
+      console.log('🔍 No thread or community selected, setting null');
       setSelectedUserProfile(null);
     }
   }, [currentThread, currentCommunity, currentUserId]);
@@ -232,12 +263,22 @@ export default function MessagePage() {
   };
 
   const handleSendDMMessage = async (content: string, mediaUrl?: string) => {
-    if (!selectedThread || !socket || !currentUserId) return;
+    if (!selectedThread || !currentUserId) {
+      console.log('❌ Missing selectedThread or currentUserId:', { selectedThread, currentUserId });
+      return;
+    }
 
-    console.log('🔍 handleSendDMMessage called:', { content, mediaUrl, threadId: selectedThread });
+    console.log('🔍 handleSendDMMessage called:', {
+      content,
+      mediaUrl,
+      threadId: selectedThread,
+      hasSocket: !!socket,
+      isConnected,
+      currentUserId
+    });
 
     try {
-      if (isConnected) {
+      if (socket && isConnected) {
         console.log('📡 Sending via WebSocket');
         (socket as any).emit('send_dm_message', {
           userId: currentUserId,
@@ -254,19 +295,26 @@ export default function MessagePage() {
               mediaUrl
             });
           }
+          console.log('🔄 Refreshing messages after WebSocket send');
           await getThreadMessages(selectedThread);
         });
       } else {
-        console.log('🌐 Sending via REST API (no WebSocket)');
-        await sendMessage(selectedThread, {
+        console.log('🌐 Sending via REST API (no WebSocket or not connected)');
+        const result = await sendMessage(selectedThread, {
           senderId: currentUserId,
           content,
           mediaUrl
         });
+        console.log('✅ Message sent via REST:', result);
+        console.log('🔄 Refreshing messages');
         await getThreadMessages(selectedThread);
       }
     } catch (error) {
       console.error('❌ Failed to send message:', error);
+      // Refresh messages to ensure consistency
+      if (selectedThread) {
+        await getThreadMessages(selectedThread);
+      }
     }
   };
 
@@ -437,21 +485,17 @@ export default function MessagePage() {
           {/* Content */}
           <div className="flex-1 overflow-y-auto scrollbar-hide">
             {activeTab === 'dms' ? (
-              <DMSection 
-                // dmSection={dmSection}
+              <DMSection
                 state={state}
-                session={session}
                 selectedThread={selectedThread}
                 onSelectThread={handleSelectThread}
-                // searchQuery={searchQuery}
-                // setSearchQuery={setSearchQuery}
                 onStartChat={handleStartChatWithUser}
+                currentUserId={currentUserId}
               />
             ) : (
-              <CommunitySection 
+              <CommunitySection
                 communitySection={communitySection}
                 state={state}
-                session={session}
                 selectedCommunity={selectedCommunity}
                 onSelectCommunity={handleSelectCommunity}
                 onJoinCommunity={handleJoinCommunity}
@@ -473,11 +517,11 @@ export default function MessagePage() {
               <ArrowLeft className="w-4 h-4 text-gray-400" />
             </button>
             <div className="flex-1">
-              <ChatHeader 
+              <ChatHeader
                 activeTab={activeTab}
                 currentThread={currentThread}
                 currentCommunity={currentCommunity}
-                session={session}
+                currentUserId={currentUserId}
               />
             </div>
           </div>
@@ -518,20 +562,16 @@ export default function MessagePage() {
           <div className="flex-1 overflow-y-auto scrollbar-hide">
             {activeTab === 'dms' ? (
               <DMSection
-                // dmSection={dmSection}
                 state={state}
-                session={session}
                 selectedThread={selectedThread}
                 onSelectThread={handleSelectThread}
-                // searchQuery={searchQuery}
-                // setSearchQuery={setSearchQuery}
                 onStartChat={handleStartChatWithUser}
+                currentUserId={currentUserId}
               />
             ) : (
               <CommunitySection
                 communitySection={communitySection}
                 state={state}
-                session={session}
                 selectedCommunity={selectedCommunity}
                 onSelectCommunity={handleSelectCommunity}
                 onJoinCommunity={handleJoinCommunity}
@@ -548,7 +588,7 @@ export default function MessagePage() {
       activeTab={activeTab}
       currentThread={currentThread}
       currentCommunity={currentCommunity}
-      session={session}
+      currentUserId={currentUserId}
     />
 
     <MessageList
@@ -581,6 +621,9 @@ export default function MessagePage() {
                       src={selectedUserProfile.avatar}
                       alt={selectedUserProfile.name}
                       className="w-16 h-16 rounded-full object-cover mx-auto mb-3"
+                      onError={(e) => {
+                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${selectedUserProfile.username || 'User'}&background=random`;
+                      }}
                     />
                     <h3 className="text-lg font-semibold text-white mb-1">
                       {selectedUserProfile.name}

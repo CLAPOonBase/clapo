@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { apiService } from '../lib/api'
 import { useSession } from 'next-auth/react'
+import { usePrivy } from '@privy-io/react-auth'
 import { renderTextWithMentions } from '../lib/mentionUtils'
 import { MessageCircle, Image as ImageIcon, Calendar, User } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -45,6 +46,7 @@ interface MyMentionsProps {
 
 export default function MyMentions({ userId }: MyMentionsProps) {
   const { data: session } = useSession()
+  const { authenticated: privyAuthenticated, user: privyUser } = usePrivy()
   const [mentions, setMentions] = useState<Mention[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -52,6 +54,7 @@ export default function MyMentions({ userId }: MyMentionsProps) {
   const [offset, setOffset] = useState(0)
   const limit = 20
 
+  // Priority: passed userId > session dbUser > nothing (will be handled separately for Privy)
   const currentUserId = userId || session?.dbUser?.id
 
   // Debug session data
@@ -60,10 +63,12 @@ export default function MyMentions({ userId }: MyMentionsProps) {
       session: !!session,
       dbUser: !!session?.dbUser,
       dbUserId: session?.dbUser?.id,
-      userId: userId,
+      privyAuthenticated,
+      privyUserId: privyUser?.id,
+      passedUserId: userId,
       currentUserId: currentUserId
     })
-  }, [session, userId, currentUserId])
+  }, [session, userId, currentUserId, privyAuthenticated, privyUser])
 
   const fetchMentions = async (reset = false) => {
     if (!currentUserId) {
@@ -176,9 +181,9 @@ export default function MyMentions({ userId }: MyMentionsProps) {
           <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-400">Please log in to view your mentions</p>
           <p className="text-gray-500 text-sm mt-2">
-            Debug: Session exists: {session ? 'Yes' : 'No'}, 
-            dbUser: {session?.dbUser ? 'Yes' : 'No'}, 
-            ID: {session?.dbUser?.id || 'None'}
+            Debug: NextAuth: {session ? 'Yes' : 'No'},
+            Privy: {privyAuthenticated ? 'Yes' : 'No'},
+            User ID: {currentUserId || 'None'}
           </p>
         </div>
       </div>
@@ -202,10 +207,9 @@ export default function MyMentions({ userId }: MyMentionsProps) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white mb-2">My Mentions</h1>
-        <p className="text-gray-400">
+    <div className="p-4">
+      <div className="mb-4">
+        <p className="text-gray-400 text-sm">
           Posts, comments, and stories where you were mentioned
         </p>
       </div>

@@ -6,7 +6,6 @@ import Image from 'next/image';
 interface CommunitySectionProps {
   communitySection: 'my' | 'join' | 'create';
   state: any;
-  session: any;
   selectedCommunity: string | null;
   onSelectCommunity: (communityId: string) => void;
   onJoinCommunity: (communityId: string) => void;
@@ -15,7 +14,6 @@ interface CommunitySectionProps {
 export const CommunitySection = ({
   communitySection,
   state,
-  session,
   selectedCommunity,
   onSelectCommunity,
   onJoinCommunity

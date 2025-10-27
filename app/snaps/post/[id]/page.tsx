@@ -527,10 +527,10 @@ export default function PostDetailPage() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.4 }}
-              className="flex flex-col"
+              className="flex flex-col bg-black/30 backdrop-blur-sm rounded-2xl border-2 border-gray-700/70 p-6 shadow-2xl"
             >
               {/* Author Info */}
-              <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-700/70">
+              <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-700/50">
                 <div className="flex items-center gap-3">
                   <UserProfileHover
                     userId={post.user_id.toString()}
@@ -608,42 +608,42 @@ export default function PostDetailPage() {
               {/* Stats Grid */}
               <div className="grid grid-cols-4 gap-3 mb-6">
                 <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  className="bg-black rounded-xl p-4 border-2 border-gray-700/70 hover:border-gray-600/70 transition-all duration-300"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl p-4 border-2 border-gray-700/70 hover:border-[#6E54FF]/50 transition-all duration-300 backdrop-blur-sm"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <HandMetal size={16} className="text-gray-400" />
-                    <span className="text-xs text-gray-500 font-medium">Likes</span>
+                    <HandMetal size={16} className="text-[#6E54FF]" />
+                    <span className="text-xs text-gray-400 font-medium">Likes</span>
                   </div>
                   <p className="text-lg font-bold text-white">{localEngagement.likes}</p>
                 </motion.div>
                 <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  className="bg-black rounded-xl p-4 border-2 border-gray-700/70 hover:border-gray-600/70 transition-all duration-300"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl p-4 border-2 border-gray-700/70 hover:border-[#6E54FF]/50 transition-all duration-300 backdrop-blur-sm"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <MessageSquare size={16} className="text-gray-400" />
-                    <span className="text-xs text-gray-500 font-medium">Comments</span>
+                    <MessageSquare size={16} className="text-[#6E54FF]" />
+                    <span className="text-xs text-gray-400 font-medium">Comments</span>
                   </div>
                   <p className="text-lg font-bold text-white">{localEngagement.comments}</p>
                 </motion.div>
                 <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  className="bg-black rounded-xl p-4 border-2 border-gray-700/70 hover:border-gray-600/70 transition-all duration-300"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl p-4 border-2 border-gray-700/70 hover:border-[#6E54FF]/50 transition-all duration-300 backdrop-blur-sm"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <Repeat size={16} className="text-gray-400 rotate-90" />
-                    <span className="text-xs text-gray-500 font-medium">Shares</span>
+                    <Repeat size={16} className="text-[#6E54FF] rotate-90" />
+                    <span className="text-xs text-gray-400 font-medium">Shares</span>
                   </div>
                   <p className="text-lg font-bold text-white">{localEngagement.retweets}</p>
                 </motion.div>
                 <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  className="bg-black rounded-xl p-4 border-2 border-gray-700/70 hover:border-gray-600/70 transition-all duration-300"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl p-4 border-2 border-gray-700/70 hover:border-[#6E54FF]/50 transition-all duration-300 backdrop-blur-sm"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <Eye size={16} className="text-gray-400" />
-                    <span className="text-xs text-gray-500 font-medium">Views</span>
+                    <Eye size={16} className="text-[#6E54FF]" />
+                    <span className="text-xs text-gray-400 font-medium">Views</span>
                   </div>
                   <p className="text-lg font-bold text-white">{localEngagement.views}</p>
                 </motion.div>
@@ -652,42 +652,42 @@ export default function PostDetailPage() {
               {/* Action Buttons */}
               <div className="flex gap-3 mb-6">
                 <motion.button
-                  whileHover={{ y: -2 }}
+                  whileHover={{ y: -2, scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleLike}
                   disabled={isLoading.like || !currentUserId}
                   className={`flex-1 py-3.5 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                     userEngagement.liked
-                      ? "bg-white text-black border-2 border-white shadow-lg"
-                      : "bg-transparent border-2 border-gray-700 text-gray-300 hover:border-white hover:bg-white hover:text-black"
+                      ? "bg-[#6E54FF] text-white border-2 border-[#6E54FF] shadow-lg shadow-[#6E54FF]/20"
+                      : "bg-transparent border-2 border-gray-700/70 text-gray-300 hover:border-[#6E54FF] hover:bg-[#6E54FF]/10"
                   }`}
                 >
                   <HandMetal size={18} className={userEngagement.liked ? "fill-current" : ""} strokeWidth={2.5} />
                   <span className="font-semibold">{userEngagement.liked ? "Liked" : "Like"}</span>
                 </motion.button>
                 <motion.button
-                  whileHover={{ y: -2 }}
+                  whileHover={{ y: -2, scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleBookmark}
                   disabled={isLoading.bookmark || !currentUserId}
                   className={`flex-1 py-3.5 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                     userEngagement.bookmarked
-                      ? "bg-white text-black border-2 border-white shadow-lg"
-                      : "bg-transparent border-2 border-gray-700 text-gray-300 hover:border-white hover:bg-white hover:text-black"
+                      ? "bg-[#6E54FF] text-white border-2 border-[#6E54FF] shadow-lg shadow-[#6E54FF]/20"
+                      : "bg-transparent border-2 border-gray-700/70 text-gray-300 hover:border-[#6E54FF] hover:bg-[#6E54FF]/10"
                   }`}
                 >
                   <Bookmark size={18} className={userEngagement.bookmarked ? "fill-current" : ""} strokeWidth={2.5} />
                   <span className="font-semibold">{userEngagement.bookmarked ? "Saved" : "Save"}</span>
                 </motion.button>
                 <motion.button
-                  whileHover={{ y: -2 }}
+                  whileHover={{ y: -2, scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleRetweet}
                   disabled={isLoading.retweet || !currentUserId || userEngagement.retweeted}
                   className={`flex-1 py-3.5 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                     userEngagement.retweeted
-                      ? "bg-white text-black border-2 border-white shadow-lg"
-                      : "bg-transparent border-2 border-gray-700 text-gray-300 hover:border-white hover:bg-white hover:text-black"
+                      ? "bg-[#6E54FF] text-white border-2 border-[#6E54FF] shadow-lg shadow-[#6E54FF]/20"
+                      : "bg-transparent border-2 border-gray-700/70 text-gray-300 hover:border-[#6E54FF] hover:bg-[#6E54FF]/10"
                   }`}
                 >
                   <Repeat size={18} className="rotate-90" strokeWidth={2.5} />
@@ -710,27 +710,49 @@ export default function PostDetailPage() {
               </div>
 
               {/* Tabs */}
-              <div className="flex gap-2 mb-6 p-1 bg-transparent rounded-xl">
-                {tabs.map((tab) => (
-                  <motion.button
-                    key={tab.key}
-                    whileHover={{ y: activeTab !== tab.key ? -2 : 0 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`flex-1 px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-300 border-2 ${
-                      activeTab === tab.key
-                        ? "bg-white text-black border-white shadow-lg"
-                        : "bg-transparent text-gray-400 border-gray-700 hover:text-white hover:border-white"
-                    }`}
-                  >
-                    {tab.label}
-                    {tab.count !== undefined && tab.count > 0 && (
-                      <span className={`ml-1.5 text-xs font-bold ${activeTab === tab.key ? "text-black/70" : "text-gray-500"}`}>
-                        {tab.count}
-                      </span>
-                    )}
-                  </motion.button>
-                ))}
+              <div className="bg-gray-700/50 rounded-full mb-6 p-0.5">
+                <div className="flex justify-around bg-black m-0.5 p-1 items-center rounded-full relative">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setActiveTab(tab.key)}
+                      className={`p-2 my-1 font-semibold w-full relative z-10 text-xs sm:text-sm ${
+                        activeTab === tab.key ? "text-white" : "text-gray-400"
+                      }`}
+                    >
+                      {tab.label}
+                      {tab.count !== undefined && tab.count > 0 && (
+                        <span className={`ml-1 text-xs ${activeTab === tab.key ? "text-white/70" : "text-gray-500"}`}>
+                          {tab.count}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+
+                  <motion.div
+                    className="absolute rounded-full"
+                    style={{
+                      height: "40px",
+                      boxShadow:
+                        "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF",
+                      backgroundColor: "#6E54FF",
+                      margin: "6px",
+                    }}
+                    initial={false}
+                    animate={{
+                      left:
+                        activeTab === "comments"
+                          ? "0%"
+                          : activeTab === "holders"
+                          ? "calc(25% + 0px)"
+                          : activeTab === "activity"
+                          ? "calc(50% + 0px)"
+                          : "calc(75% + 0px)",
+                      width: "calc(25% - 6px)",
+                    }}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                </div>
               </div>
 
               {/* Tab Content */}
@@ -739,7 +761,7 @@ export default function PostDetailPage() {
                   <div className="space-y-4">
                     {/* Add Comment */}
                     <form onSubmit={handleCommentSubmit} className="flex items-center gap-3 mb-4">
-                      <div className="flex-shrink-0 w-9 h-9 rounded-full overflow-hidden border-2 border-gray-700/70">
+                      <div className="flex-shrink-0 w-9 h-9 rounded-full overflow-hidden border-2 border-[#6E54FF]/50">
                         {profile?.avatar_url ? (
                           <img
                             src={profile.avatar_url}
@@ -747,12 +769,12 @@ export default function PostDetailPage() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full bg-gray-700 flex items-center justify-center text-xs font-semibold text-white">
+                          <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-xs font-semibold text-white">
                             {session?.dbUser?.username?.substring(0, 2)?.toUpperCase() || 'U'}
                           </div>
                         )}
                       </div>
-                      <div className="flex-1 flex items-center bg-black rounded-full px-1 py-0.5 border-2 border-gray-700/70 focus-within:border-gray-600/70 transition-all">
+                      <div className="flex-1 flex items-center bg-gradient-to-br from-gray-900/50 to-black rounded-full px-1 py-0.5 border-2 border-gray-700/70 focus-within:border-[#6E54FF]/50 transition-all backdrop-blur-sm">
                         <input
                           type="text"
                           placeholder="Add a comment..."
@@ -766,7 +788,7 @@ export default function PostDetailPage() {
                           whileTap={{ scale: 0.95 }}
                           type="submit"
                           disabled={!comment.trim() || isLoading.comment || !currentUserId}
-                          className="p-2 bg-[#6E54FF] hover:bg-[#5940cc] rounded-full transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed mr-1 flex-shrink-0 shadow-lg"
+                          className="p-2 bg-[#6E54FF] hover:bg-[#5940cc] rounded-full transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed mr-1 flex-shrink-0 shadow-lg shadow-[#6E54FF]/20"
                         >
                           {isLoading.comment ? (
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -786,13 +808,13 @@ export default function PostDetailPage() {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.05 }}
-                            className="p-4 bg-black border-2 border-gray-700/70 rounded-xl hover:border-gray-600/70 transition-all duration-300 group"
+                            className="p-4 bg-gradient-to-br from-gray-900/50 to-black border-2 border-gray-700/70 rounded-xl hover:border-[#6E54FF]/50 transition-all duration-300 group backdrop-blur-sm"
                           >
                             <div className="flex gap-3">
                               <img
                                 src={comment.avatar_url || `https://ui-avatars.com/api/?name=${comment.username}`}
                                 alt={comment.username}
-                                className="w-10 h-10 rounded-full object-cover border-2 border-gray-700/70 transition-all"
+                                className="w-10 h-10 rounded-full object-cover border-2 border-gray-700/70 group-hover:border-[#6E54FF]/50 transition-all"
                               />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
@@ -809,20 +831,20 @@ export default function PostDetailPage() {
                         <motion.div
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          className="text-center py-12 bg-black border-2 border-gray-700/70 rounded-xl"
+                          className="text-center py-12 bg-gradient-to-br from-gray-900/50 to-black border-2 border-gray-700/70 rounded-xl backdrop-blur-sm"
                         >
-                          <MessageSquare size={48} className="mx-auto mb-4 text-gray-600" />
-                          <p className="text-gray-400 text-sm font-medium">No comments yet.</p>
+                          <MessageSquare size={48} className="mx-auto mb-4 text-[#6E54FF]/50" />
+                          <p className="text-gray-300 text-sm font-medium">No comments yet.</p>
                           <p className="text-gray-500 text-xs mt-1">Be the first to share your thoughts!</p>
                         </motion.div>
                       )}
 
                       {visibleCount < comments.length && (
                         <motion.button
-                          whileHover={{ scale: 1.01 }}
+                          whileHover={{ scale: 1.01, y: -2 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => setVisibleCount(prev => prev + 5)}
-                          className="w-full text-sm text-gray-300 hover:text-white transition-colors font-medium py-2 px-4 bg-black border-2 border-gray-700/70 hover:border-gray-600/70 rounded-xl"
+                          className="w-full text-sm text-gray-300 hover:text-white transition-colors font-medium py-2 px-4 bg-gradient-to-br from-gray-900/50 to-black border-2 border-gray-700/70 hover:border-[#6E54FF]/50 rounded-xl backdrop-blur-sm"
                         >
                           View more comments ({comments.length - visibleCount} remaining)
                         </motion.button>
@@ -837,13 +859,13 @@ export default function PostDetailPage() {
                     animate={{ opacity: 1 }}
                     className="space-y-4"
                   >
-                    <div className="text-center py-8 mb-4 bg-black border-2 border-gray-700/70 rounded-xl">
+                    <div className="text-center py-8 mb-4 bg-gradient-to-br from-gray-900/50 to-black border-2 border-gray-700/70 rounded-xl backdrop-blur-sm">
                       <motion.div
-                        whileHover={{ rotate: 360 }}
+                        whileHover={{ rotate: 360, scale: 1.1 }}
                         transition={{ duration: 0.6 }}
-                        className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center bg-gray-800 border-2 border-gray-700"
+                        className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center bg-gradient-to-br from-[#6E54FF]/20 to-[#6E54FF]/5 border-2 border-[#6E54FF]/50"
                       >
-                        <TrendingUp size={28} className="text-gray-400" />
+                        <TrendingUp size={28} className="text-[#6E54FF]" />
                       </motion.div>
                       <h3 className="text-3xl font-bold mb-2 text-white">156</h3>
                       <p className="text-gray-400 text-sm font-medium">Total Token Holders</p>
@@ -861,14 +883,14 @@ export default function PostDetailPage() {
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.1 }}
-                          whileHover={{ scale: 1.01 }}
-                          className="flex justify-between items-center py-3 px-4 bg-black border-2 border-gray-700/70 rounded-xl hover:border-gray-600/70 transition-all duration-300 cursor-pointer group"
+                          whileHover={{ scale: 1.02, y: -2 }}
+                          className="flex justify-between items-center py-3 px-4 bg-gradient-to-br from-gray-900/50 to-black border-2 border-gray-700/70 rounded-xl hover:border-[#6E54FF]/50 transition-all duration-300 cursor-pointer group backdrop-blur-sm"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-gray-800 border-2 border-gray-700 flex items-center justify-center text-gray-400 font-bold text-sm">
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#6E54FF]/20 to-[#6E54FF]/5 border-2 border-[#6E54FF]/50 flex items-center justify-center text-[#6E54FF] font-bold text-sm">
                               {index + 1}
                             </div>
-                            <span className="text-white font-medium text-sm group-hover:text-gray-300 transition-colors">@{holder.username}</span>
+                            <span className="text-white font-medium text-sm group-hover:text-gray-200 transition-colors">@{holder.username}</span>
                           </div>
                           <div className="text-right">
                             <p className="text-white font-semibold text-sm">{holder.amount}</p>
@@ -886,7 +908,7 @@ export default function PostDetailPage() {
                     animate={{ opacity: 1 }}
                     className="space-y-3"
                   >
-                    <div className="text-center py-6 mb-4 bg-black border-2 border-gray-700/70 rounded-xl">
+                    <div className="text-center py-6 mb-4 bg-gradient-to-br from-gray-900/50 to-black border-2 border-gray-700/70 rounded-xl backdrop-blur-sm">
                       <motion.div
                         animate={{
                           y: [0, -10, 0],
@@ -896,9 +918,9 @@ export default function PostDetailPage() {
                           repeat: Infinity,
                           ease: "easeInOut"
                         }}
-                        className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-800 flex items-center justify-center border-2 border-gray-700"
+                        className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#6E54FF]/20 to-[#6E54FF]/5 flex items-center justify-center border-2 border-[#6E54FF]/50"
                       >
-                        <TrendingUp size={24} className="text-gray-400" />
+                        <TrendingUp size={24} className="text-[#6E54FF]" />
                       </motion.div>
                       <p className="text-gray-400 text-sm font-medium">Recent Trading Activity</p>
                     </div>
@@ -915,17 +937,17 @@ export default function PostDetailPage() {
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.1 }}
-                          whileHover={{ scale: 1.01 }}
-                          className="flex justify-between items-center py-3 px-4 bg-black border-2 border-gray-700/70 rounded-xl hover:border-gray-600/70 transition-all duration-300 cursor-pointer group"
+                          whileHover={{ scale: 1.02, y: -2 }}
+                          className="flex justify-between items-center py-3 px-4 bg-gradient-to-br from-gray-900/50 to-black border-2 border-gray-700/70 rounded-xl hover:border-[#6E54FF]/50 transition-all duration-300 cursor-pointer group backdrop-blur-sm"
                         >
                           <div className="flex items-center gap-3">
                             <motion.div
-                              whileHover={{ rotate: activity.type === 'buy' ? 0 : 180 }}
+                              whileHover={{ rotate: activity.type === 'buy' ? 0 : 180, scale: 1.1 }}
                               className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                                activity.type === 'buy' ? 'bg-gray-800 border-2 border-gray-700' : 'bg-gray-800 border-2 border-gray-700'
+                                activity.type === 'buy' ? 'bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/50' : 'bg-gradient-to-br from-red-500/20 to-red-500/5 border-2 border-red-500/50'
                               }`}
                             >
-                              <Triangle size={16} className={activity.type === 'buy' ? 'text-gray-400' : 'text-gray-400 rotate-180'} />
+                              <Triangle size={16} className={activity.type === 'buy' ? 'text-green-500' : 'text-red-500 rotate-180'} />
                             </motion.div>
                             <div>
                               <p className="text-white font-medium text-sm group-hover:text-gray-300 transition-colors">@{activity.user}</p>
@@ -964,11 +986,11 @@ export default function PostDetailPage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        whileHover={{ scale: 1.01 }}
-                        className="flex justify-between items-center py-4 px-4 bg-black border-2 border-gray-700/70 rounded-xl hover:border-gray-600/70 transition-all duration-300 group"
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        className="flex justify-between items-center py-4 px-4 bg-gradient-to-br from-gray-900/50 to-black border-2 border-gray-700/70 rounded-xl hover:border-[#6E54FF]/50 transition-all duration-300 group backdrop-blur-sm"
                       >
-                        <span className="text-gray-400 text-sm font-medium group-hover:text-gray-300 transition-colors">{item.label}</span>
-                        <span className="text-white font-bold text-base">{item.value}</span>
+                        <span className="text-gray-400 text-sm font-medium group-hover:text-gray-200 transition-colors">{item.label}</span>
+                        <span className="text-white font-bold text-base group-hover:text-[#6E54FF] transition-colors">{item.value}</span>
                       </motion.div>
                     ))}
                   </motion.div>

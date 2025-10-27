@@ -26,7 +26,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import SharePage from "./SidebarSection/SharePage";
 import { X } from "lucide-react";
 import Stories from "../components/Story";
-import MyMentions from "../components/MyMentions";
 import { apiService } from "../lib/api";
 import Munch from "../components/Munch";
 
@@ -48,7 +47,6 @@ function SocialFeedPageContent() {
     | "shares"
     | "invite"
     | "munch"
-    | "mentions"
   >("home");
   const [followingPosts, setFollowingPosts] = useState<any[]>([]);
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(false);
@@ -91,7 +89,6 @@ function SocialFeedPageContent() {
         "shares",
         "invite",
         "munch",
-        "mentions",
       ];
       if (validPages.includes(pageParam as any)) {
         setCurrentPage(pageParam as any);
@@ -144,7 +141,6 @@ function SocialFeedPageContent() {
         "shares",
         "invite",
         "munch",
-        "mentions",
       ];
       if (validPages.includes(targetPage as any)) {
         setCurrentPage(targetPage as any);
@@ -415,8 +411,6 @@ function SocialFeedPageContent() {
         </div>
       case "notifications":
         return <div className="w-full max-w-3xl mx-auto mt-6 "> <NotificationPage/></div>
-      case "mentions":
-        return <div className="w-full max-w-3xl mx-auto mt-6 "> <MyMentions/></div>
       case "likes":
         return allPosts.length > 0 ? (
           <SnapCard
