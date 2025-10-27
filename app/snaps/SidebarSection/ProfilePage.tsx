@@ -22,7 +22,7 @@ type Props = {
   posts: Post[]
 }
 
-type Tab = "Posts" | "Munchs" | "Activity"
+type Tab = "Posts" | "Munchs" | "Activity" | "Followers"
 
 export function ProfilePage({ user, posts }: Props) {
   const { authenticated, user: privyUser, ready } = usePrivy()
