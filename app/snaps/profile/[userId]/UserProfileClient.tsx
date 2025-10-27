@@ -78,6 +78,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
     | "share"
     | "search"
     | "mentions"
+    |"munch"
   >("home");  
   
   // Message state
