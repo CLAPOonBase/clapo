@@ -729,7 +729,7 @@ function SocialFeedPageContent() {
         </div>
 
         {/* Right Sidebar - Only visible at 2xl breakpoint */}
-        {currentPage !== "messages" && currentPage !== "share" && currentPage !=="explore" && (session?.dbUser || currentUserId) && (
+        {currentPage !== "messages" && currentPage !== "share" && currentPage !=="explore" && currentPage !== "munch" && (session?.dbUser || currentUserId) && (
           <div
             className="hidden md:block lg:block xl:block 2xl:block w-[340px] h-screen sticky top-0"
 

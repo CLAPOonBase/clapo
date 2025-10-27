@@ -267,4 +267,36 @@ export class MunchApiService {
       throw new Error(`Failed to share munch video: ${response.statusText}`);
     }
   }
+
+  // Get user's own munch videos
+  static async getUserMunchVideos(userId: string, limit: number = 50, offset: number = 0): Promise<MunchVideo[]> {
+    const url = `${API_BASE_URL}/munch/user/${userId}?limit=${limit}&offset=${offset}`;
+    console.log('📹 MunchAPI: GET user videos', url);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('📹 MunchAPI: User videos response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ MunchAPI: Error response:', errorText);
+      throw new Error(`Failed to fetch user munch videos: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log('📹 MunchAPI: User videos response data:', result);
+
+    const videos = result.videos || [];
+    console.log('📹 MunchAPI: Found user videos:', videos.length);
+
+    const transformedVideos = videos.map((video: any) => this.transformVideo(video));
+    console.log('📹 MunchAPI: Transformed user videos:', transformedVideos);
+
+    return transformedVideos;
+  }
 }

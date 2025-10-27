@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import Image from 'next/image'
 import { User, Post } from "@/app/types"
-import { Ellipsis, Eye, Heart, MessageCircle, Repeat2, Bookmark, ThumbsUp, FileText, X, Grid, Users, Volume2, Share2, Triangle } from "lucide-react"
+import { Ellipsis, Eye, Heart, MessageCircle, Repeat2, Bookmark, ThumbsUp, FileText, X, Grid, Users, Volume2, Share2, Triangle, Video } from "lucide-react"
 import { usePrivy } from "@privy-io/react-auth"
 import { useApi } from "../../Context/ApiProvider"
 import { UpdateProfileModal } from "@/app/components/UpdateProfileModal"
@@ -14,13 +14,15 @@ import { CreatorTokenDisplay } from "@/app/components/CreatorTokenDisplay"
 import CreatorTokenTrading from "@/app/components/CreatorTokenTrading"
 import ReputationBadge from "@/app/components/ReputationBadge"
 import ReputationHistoryModal from "@/app/components/ReputationHistoryModal"
+import { MunchApiService, MunchVideo } from "@/app/lib/munchApi"
+import SnapCard from "../Sections/SnapCard"
 
 type Props = {
   user?: User
   posts: Post[]
 }
 
-type Tab = "Posts" | "Activity" | "Followers"
+type Tab = "Posts" | "Munchs" | "Activity"
 
 export function ProfilePage({ user, posts }: Props) {
   const { authenticated, user: privyUser, ready } = usePrivy()
@@ -54,6 +56,15 @@ export function ProfilePage({ user, posts }: Props) {
   const [showFollowersList, setShowFollowersList] = useState(false)
   const [showFollowingList, setShowFollowingList] = useState(false)
   const [showReputationHistory, setShowReputationHistory] = useState(false)
+
+  // Munch videos state
+  const [munchVideos, setMunchVideos] = useState<MunchVideo[]>([])
+  const [isLoadingMunchVideos, setIsLoadingMunchVideos] = useState(false)
+
+  // Post engagement state for SnapCard
+  const [liked, setLiked] = useState<Set<number>>(new Set())
+  const [retweeted, setRetweeted] = useState<Set<number>>(new Set())
+  const [bookmarked, setBookmarked] = useState<Set<number>>(new Set())
 
   // Initialize user ID from Privy
   useEffect(() => {
@@ -109,14 +120,14 @@ export function ProfilePage({ user, posts }: Props) {
   // Check if creator token exists with debouncing
   useEffect(() => {
     console.log('🔍 ProfilePage useEffect triggered with:', {
-      'session?.dbUser?.id': session?.dbUser?.id,
+      'currentUserId': currentUserId,
       'isConnected': isConnected,
       'address': address,
       'checkCreatorExists': typeof checkCreatorExists
     });
-    
+
     console.log('🔍 ProfilePage: useEffect dependencies check:', {
-      'hasUserId': !!session?.dbUser?.id,
+      'hasUserId': !!currentUserId,
       'isConnected': isConnected,
       'hasAddress': !!address,
       'hasCheckFunction': typeof checkCreatorExists === 'function'
@@ -231,6 +242,35 @@ export function ProfilePage({ user, posts }: Props) {
       }
     }
   }, [activeTab, followersList.length, followingList.length])
+
+  // Fetch munch videos when Munchs tab is active
+  useEffect(() => {
+    const fetchMunchVideos = async () => {
+      if (activeTab === 'Munchs' && currentUserId) {
+        console.log('🎬 ProfilePage: Fetching munch videos for user:', currentUserId)
+        setIsLoadingMunchVideos(true)
+        try {
+          const videos = await MunchApiService.getUserMunchVideos(currentUserId, 50, 0)
+          console.log('🎬 ProfilePage: Fetched munch videos:', videos.length, videos)
+          setMunchVideos(videos)
+        } catch (error) {
+          console.error('❌ ProfilePage: Failed to load munch videos:', error)
+        } finally {
+          setIsLoadingMunchVideos(false)
+        }
+      }
+    }
+
+    fetchMunchVideos()
+  }, [activeTab, currentUserId])
+
+  // Helper function to toggle sets
+  const toggleSet = (set: Set<number>, id: number): Set<number> => {
+    const newSet = new Set(set)
+    if (newSet.has(id)) newSet.delete(id)
+    else newSet.add(id)
+    return newSet
+  }
 
   const handleCreateCreatorToken = async () => {
     if (!isConnected) {
@@ -501,8 +541,8 @@ export function ProfilePage({ user, posts }: Props) {
             <div className="bg-black m-0.5 p-1 rounded-full relative flex">
               {[
                 { id: 'Posts', label: 'Posts', icon: Grid },
+                { id: 'Munchs', label: 'Munchs', icon: Video },
                 { id: 'Activity', label: 'Activity', icon: MessageCircle },
-                { id: 'Followers', label: 'Network', icon: Users },
               ].map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
@@ -531,7 +571,7 @@ export function ProfilePage({ user, posts }: Props) {
                 }}
                 initial={false}
                 animate={{
-                  x: activeTab === "Posts" ? "0%" : activeTab === "Activity" ? "100%" : "200%",
+                  x: activeTab === "Posts" ? "0%" : activeTab === "Munchs" ? "100%" : "200%",
                   width: "calc(33.333% - 8px)",
                 }}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
@@ -555,174 +595,18 @@ export function ProfilePage({ user, posts }: Props) {
           {activeTab === "Posts" && (
             <div className="space-y-4">
               {profile.posts && profile.posts.length > 0 ? (
-                <div className="space-y-4">
-                  {profile.posts.map((post: any) => (
-                    <div
-                      key={post.id}
-                      className="shadow-custom border-2 border-gray-700/70 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200"
-                    >
-                      <div className="flex flex-col">
-                        {/* Header Section */}
-                        <div className='flex items-center space-x-3'>
-                          <div className="flex flex-1 min-w-0 items-center justify-between">
-                            <div className="flex flex-1 min-w-0 items-center justify-between">
-                              <div className="flex flex-col min-w-0">
-                                <div className="flex items-center space-x-2 group cursor-pointer">
-                                  {/* Avatar */}
-                                  <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden">
-                                    <Image
-                                      src={profile.avatar_url || "/4.png"}
-                                      alt={profile.username}
-                                      width={32}
-                                      height={32}
-                                      className="w-full h-full object-cover bg-gray-200"
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.src = "/4.png";
-                                      }}
-                                    />
-                                  </div>
-
-                                  {/* Username */}
-                                  <div className="flex items-center gap-2">
-                                    <div className="flex min-w-0 items-center flex-wrap gap-x-1 text-sm">
-                                      <span className="font-semibold text-white truncate hover:text-blue-500 transition-colors group-hover:underline">
-                                        {profile.username}
-                                      </span>
-                                      {profile.reputation_tier && (
-                                        <ReputationBadge
-                                          tier={profile.reputation_tier}
-                                          score={profile.reputation_score || 0}
-                                          size="sm"
-                                          showScore={true}
-                                          showLabel={false}
-                                        />
-                                      )}
-                                      <span className="text-gray-400">•</span>
-                                      <span className="text-secondary truncate">@{profile.username}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                              {post.is_retweet && (
-                                <div className="flex items-center space-x-1 text-green-400">
-                                  <Repeat2 className="w-3 h-3" />
-                                  <span className="text-xs font-medium">Retweeted</span>
-                                </div>
-                              )}
-                              <span className="text-secondary text-sm">{formatDate(post.created_at)}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Content Section */}
-                        <div className="ml-12">
-                          <div className="">
-
-                            <p className="text-white text-base leading-relaxed whitespace-pre-wrap break-words">
-                              {post.content}
-                            </p>
-
-                            {/* Media Section */}
-                            {post.media_url && (
-                              <div className="overflow-hidden mt-1">
-                                {post.media_url.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff|ico)$/i) ? (
-                                  <div className="relative group inline-block">
-                                    <Image
-                                      src={post.media_url}
-                                      alt="Post content"
-                                      width={400}
-                                      height={320}
-                                      className="rounded-2xl max-h-80 w-auto object-cover cursor-pointer hover:opacity-95 transition-opacity duration-200"
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement
-                                        target.style.display = 'none'
-                                      }}
-                                    />
-                                  </div>
-                                ) : post.media_url.match(/\.(mp4|webm|ogg|mov|avi|mkv|flv|wmv|m4v|3gp|ts|mts|m2ts)$/i) ? (
-                                  <video
-                                    src={post.media_url}
-                                    autoPlay
-                                    muted
-                                    loop
-                                    playsInline
-                                    controls
-                                    className="w-auto max-h-80 bg-black rounded-lg"
-                                  />
-                                ) : post.media_url.match(/\.(mp3|wav|ogg|m4a|aac|flac|wma|opus|aiff|pcm)$/i) ? (
-                                  <div className="bg-black p-3 flex items-center space-x-3 rounded-lg">
-                                    <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                                      <Volume2 className="w-4 h-4 text-indigo-600" />
-                                    </div>
-                                    <audio src={post.media_url} controls className="flex-1" />
-                                  </div>
-                                ) : (
-                                  <div className="bg-black p-3 text-center rounded-lg">
-                                    <p className="text-gray-400 text-sm mb-2">Media file</p>
-                                    <a
-                                      href={post.media_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-indigo-400 hover:text-indigo-300 text-sm font-medium"
-                                    >
-                                      View media
-                                    </a>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          
-                            {/* Original Post Content for Retweets */}
-                            {post.original_post_content && (
-                              <div className="bg-black border border-gray-600 rounded-lg p-4 mt-3">
-                                <p className="text-gray-300 text-sm">
-                                  <span className="text-gray-400 font-medium">Original by @{post.original_post_username}:</span>
-                                  <br />
-                                  <span className="mt-1 block">{post.original_post_content}</span>
-                                </p>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Engagement Actions */}
-                          <div className="flex items-center justify-between pt-3">
-                            <div className="flex items-center space-x-4">
-                              <button className="flex items-center space-x-1 text-gray-500 hover:text-white transition-colors opacity-60">
-                                <Heart className="w-4 h-4" />
-                                <span className="text-xs font-medium">{post.like_count}</span>
-                              </button>
-
-                              <button className="flex items-center space-x-1 text-gray-500 hover:text-white transition-colors opacity-60">
-                                <MessageCircle className="w-4 h-4" />
-                                <span className="text-xs font-medium">{post.comment_count}</span>
-                              </button>
-
-                              <button className="flex items-center space-x-1 text-gray-500 hover:text-white transition-colors opacity-60">
-                                <Repeat2 className="w-4 h-4 rotate-90" />
-                                <span className="text-xs font-medium">{post.retweet_count}</span>
-                              </button>
-                            </div>
-
-                            <div className='flex items-center space-x-4'>
-                              <div className='flex items-center space-x-1 cursor-pointer'>
-                                <Triangle className={`w-5 h-5 text-green-500 transition-all duration-200`} />
-                                <span className="text-sm hidden text-green-500 sm:block font-medium">$27.01</span>
-                              </div>
-
-                              <button className="flex items-center space-x-1 text-gray-500 hover:text-white transition-colors opacity-60">
-                                <Bookmark className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                profile.posts.map((post: any) => (
+                  <SnapCard
+                    key={post.id}
+                    post={post}
+                    liked={liked.has(parseInt(post.id))}
+                    bookmarked={bookmarked.has(parseInt(post.id))}
+                    retweeted={retweeted.has(parseInt(post.id))}
+                    onLike={(id) => setLiked(toggleSet(liked, typeof id === "string" ? parseInt(id) : id))}
+                    onBookmark={(id) => setBookmarked(toggleSet(bookmarked, typeof id === "string" ? parseInt(id) : id))}
+                    onRetweet={(id) => setRetweeted(toggleSet(retweeted, typeof id === "string" ? parseInt(id) : id))}
+                  />
+                ))
               ) : (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 mx-auto mb-4 bg-gray-700 rounded-full flex items-center justify-center">
@@ -767,6 +651,73 @@ export function ProfilePage({ user, posts }: Props) {
                   </div>
                   <p className="text-gray-400 text-lg">No recent activity</p>
                   <p className="text-gray-500 text-sm mt-1">Your interactions will appear here</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "Munchs" && (
+            <div className="space-y-4">
+              {isLoadingMunchVideos ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-700 rounded-full flex items-center justify-center">
+                    <Video className="w-8 h-8 text-gray-400 animate-pulse" />
+                  </div>
+                  <p className="text-gray-400 text-lg">Loading videos...</p>
+                </div>
+              ) : munchVideos.length > 0 ? (
+                <div className="grid grid-cols-3 gap-1">
+                  {munchVideos.map((video) => (
+                    <div
+                      key={video.id}
+                      className="relative aspect-[9/16] bg-gray-800 rounded-lg overflow-hidden cursor-pointer group"
+                      onClick={() => {
+                        // Navigate to munch page with this video
+                        window.location.href = `/snaps?page=munch&videoId=${video.id}`;
+                      }}
+                    >
+                      {/* Video thumbnail */}
+                      {video.thumbnail_url ? (
+                        <Image
+                          src={video.thumbnail_url}
+                          alt={video.caption || 'Munch video'}
+                          fill
+                          className="object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <video
+                          src={video.video_url}
+                          className="w-full h-full object-cover"
+                          muted
+                        />
+                      )}
+
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="text-white text-center">
+                          <Heart className="w-6 h-6 mx-auto mb-1" />
+                          <span className="text-sm font-semibold">{video.like_count}</span>
+                        </div>
+                      </div>
+
+                      {/* Video indicator */}
+                      <div className="absolute top-2 right-2">
+                        <Video className="w-4 h-4 text-white drop-shadow-lg" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-700 rounded-full flex items-center justify-center">
+                    <Video className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-400 text-lg">No videos yet</p>
+                  <p className="text-gray-500 text-sm mt-1">Share your first Munch video!</p>
                 </div>
               )}
             </div>

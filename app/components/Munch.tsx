@@ -491,6 +491,102 @@ const Munch: React.FC = () => {
           currentUserId={currentUserId}
           onDelete={handleDelete}
         />
+
+        {/* Comments Modal */}
+        <AnimatePresence>
+          {showComments && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end justify-center"
+              onClick={() => setShowComments(false)}
+            >
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="bg-gray-900 border-2 border-gray-700/70 rounded-t-2xl flex flex-col"
+                style={{ height: '400px', width: '456px' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-700">
+                  <h3 className="text-white text-lg font-semibold">
+                    Comments {comments.length > 0 && `(${comments.length})`}
+                  </h3>
+                  <button
+                    onClick={() => setShowComments(false)}
+                    className="p-2 hover:bg-gray-800 rounded-full transition-colors"
+                  >
+                    <X size={20} className="text-gray-400" />
+                  </button>
+                </div>
+
+                {/* Comments List */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {loadingComments ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                    </div>
+                  ) : comments.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-400">No comments yet</p>
+                      <p className="text-gray-500 text-sm mt-1">Be the first to comment!</p>
+                    </div>
+                  ) : (
+                    comments.map((comment) => (
+                      <div key={comment.id} className="flex gap-3">
+                        <img
+                          src={comment.user.avatar_url || '/default-avatar.png'}
+                          alt={comment.user.username}
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-white font-semibold text-sm">
+                              @{comment.user.username}
+                            </span>
+                            <span className="text-gray-500 text-xs">
+                              {new Date(comment.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <p className="text-gray-300 text-sm mt-1">{comment.content}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Comment Input */}
+                <div className="p-4 border-t border-gray-700">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      placeholder="Add a comment..."
+                      className="flex-1 px-4 py-2 bg-gray-800 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handleAddComment();
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={handleAddComment}
+                      disabled={!commentText.trim()}
+                      className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Send size={20} />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* Action Buttons - External Right Side */}
@@ -592,101 +688,6 @@ const Munch: React.FC = () => {
       <AnimatePresence>
         {showUploadModal && (
           <MunchUpload onClose={() => setShowUploadModal(false)} />
-        )}
-      </AnimatePresence>
-
-      {/* Comments Modal */}
-      <AnimatePresence>
-        {showComments && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-end"
-            onClick={() => setShowComments(false)}
-          >
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="w-full max-w-2xl mx-auto bg-gray-900 border-2 border-gray-700/70 rounded-t-3xl max-h-[80vh] flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-700">
-                <h3 className="text-white text-lg font-semibold">
-                  Comments {comments.length > 0 && `(${comments.length})`}
-                </h3>
-                <button
-                  onClick={() => setShowComments(false)}
-                  className="p-2 hover:bg-gray-800 rounded-full transition-colors"
-                >
-                  <X size={20} className="text-gray-400" />
-                </button>
-              </div>
-
-              {/* Comments List */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {loadingComments ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-                  </div>
-                ) : comments.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-400">No comments yet</p>
-                    <p className="text-gray-500 text-sm mt-1">Be the first to comment!</p>
-                  </div>
-                ) : (
-                  comments.map((comment) => (
-                    <div key={comment.id} className="flex gap-3">
-                      <img
-                        src={comment.user.avatar_url || '/default-avatar.png'}
-                        alt={comment.user.username}
-                        className="w-8 h-8 rounded-full object-cover"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-white font-semibold text-sm">
-                            @{comment.user.username}
-                          </span>
-                          <span className="text-gray-500 text-xs">
-                            {new Date(comment.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <p className="text-gray-300 text-sm mt-1">{comment.content}</p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Comment Input */}
-              <div className="p-4 border-t border-gray-700">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    placeholder="Add a comment..."
-                    className="flex-1 px-4 py-2 bg-gray-800 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        handleAddComment();
-                      }
-                    }}
-                  />
-                  <button
-                    onClick={handleAddComment}
-                    disabled={!commentText.trim()}
-                    className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <Send size={20} />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
         )}
       </AnimatePresence>
     </div>
