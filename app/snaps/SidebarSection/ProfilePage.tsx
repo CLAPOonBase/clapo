@@ -5,7 +5,6 @@ import { motion } from "framer-motion"
 import Image from 'next/image'
 import { User, Post } from "@/app/types"
 import { Ellipsis, Eye, Heart, MessageCircle, Repeat2, Bookmark, ThumbsUp, FileText, X, Grid, Users, Volume2, Share2, Triangle } from "lucide-react"
-import { useSession } from "next-auth/react"
 import { usePrivy } from "@privy-io/react-auth"
 import { useApi } from "../../Context/ApiProvider"
 import { UpdateProfileModal } from "@/app/components/UpdateProfileModal"
@@ -24,8 +23,7 @@ type Props = {
 type Tab = "Posts" | "Activity" | "Followers"
 
 export function ProfilePage({ user, posts }: Props) {
-  const { data: session, status } = useSession()
-  const { authenticated: privyAuthenticated, user: privyUser, ready: privyReady } = usePrivy()
+  const { authenticated, user: privyUser, ready } = usePrivy()
   const { getUserProfile, updateUserProfile, getUserFollowers, getUserFollowing } = useApi()
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const { createCreatorToken, checkCreatorExists, isConnected, connectWallet, isConnecting, address, switchToMonadTestnet } = useCreatorToken()
@@ -35,19 +33,19 @@ export function ProfilePage({ user, posts }: Props) {
   const [showUpdateModal, setShowUpdateModal] = useState(false)
   const [showCreateTokenModal, setShowCreateTokenModal] = useState(false)
   const [showTradingModal, setShowTradingModal] = useState(false)
-  
+
   // Creator token creation state
   const [tokenName, setTokenName] = useState('')
   const [tokenDescription, setTokenDescription] = useState('')
   // freebieCount is now fixed at 50 in the contract
   const [quadraticDivisor, setQuadraticDivisor] = useState(1)
   const [isCreatingToken, setIsCreatingToken] = useState(false)
-  
+
   // Creator token existence state
   const [creatorTokenExists, setCreatorTokenExists] = useState(false)
   const [checkingTokenExists, setCheckingTokenExists] = useState(false)
   const [creatorTokenUserId, setCreatorTokenUserId] = useState<string | null>(null)
-  
+
   // Follower/Following lists state
   const [followersList, setFollowersList] = useState<any[]>([])
   const [followingList, setFollowingList] = useState<any[]>([])
@@ -57,18 +55,10 @@ export function ProfilePage({ user, posts }: Props) {
   const [showFollowingList, setShowFollowingList] = useState(false)
   const [showReputationHistory, setShowReputationHistory] = useState(false)
 
-  // Initialize user ID from either NextAuth or Privy
+  // Initialize user ID from Privy
   useEffect(() => {
     const initializeUser = async () => {
-      // Handle NextAuth session
-      if (status === "authenticated" && session?.dbUser?.id) {
-        console.log("📊 Loading profile for NextAuth user:", session.dbUser.id);
-        setCurrentUserId(session.dbUser.id);
-        return;
-      }
-
-      // Handle Privy authentication
-      if (privyAuthenticated && privyUser && privyReady) {
+      if (authenticated && privyUser && ready) {
         console.log("📊 Loading profile for Privy user:", privyUser.id);
         try {
           const response = await fetch(
@@ -81,15 +71,19 @@ export function ProfilePage({ user, posts }: Props) {
             setCurrentUserId(data.user.id);
           } else {
             console.log("❌ User not found in backend");
+            setCurrentUserId(null);
           }
         } catch (error) {
           console.error("❌ Error fetching Privy user:", error);
+          setCurrentUserId(null);
         }
+      } else {
+        setCurrentUserId(null);
       }
     };
 
     initializeUser();
-  }, [session, status, privyAuthenticated, privyUser, privyReady]);
+  }, [authenticated, privyUser, ready]);
 
   // Fetch profile using currentUserId
   useEffect(() => {

@@ -118,8 +118,8 @@ export class StoriesApiService {
   }
 
   // Delete a story
-  static async deleteStory(storyId: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/stories/${storyId}`, {
+  static async deleteStory(storyId: string, userId: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/stories/${storyId}?user_id=${userId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

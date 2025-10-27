@@ -83,22 +83,28 @@ class ApiService {
 
     try {
       const response = await fetch(url, config)
-      
+
       if (!response.ok) {
         const errorText = await response.text()
-        
+        console.error('❌ API Error Response:', {
+          url,
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        })
+
         let errorData: ApiError
         try {
           errorData = JSON.parse(errorText)
         } catch {
           errorData = {
-            message: `HTTP ${response.status}: ${response.statusText}`,
+            message: errorText || `HTTP ${response.status}: ${response.statusText}`,
             status: response.status,
           }
         }
-        
-        const errorMessage = errorData.message || `HTTP error! status: ${response.status}`
-        console.error('API Error:', errorData)
+
+        const errorMessage = errorData.message || errorText || `HTTP error! status: ${response.status}`
+        console.error('❌ Parsed error:', errorData)
         throw new Error(errorMessage)
       }
 
@@ -106,7 +112,7 @@ class ApiService {
       // Response data logged for debugging
       return responseData
     } catch (error) {
-      console.error('❌ Request failed:', error)
+      console.error('❌ Request failed for:', url, error)
       throw error
     }
   }
@@ -596,8 +602,9 @@ class ApiService {
       const response = await this.request(`/reputation/leaderboard?${params}`)
       return response as { users: Array<{ user_id: string; username: string; avatar_url: string; score: number; tier: string }> }
     } catch (error) {
-      console.error('Error fetching reputation leaderboard:', error)
-      throw error
+      console.warn('⚠️ Reputation leaderboard not available:', error)
+      // Return empty list if endpoint doesn't exist
+      return { users: [] }
     }
   }
 

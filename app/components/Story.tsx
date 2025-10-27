@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { ChevronLeft, ChevronRight, X, Play, Pause, Volume2, VolumeX, Plus, Eye } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Play, Pause, Volume2, VolumeX, Plus, Eye, Trash2 } from "lucide-react";
 import { useStories } from "@/app/hooks/useStories";
 import { StoryUpload } from "./StoryUpload";
-import { useSession } from "next-auth/react";
+import { usePrivy } from "@privy-io/react-auth";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { renderTextWithMentions } from "@/app/lib/mentionUtils";
 import { useRouter } from "next/navigation";
@@ -37,9 +37,10 @@ type GroupedStory = {
 };
 
 const Stories: React.FC = () => {
-  const { data: session } = useSession();
-  const { stories, loading, error, fetchFollowingStories, recordStoryView, getStoryViewers } = useStories();
+  const { authenticated, ready, user: privyUser } = usePrivy();
+  const { stories, loading, error, fetchFollowingStories, recordStoryView, getStoryViewers, deleteStory } = useStories();
   const router = useRouter();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserIndex, setCurrentUserIndex] = useState<number>(0);
   const [currentStoryIndex, setCurrentStoryIndex] = useState<number>(0);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -55,6 +56,26 @@ const Stories: React.FC = () => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const bottomSheetRef = useRef<HTMLDivElement | null>(null);
+
+  // Get current user ID from Privy
+  useEffect(() => {
+    const initializeUser = async () => {
+      if (authenticated && privyUser && ready) {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${privyUser.id}`
+          );
+          const data = await response.json();
+          if (data.exists && data.user?.id) {
+            setCurrentUserId(data.user.id);
+          }
+        } catch (error) {
+          console.error("❌ Stories: Error fetching Privy user:", error);
+        }
+      }
+    };
+    initializeUser();
+  }, [authenticated, privyUser, ready]);
 
   // Group stories by user
   const groupedStories: GroupedStory[] = React.useMemo(() => {
@@ -80,9 +101,13 @@ const Stories: React.FC = () => {
   const currentUserStories = groupedStories[currentUserIndex]?.stories || [];
   const currentStory = currentUserStories[currentStoryIndex];
 
+  // Fetch stories when authenticated
   useEffect(() => {
-    fetchFollowingStories();
-  }, []);
+    if (authenticated && ready) {
+      console.log('📊 Stories: Fetching following stories...');
+      fetchFollowingStories();
+    }
+  }, [authenticated, ready, fetchFollowingStories]);
 
  useEffect(() => {
   let interval: NodeJS.Timeout | undefined;
@@ -255,6 +280,50 @@ const goToNextStory = () => {
     setShowBottomSheet(false);
     setDragY(0);
     setIsPlaying(true);
+  };
+
+  const handleDeleteStory = async () => {
+    if (!currentStory) return;
+
+    const confirmDelete = window.confirm('Are you sure you want to delete this story? This action cannot be undone.');
+
+    if (confirmDelete) {
+      try {
+        await deleteStory(currentStory.id);
+
+        // Navigate to next story or close modal if no more stories
+        if (currentUserStories.length > 1) {
+          // If there are more stories from this user, show the next one
+          if (currentStoryIndex < currentUserStories.length - 1) {
+            // Stay on current index (which will now show the next story after deletion)
+            setProgress(0);
+          } else {
+            // Was the last story of this user, go to previous
+            setCurrentStoryIndex(Math.max(0, currentStoryIndex - 1));
+            setProgress(0);
+          }
+        } else if (groupedStories.length > 1) {
+          // No more stories from this user, move to next user or close
+          if (currentUserIndex < groupedStories.length - 1) {
+            setCurrentUserIndex(prev => prev + 1);
+            setCurrentStoryIndex(0);
+            setProgress(0);
+          } else if (currentUserIndex > 0) {
+            setCurrentUserIndex(prev => prev - 1);
+            setCurrentStoryIndex(0);
+            setProgress(0);
+          } else {
+            closeStory();
+          }
+        } else {
+          // No more stories at all, close modal
+          closeStory();
+        }
+      } catch (error) {
+        console.error('Failed to delete story:', error);
+        alert('Failed to delete story. Please try again.');
+      }
+    }
   };
 
   // Animation variants
@@ -472,30 +541,41 @@ const goToNextStory = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {currentStory.user.id === session?.dbUser?.id && (
-                  <motion.button 
-                    onClick={() => handleViewStoryViewers(currentStory.id)}
-                    disabled={loadingViewers}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-black/50 backdrop-blur-sm text-white rounded-full hover:bg-black/70 transition-colors disabled:opacity-50"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Eye size={16} />
-                    <span className="text-xs font-medium">{currentStory.view_count}</span>
-                  </motion.button>
+                {currentStory.user.id === currentUserId && (
+                  <>
+                    <motion.button
+                      onClick={() => handleViewStoryViewers(currentStory.id)}
+                      disabled={loadingViewers}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-black/50 backdrop-blur-sm text-white rounded-full hover:bg-black/70 transition-colors disabled:opacity-50"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Eye size={16} />
+                      <span className="text-xs font-medium">{currentStory.view_count}</span>
+                    </motion.button>
+                    <motion.button
+                      onClick={handleDeleteStory}
+                      className="p-2 bg-red-500/50 backdrop-blur-sm text-white rounded-full hover:bg-red-500/70 transition-colors"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      title="Delete story"
+                    >
+                      <Trash2 size={18} />
+                    </motion.button>
+                  </>
                 )}
                 {currentStory.media_type === "video" && (
                   <>
-                    <motion.button 
-                      onClick={togglePlayPause} 
+                    <motion.button
+                      onClick={togglePlayPause}
                       className="p-2 bg-black/50 backdrop-blur-sm text-white rounded-full hover:bg-black/70 transition-colors"
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                     >
                       {isPlaying ? <Pause size={18} /> : <Play size={18} />}
                     </motion.button>
-                    <motion.button 
-                      onClick={toggleMute} 
+                    <motion.button
+                      onClick={toggleMute}
                       className="p-2 bg-black/50 backdrop-blur-sm text-white rounded-full hover:bg-black/70 transition-colors"
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
@@ -504,8 +584,8 @@ const goToNextStory = () => {
                     </motion.button>
                   </>
                 )}
-                <motion.button 
-                  onClick={closeStory} 
+                <motion.button
+                  onClick={closeStory}
                   className="p-2 text-white hover:text-gray-300"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
@@ -603,8 +683,8 @@ const goToNextStory = () => {
               </div>
 
               {/* Story Viewers Button (Instagram Style) */}
-              {currentStory.user.id === session?.dbUser?.id && (
-                <motion.div 
+              {currentStory.user.id === currentUserId && (
+                <motion.div
                   className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-40"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}

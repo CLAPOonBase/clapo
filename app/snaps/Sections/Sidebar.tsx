@@ -1,16 +1,16 @@
 "use client";
-import { Home, Bell, User, MessageCircle, Activity, Blocks, TrendingUp, Menu, X, Telescope, Wallet, Lock, Settings, LogOut, PersonStandingIcon, AtSign } from "lucide-react";
+import { Home, Bell, User, MessageCircle, Activity, Blocks, TrendingUp, Menu, X, Telescope, Wallet, Lock, Settings, LogOut, PersonStandingIcon, AtSign, Film } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useWalletContext } from "@/context/WalletContext";
-import { useSession } from "next-auth/react";
+import { usePrivy } from "@privy-io/react-auth";
 // import SignInPage from "@/app/SignIn";
 import SignInPage from "@/app/SignIn/page";
 import { SnapComposer } from "./SnapComposer";
 
-type PageKey = "home" | "wallet" | "explore" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks" | "mentions";
+type PageKey = "home" | "wallet" | "explore" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks" | "mentions" | "munch";
 
 type SidebarProps = {
   setCurrentPage: (page: PageKey) => void;
@@ -52,22 +52,12 @@ export default function Sidebar({
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const router = useRouter();
   const { connect, disconnect, address } = useWalletContext();
-  const { data: session } = useSession();
-  console.log("PROFILE PHOTO FROM SIDEVAR",session)
-  
+  const { authenticated, user: privyUser, ready } = usePrivy();
+  console.log("PROFILE PHOTO FROM SIDEBAR (Privy):", privyUser)
+
   // Create a custom profile icon component that uses avatar if available
   const ProfileIcon = ({ isActive, className }: { isActive?: boolean; className?: string }) => {
-    if (session?.user.image) {
-      return (
-        <Image
-          src={session?.user.image}
-          alt="Profile"
-          width={24}
-          height={24}
-          className={`rounded-full ${className || "w-6 h-6"} object-cover border border-gray-600/40`}
-        />
-      );
-    }
+    // TODO: Add avatar URL support from backend profile
     return isActive ?
       <User className={`${className || "w-6 h-6"} text-white`} /> :
       <User className={className || "w-6 h-6"} />;
@@ -94,6 +84,14 @@ export default function Sidebar({
       value: "explore",
       icon: <Telescope className="w-6 h-6" />,
       activeIcon: <Telescope className="w-6 h-6 text-white" />,
+      showOnMobile: true,
+      showOnDesktop: true
+    },
+    {
+      label: "Munch",
+      value: "munch",
+      icon: <Film className="w-6 h-6" />,
+      activeIcon: <Film className="w-6 h-6 text-white" />,
       showOnMobile: true,
       showOnDesktop: true
     },
@@ -210,7 +208,7 @@ const handleNavClick = (value: PageKey) => {
   const shouldCollapse = !alwaysExpanded && collapsibleItems.includes(currentPage);
   const sidebarWidth = shouldCollapse ? (isHovered ? 240 : 85) : 240;
 
-  const isLoggedIn = !!session;
+  const isLoggedIn = authenticated && ready;
   const isWalletConnected = !!address;
 
   // Check if current page is home to show Create Post button
@@ -341,9 +339,9 @@ const handleNavClick = (value: PageKey) => {
                       onClick={() => openDialog("x")}
                       className="inline-flex items-center justify-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 gap-[6px] min-w-[105px] transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)] bg-[hsla(220,10%,12%,1)] text-white shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000] hover:bg-[hsla(220,10%,18%,1)] px-3 py-2 text-xs rounded-full leading-[24px] font-bold w-full whitespace-nowrap"
                     >
-                    <Image src={session?.dbUser?.avatar_url || "/default-avatar.png"} alt={""} width={1000} height={1000} className="rounded-full h-8 w-8 bg-black border border-gray-700/70"/>
+                    <Image src={"/default-avatar.png"} alt={""} width={1000} height={1000} className="rounded-full h-8 w-8 bg-black border border-gray-700/70"/>
 
-                      {isLoggedIn ? session?.dbUser?.username || "CONNECTED" : "CONNECT X"}
+                      {isLoggedIn ? (privyUser?.email?.address || privyUser?.wallet?.address?.slice(0,8) || "CONNECTED") : "CONNECT"}
                     </button>
                  
                   </div>

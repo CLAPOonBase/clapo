@@ -16,7 +16,7 @@ import {
   AtSign,
 } from 'lucide-react'
 import MediaUpload, { MediaUploadHandle } from '@/app/components/MediaUpload'
-import { useSession } from 'next-auth/react'
+import { usePrivy } from '@privy-io/react-auth'
 import { useApi } from '@/app/Context/ApiProvider'
 import { usePostToken } from '@/app/hooks/usePostToken'
 import { generatePostTokenUUID } from '@/app/lib/uuid'
@@ -84,17 +84,48 @@ export function SnapComposer({ close }: { close: () => void }) {
   
   const { createPost, fetchPosts } = useApi();
   const { createPostToken, isConnected, connectWallet, isConnecting, address } = usePostToken();
-  const { data: session, status } = useSession();
+  const { authenticated, user: privyUser, ready } = usePrivy();
   const { getUserProfile, updateUserProfile } = useApi()
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+
+  // Initialize user ID from Privy
+  useEffect(() => {
+    const initializeUser = async () => {
+      if (authenticated && privyUser && ready) {
+        console.log("📊 SnapComposer: Loading user from Privy:", privyUser.id);
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${privyUser.id}`
+          );
+          const data = await response.json();
+
+          if (data.exists && data.user?.id) {
+            console.log("✅ SnapComposer: Found user in backend:", data.user.id);
+            setCurrentUserId(data.user.id);
+          } else {
+            console.log("❌ SnapComposer: User not found in backend");
+            setCurrentUserId(null);
+          }
+        } catch (error) {
+          console.error("❌ SnapComposer: Error fetching Privy user:", error);
+          setCurrentUserId(null);
+        }
+      } else {
+        setCurrentUserId(null);
+      }
+    };
+
+    initializeUser();
+  }, [authenticated, privyUser, ready]);
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (session?.dbUser?.id) {
+      if (currentUserId) {
         try {
           setLoading(true)
-          const profileData = await getUserProfile(session.dbUser.id)
+          const profileData = await getUserProfile(currentUserId)
           setProfile(profileData.profile)
         } catch (error) {
           console.error('Failed to fetch profile:', error)
@@ -105,10 +136,10 @@ export function SnapComposer({ close }: { close: () => void }) {
     }
 
     fetchProfile()
-  }, [session?.dbUser?.id, getUserProfile])
+  }, [currentUserId, getUserProfile])
 
   // Profile data loaded
-  
+
   const [uploadedMedia, setUploadedMedia] = useState<{
     url: string
     name: string
@@ -116,16 +147,16 @@ export function SnapComposer({ close }: { close: () => void }) {
   } | null>(null)
 
   const mediaUploadRef = useRef<MediaUploadHandle>(null)
-  const userId = session?.dbUser?.id
+  const userId = currentUserId
 
   React.useEffect(() => {
-    console.log('🔍 Session changed:', {
-      status,
-      session,
-      userId,
-      sessionDbUser: session?.dbUser
+    console.log('🔍 SnapComposer Auth State:', {
+      privyAuthenticated: authenticated,
+      privyUserId: privyUser?.id,
+      privyReady: ready,
+      currentUserId: userId,
     })
-  }, [session, status, userId])
+  }, [userId, authenticated, privyUser, ready])
 
   const actions = [
     { icon: ImageIcon, label: 'Photo', color: 'text-blue-400', type: 'image' as const },
@@ -251,19 +282,24 @@ export function SnapComposer({ close }: { close: () => void }) {
     }
     
     console.log('🔍 Submit Debug:', {
-      session,
-      sessionDbUser: session?.dbUser,
-      sessionDbUserId: session?.dbUser?.id,
-      userId,
+      privyAuthenticated: authenticated,
+      privyUserId: privyUser?.id,
+      currentUserId: userId,
       content: content.trim(),
       mediaUrl,
       createPostToken: !!createPostToken,
       isConnected
     })
-    
+
     if (!userId) {
-      console.error('User ID is missing from session')
-      alert('Please log in to create a post')
+      console.error('❌ User ID is missing - not authenticated with Privy')
+      console.error('Debug:', {
+        authenticated,
+        privyReady: ready,
+        privyUser,
+        currentUserId
+      })
+      alert('Please log in with Privy to create a post. Make sure you completed the signup process.')
       return
     }
 

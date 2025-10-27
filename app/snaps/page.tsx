@@ -28,6 +28,7 @@ import { X } from "lucide-react";
 import Stories from "../components/Story";
 import MyMentions from "../components/MyMentions";
 import { apiService } from "../lib/api";
+import Munch from "../components/Munch";
 
 function SocialFeedPageContent() {
   const [activeTab, setActiveTab] = useState<"FOR YOU" | "FOLLOWING">(
@@ -46,6 +47,8 @@ function SocialFeedPageContent() {
     | "search"
     | "shares"
     | "invite"
+    | "munch"
+    | "mentions"
   >("home");
   const [followingPosts, setFollowingPosts] = useState<any[]>([]);
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(false);
@@ -87,6 +90,8 @@ function SocialFeedPageContent() {
         "search",
         "shares",
         "invite",
+        "munch",
+        "mentions",
       ];
       if (validPages.includes(pageParam as any)) {
         setCurrentPage(pageParam as any);
@@ -138,6 +143,8 @@ function SocialFeedPageContent() {
         "search",
         "shares",
         "invite",
+        "munch",
+        "mentions",
       ];
       if (validPages.includes(targetPage as any)) {
         setCurrentPage(targetPage as any);
@@ -398,6 +405,10 @@ function SocialFeedPageContent() {
 
   const renderContent = () => {
     switch (currentPage) {
+      case "munch":
+        return <div className="w-full mx-auto">
+          <Munch />
+        </div>
       case "explore":
         return <div className="w-full  mt-6">
           <ExplorePage/>

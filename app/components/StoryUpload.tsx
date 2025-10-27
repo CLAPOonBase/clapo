@@ -122,13 +122,18 @@ const handleUpload = async () => {
     // Create story with uploaded URL
     await createStory(uploadResult.url, mediaType, caption || undefined);
 
-    // ✅ Close modal and refresh page
+    console.log('✅ Story created successfully!');
+
+    // Reset form and close modal
+    resetForm();
     onClose();
-    window.location.reload();  // <--- this forces full page refresh
+
+    // Story will appear automatically via useStories hook
 
   } catch (error) {
-    console.error('Failed to upload story:', error);
-    alert('Failed to upload story. Please try again.');
+    console.error('❌ Failed to upload story:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to upload story';
+    alert(`Failed to upload story: ${errorMessage}. Please try again.`);
   } finally {
     setUploading(false);
   }
