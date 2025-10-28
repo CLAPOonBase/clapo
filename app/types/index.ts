@@ -88,6 +88,7 @@ export type PageKey =
   | 'messages'
   | 'share'
   | 'mentions'
+  |'mention'
   |'munch';
 
   export type OpinionPageKey =

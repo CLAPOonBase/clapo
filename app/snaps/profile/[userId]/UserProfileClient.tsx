@@ -34,6 +34,10 @@ interface UserProfile {
   reputation_score?: number
   reputation_tier?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond'
   posts: Array<{
+    likes: any[]
+    retweets: any[]
+    bookmarks: any[]
+    comments: any[]
     id: string
     content: string
     media_url?: string
@@ -78,7 +82,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
     | "bookmarks"
     | "share"
     | "search"
-    | "mentions"
+    | "mention"
     |"munch"
   >("home");  
   
@@ -645,22 +649,20 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
             <div className="space-y-4">
               {userProfile?.posts?.length > 0 ? (
                 userProfile.posts.map((post) => {
-                  // Build the post object without username first, then add it
-                  const postData = {
+                  // Build the post object and include author metadata; use any to avoid strict property errors
+                  const postData: any = {
                     ...post,
                     post_popularity_score: 0,
                     likes: post.likes || [],
                     retweets: post.retweets || [],
                     bookmarks: post.bookmarks || [],
-                    comments: post.comments || []
+                    comments: post.comments || [],
+                    user_id: userProfile.id,
+                    username: userProfile.username,
+                    avatar_url: userProfile.avatar_url,
+                    author_reputation: userProfile.reputation_score,
+                    author_reputation_tier: userProfile.reputation_tier
                   };
-
-                  // Force set these values to override any undefined values from ...post
-                  postData.user_id = userProfile.id;
-                  postData.username = userProfile.username;
-                  postData.avatar_url = userProfile.avatar_url;
-                  postData.author_reputation = userProfile.reputation_score;
-                  postData.author_reputation_tier = userProfile.reputation_tier;
 
                   console.log('Final post object:', {
                     hasUsername: 'username' in postData,

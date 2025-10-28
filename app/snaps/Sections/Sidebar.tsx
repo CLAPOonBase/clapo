@@ -10,7 +10,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import SignInPage from "@/app/SignIn/page";
 import { SnapComposer } from "./SnapComposer";
 
-type PageKey = "home" | "wallet" | "explore" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks" | "munch";
+type PageKey = "home" | "wallet" | "explore" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks" | "munch" | "mention";
 
 type SidebarProps = {
   setCurrentPage: (page: PageKey) => void;
