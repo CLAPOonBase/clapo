@@ -8,7 +8,7 @@
  * For production, implement this on your backend server.
  */
 
-import { ethers } from 'ethers';
+import { ethers, formatEther } from 'ethers';
 
 // Contract ABI - You need to update this with your actual contract ABI
 const CONTRACT_ABI = [
@@ -35,13 +35,13 @@ export interface BlockchainEvent {
 }
 
 export class MonadEventListener {
-  private provider: ethers.providers.Provider;
+  private provider: ethers.Provider;
   private contract: ethers.Contract;
   private contractAddress: string = '0xdb61267b2b233A47bf56F551528CCB93f9788C6a';
 
   constructor(rpcUrl: string) {
     // Initialize provider for Monad network
-    this.provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+    this.provider = new ethers.JsonRpcProvider(rpcUrl);
 
     // Initialize contract
     this.contract = new ethers.Contract(
@@ -67,8 +67,8 @@ export class MonadEventListener {
           userAddress: buyer,
           tokenUuid: tokenUuid,
           amount: Number(amount),
-          pricePerToken: Number(ethers.utils.formatEther(pricePerToken)),
-          totalValue: Number(ethers.utils.formatEther(totalCost)),
+          pricePerToken: Number(formatEther(pricePerToken)),
+          totalValue: Number(formatEther(totalCost)),
           isFreebie: isFreebie,
           txHash: event.transactionHash,
           blockNumber: event.blockNumber,
@@ -92,8 +92,8 @@ export class MonadEventListener {
           userAddress: seller,
           tokenUuid: tokenUuid,
           amount: Number(amount),
-          pricePerToken: Number(ethers.utils.formatEther(pricePerToken)),
-          totalValue: Number(ethers.utils.formatEther(totalProceeds)),
+          pricePerToken: Number(formatEther(pricePerToken)),
+          totalValue: Number(formatEther(totalProceeds)),
           txHash: event.transactionHash,
           blockNumber: event.blockNumber,
           timestamp: block.timestamp,
@@ -135,8 +135,8 @@ export class MonadEventListener {
           userAddress: parsedEvent.args.buyer,
           tokenUuid: parsedEvent.args.tokenUuid,
           amount: Number(parsedEvent.args.amount),
-          pricePerToken: Number(ethers.utils.formatEther(parsedEvent.args.pricePerToken)),
-          totalValue: Number(ethers.utils.formatEther(parsedEvent.args.totalCost)),
+          pricePerToken: Number(formatEther(parsedEvent.args.pricePerToken)),
+          totalValue: Number(formatEther(parsedEvent.args.totalCost)),
           isFreebie: parsedEvent.args.isFreebie,
           txHash: event.transactionHash,
           blockNumber: event.blockNumber,
@@ -157,8 +157,8 @@ export class MonadEventListener {
           userAddress: parsedEvent.args.seller,
           tokenUuid: parsedEvent.args.tokenUuid,
           amount: Number(parsedEvent.args.amount),
-          pricePerToken: Number(ethers.utils.formatEther(parsedEvent.args.pricePerToken)),
-          totalValue: Number(ethers.utils.formatEther(parsedEvent.args.totalProceeds)),
+          pricePerToken: Number(formatEther(parsedEvent.args.pricePerToken)),
+          totalValue: Number(formatEther(parsedEvent.args.totalProceeds)),
           txHash: event.transactionHash,
           blockNumber: event.blockNumber,
           timestamp: block.timestamp,
