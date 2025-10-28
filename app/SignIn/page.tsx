@@ -4,16 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { X, ArrowLeft, ArrowRight, Check, Mail, AtSign, User, Hash, Users, Sparkles, Wallet, Camera, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { usePrivy } from '@privy-io/react-auth';
 
-type FlowState = 
-  | "initial" 
+type FlowState =
+  | "initial"
   | "choice"
-  | "individual-name-username"
-  | "individual-displayname"
-  | "individual-topics"
-  | "individual-follow"
-  | "community-id"
-  | "community-name"
-  | "community-type"
+  | "name-username"
+  | "displayname"
+  | "topics"
+  | "follow"
   | "success";
 
 const topics = [
@@ -37,15 +34,13 @@ const communityTypes = [
 
 function SignInPage() {
   const [flowState, setFlowState] = useState<FlowState>("initial");
+  const [accountType, setAccountType] = useState<'individual' | 'community'>('individual');
   const [formData, setFormData] = useState({
     name: "",
     username: "",
     displayName: "",
     topics: [] as string[],
-    following: [] as string[],
-    communityId: "",
-    communityName: "",
-    communityType: ""
+    following: [] as string[]
   });
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
@@ -66,7 +61,7 @@ function SignInPage() {
 
   // Update username when name changes
   useEffect(() => {
-    if (flowState === "individual-name-username" && formData.name) {
+    if (flowState === "name-username" && formData.name) {
       const generatedUsername = generateUsername(formData.name);
       setFormData(prev => ({ ...prev, username: generatedUsername }));
     }
@@ -164,13 +159,10 @@ function SignInPage() {
   const handleBack = () => {
     const backMap: Record<string, FlowState> = {
       "choice": "initial",
-      "individual-name-username": "choice",
-      "individual-displayname": "individual-name-username",
-      "individual-topics": "individual-displayname",
-      "individual-follow": "individual-topics",
-      "community-id": "choice",
-      "community-name": "community-id",
-      "community-type": "community-name"
+      "name-username": "choice",
+      "displayname": "name-username",
+      "topics": "displayname",
+      "follow": "topics"
     };
     setFlowState(backMap[flowState] || "initial");
   };
@@ -187,16 +179,14 @@ function SignInPage() {
     try {
       await logout();
       setFlowState("initial");
+      setAccountType('individual');
       // Clear all form data
       setFormData({
         name: "",
         username: "",
         displayName: "",
         topics: [],
-        following: [],
-        communityId: "",
-        communityName: "",
-        communityType: ""
+        following: []
       });
     } catch (error) {
       console.error("Privy logout error:", error);
@@ -228,8 +218,6 @@ function SignInPage() {
     setSubmitError(null);
 
     // Prepare complete profile data
-    const isIndividual = formData.username && !formData.communityId;
-
     const profileData: any = {
       // Privy Authentication Data
       privyId: user.id,
@@ -244,23 +232,14 @@ function SignInPage() {
       google: user.google?.email || null,
 
       // Metadata
-      accountType: isIndividual ? 'individual' : 'community',
+      accountType: accountType,
+
+      // User profile fields (same for both individual and community)
+      username: formData.username,
+      displayName: formData.displayName || null,
+      topics: formData.topics || [],
+      following: formData.following || []
     };
-
-    // Add individual-specific fields
-    if (isIndividual) {
-      profileData.username = formData.username;
-      profileData.displayName = formData.displayName || null;
-      profileData.topics = formData.topics || [];
-      profileData.following = formData.following || [];
-    }
-
-    // Add community-specific fields
-    if (!isIndividual && formData.communityId) {
-      profileData.communityId = formData.communityId;
-      profileData.communityName = formData.communityName;
-      profileData.communityType = formData.communityType || 'open';
-    }
 
     console.log("📦 Submitting profile data to API:", profileData);
 
@@ -314,13 +293,10 @@ function SignInPage() {
 
   const getStepInfo = () => {
     const stepMap: Record<string, string> = {
-      "individual-name-username": "Step 1 of 4",
-      "individual-displayname": "Step 2 of 4",
-      "individual-topics": "Step 3 of 4",
-      "individual-follow": "Final Step",
-      "community-id": "Step 1 of 3",
-      "community-name": "Step 2 of 3",
-      "community-type": "Step 3 of 3"
+      "name-username": "Step 1 of 4",
+      "displayname": "Step 2 of 4",
+      "topics": "Step 3 of 4",
+      "follow": "Final Step"
     };
     return stepMap[flowState] || "";
   };
@@ -356,10 +332,12 @@ function SignInPage() {
               <h2 className="text-3xl font-bold text-white mb-4">Join, Create & Connect</h2>
               <h1 className="text-4xl font-bold text-white mb-4">Welcome to Clapo</h1>
               <p className="text-gray-300 text-lg leading-relaxed max-w-md">
-                {flowState.includes("individual") 
-                  ? "Join as an individual to connect with the community"
-                  : flowState.includes("community")
-                  ? "Create and manage your own community space"
+                {flowState === "choice"
+                  ? "Choose your account type and get started"
+                  : flowState !== "initial" && flowState !== "success"
+                  ? accountType === 'community'
+                    ? "Create your community profile"
+                    : "Create your personal profile"
                   : "Connect your wallet and social accounts to unlock the full Web3 experience"}
               </p>
 
@@ -533,14 +511,17 @@ function SignInPage() {
               {flowState === "choice" && (
                 <div className="space-y-4 w-full">
                   <p className="text-gray-400 text-center mb-6">How would you like to join Clapo?</p>
-                  
+
                   <button
-                    onClick={() => setFlowState("individual-name-username")}
+                    onClick={() => {
+                      setAccountType('individual');
+                      setFlowState("name-username");
+                    }}
                     className="w-full p-6 bg-gray-700/30 hover:bg-gray-600/30 rounded-xl border border-gray-600/30 transition-all duration-200 text-left"
                   >
                     <div className="flex items-start gap-4">
-                      <div 
-                        className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" 
+                      <div
+                        className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
                         style={{
                           backgroundColor: "#6E54FF",
                           boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
@@ -556,12 +537,15 @@ function SignInPage() {
                   </button>
 
                   <button
-                    onClick={() => setFlowState("community-id")}
+                    onClick={() => {
+                      setAccountType('community');
+                      setFlowState("name-username");
+                    }}
                     className="w-full p-6 bg-gray-700/30 hover:bg-gray-600/30 rounded-xl border border-gray-600/30 transition-all duration-200 text-left"
                   >
                     <div className="flex items-start gap-4">
-                      <div 
-                        className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" 
+                      <div
+                        className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
                         style={{
                           backgroundColor: "#6E54FF",
                           boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
@@ -578,8 +562,8 @@ function SignInPage() {
                 </div>
               )}
 
-              {/* Individual Flow - Combined Name & Username */}
-              {flowState === "individual-name-username" && (
+              {/* Name & Username Flow */}
+              {flowState === "name-username" && (
                 <div className="space-y-6 w-full">
                   <div className="text-center mb-6">
                     <div 
@@ -655,7 +639,7 @@ function SignInPage() {
                   </div>
                   
                   <button
-                    onClick={() => setFlowState("individual-displayname")}
+                    onClick={() => setFlowState("displayname")}
                     disabled={!formData.name || !formData.username || usernameAvailable === false || checkingUsername}
                     className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     style={{
@@ -677,8 +661,8 @@ function SignInPage() {
                 </div>
               )}
 
-              {/* Individual Flow - Display Name */}
-              {flowState === "individual-displayname" && (
+              {/* Display Name Flow */}
+              {flowState === "displayname" && (
                 <div className="space-y-6 w-full">
                   <div className="text-center mb-6">
                     <div 
@@ -701,7 +685,7 @@ function SignInPage() {
                     placeholder="Your display name"
                   />
                   <button
-                    onClick={() => setFlowState("individual-topics")}
+                    onClick={() => setFlowState("topics")}
                     disabled={!formData.displayName}
                     className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     style={{
@@ -714,8 +698,8 @@ function SignInPage() {
                 </div>
               )}
 
-              {/* Individual Flow - Topics */}
-              {flowState === "individual-topics" && (
+              {/* Topics Flow */}
+              {flowState === "topics" && (
                 <div className="space-y-6 w-full">
                   <div className="text-center mb-6">
                     <div 
@@ -753,7 +737,7 @@ function SignInPage() {
                     {formData.topics.length} of 3 selected
                   </div>
                   <button
-                    onClick={() => setFlowState("individual-follow")}
+                    onClick={() => setFlowState("follow")}
                     disabled={formData.topics.length < 3}
                     className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     style={{
@@ -766,8 +750,8 @@ function SignInPage() {
                 </div>
               )}
 
-              {/* Individual Flow - Follow */}
-              {flowState === "individual-follow" && (
+              {/* Follow Flow */}
+              {flowState === "follow" && (
                 <div className="space-y-6 w-full">
                   <div className="text-center mb-6">
                     <div 
@@ -848,158 +832,6 @@ function SignInPage() {
                 </div>
               )}
 
-              {/* Community Flow - ID */}
-              {flowState === "community-id" && (
-                <div className="space-y-6 w-full">
-                  <div className="text-center mb-6">
-                    <div 
-                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" 
-                      style={{
-                        backgroundColor: "#6E54FF",
-                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                      }}
-                    >
-                      <Hash className="w-8 h-8 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Choose community ID</h2>
-                    <p className="text-gray-400 text-sm">Your unique community identifier</p>
-                  </div>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">#</span>
-                    <input
-                      type="text"
-                      value={formData.communityId}
-                      onChange={(e) => setFormData({ ...formData, communityId: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 bg-black border-2 border-gray-700/70 text-white rounded-xl focus:border-[#6E54FF]/50 focus:outline-none transition-all duration-200 placeholder:text-gray-500"
-                      placeholder="communityname"
-                    />
-                  </div>
-                  <button
-                    onClick={() => setFlowState("community-name")}
-                    disabled={!formData.communityId}
-                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    style={{
-                      backgroundColor: formData.communityId ? "#6E54FF" : "#6B7280",
-                      boxShadow: formData.communityId ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
-                    }}
-                  >
-                    Continue <ArrowRight className="w-4 h-4 ml-2" />
-                  </button>
-                </div>
-              )}
-
-              {/* Community Flow - Name */}
-              {flowState === "community-name" && (
-                <div className="space-y-6 w-full">
-                  <div className="text-center mb-6">
-                    <div 
-                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" 
-                      style={{
-                        backgroundColor: "#6E54FF",
-                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                      }}
-                    >
-                      <Users className="w-8 h-8 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Community name</h2>
-                    <p className="text-gray-400 text-sm">What should we call your community?</p>
-                  </div>
-                  <input
-                    type="text"
-                    value={formData.communityName}
-                    onChange={(e) => setFormData({ ...formData, communityName: e.target.value })}
-                    className="w-full px-4 py-3 bg-black border-2 border-gray-700/70 text-white rounded-xl focus:border-[#6E54FF]/50 focus:outline-none transition-all duration-200 placeholder:text-gray-500"
-                    placeholder="My Awesome Community"
-                  />
-                  <button
-                    onClick={() => setFlowState("community-type")}
-                    disabled={!formData.communityName}
-                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    style={{
-                      backgroundColor: formData.communityName ? "#6E54FF" : "#6B7280",
-                      boxShadow: formData.communityName ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
-                    }}
-                  >
-                    Continue <ArrowRight className="w-4 h-4 ml-2" />
-                  </button>
-                </div>
-              )}
-
-              {/* Community Flow - Type */}
-              {flowState === "community-type" && (
-                <div className="space-y-6 w-full">
-                  <div className="text-center mb-6">
-                    <div 
-                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" 
-                      style={{
-                        backgroundColor: "#6E54FF",
-                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                      }}
-                    >
-                      <Users className="w-8 h-8 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Community type</h2>
-                    <p className="text-gray-400 text-sm">Choose how you want to manage your community</p>
-                  </div>
-                  <div className="space-y-3">
-                    {communityTypes.map((type) => (
-                      <button
-                        key={type.id}
-                        onClick={() => setFormData({ ...formData, communityType: type.id })}
-                        className={`w-full p-4 rounded-xl border transition-all duration-200 text-left ${
-                          formData.communityType === type.id
-                            ? "border-[#6E54FF] bg-[#6E54FF]/10"
-                            : "border-gray-600/30 bg-gray-700/30 hover:bg-gray-600/30"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h3 className="text-white font-semibold mb-1">{type.name}</h3>
-                            <p className="text-gray-400 text-sm">{type.description}</p>
-                          </div>
-                          {formData.communityType === type.id && (
-                            <div 
-                              className="w-6 h-6 rounded-full flex items-center justify-center" 
-                              style={{
-                                backgroundColor: "#6E54FF",
-                                boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                              }}
-                            >
-                              <Check className="w-4 h-4 text-white" />
-                            </div>
-                          )}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                  {submitError && (
-                    <div className="p-4 bg-red-600/20 border border-red-600/50 rounded-xl">
-                      <p className="text-sm text-red-300">{submitError}</p>
-                    </div>
-                  )}
-                  <button
-                    onClick={handleComplete}
-                    disabled={!formData.communityType || isSubmitting}
-                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    style={{
-                      backgroundColor: formData.communityType && !isSubmitting ? "#6E54FF" : "#6B7280",
-                      boxShadow: formData.communityType && !isSubmitting ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
-                    }}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Creating Community...
-                      </>
-                    ) : (
-                      <>
-                        Complete Setup <Check className="w-4 h-4 ml-2" />
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
-
               {/* Success Screen */}
               {flowState === "success" && (
                 <div className="text-center space-y-6 w-full">
@@ -1023,7 +855,7 @@ function SignInPage() {
                   <div>
                     <h2 className="text-3xl font-bold text-white mb-3">Welcome to Clapo!</h2>
                     <p className="text-gray-400 text-lg mb-2">
-                      {formData.username ? `@${formData.username}` : `#${formData.communityId}`}
+                      @{formData.username}
                     </p>
                     <p className="text-gray-400">
                       You're all set to explore the ecosystem
@@ -1031,30 +863,18 @@ function SignInPage() {
                   </div>
                   <div className="p-6 bg-green-600/20 border-2 border-green-600/50 rounded-xl">
                     <p className="text-sm text-green-300 mb-4">
-                      🎉 Your account has been created successfully!
+                      🎉 Your {accountType === 'community' ? 'community' : 'account'} has been created successfully!
                     </p>
-                    {formData.username && (
-                      <div className="text-left space-y-2 text-sm text-gray-300">
-                        <p>• Name: {formData.name}</p>
-                        <p>• Display Name: {formData.displayName}</p>
-                        <p>• Following {formData.following.length} users</p>
-                        <p>• Interested in {formData.topics.length} topics</p>
-                        {user && (
-                          <p>• Connected: {user.email?.address || `${user.wallet?.address?.slice(0, 6)}...${user.wallet?.address?.slice(-4)}`}</p>
-                        )}
-                      </div>
-                    )}
-                    {formData.communityId && (
-                      <div className="text-left space-y-2 text-sm text-gray-300">
-                        <p>• Community ID: #{formData.communityId}</p>
-                        <p>• Name: {formData.communityName}</p>
-                        <p>• Type: {communityTypes.find(t => t.id === formData.communityType)?.name}</p>
-                        <p>• Ready to add members</p>
-                        {user && (
-                          <p>• Admin: {user.email?.address || `${user.wallet?.address?.slice(0, 6)}...${user.wallet?.address?.slice(-4)}`}</p>
-                        )}
-                      </div>
-                    )}
+                    <div className="text-left space-y-2 text-sm text-gray-300">
+                      <p>• Account Type: {accountType === 'community' ? 'Community' : 'Individual'}</p>
+                      <p>• Name: {formData.name}</p>
+                      <p>• Display Name: {formData.displayName}</p>
+                      <p>• Following {formData.following.length} users</p>
+                      <p>• Interested in {formData.topics.length} topics</p>
+                      {user && (
+                        <p>• Connected: {user.email?.address || `${user.wallet?.address?.slice(0, 6)}...${user.wallet?.address?.slice(-4)}`}</p>
+                      )}
+                    </div>
                   </div>
                   <button
                     onClick={() => {

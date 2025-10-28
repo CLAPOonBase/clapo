@@ -39,6 +39,7 @@ interface UserProfile {
   website?: string
   reputation_score?: number
   reputation_tier?: 'newcomer' | 'contributor' | 'veteran' | 'expert' | 'legend'
+  account_type?: 'individual' | 'community'
   recentPosts?: Array<{
     id: string
     media_url?: string
@@ -283,7 +284,7 @@ export function UserProfileHover({
                         alt={username}
                         width={56}
                         height={56}
-                        className="w-14 h-14 rounded-full border-2 border-gray-600"
+                        className={`w-14 h-14 border-2 border-gray-600 object-cover ${userProfile?.account_type === 'community' ? 'rounded-md' : 'rounded-full'}`}
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = '/4.png';

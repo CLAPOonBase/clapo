@@ -129,6 +129,7 @@ export interface ApiPost {
   post_popularity_score: number
   username: string
   avatar_url: string
+  account_type?: 'individual' | 'community'
   author_reputation?: number
   author_reputation_tier?: 'newcomer' | 'contributor' | 'veteran' | 'expert' | 'legend'
   likes?: Array<{

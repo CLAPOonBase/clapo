@@ -9,6 +9,7 @@ import { usePrivy } from "@privy-io/react-auth";
 // import SignInPage from "@/app/SignIn";
 import SignInPage from "@/app/SignIn/page";
 import { SnapComposer } from "./SnapComposer";
+import AccountInfo from "@/app/components/AccountInfo";
 
 type PageKey = "home" | "wallet" | "explore" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks" | "munch" | "mention";
 
@@ -510,7 +511,7 @@ const handleNavClick = (value: PageKey) => {
       onClick={() => setActiveDialog(null)}
     >
       <div onClick={(e) => e.stopPropagation()}>
-        {activeDialog === "x" && <SignInPage/>}
+        {activeDialog === "x" && (isLoggedIn ? <AccountInfo onClose={() => setActiveDialog(null)} /> : <SignInPage/>)}
         {activeDialog === "wallet" && <SignInPage/>}
         {activeDialog === "createPost" && <SnapComposer close={() => setActiveDialog(null)} />}
       </div>

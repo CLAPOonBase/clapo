@@ -92,14 +92,53 @@ export default function SnapCard({ post, liked, bookmarked, retweeted, onLike, o
 
   const authorReputation = ('author_reputation' in post) ? post.author_reputation : undefined
   const authorReputationTier = ('author_reputation_tier' in post) ? post.author_reputation_tier : undefined
+  const [accountType, setAccountType] = useState<'individual' | 'community' | undefined>(
+    ('account_type' in post) ? post.account_type : undefined
+  )
 
-  console.log('SnapCard computed:', {
-    postAuthor,
-    hasUsername: 'username' in post,
-    usernameValue: post.username,
-    postImage,
-    hasMediaUrl: 'media_url' in post
-  })
+  // Fetch account type if not provided by backend
+  useEffect(() => {
+    const fetchAccountType = async () => {
+      // Skip if we already have account_type from the post
+      if ('account_type' in post && post.account_type) {
+        setAccountType(post.account_type)
+        return
+      }
+
+      // Skip if no user_id
+      if (!('user_id' in post) || !post.user_id) return
+
+      const userId = post.user_id
+
+      // Check cache first
+      const cacheKey = `account_type_${userId}`
+      const cached = sessionStorage.getItem(cacheKey)
+      if (cached) {
+        setAccountType(cached as 'individual' | 'community')
+        return
+      }
+
+      // Fetch from API
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${userId}/profile/posts`)
+        const data = await response.json()
+        console.log('Fetched profile data for account type:', { userId, data })
+        if (data.profile?.account_type) {
+          const type = data.profile.account_type
+          console.log('Setting account type:', type)
+          setAccountType(type)
+          // Cache it
+          sessionStorage.setItem(cacheKey, type)
+        } else {
+          console.log('No account_type in profile data:', data.profile)
+        }
+      } catch (error) {
+        console.error('Failed to fetch account type:', error)
+      }
+    }
+
+    fetchAccountType()
+  }, [post])
   const getRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -508,7 +547,7 @@ const handleImageClick = (e: React.MouseEvent) => {
               avatarUrl={postAvatar}
               position="bottom"
             >
-              <div className="w-10 h-10 rounded-full overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={(e) => e.stopPropagation()}>
+              <div className={`w-10 h-10 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity ${accountType === 'community' ? 'rounded-md' : 'rounded-full'}`} onClick={(e) => e.stopPropagation()}>
                 {postAvatar ? (
                   <img
                     src={postAvatar}

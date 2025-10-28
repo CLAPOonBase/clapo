@@ -23,6 +23,7 @@ interface UserProfile {
   email: string
   bio: string
   avatar_url?: string
+  account_type?: 'individual' | 'community'
   created_at: string
   total_posts: number
   total_likes_given: number
@@ -483,7 +484,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
                     alt={userProfile.username}
                     width={80}
                     height={80}
-                    className="w-16 h-16 rounded-full border-2 border-gray-600"
+                    className={`w-16 h-16 border-2 border-gray-600 object-cover ${userProfile.account_type === 'community' ? 'rounded-md' : 'rounded-full'}`}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src = '/4.png';

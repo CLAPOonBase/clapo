@@ -30,7 +30,7 @@ import { apiService } from "../lib/api";
 import Munch from "../components/Munch";
 
 function SocialFeedPageContent() {
-  const [activeTab, setActiveTab] = useState<"FOR YOU" | "FOLLOWING">(
+  const [activeTab, setActiveTab] = useState<"FOR YOU" | "FOLLOWING" | "COMMUNITY">(
     "FOR YOU"
   );
   const [currentPage, setCurrentPage] = useState<
@@ -50,6 +50,8 @@ function SocialFeedPageContent() {
   >("home");
   const [followingPosts, setFollowingPosts] = useState<any[]>([]);
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(false);
+  const [communityPosts, setCommunityPosts] = useState<any[]>([]);
+  const [isLoadingCommunity, setIsLoadingCommunity] = useState(false);
   const [topUsers, setTopUsers] = useState<any[]>([]);
   const [isLoadingTopUsers, setIsLoadingTopUsers] = useState(false);
 
@@ -249,6 +251,75 @@ function SocialFeedPageContent() {
     }
   };
 
+  const loadCommunityFeed = async () => {
+    const userId = session?.dbUser?.id || currentUserId;
+    console.log("🔍 loadCommunityFeed called with userId:", userId);
+
+    if (!userId || isLoadingCommunity) {
+      console.log("❌ Cannot load community feed - no userId or already loading");
+      return;
+    }
+
+    setIsLoadingCommunity(true);
+    try {
+      console.log("📡 Fetching community feed...");
+
+      // Get all unique user IDs from posts
+      const userIds = [...new Set(state.posts.posts.map((post: any) => post.user_id).filter(Boolean))];
+      console.log("👥 Found unique user IDs:", userIds.length);
+
+      // Fetch account types for all users (with caching)
+      const accountTypes: Record<string, string> = {};
+      await Promise.all(
+        userIds.map(async (uid: string) => {
+          const cacheKey = `account_type_${uid}`;
+          const cached = sessionStorage.getItem(cacheKey);
+
+          if (cached) {
+            console.log(`📦 Using cached account type for ${uid}:`, cached);
+            accountTypes[uid] = cached;
+          } else {
+            try {
+              const url = `${process.env.NEXT_PUBLIC_API_URL}/users/${uid}/profile/posts`;
+              console.log(`🌐 Fetching account type from:`, url);
+              const response = await fetch(url);
+              const data = await response.json();
+              console.log(`📥 Response for user ${uid}:`, data);
+
+              if (data.profile?.account_type) {
+                accountTypes[uid] = data.profile.account_type;
+                sessionStorage.setItem(cacheKey, data.profile.account_type);
+                console.log(`✅ Set account type for ${uid}:`, data.profile.account_type);
+              } else {
+                console.warn(`⚠️ No account_type found for user ${uid}. Profile data:`, data.profile);
+              }
+            } catch (error) {
+              console.error(`❌ Failed to fetch account type for user ${uid}:`, error);
+            }
+          }
+        })
+      );
+
+      console.log("✅ All fetched account types:", accountTypes);
+
+      // Filter posts where user's account_type is 'community'
+      const filteredPosts = state.posts.posts.filter((post: any) => {
+        return accountTypes[post.user_id] === 'community';
+      }).sort((a, b) => {
+        const dateA = new Date(a.created_at).getTime();
+        const dateB = new Date(b.created_at).getTime();
+        return dateB - dateA; // Sort by newest first
+      });
+
+      console.log("🏢 Community posts found:", filteredPosts.length);
+      setCommunityPosts(filteredPosts);
+    } catch (error) {
+      console.error("❌ Failed to load community feed:", error);
+    } finally {
+      setIsLoadingCommunity(false);
+    }
+  };
+
   // Fetch top 5 users by reputation (with fallback to recent users)
   useEffect(() => {
     const fetchTopUsers = async () => {
@@ -371,10 +442,12 @@ function SocialFeedPageContent() {
     fetchTopUsers();
   }, [state.posts.posts]);
 
-  const handleTabChange = (tab: "FOR YOU" | "FOLLOWING") => {
+  const handleTabChange = (tab: "FOR YOU" | "FOLLOWING" | "COMMUNITY") => {
     setActiveTab(tab);
     if (tab === "FOLLOWING") {
       loadFollowingFeed();
+    } else if (tab === "COMMUNITY") {
+      loadCommunityFeed();
     }
   };
 
@@ -591,53 +664,103 @@ function SocialFeedPageContent() {
                           )}
                         </div>
                       )
-                    ) : isLoadingFollowing ? (
-                      <div className="space-y-4">
-                        {[...Array(3)].map((_, i) => (
-                          <PostSkeleton key={i} />
-                        ))}
-                      </div>
-                    ) : followingPosts.length > 0 ? (
-                      followingPosts.map((post) => (
-                        <SnapCard
-                          key={post.id}
-                          post={post}
-                          liked={liked.has(parseInt(post.id))}
-                          bookmarked={bookmarked.has(parseInt(post.id))}
-                          retweeted={retweeted.has(parseInt(post.id))}
-                          onLike={(id) =>
-                            setLiked(
-                              toggleSet(
-                                liked,
-                                typeof id === "string" ? parseInt(id) : id
+                    ) : activeTab === "FOLLOWING" ? (
+                      isLoadingFollowing ? (
+                        <div className="space-y-4">
+                          {[...Array(3)].map((_, i) => (
+                            <PostSkeleton key={i} />
+                          ))}
+                        </div>
+                      ) : followingPosts.length > 0 ? (
+                        followingPosts.map((post) => (
+                          <SnapCard
+                            key={post.id}
+                            post={post}
+                            liked={liked.has(parseInt(post.id))}
+                            bookmarked={bookmarked.has(parseInt(post.id))}
+                            retweeted={retweeted.has(parseInt(post.id))}
+                            onLike={(id) =>
+                              setLiked(
+                                toggleSet(
+                                  liked,
+                                  typeof id === "string" ? parseInt(id) : id
+                                )
                               )
-                            )
-                          }
-                          onBookmark={(id) =>
-                            setBookmarked(
-                              toggleSet(
-                                bookmarked,
-                                typeof id === "string" ? parseInt(id) : id
+                            }
+                            onBookmark={(id) =>
+                              setBookmarked(
+                                toggleSet(
+                                  bookmarked,
+                                  typeof id === "string" ? parseInt(id) : id
+                                )
                               )
-                            )
-                          }
-                          onRetweet={(id) =>
-                            setRetweeted(
-                              toggleSet(
-                                retweeted,
-                                typeof id === "string" ? parseInt(id) : id
+                            }
+                            onRetweet={(id) =>
+                              setRetweeted(
+                                toggleSet(
+                                  retweeted,
+                                  typeof id === "string" ? parseInt(id) : id
+                                )
                               )
-                            )
-                          }
-                        />
-                      ))
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        {(status === "authenticated" || privyAuthenticated)
-                          ? "No posts from people you follow yet. Try following some users!"
-                          : "Sign in to see posts"}
-                      </div>
-                    )}
+                            }
+                          />
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          {(status === "authenticated" || privyAuthenticated)
+                            ? "No posts from people you follow yet. Try following some users!"
+                            : "Sign in to see posts"}
+                        </div>
+                      )
+                    ) : activeTab === "COMMUNITY" ? (
+                      isLoadingCommunity ? (
+                        <div className="space-y-4">
+                          {[...Array(3)].map((_, i) => (
+                            <PostSkeleton key={i} />
+                          ))}
+                        </div>
+                      ) : communityPosts.length > 0 ? (
+                        communityPosts.map((post) => (
+                          <SnapCard
+                            key={post.id}
+                            post={post}
+                            liked={liked.has(parseInt(post.id))}
+                            bookmarked={bookmarked.has(parseInt(post.id))}
+                            retweeted={retweeted.has(parseInt(post.id))}
+                            onLike={(id) =>
+                              setLiked(
+                                toggleSet(
+                                  liked,
+                                  typeof id === "string" ? parseInt(id) : id
+                                )
+                              )
+                            }
+                            onBookmark={(id) =>
+                              setBookmarked(
+                                toggleSet(
+                                  bookmarked,
+                                  typeof id === "string" ? parseInt(id) : id
+                                )
+                              )
+                            }
+                            onRetweet={(id) =>
+                              setRetweeted(
+                                toggleSet(
+                                  retweeted,
+                                  typeof id === "string" ? parseInt(id) : id
+                                )
+                              )
+                            }
+                          />
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          {(status === "authenticated" || privyAuthenticated)
+                            ? "No community posts yet. Community accounts will appear here!"
+                            : "Sign in to see posts"}
+                        </div>
+                      )
+                    ) : null}
                   </motion.div>
                 </AnimatePresence>
               </div>

@@ -1,6 +1,7 @@
 import { MessageCircle, Search, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useApi } from '../Context/ApiProvider';
 
 interface DMSectionProps {
   state: any;
@@ -27,7 +28,9 @@ export const DMSection = ({
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [friends, setFriends] = useState<Set<string>>(new Set());
   const [avatarErrors, setAvatarErrors] = useState<Set<string>>(new Set());
+  const [followingList, setFollowingList] = useState<Set<string>>(new Set());
   const router = useRouter();
+  const { followUser, getUserFollowing } = useApi();
 
   const handleUserClick = (userId: string) => {
     const currentState = {
@@ -40,10 +43,50 @@ export const DMSection = ({
     router.push(`/snaps/profile/${userId}`);
   };
 
+  // Fetch following list
+  useEffect(() => {
+    const fetchFollowing = async () => {
+      if (!currentUserId) return;
+
+      try {
+        const response = await getUserFollowing(currentUserId, 1000, 0);
+        console.log('📋 getUserFollowing response:', response);
+
+        if (response?.following) {
+          const followingIds = new Set<string>(
+            response.following.map((user: any) => {
+              // following_id is the actual user ID being followed, not the relationship ID
+              const id = String(user.following_id || user.user_id || user.id);
+              console.log('📋 Processing following user:', {
+                username: user.username,
+                relationshipId: user.id,
+                actualUserId: user.following_id,
+                extractedId: id
+              });
+              return id;
+            })
+          );
+          setFollowingList(followingIds);
+          console.log('📋 Following list loaded (count):', followingIds.size);
+          console.log('📋 Following list IDs:', Array.from(followingIds));
+        } else {
+          console.log('📋 No following list in response');
+        }
+      } catch (error) {
+        console.error('❌ Failed to fetch following list:', error);
+      }
+    };
+
+    if (currentUserId) {
+      fetchFollowing();
+    }
+  }, [currentUserId, getUserFollowing]);
+
   useEffect(() => {
     const fetchFriends = async () => {
       try {
-        const response = await fetch('http://server.blazeswap.io/api/snaps/friends');
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps';
+        const response = await fetch(`${apiUrl}/friends`);
         const data = await response.json();
         if (data.friends) {
           const friendIds = new Set<string>(data.friends.map((friend: any) => String(friend.id)));
@@ -80,18 +123,29 @@ export const DMSection = ({
     setLoadingSearch(true);
     setShowSearchResults(true);
     try {
-      const response = await fetch(
-        `http://server.blazeswap.io/api/snaps/users/search?q=${encodeURIComponent(query)}`
-      );
+      console.log('🔍 Searching for users with query:', query);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps';
+      const searchUrl = `${apiUrl}/users/search?q=${encodeURIComponent(query)}`;
+      console.log('🔍 Search URL:', searchUrl);
+
+      const response = await fetch(searchUrl);
       const data = await response.json();
+
+      console.log('🔍 Search API response:', data);
+      console.log('🔍 Current user ID:', currentUserId);
+
       if (data.users && currentUserId) {
         const filteredUsers = data.users.filter((user: any) =>
           user.id !== currentUserId && user.id !== String(currentUserId)
         );
+        console.log('🔍 Filtered users:', filteredUsers.length);
         setSearchResults(filteredUsers);
+      } else if (data.users) {
+        console.log('🔍 No currentUserId, showing all users:', data.users.length);
+        setSearchResults(data.users);
       }
     } catch (error) {
-      console.error('Failed to search users:', error);
+      console.error('❌ Failed to search users:', error);
       setSearchResults([]);
     } finally {
       setLoadingSearch(false);
@@ -143,7 +197,8 @@ export const DMSection = ({
   const handleAddFriend = async (userId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const response = await fetch('http://server.blazeswap.io/api/snaps/friends/add', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps';
+      const response = await fetch(`${apiUrl}/friends/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ friendId: userId })
@@ -156,14 +211,80 @@ export const DMSection = ({
     }
   };
 
+  // Handle follow user
+  const handleFollowUser = async (userId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!currentUserId) {
+      console.error('❌ Cannot follow: currentUserId is not set');
+      return;
+    }
+
+    try {
+      console.log('🔄 Attempting to follow user:', { userId, currentUserId });
+      const result = await followUser(userId, { userId: currentUserId });
+      console.log('✅ Follow API response:', result);
+
+      // Add to following list locally
+      setFollowingList(prev => {
+        const newSet = new Set(prev);
+        newSet.add(userId);
+        console.log('✅ Updated following list:', Array.from(newSet));
+        return newSet;
+      });
+
+      // Refresh the following list from server to ensure accuracy
+      const response = await getUserFollowing(currentUserId, 1000, 0);
+      if (response?.following) {
+        const followingIds = new Set<string>(
+          response.following.map((user: any) => String(user.following_id || user.user_id || user.id))
+        );
+        setFollowingList(followingIds);
+        console.log('✅ Refreshed following list from server (count):', followingIds.size);
+        console.log('✅ Refreshed following list IDs:', Array.from(followingIds));
+      }
+    } catch (error) {
+      console.error('❌ Failed to follow user:', error);
+    }
+  };
+
   // Unified User Search Card Component
   const UserSearchCard = ({ user }: { user: any }) => {
     const isFriend = friends.has(user.id);
-    
+    const isFollowing = followingList.has(user.id);
+
+    // Debug logging for each user card
+    console.log('🔍 UserSearchCard check:', {
+      username: user.username,
+      userId: user.id,
+      isFollowing,
+      followingListSize: followingList.size,
+      followingListSample: Array.from(followingList).slice(0, 3)
+    });
+
+    const handleCardClick = () => {
+      console.log('🖱️ User card clicked:', {
+        username: user.username,
+        userId: user.id,
+        isFollowing,
+        willStartChat: isFollowing
+      });
+
+      if (isFollowing) {
+        console.log('✅ User is followed, starting chat...');
+        onStartChat(user);
+      } else {
+        console.log('⚠️ User is not followed, cannot start chat');
+      }
+    };
+
     return (
       <div
-        onClick={() => onStartChat(user)}
-        className="w-full p-4 rounded-xl bg-slate-700/30 border border-slate-600/30 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500/50 hover:text-white cursor-pointer transition-all duration-200"
+        onClick={handleCardClick}
+        className={`w-full p-4 rounded-xl bg-slate-700/30 border border-slate-600/30 text-slate-300 transition-all duration-200 ${
+          isFollowing
+            ? 'hover:bg-slate-700/50 hover:border-slate-500/50 hover:text-white cursor-pointer'
+            : 'cursor-default opacity-75'
+        }`}
       >
         {/* Header Section */}
         <div className="flex items-center space-x-3 mb-3">
@@ -198,17 +319,23 @@ export const DMSection = ({
 
         {/* Footer Section */}
         <div className="flex items-center justify-between">
-          <div className="text-xs text-slate-400">
-            Click to start conversation
-          </div>
-          
+          {isFollowing ? (
+            <div className="text-xs text-slate-400">
+              Click to start conversation
+            </div>
+          ) : (
+            <div className="text-xs text-amber-400 font-medium">
+              Follow {user.username} to start chat !!
+            </div>
+          )}
+
           {/* Action Button */}
-          {!isFriend && (
+          {!isFollowing && (
             <button
-              onClick={(e) => handleAddFriend(user.id, e)}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-all duration-200 min-w-[100px]"
+              onClick={(e) => handleFollowUser(user.id, e)}
+              className="px-4 py-2 bg-[#6e54ff] hover:bg-[#5940CC] text-white text-sm font-medium rounded-lg transition-all duration-200 min-w-[100px]"
             >
-              Add Friend
+              Follow
             </button>
           )}
         </div>
