@@ -402,7 +402,7 @@ export function ProfilePage({ user, posts }: Props) {
                     alt={profile.username}
                     width={80}
                     height={80}
-                    className="w-16 h-16 rounded-full border-2 border-gray-600"
+                    className={`w-16 h-16 border-2 border-gray-600 object-cover ${profile.account_type === 'community' ? 'rounded-md' : 'rounded-full'}`}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src = '/4.png';

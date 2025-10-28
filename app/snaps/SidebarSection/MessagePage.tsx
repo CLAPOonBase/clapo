@@ -56,10 +56,20 @@ export default function MessagePage() {
   }, [privyAuthenticated, privyUser, privyReady]);
 
   const handleStartChatWithUser = async (user: { id: string; username: string }) => {
-    if (!currentUserId) return
+    if (!currentUserId) {
+      console.error('❌ Cannot start chat: currentUserId is not set');
+      return;
+    }
+
+    console.log('💬 Starting chat with user:', { username: user.username, userId: user.id, currentUserId });
 
     try {
-      const response = await fetch('http://server.blazeswap.io/api/snaps/messages/direct-thread', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps';
+      const url = `${apiUrl}/messages/direct-thread`;
+
+      console.log('💬 Creating thread via:', url);
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -70,19 +80,28 @@ export default function MessagePage() {
         }),
       })
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Thread creation failed with status:', response.status, errorText);
+        return;
+      }
+
       const threadResponse = await response.json()
+      console.log('💬 Thread creation response:', threadResponse);
 
       const thread = threadResponse?.thread || threadResponse?.data?.thread || threadResponse?.data || threadResponse
 
       if (thread && thread.id) {
+        console.log('✅ Thread created/found:', thread.id);
         setSelectedThread(thread.id)
         await getThreadMessages(thread.id)
         await getMessageThreads(currentUserId)
         setDmSection('threads')
         // On mobile, show chat view when a thread is selected
         setMobileView('chat')
+        console.log('✅ Chat view activated');
       } else {
-        console.error('❌ Thread creation failed - no thread in response')
+        console.error('❌ Thread creation failed - no thread in response:', threadResponse)
       }
     } catch (error) {
       console.error('❌ Failed to start chat with user:', error)

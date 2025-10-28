@@ -144,6 +144,7 @@ export interface UserProfile {
   bio: string
   avatarUrl: string
   avatar_url: string
+  account_type?: 'individual' | 'community'
   createdAt: string
   followerCount: number
   followingCount: number
