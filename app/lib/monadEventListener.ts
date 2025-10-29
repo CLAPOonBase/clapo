@@ -2,7 +2,7 @@
  * Monad Blockchain Event Listener Service
  *
  * This service listens to buy/sell events from the Monad contract
- * Contract Address: 0xdb61267b2b233A47bf56F551528CCB93f9788C6a
+ * Contract Address: 0xcaC4DF2Bd3723CEA847e1AE07F37Fb4B33c6Cb61
  *
  * NOTE: This is a frontend reference implementation.
  * For production, implement this on your backend server.
@@ -37,7 +37,7 @@ export interface BlockchainEvent {
 export class MonadEventListener {
   private provider: ethers.Provider;
   private contract: ethers.Contract;
-  private contractAddress: string = '0xdb61267b2b233A47bf56F551528CCB93f9788C6a';
+  private contractAddress: string = '0xcaC4DF2Bd3723CEA847e1AE07F37Fb4B33c6Cb61';
 
   constructor(rpcUrl: string) {
     // Initialize provider for Monad network

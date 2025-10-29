@@ -1,5 +1,5 @@
 /**
- * Contract configuration for deployed contracts on Monad testnet
+ * Contract configuration for deployed contracts on Base Sepolia
  * This file contains the verified contract addresses to avoid RPC calls for validation
  */
 
@@ -11,35 +11,43 @@ export interface ContractConfig {
 }
 
 export const CONTRACT_CONFIG: { [key: string]: ContractConfig } = {
-  // MockUSDC (existing contract)
+  // MockUSDC (deployed on Base Sepolia)
   MOCK_USDC: {
-    address: "0x44aAAEeC1A83c30Fe5784Af49E6a38D3709Ee148",
+    address: "0xCADCa295a223E3DA821a243520df8e2a302C9840",
     isDeployed: true,
-    network: "monad_testnet",
+    network: "base_sepolia",
     lastVerified: "2024-01-15T10:00:00Z"
   },
 
-  // RewardPool (newly deployed)
+  // RewardPool (deployed on Base Sepolia)
   REWARD_POOL: {
-    address: "0xF942be9969AE075594372c8e3f002Fa05b40D186",
+    address: "0x07056D9a61A7894BD2c8494EDB0a78451F1fA7c8",
     isDeployed: true,
-    network: "monad_testnet",
+    network: "base_sepolia",
     lastVerified: "2024-01-15T10:00:00Z"
   },
 
-  // CreatorToken (newly deployed)
+  // CreatorToken (deployed on Base Sepolia)
   CREATOR_TOKEN: {
-    address: "0xCe2415A6790756CCBd1890466F8f83767193A23C",
+    address: "0xDfd05ed372C5eD9f7aaD54A5A2d5A5c94a99f5fb",
     isDeployed: true,
-    network: "monad_testnet",
+    network: "base_sepolia",
     lastVerified: "2024-01-15T10:00:00Z"
   },
 
-  // PostToken (newly deployed)
+  // PostToken (deployed on Base Sepolia)
   POST_TOKEN: {
-    address: "0xdb61267b2b233A47bf56F551528CCB93f9788C6a",
+    address: "0xcaC4DF2Bd3723CEA847e1AE07F37Fb4B33c6Cb61",
     isDeployed: true,
-    network: "monad_testnet",
+    network: "base_sepolia",
+    lastVerified: "2024-01-15T10:00:00Z"
+  },
+
+  // OpinioMarket (deployed on Base Sepolia)
+  OPINIO_MARKET: {
+    address: "0xF9A911bD8f2e2beCC18781ed467653bb2F515de5",
+    isDeployed: true,
+    network: "base_sepolia",
     lastVerified: "2024-01-15T10:00:00Z"
   }
 };
@@ -93,7 +101,7 @@ export function validateContractConfig(key: string): boolean {
   // Check if address is valid (starts with 0x and has correct length)
   const isValidAddress = /^0x[a-fA-F0-9]{40}$/.test(config.address);
   
-  return isValidAddress && config.isDeployed && config.network === "monad_testnet";
+  return isValidAddress && config.isDeployed && config.network === "base_sepolia";
 }
 
 /**

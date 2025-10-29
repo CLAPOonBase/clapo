@@ -24,7 +24,7 @@ const UserDetails = () => {
   });
 
   // Your Mock USDC token address
-  const MOCK_USDC_TOKEN_ADDRESS = "0x44aAAEeC1A83c30Fe5784Af49E6a38D3709Ee148";
+  const MOCK_USDC_TOKEN_ADDRESS = "0xCADCa295a223E3DA821a243520df8e2a302C9840";
 
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;

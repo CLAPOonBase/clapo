@@ -42,8 +42,8 @@ const CREATOR_TOKEN_ABI = [
 ];
 
 // Contract addresses from deployment
-const CREATOR_TOKEN_ADDRESS = "0xCe2415A6790756CCBd1890466F8f83767193A23C"; // Creator Token contract deployed on Monad testnet
-const MOCK_USDC_ADDRESS = "0x44aAAEeC1A83c30Fe5784Af49E6a38D3709Ee148";
+const CREATOR_TOKEN_ADDRESS = "0xDfd05ed372C5eD9f7aaD54A5A2d5A5c94a99f5fb";
+const MOCK_USDC_ADDRESS = "0xCADCa295a223E3DA821a243520df8e2a302C9840";
 
 // ERC20 ABI for USDC approval
 const ERC20_ABI = [

@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 
 // Contract addresses
 const SNAPS_SHARES_ADDRESS = '0xc5CB9f650f99941A8bF9947824A6Ae48Bb957f89';
-const MOCK_USDC_ADDRESS = '0x44aAAEeC1A83c30Fe5784Af49E6a38D3709Ee148';
+const MOCK_USDC_ADDRESS = '0xCADCa295a223E3DA821a243520df8e2a302C9840';
 
 // Contract ABI (simplified for the interface)
 const SNAPS_SHARES_ABI = [

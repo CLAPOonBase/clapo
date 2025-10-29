@@ -45,8 +45,8 @@ const CONTRACT_ABI = [
   "event PostTokensSold(uint256 indexed postId, address indexed seller, uint256 amount, uint256 payout, bool isFreebie, uint256 transactionId)"
 ];
 
-const CONTRACT_ADDRESS = "0xdb61267b2b233A47bf56F551528CCB93f9788C6a"; // Post Token contract deployed on Monad testnet
-const MOCK_USDC_ADDRESS = "0x44aAAEeC1A83c30Fe5784Af49E6a38D3709Ee148";
+const CONTRACT_ADDRESS = "0xcaC4DF2Bd3723CEA847e1AE07F37Fb4B33c6Cb61";
+const MOCK_USDC_ADDRESS = "0xCADCa295a223E3DA821a243520df8e2a302C9840";
 
 // ERC20 ABI for USDC approval
 const ERC20_ABI = [
