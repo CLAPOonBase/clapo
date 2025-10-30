@@ -1,8 +1,11 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { X, Copy, Share, ArrowLeft } from 'lucide-react'
+import { X, Copy, Share, ArrowLeft, Gift } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useSession } from 'next-auth/react'
+import { usePrivy } from '@privy-io/react-auth'
+import { AccessTokenManager } from '@/app/components/AccessTokenManager'
 
 interface InviteCode {
   id: string
@@ -16,8 +19,78 @@ export default function InvitePage() {
   const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([])
   const [totalCodes] = useState(50)
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [currentUsername, setCurrentUsername] = useState<string | null>(null)
+  const [hasCreatorToken, setHasCreatorToken] = useState(false)
+  const [isLoadingUser, setIsLoadingUser] = useState(true)
 
-  // Generate invite codes on component mount
+  const { data: session, status } = useSession()
+  const { authenticated: privyAuthenticated, user: privyUser, ready: privyReady } = usePrivy()
+
+  // Get current user data
+  useEffect(() => {
+    const getUserData = async () => {
+      setIsLoadingUser(true)
+
+      // Handle NextAuth session
+      if (status === 'authenticated' && session?.dbUser?.id) {
+        setCurrentUserId(session.dbUser.id)
+        setCurrentUsername(session.dbUser.username || 'User')
+        await checkForCreatorToken(session.dbUser.id)
+        setIsLoadingUser(false)
+        return
+      }
+
+      // Handle Privy authentication
+      if (privyAuthenticated && privyUser && privyReady) {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${privyUser.id}`
+          )
+          const data = await response.json()
+
+          if (data.exists && data.user?.id) {
+            setCurrentUserId(data.user.id)
+            setCurrentUsername(data.user.username || 'User')
+            await checkForCreatorToken(data.user.id)
+          }
+        } catch (error) {
+          console.error('Error fetching Privy user:', error)
+        }
+        setIsLoadingUser(false)
+        return
+      }
+
+      if (status === 'unauthenticated' && !privyAuthenticated) {
+        setIsLoadingUser(false)
+      }
+    }
+
+    getUserData()
+  }, [session, status, privyAuthenticated, privyUser, privyReady])
+
+  // Check if user has created a creator token
+  const checkForCreatorToken = async (userId: string) => {
+    try {
+      // Import the tokenApiService
+      const { tokenApiService } = await import('@/app/lib/tokenApi')
+      const { generateCreatorTokenUUID } = await import('@/app/lib/uuid')
+
+      const creatorTokenUuid = generateCreatorTokenUUID(userId)
+
+      // Try to get the creator token stats
+      const response = await tokenApiService.getAccessTokenStats(creatorTokenUuid)
+
+      if (response.success && response.data) {
+        setHasCreatorToken(true)
+      }
+    } catch (error) {
+      console.log('User has not created a creator token yet')
+      setHasCreatorToken(false)
+    }
+  }
+
+  // Generate invite codes on component mount (fallback for users without creator tokens)
   useEffect(() => {
     const generateCodes = () => {
       const codes: InviteCode[] = []
@@ -71,112 +144,76 @@ export default function InvitePage() {
   const usedCodes = inviteCodes.filter(code => code.isUsed).length
   const availableCodes = totalCodes - usedCodes
 
+  // Loading state
+  if (isLoadingUser) {
+    return (
+      <div className="w-full text-white p-4 md:p-6">
+        <div className="bg-black border border-gray-800 rounded-2xl p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-6 bg-gray-800 rounded w-1/3"></div>
+            <div className="h-4 bg-gray-800 rounded w-2/3"></div>
+            <div className="h-4 bg-gray-800 rounded w-1/2"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="w-full text-white">
       {/* Content */}
       <div className="p-4 md:p-6">
-        {/* Stats Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-black border-2 border-gray-700/70 rounded-xl p-6 mb-6 shadow-custom"
-        >
-          <h2 className="text-xl font-semibold text-white mb-2">
-            You have {availableCodes} invites as an early user!
-          </h2>
-          <p className="text-gray-400 text-sm mb-4">
-            So far {usedCodes} have been used.
-          </p>
-          <p className="text-gray-300 text-sm">
-            Invite friends to use Clapo with the below invitation codes.
-            You'll earn extra points when they sign up.
-          </p>
-        </motion.div>
-
-        {/* Invite Codes List */}
-        <div className="space-y-3">
-          {inviteCodes.map((invite, index) => (
-            <motion.div
-              key={invite.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.02 }}
-              className={`
-                flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-200
-                ${invite.isUsed
-                  ? 'bg-black/30 border-gray-700/50 opacity-60'
-                  : 'bg-black border-gray-700/70 hover:border-[#6E54FF]/50 hover:bg-[#1A1A1A]'
-                }
-              `}
-            >
-              <div className="flex items-center space-x-4 flex-1">
-                <div className="font-mono text-base tracking-wider">
-                  {invite.isUsed ? (
-                    <span className="line-through text-gray-500">{invite.code}</span>
-                  ) : (
-                    <span className="text-white">{invite.code}</span>
-                  )}
-                </div>
-                {invite.isUsed && (
-                  <span className="text-xs font-medium text-red-400 bg-red-900/30 px-3 py-1 rounded-full">
-                    Used
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => handleCopyCode(invite.code)}
-                  disabled={invite.isUsed}
-                  className={`
-                    p-2 rounded-lg transition-colors
-                    ${invite.isUsed
-                      ? 'text-gray-600 cursor-not-allowed'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
-                    }
-                  `}
-                  title="Copy code"
-                >
-                  <Copy className="w-4 h-4" />
-                </button>
-
-                <button
-                  onClick={() => handleShareCode(invite.code)}
-                  disabled={invite.isUsed}
-                  className={`
-                    px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
-                    ${invite.isUsed
-                      ? 'bg-gray-700/30 text-gray-600 cursor-not-allowed'
-                      : ''
-                    }
-                  `}
-                  style={!invite.isUsed ? {
-                    backgroundColor: "#6E54FF",
-                    boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                  } : {}}
-                >
-                  <div className="flex items-center space-x-2">
-                    <Share className="w-4 h-4" />
-                    <span>Share</span>
-                  </div>
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Copy Success Message */}
-        {copiedCode && (
+        {hasCreatorToken && currentUserId && currentUsername ? (
+          // Show AccessTokenManager if user has created a creator token
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-[#6E54FF] text-white px-6 py-3 rounded-xl text-sm font-medium shadow-lg border-2 border-gray-700/70"
-            style={{
-              boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-            }}
+            className="space-y-4"
           >
-            Code copied to clipboard!
+            {/* Header Stats Card */}
+            <div className="bg-black border border-gray-800 rounded-2xl p-6">
+              <h2 className="text-xl font-semibold text-white mb-2">
+                Your Creator Share Access Tokens
+              </h2>
+              <p className="text-gray-400 text-sm mb-3">
+                Share these access tokens with your friends to give them free access to your creator share.
+              </p>
+              <p className="text-gray-400 text-sm">
+                Invite friends to use Clapo with the below invitation codes. You'll earn extra points when they sign up.
+              </p>
+            </div>
+
+            {/* Access Token Manager */}
+            <AccessTokenManager
+              userId={currentUserId}
+              username={currentUsername}
+              isOwnProfile={true}
+            />
+          </motion.div>
+        ) : (
+          // Show message if user hasn't created a creator token
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-black border border-gray-800 rounded-2xl p-8 text-center"
+          >
+            <div className="flex flex-col items-center space-y-4">
+              <div className="w-16 h-16 bg-[#6E54FF]/20 rounded-full flex items-center justify-center">
+                <Gift className="w-8 h-8 text-[#6E54FF]" />
+              </div>
+              <h2 className="text-xl font-semibold text-white">
+                Launch your Creator Share to start onboarding your friends
+              </h2>
+              <p className="text-gray-400 text-sm max-w-md">
+                Create your creator share to generate access tokens that you can share with friends and community members. They'll get free access to your creator tokens!
+              </p>
+              <button
+                onClick={() => window.location.href = '/snaps/profile/' + currentUserId}
+                className="mt-4 px-6 py-3 rounded-full text-sm font-semibold transition-all duration-200 text-white bg-[#6E54FF] hover:bg-[#5940cc]"
+              >
+                Go to Profile
+              </button>
+            </div>
           </motion.div>
         )}
       </div>

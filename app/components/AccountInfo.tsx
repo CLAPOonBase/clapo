@@ -17,25 +17,143 @@ export default function AccountInfo({ onClose }: AccountInfoProps) {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
+  // Helper function to get best available name from Privy
+  const getPrivyDisplayName = () => {
+    if (!privyUser) return 'User'
+
+    console.log('🔍 AccountInfo - Privy user data:', {
+      google: privyUser.google,
+      twitter: privyUser.twitter,
+      discord: privyUser.discord,
+      github: privyUser.github,
+      email: privyUser.email
+    })
+
+    // Try to get name from various Privy auth methods
+    if (privyUser.google?.name) {
+      console.log('✅ Using Google name:', privyUser.google.name)
+      return privyUser.google.name
+    }
+    if (privyUser.twitter?.name) {
+      console.log('✅ Using Twitter name:', privyUser.twitter.name)
+      return privyUser.twitter.name
+    }
+    if (privyUser.discord?.username) {
+      console.log('✅ Using Discord username:', privyUser.discord.username)
+      return privyUser.discord.username
+    }
+    if (privyUser.github?.username) {
+      console.log('✅ Using GitHub username:', privyUser.github.username)
+      return privyUser.github.username
+    }
+    if (privyUser.email?.address) {
+      const emailName = privyUser.email.address.split('@')[0]
+      console.log('✅ Using email username:', emailName)
+      return emailName
+    }
+
+    return 'User'
+  }
+
+  // Helper function to get best available avatar from Privy
+  const getPrivyAvatar = () => {
+    if (!privyUser) return null
+
+    // Try to get avatar from various Privy auth methods
+    if (privyUser.google?.pictureUrl) {
+      console.log('✅ Using Google avatar:', privyUser.google.pictureUrl)
+      return privyUser.google.pictureUrl
+    }
+    if (privyUser.twitter?.profilePictureUrl) {
+      console.log('✅ Using Twitter avatar:', privyUser.twitter.profilePictureUrl)
+      return privyUser.twitter.profilePictureUrl
+    }
+    if (privyUser.discord?.avatarUrl) {
+      console.log('✅ Using Discord avatar:', privyUser.discord.avatarUrl)
+      return privyUser.discord.avatarUrl
+    }
+    if (privyUser.github?.profilePictureUrl) {
+      console.log('✅ Using GitHub avatar:', privyUser.github.profilePictureUrl)
+      return privyUser.github.profilePictureUrl
+    }
+
+    console.log('⚠️ No avatar found in Privy data')
+    return null
+  }
+
+  // Fallback timeout to prevent infinite loading
+  useEffect(() => {
+    const maxLoadingTimeout = setTimeout(() => {
+      if (loading) {
+        console.warn('AccountInfo - Loading timeout reached, forcing stop')
+        setLoading(false)
+        // Show basic info if we have Privy user
+        if (authenticated && privyUser && !currentUser) {
+          const displayName = getPrivyDisplayName()
+          setCurrentUser({
+            username: displayName,
+            name: displayName,
+            avatar_url: getPrivyAvatar(),
+            account_type: 'individual'
+          })
+        }
+      }
+    }, 15000) // 15 second max loading time
+
+    return () => clearTimeout(maxLoadingTimeout)
+  }, [loading, authenticated, privyUser, currentUser])
+
   // Initialize user ID from Privy
   useEffect(() => {
     const initializeUser = async () => {
       if (authenticated && privyUser && ready) {
         try {
+          setLoading(true)
+
+          // Add timeout for initial fetch
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), 8000)
+
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${privyUser.id}`
+            `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${privyUser.id}`,
+            { signal: controller.signal }
           )
+
+          clearTimeout(timeoutId)
           const data = await response.json()
 
           if (data.exists && data.user?.id) {
             console.log('AccountInfo - Found user ID:', data.user.id)
             setCurrentUserId(data.user.id)
+          } else {
+            console.warn('AccountInfo - User not found in backend')
+            // Show basic Privy info if backend doesn't have user
+            if (privyUser) {
+              const displayName = getPrivyDisplayName()
+              setCurrentUser({
+                username: displayName,
+                name: displayName,
+                avatar_url: getPrivyAvatar(),
+                account_type: 'individual'
+              })
+            }
+            setLoading(false)
           }
         } catch (error) {
           console.error('AccountInfo - Error fetching user ID:', error)
+          // Show basic Privy info on error
+          if (privyUser) {
+            const displayName = getPrivyDisplayName()
+            setCurrentUser({
+              username: displayName,
+              name: displayName,
+              avatar_url: getPrivyAvatar(),
+              account_type: 'individual'
+            })
+          }
           setLoading(false)
         }
-      } else {
+      } else if (!authenticated) {
         setLoading(false)
       }
     }
@@ -49,12 +167,31 @@ export default function AccountInfo({ onClose }: AccountInfoProps) {
       if (currentUserId) {
         try {
           setLoading(true)
-          const profileData = await getUserProfile(currentUserId)
+
+          // Add timeout to prevent infinite loading
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Request timeout')), 10000)
+          )
+
+          const profilePromise = getUserProfile(currentUserId)
+
+          const profileData = await Promise.race([profilePromise, timeoutPromise])
+
           console.log('AccountInfo - Profile data from backend:', profileData)
           console.log('AccountInfo - Avatar URL from backend:', profileData.profile?.avatar_url)
           setCurrentUser(profileData.profile)
         } catch (error) {
           console.error('AccountInfo - Failed to fetch profile:', error)
+          // Even on error, show basic info from Privy
+          if (privyUser) {
+            const displayName = getPrivyDisplayName()
+            setCurrentUser({
+              username: displayName,
+              name: displayName,
+              avatar_url: getPrivyAvatar(),
+              account_type: 'individual'
+            })
+          }
         } finally {
           setLoading(false)
         }
@@ -62,7 +199,7 @@ export default function AccountInfo({ onClose }: AccountInfoProps) {
     }
 
     fetchProfile()
-  }, [currentUserId, getUserProfile])
+  }, [currentUserId, getUserProfile, privyUser])
 
   const handleLogout = async () => {
     await logout()
@@ -140,7 +277,9 @@ export default function AccountInfo({ onClose }: AccountInfoProps) {
             </div>
             {currentUser && (
               <div className="text-center">
-                <p className="text-white font-bold text-xl">{currentUser.username}</p>
+                <p className="text-white font-bold text-xl">
+                  {currentUser.name || currentUser.username}
+                </p>
                 <p className="text-gray-400 text-sm">@{currentUser.username}</p>
               </div>
             )}

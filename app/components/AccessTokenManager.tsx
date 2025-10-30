@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Copy, Eye, EyeOff, Trash2, Gift, Users, CheckCircle, XCircle } from 'lucide-react'
+import { Copy } from 'lucide-react'
 import { useAccessTokens, AccessToken, AccessTokenStats } from '@/app/hooks/useAccessTokens'
 import { generateCreatorTokenUUID } from '@/app/lib/uuid'
 
@@ -17,17 +17,12 @@ export function AccessTokenManager({ userId, username, isOwnProfile = false }: A
     error,
     getAccessTokensForCreator,
     getAccessTokenStats,
-    revokeAccessToken,
     getAvailableAccessTokens,
   } = useAccessTokens()
 
   const [stats, setStats] = useState<AccessTokenStats | null>(null)
-  const [availableTokens, setAvailableTokens] = useState<AccessToken[]>([])
-  const [usedTokens, setUsedTokens] = useState<AccessToken[]>([])
-  const [showAvailable, setShowAvailable] = useState(true)
-  const [showUsed, setShowUsed] = useState(false)
+  const [allTokens, setAllTokens] = useState<AccessToken[]>([])
   const [copiedToken, setCopiedToken] = useState<string | null>(null)
-  const [revokingToken, setRevokingToken] = useState<string | null>(null)
 
   const creatorTokenUuid = generateCreatorTokenUUID(userId)
 
@@ -46,8 +41,16 @@ export function AccessTokenManager({ userId, username, isOwnProfile = false }: A
       ])
 
       setStats(statsData)
-      setAvailableTokens(availableData)
-      setUsedTokens(usedData)
+
+      // Combine and sort tokens (available first, then used)
+      const combined = [...availableData, ...usedData].sort((a, b) => {
+        // Available tokens first
+        if (!a.is_used && b.is_used) return -1
+        if (a.is_used && !b.is_used) return 1
+        return 0
+      })
+
+      setAllTokens(combined)
     } catch (err) {
       console.error('Failed to load access token data:', err)
     }
@@ -63,35 +66,24 @@ export function AccessTokenManager({ userId, username, isOwnProfile = false }: A
     }
   }
 
-  const handleRevokeToken = async (token: string) => {
-    if (!confirm('Are you sure you want to revoke this access token? This action cannot be undone.')) {
-      return
-    }
-
-    setRevokingToken(token)
-    try {
-      await revokeAccessToken(token)
-      await loadAccessTokenData() // Refresh data
-    } catch (err) {
-      console.error('Failed to revoke token:', err)
-      alert('Failed to revoke token: ' + (err instanceof Error ? err.message : 'Unknown error'))
-    } finally {
-      setRevokingToken(null)
+  const handleShareToken = (token: string) => {
+    if (navigator.share) {
+      navigator.share({
+        title: 'Join Clapo with my access code',
+        text: `Use my access code to join Clapo: ${token}`,
+        url: `${window.location.origin}/signup?token=${token}`
+      })
+    } else {
+      // Fallback: copy to clipboard
+      handleCopyToken(token)
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
-  const truncateToken = (token: string) => {
-    return `${token.substring(0, 8)}...${token.substring(token.length - 8)}`
+  const displayToken = (token: string) => {
+    // Show start and end characters with "..." in the middle
+    const start = token.substring(0, 8)
+    const end = token.substring(token.length - 5)
+    return `${start}...${end}`.toUpperCase()
   }
 
   if (!isOwnProfile) {
@@ -100,210 +92,99 @@ export function AccessTokenManager({ userId, username, isOwnProfile = false }: A
 
   if (loading && !stats) {
     return (
-      <div className="bg-dark-700 rounded-lg p-4">
-        <div className="animate-pulse">
-          <div className="h-4 bg-dark-600 rounded w-1/3 mb-4"></div>
-          <div className="space-y-2">
-            <div className="h-3 bg-dark-600 rounded"></div>
-            <div className="h-3 bg-dark-600 rounded w-2/3"></div>
+      <div className="space-y-3">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="bg-black border border-gray-800 rounded-2xl p-4">
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-800 rounded w-2/3"></div>
+            </div>
           </div>
-        </div>
+        ))}
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="bg-dark-700 rounded-lg p-4">
+      <div className="bg-black border border-gray-800 rounded-2xl p-4">
         <div className="text-red-400 text-sm">
-          <XCircle className="w-4 h-4 inline mr-2" />
           Error loading access tokens: {error}
         </div>
       </div>
     )
   }
 
+  if (allTokens.length === 0) {
+    return (
+      <div className="bg-black border border-gray-800 rounded-2xl p-8 text-center">
+        <p className="text-gray-400">No access tokens available</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="bg-dark-700 rounded-lg p-4 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Gift className="w-5 h-5 text-green-400" />
-          <h3 className="text-white font-semibold">Access Tokens</h3>
-        </div>
-        <div className="text-sm text-gray-400">
-          Manage freebie access tokens
-        </div>
-      </div>
-
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-dark-800 rounded-lg p-3 text-center">
-            <div className="text-white font-semibold">{stats.total}</div>
-            <div className="text-xs text-gray-400">Total</div>
-          </div>
-          <div className="bg-dark-800 rounded-lg p-3 text-center">
-            <div className="text-green-400 font-semibold">{stats.available}</div>
-            <div className="text-xs text-gray-400">Available</div>
-          </div>
-          <div className="bg-dark-800 rounded-lg p-3 text-center">
-            <div className="text-blue-400 font-semibold">{stats.used}</div>
-            <div className="text-xs text-gray-400">Used</div>
-          </div>
-        </div>
-      )}
-
-      {/* Toggle Buttons */}
-      <div className="flex space-x-2">
-        <button
-          onClick={() => {
-            setShowAvailable(true)
-            setShowUsed(false)
-          }}
-          className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-            showAvailable
-              ? 'bg-green-600 text-white'
-              : 'bg-dark-600 text-gray-400 hover:text-white'
-          }`}
+    <div className="space-y-3">
+      {allTokens.map((token) => (
+        <div
+          key={token.id}
+          className="bg-black border border-gray-800 rounded-2xl p-4 flex items-center justify-between transition-all duration-200 hover:border-gray-700"
         >
-          Available ({availableTokens.length})
-        </button>
-        <button
-          onClick={() => {
-            setShowAvailable(false)
-            setShowUsed(true)
-          }}
-          className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-            showUsed
-              ? 'bg-blue-600 text-white'
-              : 'bg-dark-600 text-gray-400 hover:text-white'
-          }`}
-        >
-          Used ({usedTokens.length})
-        </button>
-      </div>
+          {/* Token Text */}
+          <div className="flex items-center space-x-4 flex-1">
+            {token.is_used ? (
+              <>
+                <span className="text-gray-500 font-mono tracking-widest text-base line-through">
+                  {displayToken(token.token)}
+                </span>
+                <span className="text-xs font-medium text-red-400 bg-red-900/30 px-3 py-1 rounded-full">
+                  Used
+                </span>
+              </>
+            ) : (
+              <span className="text-white font-mono tracking-widest text-base">
+                {displayToken(token.token)}
+              </span>
+            )}
+          </div>
 
-      {/* Available Tokens */}
-      {showAvailable && (
-        <div className="space-y-2">
-          <div className="text-sm text-gray-400 mb-2">Available Access Tokens</div>
-          {availableTokens.length === 0 ? (
-            <div className="text-center py-4 text-gray-500">
-              <Gift className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>No available access tokens</p>
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-              {availableTokens.map((token) => (
-                <div key={token.id} className="bg-dark-800 rounded-lg p-3 flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle className="w-4 h-4 text-green-400" />
-                    <div>
-                      <div className="text-white font-mono text-sm">
-                        {truncateToken(token.token)}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        Created {formatDate(token.created_at)}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => handleCopyToken(token.token)}
-                      className="p-1 text-gray-400 hover:text-white transition-colors"
-                      title="Copy token"
-                    >
-                      {copiedToken === token.token ? (
-                        <CheckCircle className="w-4 h-4 text-green-400" />
-                      ) : (
-                        <Copy className="w-4 h-4" />
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleRevokeToken(token.token)}
-                      disabled={revokingToken === token.token}
-                      className="p-1 text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
-                      title="Revoke token"
-                    >
-                      {revokingToken === token.token ? (
-                        <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Actions */}
+          <div className="flex items-center space-x-2">
+            {/* Copy Button */}
+            <button
+              onClick={() => handleCopyToken(token.token)}
+              disabled={token.is_used}
+              className={`p-2 rounded-lg transition-colors ${
+                token.is_used
+                  ? 'text-gray-600 cursor-not-allowed'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              }`}
+              title="Copy code"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
+
+            {/* Share Button */}
+            <button
+              onClick={() => handleShareToken(token.token)}
+              disabled={token.is_used}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                token.is_used
+                  ? 'bg-gray-800/50 text-gray-600 cursor-not-allowed'
+                  : 'bg-[#6E54FF] hover:bg-[#5940cc] text-white'
+              }`}
+            >
+              Share
+            </button>
+          </div>
+        </div>
+      ))}
+
+      {/* Copy Success Message */}
+      {copiedToken && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-[#6E54FF] text-white px-6 py-3 rounded-full text-sm font-medium shadow-lg z-50">
+          Code copied to clipboard!
         </div>
       )}
-
-      {/* Used Tokens */}
-      {showUsed && (
-        <div className="space-y-2">
-          <div className="text-sm text-gray-400 mb-2">Used Access Tokens</div>
-          {usedTokens.length === 0 ? (
-            <div className="text-center py-4 text-gray-500">
-              <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>No used access tokens</p>
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-              {usedTokens.map((token) => (
-                <div key={token.id} className="bg-dark-800 rounded-lg p-3">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <XCircle className="w-4 h-4 text-blue-400" />
-                    <div>
-                      <div className="text-white font-mono text-sm">
-                        {truncateToken(token.token)}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        Created {formatDate(token.created_at)}
-                      </div>
-                    </div>
-                  </div>
-                  {token.used_by_address && (
-                    <div className="text-xs text-gray-400">
-                      Used by: {token.used_by_address.substring(0, 6)}...{token.used_by_address.substring(token.used_by_address.length - 4)}
-                      {token.used_at && (
-                        <span className="ml-2">
-                          on {formatDate(token.used_at)}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Info */}
-      <div className="text-xs text-gray-500 bg-dark-800 p-2 rounded">
-        <p>• Access tokens allow users to claim free creator tokens</p>
-        <p>• Share available tokens with your community</p>
-        <p>• Revoked tokens cannot be used</p>
-      </div>
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
