@@ -79,7 +79,7 @@ function SignInPage() {
     const timeoutId = setTimeout(async () => {
       try {
         const response = await fetch(
-          `/api/users/check-username/${formData.username}`
+          `${process.env.NEXT_PUBLIC_API_URL}/users/check-username/${formData.username}`
         );
         const data = await response.json();
         setUsernameAvailable(data.available);
@@ -116,7 +116,7 @@ function SignInPage() {
           try {
             console.log("🌐 Checking user in backend:", user.id);
             const response = await fetch(
-              `/api/users/privy/${user.id}`
+              `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${user.id}`
             );
             const data = await response.json();
             console.log("📦 Backend response:", data);
@@ -241,18 +241,11 @@ function SignInPage() {
       following: formData.following || []
     };
 
-    console.log("📦 Submitting profile data to API:", {
-      accountType: profileData.accountType,
-      username: profileData.username,
-      hasPrivyId: !!profileData.privyId,
-      hasEmail: !!profileData.email,
-      hasWallet: !!profileData.wallet,
-      fullPayload: profileData
-    });
+    console.log("📦 Submitting profile data to API:", profileData);
 
     try {
       const response = await fetch(
-        '/api/auth/signup-privy',
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/signup/privy`,
         {
           method: 'POST',
           headers: {
@@ -264,21 +257,9 @@ function SignInPage() {
 
       const data = await response.json();
 
-      console.log("📡 API Response:", {
-        status: response.status,
-        ok: response.ok,
-        data: data
-      });
-
       if (!response.ok) {
         // Handle backend error format
         const errorMessage = data.message?.message || data.message || 'Failed to create account';
-        console.error("❌ Signup failed:", {
-          status: response.status,
-          errorMessage,
-          fullError: data,
-          sentPayload: profileData
-        });
         throw new Error(errorMessage);
       }
 
