@@ -29,7 +29,9 @@ export default function Providers({ children }: ProvidersProps) {
             accentColor: '#6e54ff',
           },
           embeddedWallets: {
-            createOnLogin: 'users-without-wallets',
+            ethereum: {
+              createOnLogin: 'users-without-wallets',
+            },
             requireUserPasswordOnCreate: false,
           },
           defaultChain: baseSepolia,
