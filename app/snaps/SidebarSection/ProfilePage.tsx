@@ -28,7 +28,7 @@ export function ProfilePage({ user, posts }: Props) {
   const { authenticated, user: privyUser, ready } = usePrivy()
   const { getUserProfile, updateUserProfile, getUserFollowers, getUserFollowing } = useApi()
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-  const { createCreatorToken, checkCreatorExists, isConnected, connectWallet, isConnecting, address, switchToMonadTestnet } = useCreatorToken()
+  const { createCreatorToken, checkCreatorExists, isConnected, connectWallet, isConnecting, address, switchToBaseSepolia } = useCreatorToken()
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>("Posts")

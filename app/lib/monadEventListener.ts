@@ -1,7 +1,7 @@
 /**
- * Monad Blockchain Event Listener Service
+ * Base Sepolia Blockchain Event Listener Service
  *
- * This service listens to buy/sell events from the Monad contract
+ * This service listens to buy/sell events from the PostToken contract
  * Contract Address: 0xcaC4DF2Bd3723CEA847e1AE07F37Fb4B33c6Cb61
  *
  * NOTE: This is a frontend reference implementation.
@@ -40,7 +40,7 @@ export class MonadEventListener {
   private contractAddress: string = '0xcaC4DF2Bd3723CEA847e1AE07F37Fb4B33c6Cb61';
 
   constructor(rpcUrl: string) {
-    // Initialize provider for Monad network
+    // Initialize provider for Base Sepolia network
     this.provider = new ethers.JsonRpcProvider(rpcUrl);
 
     // Initialize contract
@@ -185,7 +185,7 @@ export class MonadEventListener {
  * Example usage (for backend implementation):
  *
  * // Initialize the listener
- * const listener = new MonadEventListener(process.env.MONAD_RPC_URL);
+ * const listener = new MonadEventListener(process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org');
  *
  * // Start listening and save events to database
  * listener.startListening(async (event) => {

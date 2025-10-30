@@ -6,7 +6,7 @@ import { useWalletContext } from '@/context/WalletContext';
 import { motion } from 'framer-motion';
 
 export default function OpinioWalletConnect() {
-  const [rpcUrl, setRpcUrl] = useState('https://testnet-rpc.monad.xyz');
+  const [rpcUrl, setRpcUrl] = useState('https://sepolia.base.org');
   const [privateKey, setPrivateKey] = useState('');
   const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [useMetaMask, setUseMetaMask] = useState(true);
@@ -185,8 +185,8 @@ export default function OpinioWalletConnect() {
     }
   }, [useMetaMask, isConnected, disconnect]);
 
-  // Helper function to add/switch to Monad Testnet
-  const addMonadNetwork = async () => {
+  // Helper function to add/switch to Base Sepolia
+  const addBaseSepoliaNetwork = async () => {
     if (!window.ethereum) {
       alert('MetaMask not found!');
       return;
@@ -196,21 +196,21 @@ export default function OpinioWalletConnect() {
       await window.ethereum.request({
         method: 'wallet_addEthereumChain',
         params: [{
-          chainId: '0x279F', // 10143 in hex
-          chainName: 'Monad Testnet',
+          chainId: '0x14a34', // 84532 in hex
+          chainName: 'Base Sepolia',
           nativeCurrency: {
-            name: 'MON',
-            symbol: 'MON',
+            name: 'Ether',
+            symbol: 'ETH',
             decimals: 18
           },
-          rpcUrls: ['https://testnet-rpc.monad.xyz'],
-          blockExplorerUrls: ['https://testnet-explorer.monad.xyz']
+          rpcUrls: ['https://sepolia.base.org'],
+          blockExplorerUrls: ['https://sepolia.basescan.org']
         }]
       });
-      console.log('✅ Monad Testnet added to MetaMask');
+      console.log('✅ Base Sepolia added to MetaMask');
     } catch (error) {
-      console.error('❌ Failed to add Monad Testnet:', error);
-      alert('Failed to add Monad Testnet. Please add it manually.');
+      console.error('❌ Failed to add Base Sepolia:', error);
+      alert('Failed to add Base Sepolia. Please add it manually.');
     }
   };
 
@@ -326,7 +326,7 @@ export default function OpinioWalletConnect() {
       animate={{ opacity: 1, y: 0 }}
       className="bg-[#1A1A1A] rounded-lg p-4 shadow-custom"
     >
-      <h3 className="text-white font-semibold mb-4">Connect to Monad Testnet</h3>
+      <h3 className="text-white font-semibold mb-4">Connect to Base Sepolia</h3>
       
       {/* Connection Method Toggle */}
       <div className="flex space-x-2 mb-4">
@@ -360,7 +360,7 @@ export default function OpinioWalletConnect() {
               <span className="font-medium">MetaMask Connection</span>
             </div>
             <p className="text-xs text-blue-300">
-              Click connect to use your MetaMask wallet. Make sure you're on the Monad Testnet.
+              Click connect to use your MetaMask wallet. Make sure you're on Base Sepolia.
             </p>
             {metaMaskAddress && (
               <div className="mt-2 text-xs">
@@ -369,10 +369,10 @@ export default function OpinioWalletConnect() {
               </div>
             )}
             <button
-              onClick={addMonadNetwork}
+              onClick={addBaseSepoliaNetwork}
               className="mt-2 w-full bg-orange-600 hover:bg-orange-700 text-white text-xs py-2 px-3 rounded transition-colors"
             >
-              🌐 Add/Switch to Monad Testnet
+              🌐 Add/Switch to Base Sepolia
             </button>
           </div>
         </div>
@@ -384,7 +384,7 @@ export default function OpinioWalletConnect() {
               type="text"
               value={rpcUrl}
               onChange={(e) => setRpcUrl(e.target.value)}
-              placeholder="https://testnet-rpc.monad.xyz"
+              placeholder="https://sepolia.base.org"
               className="w-full bg-transparent border border-[#2A2A2A] px-3 py-2 rounded text-sm outline-none text-white placeholder-gray-400 focus:border-[#6E54FF]/50"
             />
           </div>
@@ -424,13 +424,13 @@ export default function OpinioWalletConnect() {
       <div className="mt-3 text-xs text-gray-500">
         {useMetaMask ? (
           <>
-            <p>🦊 Make sure MetaMask is installed and set to Monad Testnet</p>
-            <p>🔗 Chain ID: 10143 | RPC: https://testnet-rpc.monad.xyz</p>
+            <p>🦊 Make sure MetaMask is installed and set to Base Sepolia</p>
+            <p>🔗 Chain ID: 84532 | RPC: https://sepolia.base.org</p>
           </>
         ) : (
           <>
             <p>⚠️ Never share your private key with anyone</p>
-            <p>🔗 Connected to Monad Testnet (Chain ID: 10143)</p>
+            <p>🔗 Connected to Base Sepolia (Chain ID: 84532)</p>
           </>
         )}
       </div>

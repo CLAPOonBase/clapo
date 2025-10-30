@@ -90,9 +90,9 @@ export const usePostToken = () => {
   const [contract, setContract] = useState<ethers.Contract | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Create a read-only provider using Monad RPC for read operations
+  // Create a read-only provider using Base Sepolia RPC for read operations
   const readOnlyProvider = new ethers.JsonRpcProvider(
-    process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://testnet-rpc.monad.xyz'
+    process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org'
   );
 
   // Derive isConnected from global wallet context

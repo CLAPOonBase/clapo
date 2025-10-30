@@ -361,11 +361,11 @@ export default function WalletPage() {
                       )}
                     </button>
                     <a
-                      href={`https://testnet.monadexplorer.com/address/${user.wallet.address}`}
+                      href={`https://sepolia.basescan.org/address/${user.wallet.address}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
-                      title="View on Monad Testnet Explorer"
+                      title="View on BaseScan"
                     >
                       <ExternalLink className="w-4 h-4 text-gray-400" />
                     </a>

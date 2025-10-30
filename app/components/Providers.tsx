@@ -14,41 +14,39 @@ interface ProvidersProps {
 // NOTE: SessionProvider is kept for backward compatibility with existing credential-based logins.
 // All new authentication should use Privy (PrivyProvider below).
 
-const monadTestnet = defineChain({
-  id: 10143,
-  name: 'Monad Testnet',
-  network: 'monad-testnet',
+const baseSepolia = defineChain({
+  id: 84532,
+  name: 'Base Sepolia',
+  network: 'base-sepolia',
   nativeCurrency: {
-    name: 'Monad Token',
-    symbol: 'MON',
+    name: 'Ether',
+    symbol: 'ETH',
     decimals: 18,
   },
   rpcUrls: {
     default: {
       http: [
-        'https://testnet-rpc.monad.xyz',
-        'https://rpc.ankr.com/monad_testnet',
-        'https://rpc-testnet.monadinfra.com'
+        'https://sepolia.base.org',
+        'https://base-sepolia-rpc.publicnode.com'
       ],
       webSocket: [
-        'wss://testnet-rpc.monad.xyz'
+        'wss://base-sepolia-rpc.publicnode.com'
       ]
     },
     public: {
       http: [
-        'https://testnet-rpc.monad.xyz',
-        'https://rpc.ankr.com/monad_testnet',
-        'https://rpc-testnet.monadinfra.com'
+        'https://sepolia.base.org',
+        'https://base-sepolia-rpc.publicnode.com'
       ],
       webSocket: [
-        'wss://testnet-rpc.monad.xyz'
+        'wss://base-sepolia-rpc.publicnode.com'
       ]
     }
   },
   blockExplorers: {
     default: {
-      name: 'Monad Testnet Explorer',
-      url: 'https://testnet.monadexplorer.com'
+      name: 'BaseScan',
+      url: 'https://sepolia.basescan.org'
     }
   },
   testnet: true
@@ -70,8 +68,8 @@ export default function Providers({ children }: ProvidersProps) {
               createOnLogin: 'users-without-wallets',
             }
           },
-          defaultChain: monadTestnet,
-          supportedChains: [monadTestnet]
+          defaultChain: baseSepolia,
+          supportedChains: [baseSepolia]
         }}
       >
         <ApiProvider>

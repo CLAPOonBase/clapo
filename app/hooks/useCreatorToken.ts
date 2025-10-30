@@ -197,16 +197,16 @@ export const useCreatorToken = () => {
     }
   };
 
-  // Switch to Monad testnet
-  const switchToMonadTestnet = async () => {
+  // Switch to Base Sepolia
+  const switchToBaseSepolia = async () => {
     if (window.ethereum) {
       try {
-        console.log('Switching to Monad testnet...');
+        console.log('Switching to Base Sepolia...');
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0x2797' }], // 10143 in hex
+          params: [{ chainId: '0x14a34' }], // 84532 in hex
         });
-        console.log('✅ Switched to Monad testnet');
+        console.log('✅ Switched to Base Sepolia');
       } catch (switchError: any) {
         // If the chain doesn't exist, add it
         if (switchError.code === 4902) {
@@ -214,24 +214,24 @@ export const useCreatorToken = () => {
             await window.ethereum.request({
               method: 'wallet_addEthereumChain',
               params: [{
-                chainId: '0x2797', // 10143 in hex
-                chainName: 'Monad Testnet',
+                chainId: '0x14a34', // 84532 in hex
+                chainName: 'Base Sepolia',
                 nativeCurrency: {
-                  name: 'Monad',
-                  symbol: 'MON',
+                  name: 'Ether',
+                  symbol: 'ETH',
                   decimals: 18,
                 },
-                rpcUrls: ['https://testnet-rpc.monad.xyz'],
-                blockExplorerUrls: ['https://testnet-explorer.monad.xyz'],
+                rpcUrls: ['https://sepolia.base.org'],
+                blockExplorerUrls: ['https://sepolia.basescan.org'],
               }],
             });
-            console.log('✅ Added and switched to Monad testnet');
+            console.log('✅ Added and switched to Base Sepolia');
           } catch (addError) {
-            console.error('Failed to add Monad testnet:', addError);
+            console.error('Failed to add Base Sepolia:', addError);
             throw addError;
           }
         } else {
-          console.error('Failed to switch to Monad testnet:', switchError);
+          console.error('Failed to switch to Base Sepolia:', switchError);
           throw switchError;
         }
       }
@@ -734,14 +734,14 @@ export const useCreatorToken = () => {
             name: network.name,
             chainId: network.chainId.toString(),
             chainIdHex: `0x${network.chainId.toString(16)}`,
-            expectedChainId: '10143',
-            isMonadTestnet: network.chainId.toString() === '10143'
+            expectedChainId: '84532',
+            isBaseSepolia: network.chainId.toString() === '84532'
           });
           
-          // If not on Monad testnet, try to switch
-          if (network.chainId.toString() !== '10143') {
-            console.log('⚠️ Not on Monad testnet, attempting to switch...');
-            await switchToMonadTestnet();
+          // If not on Base Sepolia, try to switch
+          if (network.chainId.toString() !== '84532') {
+            console.log('⚠️ Not on Base Sepolia, attempting to switch...');
+            await switchToBaseSepolia();
           }
         } catch (networkError) {
           console.log('⚠️ Could not get network info:', networkError.message);
@@ -987,7 +987,7 @@ export const useCreatorToken = () => {
     isConnecting,
     connectWallet,
     disconnectWallet,
-    switchToMonadTestnet,
+    switchToBaseSepolia,
     createCreatorToken,
     buyCreatorTokens,
     sellCreatorTokens,
