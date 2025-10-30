@@ -63,32 +63,18 @@ export default function WalletPage() {
       if (authenticated && address && privyReady) {
         setIsLoadingBalance(true)
         try {
-          // Verify network first
-          if (window.ethereum) {
-            const chainId = await window.ethereum.request({ method: 'eth_chainId' })
-            const chainIdDecimal = parseInt(chainId, 16)
-            console.log('🔍 Current chain ID:', chainIdDecimal)
-
-            if (chainIdDecimal !== 84532) {
-              setNetworkWarning(`Please switch to Base Sepolia testnet. Current network: Chain ID ${chainIdDecimal}`)
-              setMonBalance('0')
-              setIsLoadingBalance(false)
-              return
-            } else {
-              setNetworkWarning(null)
-            }
-          }
-
           console.log('🔍 Attempting to fetch balance for address:', address)
           const balance = await getETHBalance()
           console.log('✅ Balance fetched:', balance)
-          // Keep more precision to show small balances correctly
+
+          // Show balance with 4 decimal places, trim trailing zeros
           const balanceNum = parseFloat(balance)
-          // Show up to 6 decimals, but trim trailing zeros
-          setMonBalance(balanceNum.toFixed(6).replace(/\.?0+$/, ''))
+          const formatted = balanceNum.toFixed(4).replace(/\.?0+$/, '')
+          setMonBalance(formatted)
+          setNetworkWarning(null)
         } catch (error) {
           console.error('❌ Failed to fetch ETH balance:', error)
-          setNetworkWarning('Failed to fetch balance. Please ensure you are connected to Base Sepolia.')
+          setNetworkWarning('Failed to fetch balance. Please check your connection.')
         } finally {
           setIsLoadingBalance(false)
         }
@@ -348,27 +334,14 @@ export default function WalletPage() {
                       onClick={async () => {
                         setIsLoadingBalance(true)
                         try {
-                          // Verify network
-                          if (window.ethereum) {
-                            const chainId = await window.ethereum.request({ method: 'eth_chainId' })
-                            const chainIdDecimal = parseInt(chainId, 16)
-
-                            if (chainIdDecimal !== 84532) {
-                              setNetworkWarning(`Please switch to Base Sepolia testnet. Current network: Chain ID ${chainIdDecimal}`)
-                              setMonBalance('0')
-                              setIsLoadingBalance(false)
-                              return
-                            } else {
-                              setNetworkWarning(null)
-                            }
-                          }
-
                           const balance = await getETHBalance()
                           const balanceNum = parseFloat(balance)
-                          setMonBalance(balanceNum.toFixed(6).replace(/\.?0+$/, ''))
+                          const formatted = balanceNum.toFixed(4).replace(/\.?0+$/, '')
+                          setMonBalance(formatted)
+                          setNetworkWarning(null)
                         } catch (error) {
                           console.error('Failed to refresh balance:', error)
-                          setNetworkWarning('Failed to fetch balance. Please ensure you are connected to Base Sepolia.')
+                          setNetworkWarning('Failed to fetch balance. Please check your connection.')
                         } finally {
                           setIsLoadingBalance(false)
                         }

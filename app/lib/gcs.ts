@@ -1,16 +1,42 @@
 import { Storage } from '@google-cloud/storage';
 
-// Initialize Google Cloud Storage
-const storage = new Storage({
-  projectId: process.env.GCS_PROJECT_ID,
-  credentials: {
-    client_email: process.env.GCS_CLIENT_EMAIL,
-    private_key: process.env.GCS_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-  },
-});
+// Initialize Google Cloud Storage with better error handling
+let storage: Storage;
+let bucket: any;
 
-const bucketName = process.env.GCS_BUCKET_NAME || 'clapo_media_bucket';
-const bucket = storage.bucket(bucketName);
+try {
+  // Parse the private key more carefully
+  const privateKey = process.env.GCS_PRIVATE_KEY;
+
+  if (!privateKey) {
+    throw new Error('GCS_PRIVATE_KEY is not set');
+  }
+
+  // Replace literal \n with actual newlines
+  const formattedKey = privateKey.replace(/\\n/g, '\n');
+
+  console.log('🔑 Initializing GCS with credentials...');
+  console.log('Project ID:', process.env.GCS_PROJECT_ID);
+  console.log('Client Email:', process.env.GCS_CLIENT_EMAIL);
+  console.log('Bucket:', process.env.GCS_BUCKET_NAME);
+  console.log('Private key starts with:', formattedKey.substring(0, 30));
+
+  storage = new Storage({
+    projectId: process.env.GCS_PROJECT_ID,
+    credentials: {
+      client_email: process.env.GCS_CLIENT_EMAIL,
+      private_key: formattedKey,
+    },
+  });
+
+  const bucketName = process.env.GCS_BUCKET_NAME || 'clapo_media_bucket';
+  bucket = storage.bucket(bucketName);
+
+  console.log('✅ GCS client initialized successfully');
+} catch (error) {
+  console.error('❌ Failed to initialize GCS:', error);
+  throw error;
+}
 
 export interface UploadResult {
   url: string;
@@ -22,34 +48,68 @@ export const uploadToGCS = async (
   userId: string,
   postId?: string
 ): Promise<UploadResult> => {
+  const bucketName = process.env.GCS_BUCKET_NAME || 'clapo_media_bucket';
   const timestamp = Date.now();
   const fileExtension = file.name.split('.').pop();
   const fileName = `${userId}/${timestamp}-${Math.random().toString(36).substring(2)}.${fileExtension}`;
 
-  // Convert File to Buffer for GCS
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-
-  const blob = bucket.file(fileName);
+  console.log('📤 Uploading to GCS:', {
+    fileName,
+    bucket: bucketName,
+    size: file.size,
+    type: file.type,
+  });
 
   try {
+    // Convert File to Buffer for GCS
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    console.log('📦 File converted to buffer, size:', buffer.length);
+
+    const blob = bucket.file(fileName);
+
+    // Upload the file with public read access directly
+    // This avoids needing to call makePublic() separately
     await blob.save(buffer, {
       metadata: {
         contentType: file.type,
       },
-      public: true, // Make the file publicly accessible
+      predefinedAcl: 'publicRead', // Make file public during upload
     });
+
+    console.log('✅ File uploaded to GCS');
 
     // Get the public URL
     const url = `https://storage.googleapis.com/${bucketName}/${fileName}`;
+
+    console.log('✅ Upload complete:', url);
+    console.log('🔗 Public URL:', url);
 
     return {
       url,
       key: fileName,
     };
   } catch (error) {
-    console.error('GCS upload failed:', error);
-    throw new Error('Failed to upload file to Google Cloud Storage');
+    console.error('❌ GCS upload failed:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      });
+    }
+
+    // Provide helpful error message
+    if (error instanceof Error) {
+      if (error.message.includes('does not have')) {
+        throw new Error(`Permission denied: ${error.message}. Please check GCS bucket permissions.`);
+      } else if (error.message.includes('not found')) {
+        throw new Error(`Bucket '${bucketName}' not found. Please verify the bucket name.`);
+      }
+    }
+
+    throw new Error(`Failed to upload file to Google Cloud Storage: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
