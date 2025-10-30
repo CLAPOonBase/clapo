@@ -241,7 +241,14 @@ function SignInPage() {
       following: formData.following || []
     };
 
-    console.log("📦 Submitting profile data to API:", profileData);
+    console.log("📦 Submitting profile data to API:", {
+      accountType: profileData.accountType,
+      username: profileData.username,
+      hasPrivyId: !!profileData.privyId,
+      hasEmail: !!profileData.email,
+      hasWallet: !!profileData.wallet,
+      fullPayload: profileData
+    });
 
     try {
       const response = await fetch(
@@ -257,9 +264,21 @@ function SignInPage() {
 
       const data = await response.json();
 
+      console.log("📡 API Response:", {
+        status: response.status,
+        ok: response.ok,
+        data: data
+      });
+
       if (!response.ok) {
         // Handle backend error format
         const errorMessage = data.message?.message || data.message || 'Failed to create account';
+        console.error("❌ Signup failed:", {
+          status: response.status,
+          errorMessage,
+          fullError: data,
+          sentPayload: profileData
+        });
         throw new Error(errorMessage);
       }
 

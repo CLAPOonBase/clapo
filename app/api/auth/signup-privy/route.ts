@@ -6,7 +6,12 @@ export async function POST(request: NextRequest) {
 
     console.log('🔄 Proxying signup request to backend:', {
       url: `${process.env.NEXT_PUBLIC_API_URL}/auth/signup/privy`,
-      body: body
+      accountType: body.accountType,
+      hasPrivyId: !!body.privyId,
+      hasUsername: !!body.username,
+      hasEmail: !!body.email,
+      hasWallet: !!body.wallet,
+      fullBody: body
     });
 
     const response = await fetch(
@@ -62,7 +67,11 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('❌ Backend error:', data);
+      console.error('❌ Backend error:', {
+        status: response.status,
+        error: data,
+        sentPayload: body
+      });
       return NextResponse.json(data, { status: response.status });
     }
 
