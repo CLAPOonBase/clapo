@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
-import { 
-  Circle, 
-  Star, 
-  TrendingUp, 
-  Users, 
-  Volume2, 
+import {
+  Circle,
+  Star,
+  TrendingUp,
+  Users,
+  Volume2,
   ArrowLeft,
   Check,
   Crown,
@@ -19,7 +19,7 @@ import {
   Twitter,
   MessageCircleIcon,
   Heart,
-  Share,
+  ArrowUpFromLine,
   Bookmark,
   Triangle
 } from 'lucide-react';
@@ -496,7 +496,7 @@ export default function CreatorTradingPlatform() {
                        
                               <MessageCircleIcon className="w-3 h-3" />
                               <span>{post.likes}</span>
-                               <Share className="w-3 h-3" />
+                               <ArrowUpFromLine className="w-3 h-3" />
                               <span>{post.comments * 2}</span>
                             </span>
                           </div>

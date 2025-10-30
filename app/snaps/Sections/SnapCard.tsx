@@ -2,7 +2,7 @@
 // @ts-nocheck
 'use client'
 import React, { useState, useEffect, useRef } from 'react'
-import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume2, Paperclip, Smile, Send, ExternalLink, Blocks, Triangle, Repeat, HandMetal, Share2, HandHeart } from 'lucide-react'
+import { MessageCircle, Repeat2, Heart, Bookmark, Eye, X, MoreHorizontal, Volume2, Paperclip, Smile, Send, ExternalLink, Blocks, Triangle, Repeat, HandMetal, ArrowUpFromLine, HandHeart } from 'lucide-react'
 import { Post, ApiPost } from '@/app/types'
 import { useApi } from '../../Context/ApiProvider'
 import { useSession } from 'next-auth/react'
@@ -749,7 +749,7 @@ const handleImageClick = (e: React.MouseEvent) => {
                   className={`transition-colors group disabled:opacity-50 ${userEngagement.bookmarked ? 'text-blue-400' : 'text-gray-500 hover:text-blue-400'}`}
                 >
                   <div className="p-2 rounded-full group-hover:bg-blue-400/10 transition-colors">
-                    <Share2 className="w-[18px] h-[18px]" />
+                    <ArrowUpFromLine className="w-[18px] h-[18px]" />
                   </div>
                 </button>
               </div>

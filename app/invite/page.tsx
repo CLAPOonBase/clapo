@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { X, Copy, Share, ArrowLeft } from 'lucide-react'
+import { X, Copy, ArrowUpFromLine, ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 
@@ -175,7 +175,7 @@ export default function InvitePage() {
                   } : {}}
                 >
                   <div className="flex items-center space-x-2">
-                    <Share className="w-4 h-4" />
+                    <ArrowUpFromLine className="w-4 h-4" />
                     <span>Share</span>
                   </div>
                 </button>

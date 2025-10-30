@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { X, Heart, MessageCircle, Share2, Eye, MoreHorizontal, Send } from 'lucide-react'
+import { X, Heart, MessageCircle, ArrowUpFromLine, Eye, MoreHorizontal, Send } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useApi } from '../Context/ApiProvider'
 import { renderTextWithMentions } from '@/app/lib/mentionUtils'
@@ -252,7 +252,7 @@ export const PostPopupModal = ({ post, isOpen, onClose }: PostPopupModalProps) =
               <span>{post.like_count || 0}</span>
             </div>
             <div className="flex items-center space-x-1">
-              <Share2 className="w-4 h-4" />
+              <ArrowUpFromLine className="w-4 h-4" />
               <span>{post.retweet_count || 0}</span>
             </div>
           </div>
@@ -287,7 +287,7 @@ export const PostPopupModal = ({ post, isOpen, onClose }: PostPopupModalProps) =
                   : 'bg-dark-700 text-gray-400 hover:bg-dark-600 hover:text-white'
               }`}
             >
-              <Share2 className={`w-5 h-5 ${isRetweeted ? 'fill-current' : ''}`} />
+              <ArrowUpFromLine className={`w-5 h-5 ${isRetweeted ? 'fill-current' : ''}`} />
               <span>{isRetweeted ? 'Retweeted' : 'Retweet'}</span>
             </button>
 

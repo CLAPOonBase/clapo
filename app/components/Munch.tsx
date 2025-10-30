@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Heart, MessageCircle, Share2, MoreVertical, Volume2, VolumeX, Pause, Play, X, Send, Trash2, Plus } from "lucide-react";
+import { Heart, MessageCircle, ArrowUpFromLine, MoreVertical, Volume2, VolumeX, Pause, Play, X, Send, Trash2, Plus } from "lucide-react";
 import { useMunch } from "@/app/hooks/useMunch";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -649,7 +649,7 @@ const Munch: React.FC = () => {
           whileTap={{ scale: 0.9 }}
         >
           <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
-            <Share2 size={20} className="text-black" strokeWidth={2} />
+            <ArrowUpFromLine size={20} className="text-black" strokeWidth={2} />
           </div>
           <span className="text-white text-[11px] font-semibold">Share</span>
         </motion.button>
