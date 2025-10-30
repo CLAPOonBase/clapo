@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { privyId: string } }
+  { params }: { params: Promise<{ privyId: string }> }
 ) {
   try {
-    const { privyId } = params;
+    const { privyId } = await params;
 
     console.log('🔄 Checking user by Privy ID:', privyId);
 
