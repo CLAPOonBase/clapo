@@ -60,21 +60,31 @@ export default function AccountInfo({ onClose }: AccountInfoProps) {
     if (!privyUser) return null
 
     // Try to get avatar from various Privy auth methods
-    if (privyUser.google?.pictureUrl) {
-      console.log('✅ Using Google avatar:', privyUser.google.pictureUrl)
-      return privyUser.google.pictureUrl
+    // Note: Privy types may vary, check available properties
+    const google = privyUser.google as any
+    const twitter = privyUser.twitter as any
+    const discord = privyUser.discord as any
+    const github = privyUser.github as any
+
+    if (google?.pictureUrl || google?.picture) {
+      const avatar = google.pictureUrl || google.picture
+      console.log('✅ Using Google avatar:', avatar)
+      return avatar
     }
-    if (privyUser.twitter?.profilePictureUrl) {
-      console.log('✅ Using Twitter avatar:', privyUser.twitter.profilePictureUrl)
-      return privyUser.twitter.profilePictureUrl
+    if (twitter?.profilePictureUrl || twitter?.picture) {
+      const avatar = twitter.profilePictureUrl || twitter.picture
+      console.log('✅ Using Twitter avatar:', avatar)
+      return avatar
     }
-    if (privyUser.discord?.avatarUrl) {
-      console.log('✅ Using Discord avatar:', privyUser.discord.avatarUrl)
-      return privyUser.discord.avatarUrl
+    if (discord?.avatarUrl || discord?.avatar) {
+      const avatar = discord.avatarUrl || discord.avatar
+      console.log('✅ Using Discord avatar:', avatar)
+      return avatar
     }
-    if (privyUser.github?.profilePictureUrl) {
-      console.log('✅ Using GitHub avatar:', privyUser.github.profilePictureUrl)
-      return privyUser.github.profilePictureUrl
+    if (github?.profilePictureUrl || github?.avatarUrl) {
+      const avatar = github.profilePictureUrl || github.avatarUrl
+      console.log('✅ Using GitHub avatar:', avatar)
+      return avatar
     }
 
     console.log('⚠️ No avatar found in Privy data')
