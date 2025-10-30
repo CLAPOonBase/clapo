@@ -79,7 +79,7 @@ function SignInPage() {
     const timeoutId = setTimeout(async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/users/check-username/${formData.username}`
+          `/api/users/check-username/${formData.username}`
         );
         const data = await response.json();
         setUsernameAvailable(data.available);
@@ -116,7 +116,7 @@ function SignInPage() {
           try {
             console.log("🌐 Checking user in backend:", user.id);
             const response = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${user.id}`
+              `/api/users/privy/${user.id}`
             );
             const data = await response.json();
             console.log("📦 Backend response:", data);

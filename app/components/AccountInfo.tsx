@@ -125,7 +125,7 @@ export default function AccountInfo({ onClose }: AccountInfoProps) {
           const timeoutId = setTimeout(() => controller.abort(), 8000)
 
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${privyUser.id}`,
+            `/api/users/privy/${privyUser.id}`,
             { signal: controller.signal }
           )
 
