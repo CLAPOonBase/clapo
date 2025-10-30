@@ -251,12 +251,6 @@ function SignInPage() {
     });
 
     try {
-      // For community accounts, we need to create them as individual users first
-      // then associate them as community accounts
-      const userPayload = accountType === 'community'
-        ? { ...profileData, accountType: 'individual', isCommunityAccount: true }
-        : profileData;
-
       const response = await fetch(
         '/api/auth/signup-privy',
         {
@@ -264,7 +258,7 @@ function SignInPage() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(userPayload),
+          body: JSON.stringify(profileData),
         }
       );
 
@@ -283,41 +277,9 @@ function SignInPage() {
           status: response.status,
           errorMessage,
           fullError: data,
-          sentPayload: userPayload
+          sentPayload: profileData
         });
         throw new Error(errorMessage);
-      }
-
-      // If this is a community account, create the community entity
-      if (accountType === 'community' && data.user) {
-        console.log("🏘️ Creating community entity for community account...");
-        try {
-          const communityResponse = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'https://server.blazeswap.io/api/snaps'}/communities`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                name: formData.displayName || formData.username,
-                description: `Community managed by @${formData.username}`,
-                creatorId: data.user.id,
-                type: 'open' // Default community type
-              }),
-            }
-          );
-
-          if (communityResponse.ok) {
-            const communityData = await communityResponse.json();
-            console.log("✅ Community entity created:", communityData);
-          } else {
-            console.warn("⚠️ Community entity creation failed but user account created");
-          }
-        } catch (communityError) {
-          console.warn("⚠️ Could not create community entity:", communityError);
-          // Don't fail the whole signup if community creation fails
-        }
       }
 
       // Save minimal data to localStorage for session
