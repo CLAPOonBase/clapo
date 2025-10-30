@@ -47,7 +47,7 @@ export default function Hero() {
           </span>
         </span>
         <span className="text-[10px] uppercase sm:text-xs text-[#A0A0A0] mb-8 mt-2 max-w-lg tracking-widest">
-The First Social Economy Layer on Monad for Creators, Protocol, Yappers and Community        </span>
+The First Social Economy Layer on Base for Creators, Protocol, Yappers and Community        </span>
       </div>
       <div className="md:absolute block right-0 top-0 h-full md:flex justify-end z-0 pointer-events-none">
         <OrbitalAnimation />

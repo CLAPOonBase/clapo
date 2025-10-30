@@ -5,7 +5,7 @@ export const CONTRACT_CONFIG = {
   USDC_CONTRACT_ADDRESS: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
   
   // Network configuration
-  DEFAULT_RPC_URL: process.env.NEXT_PUBLIC_RPC_URL || "https://sepolia.infura.io/v3/YOUR_PROJECT_ID",
+  DEFAULT_RPC_URL: process.env.NEXT_PUBLIC_RPC_URL || "https://sepolia.base.org",
   
   // Default values
   DEFAULT_USDC_AMOUNT: 10, // Default USDC amount for buying shares

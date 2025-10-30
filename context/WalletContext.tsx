@@ -74,9 +74,9 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
           console.log('🔍 WalletContext: Found Privy wallet:', embeddedWallet);
           console.log('🔍 WalletContext: Wallet address:', embeddedWallet.address);
 
-          // Switch to Monad Testnet (chain ID 10143)
-          console.log('🔍 WalletContext: Switching to chain 10143...');
-          await embeddedWallet.switchChain(10143);
+          // Switch to Base Sepolia (chain ID 84532)
+          console.log('🔍 WalletContext: Switching to Base Sepolia (84532)...');
+          await embeddedWallet.switchChain(84532);
 
           console.log('🔍 WalletContext: Getting Ethers provider from Privy wallet...');
           // Use the wallet's getEthereumProvider method

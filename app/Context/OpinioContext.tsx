@@ -78,7 +78,7 @@ export const OpinioProvider: React.FC<OpinioProviderProps> = ({ children }) => {
       
       try {
         console.log('🔧 Initializing read-only service for market fetching...');
-        const readOnlyProvider = new ethers.JsonRpcProvider('https://testnet-rpc.monad.xyz');
+        const readOnlyProvider = new ethers.JsonRpcProvider('https://sepolia.base.org');
         const readOnlyService = new OpinioContractService(readOnlyProvider);
         setService(readOnlyService);
         
@@ -219,8 +219,8 @@ export const OpinioProvider: React.FC<OpinioProviderProps> = ({ children }) => {
       
 
       const network = await newProvider.getNetwork();
-      const targetChainId = 10143;
-      
+      const targetChainId = 84532;
+
       if (Number(network.chainId) !== targetChainId) {
 
         if (typeof window !== 'undefined' && window.ethereum) {
@@ -236,25 +236,25 @@ export const OpinioProvider: React.FC<OpinioProviderProps> = ({ children }) => {
                 method: 'wallet_addEthereumChain',
                 params: [{
                   chainId: `0x${targetChainId.toString(16)}`,
-                  chainName: 'Monad Testnet',
+                  chainName: 'Base Sepolia',
                   nativeCurrency: {
-                    name: 'MONAD',
-                    symbol: 'MONAD',
+                    name: 'Ether',
+                    symbol: 'ETH',
                     decimals: 18
                   },
-                  rpcUrls: ['https://testnet-rpc.monad.xyz'],
-                  blockExplorerUrls: ['https://testnet.monadexplorer.com']
+                  rpcUrls: ['https://sepolia.base.org'],
+                  blockExplorerUrls: ['https://sepolia.basescan.org']
                 }],
               });
             } else {
-              throw new Error(`Please switch to Monad Testnet (Chain ID: ${targetChainId})`);
+              throw new Error(`Please switch to Base Sepolia testnet (Chain ID: ${targetChainId})`);
             }
           }
           
 
           const updatedNetwork = await newProvider.getNetwork();
           if (Number(updatedNetwork.chainId) !== targetChainId) {
-            throw new Error(`Failed to switch to Monad Testnet. Current chain ID: ${updatedNetwork.chainId}`);
+            throw new Error(`Failed to switch to Base Sepolia testnet. Current chain ID: ${updatedNetwork.chainId}`);
           }
         }
       }

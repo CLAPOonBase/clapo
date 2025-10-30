@@ -38,6 +38,7 @@ export default function WalletPage() {
   const { authenticated, user, ready: privyReady, login } = usePrivy()
   const [monBalance, setMonBalance] = useState<string>('0')
   const [isLoadingBalance, setIsLoadingBalance] = useState(false)
+  const [networkWarning, setNetworkWarning] = useState<string | null>(null)
   const [copiedPrivyAddress, setCopiedPrivyAddress] = useState(false)
   const [activeTab, setActiveTab] = useState<'posts' | 'creators'>('posts')
   const [currentPage, setCurrentPage] = useState<'wallet'>('wallet')
@@ -62,18 +63,39 @@ export default function WalletPage() {
       if (authenticated && address && privyReady) {
         setIsLoadingBalance(true)
         try {
+          // Verify network first
+          if (window.ethereum) {
+            const chainId = await window.ethereum.request({ method: 'eth_chainId' })
+            const chainIdDecimal = parseInt(chainId, 16)
+            console.log('🔍 Current chain ID:', chainIdDecimal)
+
+            if (chainIdDecimal !== 84532) {
+              setNetworkWarning(`Please switch to Base Sepolia testnet. Current network: Chain ID ${chainIdDecimal}`)
+              setMonBalance('0')
+              setIsLoadingBalance(false)
+              return
+            } else {
+              setNetworkWarning(null)
+            }
+          }
+
           console.log('🔍 Attempting to fetch balance for address:', address)
           const balance = await getETHBalance()
           console.log('✅ Balance fetched:', balance)
-          setMonBalance(parseFloat(balance).toFixed(4))
+          // Keep more precision to show small balances correctly
+          const balanceNum = parseFloat(balance)
+          // Show up to 6 decimals, but trim trailing zeros
+          setMonBalance(balanceNum.toFixed(6).replace(/\.?0+$/, ''))
         } catch (error) {
-          console.error('❌ Failed to fetch MON balance:', error)
+          console.error('❌ Failed to fetch ETH balance:', error)
+          setNetworkWarning('Failed to fetch balance. Please ensure you are connected to Base Sepolia.')
         } finally {
           setIsLoadingBalance(false)
         }
       } else {
         console.log('⚠️ Not ready to fetch balance')
         setMonBalance('0')
+        setNetworkWarning(null)
       }
     }
 
@@ -266,6 +288,25 @@ export default function WalletPage() {
             )}
           </div>
 
+          {networkWarning && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-yellow-900/20 border-2 border-yellow-500/50 rounded-2xl p-4 shadow-xl shadow-black/20"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-yellow-500 text-xl">⚠️</span>
+                </div>
+                <div>
+                  <h3 className="text-yellow-500 font-semibold mb-1">Wrong Network</h3>
+                  <p className="text-yellow-200/80 text-sm">{networkWarning}</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -297,25 +338,43 @@ export default function WalletPage() {
                 </div>
               </div>
               <div>
-                <p className="text-gray-400 text-xs font-semibold mb-1">WALLET BALANCE (MON)</p>
+                <p className="text-gray-400 text-xs font-semibold mb-1">WALLET BALANCE (ETH)</p>
                 <div className="flex items-center gap-2">
                   <p className="text-2xl font-bold">
-                    {!authenticated ? '0.0000' : isLoadingBalance ? '...' : monBalance}
+                    {!authenticated ? '0' : isLoadingBalance ? '...' : monBalance || '0'}
                   </p>
                   {authenticated && address && (
                     <button
                       onClick={async () => {
                         setIsLoadingBalance(true)
                         try {
+                          // Verify network
+                          if (window.ethereum) {
+                            const chainId = await window.ethereum.request({ method: 'eth_chainId' })
+                            const chainIdDecimal = parseInt(chainId, 16)
+
+                            if (chainIdDecimal !== 84532) {
+                              setNetworkWarning(`Please switch to Base Sepolia testnet. Current network: Chain ID ${chainIdDecimal}`)
+                              setMonBalance('0')
+                              setIsLoadingBalance(false)
+                              return
+                            } else {
+                              setNetworkWarning(null)
+                            }
+                          }
+
                           const balance = await getETHBalance()
-                          setMonBalance(parseFloat(balance).toFixed(4))
+                          const balanceNum = parseFloat(balance)
+                          setMonBalance(balanceNum.toFixed(6).replace(/\.?0+$/, ''))
                         } catch (error) {
                           console.error('Failed to refresh balance:', error)
+                          setNetworkWarning('Failed to fetch balance. Please ensure you are connected to Base Sepolia.')
                         } finally {
                           setIsLoadingBalance(false)
                         }
                       }}
                       className="p-1 hover:bg-gray-700/50 rounded-lg transition-colors"
+                      title="Refresh balance"
                     >
                       <RefreshCw className={`w-4 h-4 ${isLoadingBalance ? 'animate-spin' : ''}`} />
                     </button>

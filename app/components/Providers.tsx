@@ -2,7 +2,7 @@
 
 import { SessionProvider } from "next-auth/react";
 import { PrivyProvider } from "@privy-io/react-auth";
-import { defineChain } from "viem";
+import { baseSepolia } from "viem/chains";
 import { ApiProvider } from "../Context/ApiProvider";
 import ClientLayoutWrapper from "./ClientLayoutWrapper";
 import { WalletProvider } from "@/context/WalletContext";
@@ -14,44 +14,6 @@ interface ProvidersProps {
 // NOTE: SessionProvider is kept for backward compatibility with existing credential-based logins.
 // All new authentication should use Privy (PrivyProvider below).
 
-const baseSepolia = defineChain({
-  id: 84532,
-  name: 'Base Sepolia',
-  network: 'base-sepolia',
-  nativeCurrency: {
-    name: 'Ether',
-    symbol: 'ETH',
-    decimals: 18,
-  },
-  rpcUrls: {
-    default: {
-      http: [
-        'https://sepolia.base.org',
-        'https://base-sepolia-rpc.publicnode.com'
-      ],
-      webSocket: [
-        'wss://base-sepolia-rpc.publicnode.com'
-      ]
-    },
-    public: {
-      http: [
-        'https://sepolia.base.org',
-        'https://base-sepolia-rpc.publicnode.com'
-      ],
-      webSocket: [
-        'wss://base-sepolia-rpc.publicnode.com'
-      ]
-    }
-  },
-  blockExplorers: {
-    default: {
-      name: 'BaseScan',
-      url: 'https://sepolia.basescan.org'
-    }
-  },
-  testnet: true
-});
-
 export default function Providers({ children }: ProvidersProps) {
   return (
     <SessionProvider
@@ -62,14 +24,16 @@ export default function Providers({ children }: ProvidersProps) {
       <PrivyProvider
         appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}
         config={{
-          appearance: { theme: 'dark' },
+          appearance: {
+            theme: 'dark',
+            accentColor: '#6e54ff',
+          },
           embeddedWallets: {
-            ethereum: {
-              createOnLogin: 'users-without-wallets',
-            }
+            createOnLogin: 'users-without-wallets',
+            requireUserPasswordOnCreate: false,
           },
           defaultChain: baseSepolia,
-          supportedChains: [baseSepolia]
+          supportedChains: [baseSepolia],
         }}
       >
         <ApiProvider>
