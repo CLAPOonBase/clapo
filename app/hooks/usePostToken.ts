@@ -133,7 +133,9 @@ export const usePostToken = () => {
     uuid: string,
     content: string,
     imageUrl: string,
-    quadraticDivisor: number = 1
+    quadraticDivisor: number = 1,
+    privyUserId?: string,
+    useGasSponsorship: boolean = true
   ) => {
     console.log('🚀 createPostToken called with:', {
       uuid,
@@ -144,7 +146,9 @@ export const usePostToken = () => {
       contractAddress: CONTRACT_ADDRESS,
       hasContract: !!contract,
       hasSigner: !!signer,
-      userAddress: address
+      userAddress: address,
+      useGasSponsorship,
+      hasPrivyUserId: !!privyUserId
     });
 
     if (!contract || !signer) {
@@ -154,13 +158,7 @@ export const usePostToken = () => {
 
     setLoading(true);
     try {
-      console.log('📝 Calling contract.createPost...');
-      console.log('Contract method details:', {
-        method: 'createPost',
-        params: [uuid, content, imageUrl, quadraticDivisor],
-        contractAddress: CONTRACT_ADDRESS,
-        userAddress: address
-      });
+      console.log('📝 Preparing to create post token...');
 
       // First check if the contract is paused
       try {
@@ -184,17 +182,67 @@ export const usePostToken = () => {
         console.log('Could not check UUID existence:', existsError);
       }
 
-      const tx = await contract.createPost(
-        uuid,
-        content,
-        imageUrl,
-        0, // freebieCount - posts have 0 freebies
-        quadraticDivisor
-      );
+      // Try gas sponsorship if enabled and Privy user ID is available
+      let txHash: string;
+      let wasSponsored = false;
 
-      // Transaction sent successfully
+      if (useGasSponsorship && privyUserId && address) {
+        try {
+          console.log('💰 Attempting gas sponsorship via backend API...');
 
-      const receipt = await tx.wait();
+          const sponsorResponse = await fetch('/api/sponsor-transaction', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userAddress: address,
+              uuid,
+              content,
+              imageUrl,
+              quadraticDivisor,
+              privyUserId,
+            }),
+          });
+
+          const sponsorData = await sponsorResponse.json();
+
+          if (sponsorResponse.ok && sponsorData.success && sponsorData.txHash) {
+            console.log('✅ Gas sponsorship successful!', sponsorData.txHash);
+            txHash = sponsorData.txHash;
+            wasSponsored = true;
+
+            // Wait for transaction confirmation
+            const receipt = await provider.waitForTransaction(txHash);
+            console.log('✅ Sponsored transaction confirmed:', receipt);
+          } else {
+            throw new Error(sponsorData.error || 'Gas sponsorship failed');
+          }
+        } catch (sponsorError) {
+          console.warn('⚠️ Gas sponsorship failed, falling back to user-paid gas:', sponsorError);
+          // Fall through to user-paid transaction
+          wasSponsored = false;
+        }
+      }
+
+      // If sponsorship wasn't used or failed, user pays for gas
+      if (!wasSponsored) {
+        console.log('💳 User paying for gas...');
+
+        const tx = await contract.createPost(
+          uuid,
+          content,
+          imageUrl,
+          0, // freebieCount - posts have 0 freebies
+          quadraticDivisor
+        );
+
+        console.log('📤 Transaction sent (user-paid):', tx.hash);
+        txHash = tx.hash;
+
+        const receipt = await tx.wait();
+        console.log('✅ Transaction confirmed:', receipt);
+      }
 
       // Create post token in backend database
       try {
@@ -208,9 +256,9 @@ export const usePostToken = () => {
           quadratic_divisor: quadraticDivisor,
           total_supply: 100000 // Default total supply
         });
-        
+
         if (backendResponse.success) {
-          // Post token created in backend database
+          console.log('✅ Post token created in backend database');
         } else {
           console.error('❌ Failed to create post token in backend:', backendResponse.message);
         }
@@ -219,7 +267,14 @@ export const usePostToken = () => {
         // Don't throw here - blockchain transaction succeeded, backend is optional
       }
 
-      return tx.hash;
+      // Log sponsorship status
+      if (wasSponsored) {
+        console.log('🎉 Post token created with sponsored gas!');
+      } else {
+        console.log('✅ Post token created (user paid for gas)');
+      }
+
+      return txHash;
     } catch (error) {
       console.error('❌ Failed to create post token:', error);
       console.error('Error details:', {
@@ -229,10 +284,10 @@ export const usePostToken = () => {
         data: error.data,
         stack: error.stack
       });
-      
+
       // Try to parse the error message for better user feedback
       let userMessage = 'Failed to create post token';
-      
+
       if (error.message?.includes('Post with this UUID already exists')) {
         userMessage = 'A token already exists for this post. Please try again.';
       } else if (error.message?.includes('Contract is currently paused')) {
@@ -244,7 +299,7 @@ export const usePostToken = () => {
       } else if (error.message?.includes('insufficient funds')) {
         userMessage = 'Insufficient funds for gas fees. Please add ETH to your wallet.';
       }
-      
+
       const enhancedError = new Error(userMessage) as Error & { originalError: any };
       enhancedError.originalError = error;
       throw enhancedError;

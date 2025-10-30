@@ -343,18 +343,22 @@ export function SnapComposer({ close }: { close: () => void }) {
       if (isConnected) {
         try {
           console.log('🚀 Creating post token with same UUID:', postUuid)
+          console.log('📝 Using Privy user ID for gas sponsorship:', privyUser?.id)
+
           const tokenTxHash = await createPostToken(
             postUuid, // Use the SAME UUID
             content.trim(),
             mediaUrl || '',
-            quadraticDivisor
+            quadraticDivisor,
+            privyUser?.id, // Pass Privy user ID for gas sponsorship
+            true // Enable gas sponsorship
           )
           // Post token created successfully
-          showSuccessToast(`Snap posted and token created! TX: ${tokenTxHash.slice(0, 10)}...`)
+          showSuccessToast(`🎉 Snap posted and token created with sponsored gas! TX: ${tokenTxHash.slice(0, 10)}...`)
         } catch (tokenError) {
           console.error('Failed to create post token:', tokenError)
           let errorMessage = 'Snap posted successfully, but token creation failed'
-          
+
           if (tokenError.message?.includes('Post with this UUID already exists')) {
             errorMessage = 'Snap posted successfully, but token already exists for this post'
           } else if (tokenError.message?.includes('Insufficient')) {
@@ -362,7 +366,7 @@ export function SnapComposer({ close }: { close: () => void }) {
           } else if (tokenError.message?.includes('reverted')) {
             errorMessage = 'Snap posted successfully, but token creation transaction failed'
           }
-          
+
           showErrorToast(errorMessage)
         }
       } else {

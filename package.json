@@ -15,6 +15,7 @@
     "@aws-sdk/s3-request-presigner": "^3.864.0",
     "@google-cloud/storage": "^7.17.2",
     "@privy-io/react-auth": "^3.3.0",
+    "@privy-io/server-auth": "^1.32.5",
     "@radix-ui/react-dialog": "^1.1.14",
     "autoprefixer": "^10.4.21",
     "class-variance-authority": "^0.7.1",
@@ -35,7 +36,8 @@
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^13.0.0",
-    "vaul": "^1.1.2"
+    "vaul": "^1.1.2",
+    "viem": "^2.38.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

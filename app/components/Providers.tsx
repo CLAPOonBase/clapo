@@ -32,9 +32,13 @@ export default function Providers({ children }: ProvidersProps) {
             ethereum: {
               createOnLogin: 'users-without-wallets',
             },
+            // Note: Gas sponsorship is handled server-side via the /api/sponsor-transaction endpoint
+            // The sponsor wallet covers gas fees for post creation transactions
           },
           defaultChain: baseSepolia,
           supportedChains: [baseSepolia],
+          // Enable wallet connection for post token creation
+          loginMethods: ['email', 'wallet', 'google'],
         }}
       >
         <ApiProvider>
