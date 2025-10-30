@@ -532,7 +532,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_LOADING', payload: true })
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/signup/privy`,
+        '/api/auth/signup-privy',
         {
           method: 'POST',
           headers: {

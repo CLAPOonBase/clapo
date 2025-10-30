@@ -32,7 +32,6 @@ export default function Providers({ children }: ProvidersProps) {
             ethereum: {
               createOnLogin: 'users-without-wallets',
             },
-            requireUserPasswordOnCreate: false,
           },
           defaultChain: baseSepolia,
           supportedChains: [baseSepolia],
