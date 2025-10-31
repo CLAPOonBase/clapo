@@ -40,13 +40,16 @@ export const useStories = () => {
   }, [authenticated, privyUser, ready]);
 
   // Fetch stories from users that the current user is following
-  const fetchFollowingStories = useCallback(async (limit: number = 50) => {
+  const fetchFollowingStories = useCallback(async (limit: number = 50, silent: boolean = false) => {
     if (!currentUserId) {
       console.log('❌ useStories: No user ID available');
       return;
     }
 
-    setLoading(true);
+    // Only show loading state on initial fetch, not on background refresh
+    if (!silent) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
@@ -56,7 +59,9 @@ export const useStories = () => {
       setError(err instanceof Error ? err.message : 'Failed to fetch stories');
       console.error('Error fetching stories:', err);
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, [currentUserId]);
 

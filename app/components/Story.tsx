@@ -109,13 +109,13 @@ const Stories: React.FC = () => {
     }
   }, [authenticated, ready, fetchFollowingStories]);
 
-  // Auto-refresh stories every 30 seconds
+  // Auto-refresh stories every 30 seconds (silent refresh - no loading state)
   useEffect(() => {
     if (!authenticated || !ready) return;
 
     const refreshInterval = setInterval(() => {
-      console.log('🔄 Stories: Auto-refreshing stories...');
-      fetchFollowingStories();
+      console.log('🔄 Stories: Auto-refreshing stories silently...');
+      fetchFollowingStories(50, true); // Pass true for silent refresh
     }, 30000); // Refresh every 30 seconds
 
     return () => clearInterval(refreshInterval);
