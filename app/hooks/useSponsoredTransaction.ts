@@ -36,13 +36,13 @@ export const useSponsoredTransaction = () => {
    * @param transaction.to - Destination address
    * @param transaction.data - Encoded transaction data
    * @param transaction.value - Value to send in wei (default: 0)
-   * @returns Transaction hash
+   * @returns Transaction hash as string
    */
   const sendSponsoredTransaction = useCallback(async (transaction: {
     to: `0x${string}`;
     data?: `0x${string}`;
     value?: bigint;
-  }) => {
+  }): Promise<string> => {
     try {
       console.log('🎫 Sending sponsored transaction:', {
         to: transaction.to,
@@ -50,7 +50,7 @@ export const useSponsoredTransaction = () => {
         dataLength: transaction.data?.length || 0
       });
 
-      const txHash = await sendTransaction(
+      const txResult = await sendTransaction(
         {
           to: transaction.to,
           value: transaction.value || 0n,
@@ -62,6 +62,8 @@ export const useSponsoredTransaction = () => {
         }
       );
 
+      // Extract transaction hash from result
+      const txHash = typeof txResult === 'string' ? txResult : (txResult as any).hash || (txResult as any).transactionHash;
       console.log('✅ Sponsored transaction sent:', txHash);
       return txHash;
     } catch (error) {
