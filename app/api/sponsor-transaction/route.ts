@@ -144,10 +144,11 @@ export async function POST(request: NextRequest) {
     console.log('📤 Sending sponsored transaction...');
 
     const txHash = await walletClient.sendTransaction({
+      account: sponsorAccount,
       to: POST_TOKEN_CONTRACT,
       data,
       gas: gasEstimate * 120n / 100n, // Add 20% buffer
-    });
+    } as any);
 
     console.log('✅ Transaction sent:', txHash);
 
