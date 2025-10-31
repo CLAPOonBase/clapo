@@ -28,7 +28,7 @@ export const MunchUpload: React.FC<MunchUploadProps> = ({ onClose }) => {
   const [mentionStartPos, setMentionStartPos] = useState(0);
   const captionRef = useRef<HTMLTextAreaElement>(null);
 
-  const { createMunchVideo } = useMunch();
+  const { createMunchVideo, currentUserId } = useMunch();
 
   // Handle caption change and mention detection
   const handleCaptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -119,54 +119,64 @@ export const MunchUpload: React.FC<MunchUploadProps> = ({ onClose }) => {
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !currentUserId) return;
 
     setUploading(true);
     setError('');
 
     try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-
-      console.log('📹 Uploading munch video:', {
+      console.log('📹 Starting direct-to-GCS upload:', {
         fileName: selectedFile.name,
         fileSize: selectedFile.size,
         fileType: selectedFile.type,
-        duration: videoDuration
+        duration: videoDuration,
+        userId: currentUserId
       });
 
-      const uploadResponse = await fetch('/api/upload', {
+      // Step 1: Get signed URL from our API
+      const fileExtension = selectedFile.name.split('.').pop() || 'mp4';
+      const signedUrlResponse = await fetch('/api/upload/signed-url', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUserId,
+          fileType: selectedFile.type,
+          fileExtension: fileExtension
+        }),
       });
 
-      console.log('📹 Upload response status:', uploadResponse.status, uploadResponse.statusText);
-
-      if (!uploadResponse.ok) {
-        let errorMessage = 'Upload failed';
-        try {
-          const errorData = await uploadResponse.json();
-          errorMessage = errorData.error || errorData.message || `Upload failed with status ${uploadResponse.status}`;
-          console.error('📹 Upload error details:', errorData);
-        } catch (e) {
-          const errorText = await uploadResponse.text();
-          console.error('📹 Upload error text:', errorText);
-          errorMessage = errorText || `Upload failed with status ${uploadResponse.status}`;
-        }
-        throw new Error(errorMessage);
+      if (!signedUrlResponse.ok) {
+        const errorData = await signedUrlResponse.json();
+        throw new Error(errorData.error || 'Failed to get upload URL');
       }
 
-      const uploadResult = await uploadResponse.json();
-      console.log('📹 Munch video uploaded to storage:', uploadResult);
-      console.log('📹 Video URL:', uploadResult.url);
-      console.log('📹 Video duration:', videoDuration);
+      const { signedUrl, publicUrl } = await signedUrlResponse.json();
+      console.log('✅ Received signed URL for direct upload');
 
-      // Create munch video with uploaded URL
+      // Step 2: Upload directly to GCS using signed URL
+      const uploadResponse = await fetch(signedUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': selectedFile.type,
+          'x-goog-acl': 'public-read',
+        },
+        body: selectedFile,
+      });
+
+      if (!uploadResponse.ok) {
+        console.error('❌ Direct GCS upload failed:', uploadResponse.status, uploadResponse.statusText);
+        throw new Error(`Upload failed with status ${uploadResponse.status}`);
+      }
+
+      console.log('✅ File uploaded directly to GCS');
+      console.log('📹 Video URL:', publicUrl);
+
+      // Step 3: Create munch video record in backend
       const createdVideo = await createMunchVideo(
-        uploadResult.url,
+        publicUrl,
         videoDuration,
         caption || undefined,
-        uploadResult.thumbnail // if your upload endpoint provides a thumbnail
+        undefined // thumbnail - can be generated later if needed
       );
 
       console.log('✅ Munch video created successfully in backend:', createdVideo);
@@ -179,7 +189,6 @@ export const MunchUpload: React.FC<MunchUploadProps> = ({ onClose }) => {
       onClose();
 
       // Stay on munch section - the parent component will refresh the feed
-      // No need to reload the entire page
 
     } catch (error) {
       console.error('❌ Failed to upload munch video:', error);
@@ -341,13 +350,18 @@ export const MunchUpload: React.FC<MunchUploadProps> = ({ onClose }) => {
             <div className="flex space-x-3 pt-2">
               <button
                 onClick={handleUpload}
-                disabled={uploading}
+                disabled={uploading || !currentUserId}
                 className="flex-1 px-6 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {uploading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
                     Uploading...
+                  </>
+                ) : !currentUserId ? (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Loading...
                   </>
                 ) : (
                   <>

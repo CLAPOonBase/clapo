@@ -43,6 +43,12 @@ export interface UploadResult {
   key: string;
 }
 
+export interface SignedUrlResult {
+  signedUrl: string;
+  publicUrl: string;
+  fileName: string;
+}
+
 export const uploadToGCS = async (
   file: File,
   userId: string,
@@ -110,6 +116,57 @@ export const uploadToGCS = async (
     }
 
     throw new Error(`Failed to upload file to Google Cloud Storage: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+export const generateSignedUploadUrl = async (
+  userId: string,
+  fileType: string,
+  fileExtension: string
+): Promise<SignedUrlResult> => {
+  const bucketName = process.env.GCS_BUCKET_NAME || 'clapo_media_bucket';
+  const timestamp = Date.now();
+  const fileName = `${userId}/${timestamp}-${Math.random().toString(36).substring(2)}.${fileExtension}`;
+
+  console.log('🔐 Generating signed URL for:', {
+    fileName,
+    bucket: bucketName,
+    contentType: fileType,
+  });
+
+  try {
+    const file = bucket.file(fileName);
+
+    // Generate a signed URL for upload that expires in 15 minutes
+    const [signedUrl] = await file.getSignedUrl({
+      version: 'v4',
+      action: 'write',
+      expires: Date.now() + 15 * 60 * 1000, // 15 minutes
+      contentType: fileType,
+      extensionHeaders: {
+        'x-goog-acl': 'public-read', // Make the file public after upload
+      },
+    });
+
+    const publicUrl = `https://storage.googleapis.com/${bucketName}/${fileName}`;
+
+    console.log('✅ Signed URL generated successfully');
+
+    return {
+      signedUrl,
+      publicUrl,
+      fileName,
+    };
+  } catch (error) {
+    console.error('❌ Failed to generate signed URL:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      });
+    }
+    throw new Error(`Failed to generate signed upload URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
