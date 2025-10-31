@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["https://clapo.vercel.app", "https://*.vercel.app", "http://localhost:3000"],
+    "method": ["GET", "HEAD", "PUT", "POST", "DELETE"],
+    "responseHeader": ["Content-Type", "x-goog-acl"],
+    "maxAgeSeconds": 3600
+  }
+]
