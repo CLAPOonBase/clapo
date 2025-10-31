@@ -216,12 +216,14 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
   const loadMunchVideos = async () => {
     if (!userId || isLoadingMunchs) return
 
+    console.log('📹 Loading munch videos for user:', userId)
     setIsLoadingMunchs(true)
     try {
       const videos = await MunchApiService.getUserMunchVideos(userId, 50, 0)
+      console.log('📹 Loaded munch videos:', videos.length, 'videos')
       setMunchVideos(videos)
     } catch (error) {
-      console.error('Failed to load munch videos:', error)
+      console.error('❌ Failed to load munch videos:', error)
       setMunchVideos([])
     } finally {
       setIsLoadingMunchs(false)
@@ -230,7 +232,7 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
 
   // Load munch videos when munchs tab is selected
   useEffect(() => {
-    if (activeTab === 'munchs' && munchVideos.length === 0) {
+    if (activeTab === 'munchs' && !isLoadingMunchs) {
       loadMunchVideos()
     }
   }, [activeTab, userId])
