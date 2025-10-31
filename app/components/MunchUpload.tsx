@@ -128,13 +128,32 @@ export const MunchUpload: React.FC<MunchUploadProps> = ({ onClose }) => {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
+      console.log('📹 Uploading munch video:', {
+        fileName: selectedFile.name,
+        fileSize: selectedFile.size,
+        fileType: selectedFile.type,
+        duration: videoDuration
+      });
+
       const uploadResponse = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
 
+      console.log('📹 Upload response status:', uploadResponse.status, uploadResponse.statusText);
+
       if (!uploadResponse.ok) {
-        throw new Error('Upload failed');
+        let errorMessage = 'Upload failed';
+        try {
+          const errorData = await uploadResponse.json();
+          errorMessage = errorData.error || errorData.message || `Upload failed with status ${uploadResponse.status}`;
+          console.error('📹 Upload error details:', errorData);
+        } catch (e) {
+          const errorText = await uploadResponse.text();
+          console.error('📹 Upload error text:', errorText);
+          errorMessage = errorText || `Upload failed with status ${uploadResponse.status}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const uploadResult = await uploadResponse.json();
@@ -166,6 +185,7 @@ export const MunchUpload: React.FC<MunchUploadProps> = ({ onClose }) => {
       console.error('❌ Failed to upload munch video:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to upload video';
       setError(errorMessage);
+      alert(`Failed to upload: ${errorMessage}`);
     } finally {
       setUploading(false);
     }
