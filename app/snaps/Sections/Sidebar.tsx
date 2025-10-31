@@ -163,14 +163,14 @@ const handleNavClick = (value: PageKey) => {
     return;
   }
 
-  if (window.location.pathname !== '/') {
-    router.push('/');
-    setTimeout(() => {
-      setCurrentPage(value);
-    }, 100);
-  } else {
-    setCurrentPage(value);
+  // Always set the page first for immediate feedback
+  setCurrentPage(value);
+
+  // Navigate if not on home page
+  if (window.location.pathname !== '/snaps') {
+    router.push('/snaps');
   }
+
   setIsMobileSidebarOpen(false);
 };
 

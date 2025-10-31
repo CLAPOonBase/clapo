@@ -87,7 +87,7 @@ export const CreateCommunityModal = ({
       console.log('Creating community with data:', communityData);
       console.log('CreatorId:', creatorId, 'Type:', typeof creatorId);
 
-      const res = await fetch('http://server.blazeswap.io/api/snaps/communities', {
+      const res = await fetch('https://server.blazeswap.io/api/snaps/communities', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

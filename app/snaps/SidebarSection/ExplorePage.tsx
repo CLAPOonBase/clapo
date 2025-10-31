@@ -779,9 +779,14 @@ export default function ExplorePage() {
             className="text-center py-20 text-gray-400"
           >
             <Trophy size={48} className="mx-auto mb-4 opacity-50" />
-            <p className="text-sm">
-              {topUsers.length === 0 ? 'No users found in leaderboard' : 'No results match your search'}
+            <p className="text-sm mb-2">
+              {topUsers.length === 0 ? 'No users in leaderboard yet' : 'No results match your search'}
             </p>
+            {topUsers.length === 0 && (
+              <p className="text-xs text-gray-500">
+                Be the first to gain reputation and appear here!
+              </p>
+            )}
           </motion.div>
         )
       }
