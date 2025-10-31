@@ -29,11 +29,7 @@ export default function Providers({ children }: ProvidersProps) {
             accentColor: '#6e54ff',
           },
           embeddedWallets: {
-            ethereum: {
-              createOnLogin: 'users-without-wallets',
-            },
-            // Note: Gas sponsorship is handled server-side via the /api/sponsor-transaction endpoint
-            // The sponsor wallet covers gas fees for post creation transactions
+            createOnLogin: 'users-without-wallets',
           },
           defaultChain: baseSepolia,
           supportedChains: [baseSepolia],
