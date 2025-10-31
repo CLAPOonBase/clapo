@@ -109,6 +109,18 @@ const Stories: React.FC = () => {
     }
   }, [authenticated, ready, fetchFollowingStories]);
 
+  // Auto-refresh stories every 30 seconds
+  useEffect(() => {
+    if (!authenticated || !ready) return;
+
+    const refreshInterval = setInterval(() => {
+      console.log('🔄 Stories: Auto-refreshing stories...');
+      fetchFollowingStories();
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(refreshInterval);
+  }, [authenticated, ready, fetchFollowingStories]);
+
  useEffect(() => {
   let interval: NodeJS.Timeout | undefined;
   if (isModalOpen && isPlaying && currentStory) {

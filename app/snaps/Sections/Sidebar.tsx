@@ -163,6 +163,22 @@ const handleNavClick = (value: PageKey) => {
     return;
   }
 
+  // Navigate to user's profile page if profile is clicked
+  if (value === 'profile') {
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+      router.push(`/snaps/profile/${userId}`);
+    } else {
+      // Fallback to profile page if no user ID
+      setCurrentPage(value);
+      if (window.location.pathname !== '/snaps') {
+        router.push('/snaps');
+      }
+    }
+    setIsMobileSidebarOpen(false);
+    return;
+  }
+
   // Always set the page first for immediate feedback
   setCurrentPage(value);
 

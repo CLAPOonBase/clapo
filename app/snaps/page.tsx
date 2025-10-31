@@ -892,8 +892,19 @@ function SocialFeedPageContent() {
                 {/* Top Users by Reputation */}
                 <div className="flex-1 w-full p-3 overflow-y-auto">
                   {isLoadingTopUsers ? (
-                    <div className="flex justify-center items-center py-8">
-                      <LoadingSpinner size="w-8 h-8" />
+                    <div className="space-y-3">
+                      {[...Array(5)].map((_, i) => (
+                        <div key={i} className="flex items-center justify-between p-2 animate-pulse">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 rounded-full bg-gray-700"></div>
+                            <div className="flex flex-col space-y-2">
+                              <div className="h-3 w-20 bg-gray-700 rounded"></div>
+                              <div className="h-2 w-16 bg-gray-700 rounded"></div>
+                            </div>
+                          </div>
+                          <div className="h-8 w-16 bg-gray-700 rounded-lg"></div>
+                        </div>
+                      ))}
                     </div>
                   ) : topUsers.length > 0 ? (
                     <div className="space-y-3">
