@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadToGCS, validateFile } from '@/app/lib/gcs';
 
+// Configure route for large file uploads
+export const maxDuration = 60; // Maximum execution time in seconds
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     console.log('📤 Upload request received');
