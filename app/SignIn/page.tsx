@@ -196,7 +196,11 @@ function SignInPage() {
         username: "",
         displayName: "",
         topics: [],
-        following: []
+        following: [],
+        avatarFile: null,
+        avatarPreview: "",
+        bio: "",
+        enableCreatorShare: false
       });
     } catch (error) {
       console.error("Privy logout error:", error);
