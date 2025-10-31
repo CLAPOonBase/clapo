@@ -391,12 +391,12 @@ const goToNextStory = () => {
 
   if (loading) {
     return (
-      <div className="w-full p-4">
-        <div className="flex gap-3">
+      <div className="w-full px-2 md:px-4 py-2 md:py-3">
+        <div className="flex gap-2 md:gap-3">
           {[...Array(6)].map((_, index) => (
             <div key={index} className="flex-shrink-0">
-              <div className="w-20 h-20 rounded-full bg-gray-700 animate-pulse"></div>
-              <div className="w-16 h-3 bg-gray-700 rounded animate-pulse mt-1 mx-auto"></div>
+              <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gray-700 animate-pulse"></div>
+              <div className="w-12 md:w-14 h-2 md:h-3 bg-gray-700 rounded animate-pulse mt-0.5 md:mt-1 mx-auto"></div>
             </div>
           ))}
         </div>
@@ -406,9 +406,9 @@ const goToNextStory = () => {
 
   return (
     <div className="w-full max-w-6xl mx-auto">
-      {/* Stories Grid */}
+      {/* Stories Grid - Compact & Mobile Responsive */}
       <motion.div
-        className={`flex gap-4 p-6 ${
+        className={`flex gap-2 md:gap-3 px-2 md:px-4 py-2 md:py-3 ${
           groupedStories.length > 5 ? "overflow-x-auto scrollbar-hide" : "overflow-x-hidden scrollbar-hide"
         }`}
         initial={{ opacity: 0, y: 20 }}
@@ -416,38 +416,38 @@ const goToNextStory = () => {
         transition={{ duration: 0.5 }}
       >
         {/* Upload Story Button */}
-        <motion.div 
-          className="flex-shrink-0 cursor-pointer" 
+        <motion.div
+          className="flex-shrink-0 cursor-pointer"
           onClick={() => setShowUploadModal(true)}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
           <div className="relative">
-            <div className="w-20 h-20 rounded-full bg-black border-2 border-dashed border-gray-500 p-0.5 flex items-center justify-center">
-              <Plus size={24} className="text-gray-400" />
+            <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-black border-2 border-dashed border-gray-500 p-0.5 flex items-center justify-center">
+              <Plus size={20} className="text-gray-400 md:w-6 md:h-6" />
             </div>
           </div>
-          <p className="text-xs text-center mt-1 truncate w-20 text-gray-400">Your Story</p>
+          <p className="text-[10px] md:text-xs text-center mt-0.5 md:mt-1 truncate w-14 md:w-16 text-gray-400">Your Story</p>
         </motion.div>
 
         {/* User Stories */}
         {groupedStories.length === 0 && !loading && !error ? (
-          <motion.div 
+          <motion.div
             className="flex-shrink-0 text-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <div className="w-20 h-20 rounded-full bg-gray-700 flex items-center justify-center">
-              <span className="text-gray-400 text-xs">No stories yet</span>
+            <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gray-700 flex items-center justify-center">
+              <span className="text-gray-400 text-[10px] md:text-xs">No stories</span>
             </div>
-            <p className="text-xs text-center mt-1 text-gray-400">Create your first story!</p>
+            <p className="text-[10px] md:text-xs text-center mt-0.5 md:mt-1 text-gray-400 w-14 md:w-16">Create first!</p>
           </motion.div>
         ) : (
           groupedStories.map((groupedStory, index) => (
-            <motion.div 
-              key={groupedStory.user.id} 
-              className="flex-shrink-0 cursor-pointer" 
+            <motion.div
+              key={groupedStory.user.id}
+              className="flex-shrink-0 cursor-pointer"
               onClick={() => openStory(index)}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -456,10 +456,10 @@ const goToNextStory = () => {
               transition={{ delay: index * 0.1 }}
             >
               <div className="relative">
-                <motion.div 
-                  className={`w-20 h-20 rounded-full p-0.5 ${
-                    groupedStory.has_viewed 
-                      ? 'bg-gray-600' 
+                <motion.div
+                  className={`w-14 h-14 md:w-16 md:h-16 rounded-full p-0.5 ${
+                    groupedStory.has_viewed
+                      ? 'bg-gray-600'
                       : 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500'
                   }`}
                   whileHover={{ scale: 1.1 }}
@@ -474,7 +474,7 @@ const goToNextStory = () => {
                   </div>
                 </motion.div>
               </div>
-              <p className="text-xs text-center mt-1 truncate w-20">{groupedStory.user.username}</p>
+              <p className="text-[10px] md:text-xs text-center mt-0.5 md:mt-1 truncate w-14 md:w-16">{groupedStory.user.username}</p>
             </motion.div>
           ))
         )}

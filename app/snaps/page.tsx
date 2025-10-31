@@ -553,7 +553,7 @@ function SocialFeedPageContent() {
       case "home":
       default:
         return (
-          <div className="max-w-2xl mx-auto px-2 sm:px-0">
+          <div className="max-w-2xl mx-auto px-2 sm:px-0 mt-14 md:mt-0">
             <div className="relative">
               {/* Subtle background gradient */}
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-900/5 to-transparent pointer-events-none" />

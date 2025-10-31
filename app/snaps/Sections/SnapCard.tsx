@@ -534,11 +534,11 @@ const handleImageClick = (e: React.MouseEvent) => {
   return (
     <>
       <div
-        className="border-2 border-gray-700/70 rounded-xl mt-4 bg-black cursor-pointer hover:bg-gray-900/30 transition-colors"
+        className="border-2 border-gray-700/70 rounded-xl mt-2 md:mt-4 bg-black cursor-pointer hover:bg-gray-900/30 transition-colors"
         onClick={handleCardClick}
       >
         {/* Twitter-style Layout */}
-        <div className="flex gap-3 p-4">
+        <div className="flex gap-2 md:gap-3 p-2 md:p-4">
           {/* Left: Avatar */}
           <div className="flex-shrink-0">
             <UserProfileHover
@@ -547,7 +547,7 @@ const handleImageClick = (e: React.MouseEvent) => {
               avatarUrl={postAvatar}
               position="bottom"
             >
-              <div className={`w-10 h-10 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity ${accountType === 'community' ? 'rounded-md' : 'rounded-full'}`} onClick={(e) => e.stopPropagation()}>
+              <div className={`w-8 h-8 md:w-10 md:h-10 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity ${accountType === 'community' ? 'rounded-md' : 'rounded-full'}`} onClick={(e) => e.stopPropagation()}>
                 {postAvatar ? (
                   <img
                     src={postAvatar}
@@ -558,7 +558,7 @@ const handleImageClick = (e: React.MouseEvent) => {
                     }}
                   />
                 ) : (
-                  <div className="w-full h-full bg-gray-700 flex items-center justify-center text-sm font-semibold text-white">
+                  <div className="w-full h-full bg-gray-700 flex items-center justify-center text-xs md:text-sm font-semibold text-white">
                     {postAuthor?.substring(0, 2)?.toUpperCase() || 'U'}
                   </div>
                 )}
@@ -569,14 +569,14 @@ const handleImageClick = (e: React.MouseEvent) => {
           {/* Right: Content */}
           <div className="flex-1 min-w-0">
             {/* Header */}
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-1 md:gap-2 mb-0.5 md:mb-1">
               <UserProfileHover
                 userId={('user_id' in post && post.user_id) ? post.user_id.toString() : post.id.toString()}
                 username={postAuthor}
                 avatarUrl={postAvatar}
                 position="bottom"
               >
-                <span className="font-semibold text-white text-sm hover:underline cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                <span className="font-semibold text-white text-xs md:text-sm hover:underline cursor-pointer" onClick={(e) => e.stopPropagation()}>
                   {postAuthor}
                 </span>
               </UserProfileHover>
@@ -588,23 +588,23 @@ const handleImageClick = (e: React.MouseEvent) => {
                   showScore={false}
                 />
               )}
-              <span className="text-gray-500 text-sm">·</span>
-              <span className="text-gray-500 text-sm">{postTime}</span>
+              <span className="text-gray-500 text-xs md:text-sm">·</span>
+              <span className="text-gray-500 text-xs md:text-sm">{postTime}</span>
             </div>
 
             {/* Post Content */}
           {postContent && (
-  <div className="mb-3">
+  <div className="mb-2 mt-2 md:mb-3">
     <div
       className={`${
         !postImage
-          ? "bg-gradient-to-br from-gray-800/50  to-gray-900/50 mt-2 border border-gray-700/50 rounded-2xl px-4 py-6 h-96 w-auto flex items-center justify-center text-center"
+          ? "bg-gradient-to-br from-gray-800/50  to-gray-900/50 mt-1 md:mt-2 border border-gray-700/50 rounded-2xl px-3 py-4 md:px-4 md:py-6 h-64 md:h-96 w-auto flex items-center justify-center text-center"
           : ""
       }`}
     >
       <p
-        className={`text-white text-[15px] leading-normal whitespace-pre-wrap ${
-          !postImage ? "text-xl" : ""
+        className={`text-white text-xs md:text-sm leading-normal whitespace-pre-wrap ${
+          !postImage ? "text-base md:text-xl" : ""
         }`}
       >
         {renderTextWithMentions(
@@ -623,7 +623,7 @@ const handleImageClick = (e: React.MouseEvent) => {
           e.stopPropagation()
           setExpanded(prev => !prev)
         }}
-        className="text-blue-400 hover:text-blue-300 text-[15px] mt-1"
+        className="text-blue-400 hover:text-blue-300 text-xs md:text-sm mt-0.5 md:mt-1"
       >
         {expanded ? "Show less" : "Show more"}
       </button>
@@ -634,13 +634,13 @@ const handleImageClick = (e: React.MouseEvent) => {
 
             {/* Media Section - Twitter Style */}
             {postImage && (
-              <div className="mb-3">
-                <div className="border border-gray-700/50 rounded-2xl overflow-hidden bg-black flex items-center justify-center max-h-[506px]">
+              <div className="mb-2 md:mb-3">
+                <div className="border border-gray-700/50 rounded-2xl overflow-hidden bg-black flex items-center justify-center max-h-[400px] md:max-h-[506px]">
                   {/\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff|ico)$/i.test(postImage) ? (
                     <img
                       src={postImage}
                       alt="Post content"
-                      className="w-full h-auto object-contain cursor-pointer max-h-[506px]"
+                      className="w-full h-auto object-contain cursor-pointer max-h-[400px] md:max-h-[506px]"
                       onClick={handleImageClick}
                     />
                   ) : /\.(mp4|webm|ogg|mov|avi|mkv|flv|wmv|m4v|3gp|ts|mts|m2ts)$/i.test(postImage) ? (
@@ -651,17 +651,17 @@ const handleImageClick = (e: React.MouseEvent) => {
                       loop
                       playsInline
                       controls
-                      className="w-full h-auto object-contain max-h-[506px]"
+                      className="w-full h-auto object-contain max-h-[400px] md:max-h-[506px]"
                       onClick={(e) => e.stopPropagation()}
                     />
                   ) : /\.(mp3|wav|ogg|m4a|aac|flac|wma|opus|aiff|pcm)$/i.test(postImage) ? (
-                    <div className="bg-gray-900 p-4 flex items-center justify-center w-full">
+                    <div className="bg-gray-900 p-3 md:p-4 flex items-center justify-center w-full">
                       <audio src={postImage} controls className="w-full" />
                     </div>
                   ) : (
-                    <div className="bg-gray-900 p-4 text-center w-full">
-                      <p className="text-gray-400 text-sm mb-2">Media file</p>
-                      <a href={postImage} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 text-sm font-medium">
+                    <div className="bg-gray-900 p-3 md:p-4 text-center w-full">
+                      <p className="text-gray-400 text-xs md:text-sm mb-2">Media file</p>
+                      <a href={postImage} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 text-xs md:text-sm font-medium">
                         View media
                       </a>
                     </div>
@@ -671,9 +671,9 @@ const handleImageClick = (e: React.MouseEvent) => {
             )}
 
             {/* Action Buttons - Twitter Style */}
-            <div className="flex items-center justify-between mt-2 -ml-2">
+            <div className="flex items-center justify-between mt-1 md:mt-2 -ml-1 md:-ml-2">
               {/* Left: Main actions close together */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0 md:gap-1">
           <button
   onClick={e => {
     e.stopPropagation()
@@ -684,16 +684,16 @@ const handleImageClick = (e: React.MouseEvent) => {
     userEngagement.liked ? 'text-gray-400' : 'text-gray-500 hover:text-pink-500'
   }`}
 >
-  <div className="p-2 rounded-full group-hover:bg-pink-500/10 transition-colors">
+  <div className="p-1.5 md:p-2 rounded-full group-hover:bg-pink-500/10 transition-colors">
     <HandMetal
-      className="w-[18px] h-[18px]"
+      className="w-[15px] h-[15px] md:w-[18px] md:h-[18px]"
       style={{
         // strokeWidth: userEngagement.liked ? 2.5 : 2,
         fill: userEngagement.liked ? 'gray' : 'none',
       }}
     />
   </div>
-  <span className="text-xs">{localEngagement.likes}</span>
+  <span className="text-[11px] md:text-xs">{localEngagement.likes}</span>
 </button>
 
 
@@ -702,12 +702,12 @@ const handleImageClick = (e: React.MouseEvent) => {
                     e.stopPropagation()
                     toggleCommentDropdown(e)
                   }}
-                  className="flex items-center gap-1.5 text-gray-500 hover:text-blue-400 transition-colors group"
+                  className="flex items-center gap-0.5 md:gap-1.5 text-gray-500 hover:text-blue-400 transition-colors group"
                 >
-                  <div className="p-2 rounded-full group-hover:bg-blue-400/10 transition-colors">
-                    <MessageCircle className="w-[18px] h-[18px]" />
+                  <div className="p-1.5 md:p-2 rounded-full group-hover:bg-blue-400/10 transition-colors">
+                    <MessageCircle className="w-[15px] h-[15px] md:w-[18px] md:h-[18px]" />
                   </div>
-                  <span className="text-xs">{localEngagement.comments}</span>
+                  <span className="text-[11px] md:text-xs">{localEngagement.comments}</span>
                 </button>
 
                 <button
@@ -716,26 +716,26 @@ const handleImageClick = (e: React.MouseEvent) => {
                     handleRetweet()
                   }}
                   disabled={isLoading.retweet || !currentUserId || userEngagement.retweeted}
-                  className={`flex items-center gap-1.5 transition-colors group disabled:opacity-50 ${userEngagement.retweeted ? 'text-green-500' : 'text-gray-500 hover:text-green-500'}`}
+                  className={`flex items-center gap-0.5 md:gap-1.5 transition-colors group disabled:opacity-50 ${userEngagement.retweeted ? 'text-green-500' : 'text-gray-500 hover:text-green-500'}`}
                 >
-                  <div className="p-2 rounded-full group-hover:bg-green-500/10 transition-colors">
-                    <Repeat className="w-[18px] h-[18px] rotate-90" />
+                  <div className="p-1.5 md:p-2 rounded-full group-hover:bg-green-500/10 transition-colors">
+                    <Repeat className="w-[15px] h-[15px] md:w-[18px] md:h-[18px] rotate-90" />
                   </div>
-                  <span className="text-xs">{localEngagement.retweets}</span>
+                  <span className="text-[11px] md:text-xs">{localEngagement.retweets}</span>
                 </button>
               </div>
 
               {/* Right: Price and Share */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 md:gap-2">
                 <button
                   onClick={e => {
                     e.stopPropagation()
                     setShowTokenTrading(true)
                   }}
-                  className="flex items-center gap-1 text-green-500 hover:text-green-400 transition-colors px-2"
+                  className="flex items-center gap-0.5 md:gap-1 text-green-500 hover:text-green-400 transition-colors px-1 md:px-2"
                 >
-                  <Triangle className={`w-[14px] h-[14px] ${priceLoading ? 'opacity-50' : ''}`} />
-                  <span className={`text-xs font-medium ${priceLoading ? 'opacity-50' : ''}`}>
+                  <Triangle className={`w-[12px] h-[12px] md:w-[14px] md:h-[14px] ${priceLoading ? 'opacity-50' : ''}`} />
+                  <span className={`text-[11px] md:text-xs font-medium ${priceLoading ? 'opacity-50' : ''}`}>
                     {priceLoading ? '...' : `$${postTokenPrice.toFixed(2)}`}
                   </span>
                 </button>
@@ -748,8 +748,8 @@ const handleImageClick = (e: React.MouseEvent) => {
                   disabled={isLoading.bookmark || !currentUserId}
                   className={`transition-colors group disabled:opacity-50 ${userEngagement.bookmarked ? 'text-blue-400' : 'text-gray-500 hover:text-blue-400'}`}
                 >
-                  <div className="p-2 rounded-full group-hover:bg-blue-400/10 transition-colors">
-                    <ArrowUpFromLine className="w-[18px] h-[18px]" />
+                  <div className="p-1.5 md:p-2 rounded-full group-hover:bg-blue-400/10 transition-colors">
+                    <ArrowUpFromLine className="w-[15px] h-[15px] md:w-[18px] md:h-[18px]" />
                   </div>
                 </button>
               </div>
@@ -765,30 +765,30 @@ const handleImageClick = (e: React.MouseEvent) => {
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="px-4 pb-4 border-t border-gray-700/70 pt-3"
+              className="px-2 pb-2 md:px-4 md:pb-4 border-t border-gray-700/70 pt-2 md:pt-3"
             >
-              <div className="max-h-56 overflow-y-auto space-y-3 mb-3">
+              <div className="max-h-56 overflow-y-auto space-y-2 md:space-y-3 mb-2 md:mb-3">
                 {comments.length > 0 ? (
                   comments.slice(0, visibleCount).map((comment) => (
-                    <div key={comment.id} className="flex gap-2.5">
+                    <div key={comment.id} className="flex gap-2 md:gap-2.5">
                       <img
                         src={comment.avatar_url || `https://ui-avatars.com/api/?name=${comment.username}`}
                         alt={comment.username}
-                        className="w-7 h-7 rounded-full flex-shrink-0"
+                        className="w-6 h-6 md:w-7 md:h-7 rounded-full flex-shrink-0"
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm">
-                          <span className="font-semibold text-white mr-2">{comment.username}</span>
+                        <div className="text-xs md:text-sm">
+                          <span className="font-semibold text-white mr-1.5 md:mr-2">{comment.username}</span>
                           <span className="text-gray-400">{comment.content}</span>
                         </div>
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className="text-[10px] md:text-xs text-gray-500 mt-0.5 md:mt-1">
                           {formatCommentTime(comment.created_at)}
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-sm text-center py-4">
+                  <p className="text-gray-500 text-xs md:text-sm text-center py-3 md:py-4">
                     No comments yet. Be the first to comment!
                   </p>
                 )}
@@ -799,7 +799,7 @@ const handleImageClick = (e: React.MouseEvent) => {
                       e.stopPropagation()
                       setVisibleCount((prev) => prev + 8)
                     }}
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
+                    className="text-xs md:text-sm text-gray-400 hover:text-white transition-colors"
                   >
                     View more comments
                   </button>
@@ -807,9 +807,9 @@ const handleImageClick = (e: React.MouseEvent) => {
               </div>
 
               {/* Add Comment Input */}
-              <div className="pt-3">
-                <form onSubmit={handleCommentSubmit} className="flex items-center gap-2">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full overflow-hidden">
+              <div className="pt-2 md:pt-3">
+                <form onSubmit={handleCommentSubmit} className="flex items-center gap-1.5 md:gap-2">
+                  <div className="flex-shrink-0 w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden">
                     {profile?.avatar_url ? (
                       <img
                         src={profile.avatar_url}
@@ -817,31 +817,31 @@ const handleImageClick = (e: React.MouseEvent) => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gray-700 flex items-center justify-center text-xs font-semibold text-white">
+                      <div className="w-full h-full bg-gray-700 flex items-center justify-center text-[10px] md:text-xs font-semibold text-white">
                         {session?.dbUser?.username?.substring(0, 2)?.toUpperCase() || 'U'}
                       </div>
                     )}
                   </div>
-                  <div className="flex-1 flex items-center bg-transparent rounded-full px-1 py-0.5 border border-gray-700/50">
+                  <div className="flex-1 flex items-center bg-transparent rounded-full px-0.5 md:px-1 py-0.5 border border-gray-700/50">
                     <input
                       type="text"
                       placeholder="Add a comment..."
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
                       disabled={isLoading.comment || !currentUserId}
-                      className="flex-1 px-3 py-1.5 bg-transparent text-sm text-white rounded-full focus:outline-none transition-all duration-200 placeholder:text-gray-500 disabled:opacity-50"
+                      className="flex-1 px-2 md:px-3 py-1 md:py-1.5 bg-transparent text-xs md:text-sm text-white rounded-full focus:outline-none transition-all duration-200 placeholder:text-gray-500 disabled:opacity-50"
                       onClick={(e) => e.stopPropagation()}
                     />
                     <button
                       type="submit"
                       disabled={!commentText.trim() || isLoading.comment || !currentUserId}
-                      className="p-1.5 bg-[#6E54FF] hover:bg-[#5940cc] rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mr-0.5 flex-shrink-0"
+                      className="p-1 md:p-1.5 bg-[#6E54FF] hover:bg-[#5940cc] rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mr-0.5 flex-shrink-0"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {isLoading.comment ? (
-                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <div className="w-3 h-3 md:w-3.5 md:h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <Send className="w-3.5 h-3.5 text-white" />
+                        <Send className="w-3 h-3 md:w-3.5 md:h-3.5 text-white" />
                       )}
                     </button>
                   </div>

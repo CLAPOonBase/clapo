@@ -1,5 +1,5 @@
 "use client";
-import { Home, Bell, User, MessageCircle, Activity, Blocks, TrendingUp, Menu, X, Telescope, Wallet, Lock, Settings, LogOut, PersonStandingIcon, AtSign, Film } from "lucide-react";
+import { Home, Bell, User, MessageCircle, Activity, Blocks, TrendingUp, Telescope, Wallet, Lock, Settings, LogOut, PersonStandingIcon, AtSign, Film, Search } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -50,7 +50,6 @@ export default function Sidebar({
 }: SidebarProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [activeDialog, setActiveDialog] = useState<null | "x" | "wallet" | "createPost">(null);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const router = useRouter();
   const { connect, disconnect, address } = useWalletContext();
   const { authenticated, user: privyUser, ready } = usePrivy();
@@ -159,7 +158,6 @@ const handleNavClick = (value: PageKey) => {
   // Navigate to wallet page route if wallet is clicked
   if (value === 'wallet') {
     router.push('/snaps/wallet');
-    setIsMobileSidebarOpen(false);
     return;
   }
 
@@ -175,7 +173,6 @@ const handleNavClick = (value: PageKey) => {
         router.push('/snaps');
       }
     }
-    setIsMobileSidebarOpen(false);
     return;
   }
 
@@ -186,8 +183,6 @@ const handleNavClick = (value: PageKey) => {
   if (window.location.pathname !== '/snaps') {
     router.push('/snaps');
   }
-
-  setIsMobileSidebarOpen(false);
 };
 
   const handleOpinioClick = () => {
@@ -196,7 +191,6 @@ const handleNavClick = (value: PageKey) => {
     } else {
       router.push('/opinio');
     }
-    setIsMobileSidebarOpen(false);
   };
 
   const handleSnapsClick = () => {
@@ -205,12 +199,10 @@ const handleNavClick = (value: PageKey) => {
     } else {
       router.push('/snaps');
     }
-    setIsMobileSidebarOpen(false);
   };
 
   const openDialog = (type: "x" | "wallet") => {
     setActiveDialog(type);
-    setIsMobileSidebarOpen(false);
   };
   const closeDialog = () => setActiveDialog(null);
 
@@ -222,16 +214,13 @@ const handleNavClick = (value: PageKey) => {
 
   // Check if current page is home to show Create Post button
   const showCreatePost = currentPage === "home";
-
-  const toggleMobileSidebar = () => {
-    setIsMobileSidebarOpen(!isMobileSidebarOpen);
-  };
   
   return (
     <>
-      {/* Mobile Top Bar - Only visible on mobile */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 bg-black border-b-2 border-gray-700/70 z-[9999] px-4 py-3">
-        <div className="flex items-center justify-between">
+      {/* Mobile Top Bar - Facebook Style */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 bg-black border-b-2 border-gray-700/70 z-[9999]">
+        {/* Top Row: Logo + 3 Icons */}
+        <div className="flex items-center justify-between px-4 py-3">
           {/* Logo */}
           <div className="flex items-center">
             <Image
@@ -242,142 +231,93 @@ const handleNavClick = (value: PageKey) => {
               className="object-contain h-8 w-auto"
             />
           </div>
-          
-          {/* Menu Button */}
+
+          {/* Right Icons */}
+          <div className="flex items-center gap-2">
+            {/* Create Post Icon */}
+            <button
+              onClick={() => setActiveDialog("createPost")}
+              className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+              aria-label="Create Post"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+
+            {/* Search/Explore Icon */}
+            <button
+              onClick={() => handleNavClick("explore")}
+              className={`p-2 rounded-full transition-colors ${
+                currentPage === "explore"
+                  ? "bg-gray-700 text-white"
+                  : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+              }`}
+              aria-label="Explore"
+            >
+              <Search className="w-6 h-6" />
+            </button>
+
+            {/* Messages Icon */}
+            <button
+              onClick={() => handleNavClick("messages")}
+              className={`p-2 rounded-full transition-colors ${
+                currentPage === "messages"
+                  ? "bg-gray-700 text-white"
+                  : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+              }`}
+              aria-label="Messages"
+            >
+              <MessageCircle className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Row: Other Navigation Items - Fixed Grid */}
+        <div className="grid grid-cols-7 gap-0.5 px-1 py-2">
+          {navItems
+            .filter((item) => item.showOnMobile !== false && item.value !== "explore" && item.value !== "messages")
+            .map(({ label, value, icon, activeIcon }) => {
+              const isActive = currentPage === value;
+
+              return (
+                <button
+                  key={value}
+                  onClick={() => handleNavClick(value)}
+                  className={`flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-lg transition-all ${
+                    isActive
+                      ? "bg-gray-700/50 text-white"
+                      : "text-gray-400 hover:text-white hover:bg-gray-700/30"
+                  }`}
+                >
+                  <span className="flex-shrink-0 scale-90">
+                    {isActive ? activeIcon : icon}
+                  </span>
+                  {/* <span className="text-[10px] font-medium truncate w-full text-center px-0.5">
+                    {label}
+                  </span> */}
+                </button>
+              );
+            })}
+
+          {/* Account/Profile Button */}
           <button
-            onClick={toggleMobileSidebar}
-            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700/40 transition-colors"
+            onClick={() => openDialog("x")}
+            className="flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-lg transition-all text-gray-400 hover:text-white hover:bg-gray-700/30"
           >
-            <Menu className="w-6 h-6" />
+            <Image
+              src={"/4.png"}
+              alt={"Account"}
+              width={24}
+              height={24}
+              className="rounded-full scale-90 bg-black border border-gray-700/70"
+            />
+            {/* <span className="text-[10px] font-medium truncate w-full text-center px-0.5">
+              Account
+            </span> */}
           </button>
         </div>
       </div>
-
-      {/* Mobile Sidebar Overlay */}
-      <AnimatePresence>
-        {isMobileSidebarOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-[9998]"
-              onClick={() => setIsMobileSidebarOpen(false)}
-            />
-            
-            {/* Mobile Sidebar */}
-            <motion.div
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="lg:hidden fixed left-0 top-0 w-70 h-full bg-black border-r-2 border-gray-700/70 z-[9998] overflow-y-auto"
-            >
-              <div className="flex flex-col justify-between h-full px-4 py-6">
-                {/* Header with Close Button */}
-                <div>
-                  <div className="flex items-center justify-between mb-8">
-                    <Image
-                      src="/navlogo.png"
-                      alt="Clapo Logo"
-                      width={120}
-                      height={40}
-                      className="object-contain h-8 w-auto"
-                    />
-                    <button
-                      onClick={() => setIsMobileSidebarOpen(false)}
-                      className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700/40 transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  {/* Navigation */}
-                  <nav className="flex flex-col gap-1">
-                    {navItems
-                      .filter((item) => item.showOnMobile !== false)
-                      .map(({ label, value, icon, activeIcon }, index) => {
-                        const isActive = currentPage === value;
-
-                        return (
-                          <motion.button
-                            key={value}
-                            onClick={() => handleNavClick(value)}
-                            className={`flex items-center px-4 py-3 rounded-xl transition-all duration-200 group relative text-left w-full
-                              ${isActive 
-                                ? "text-white font-semibold bg-gray-700/30" 
-                                : "text-gray-400 hover:text-white hover:bg-gray-700/40"
-                              }
-                            `}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                          >
-                            <span className="flex-shrink-0">
-                              {isActive ? activeIcon : icon}
-                            </span>
-                            <span className="ml-4 whitespace-nowrap font-medium text-sm">
-                              {label}
-                            </span>
-                          </motion.button>
-                        );
-                      })}
-                      
-                    {/* Mobile Create Post Button - Only show on home page */}
-                    {showCreatePost && (
-                      <button
-                        onClick={() => setActiveDialog("createPost")}
-                        className="inline-flex w-full items-center justify-center gap-[6px] min-w-[105px]
-                                   transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                                   bg-[hsla(220,10%,12%,1)] text-white shadow px-3 py-1.5 text-xs 
-                                   rounded-full leading-[24px] font-bold w-full sm:w-auto whitespace-nowrap mt-4"
-                      >
-                        Create Post
-                      </button>
-                    )}
-                  </nav>
-               
-                </div>
-
-                {/* Bottom Section for Mobile */}
-                <div className="space-y-3">
-                  {/* Mobile Connect Buttons */}
-                  <div className="flex flex-col gap-2">
-                    <button
-                      onClick={() => openDialog("x")}
-                      className="inline-flex items-center justify-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 gap-[6px] min-w-[105px] transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)] bg-[hsla(220,10%,12%,1)] text-white shadow-[0px_1px_1px_0px_rgba(255,255,255,0.12)_inset,0px_1px_2px_0px_rgba(0,0,0,0.08),0px_0px_0px_1px_#000] hover:bg-[hsla(220,10%,18%,1)] px-3 py-2 text-xs rounded-full leading-[24px] font-bold w-full whitespace-nowrap"
-                    >
-                    <Image src={"/default-avatar.png"} alt={""} width={1000} height={1000} className="rounded-full h-8 w-8 bg-black border border-gray-700/70"/>
-
-                      {isLoggedIn ? (privyUser?.email?.address || privyUser?.wallet?.address?.slice(0,8) || "CONNECTED") : "CONNECT"}
-                    </button>
-                 
-                  </div>
-                  
-                  <div className="space-y-2">
-                    {bottomNavItems.map((item, index) => (
-                      <button 
-                        key={item.name}
-                        onClick={() => {
-                          if (item.name === "Opinio") {
-                            handleOpinioClick();
-                          } else if (item.name === "Claps") {
-                            handleSnapsClick();
-                          }
-                        }}
-                        className="w-full px-4 py-2 rounded-lg text-center bg-gray-700/30 border border-gray-600/40 hover:bg-gray-700/50 transition-colors"
-                      >
-                        <div className="text-gray-300 font-medium text-sm">{item.name}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
       {/* Desktop Sidebar - Only visible on desktop, exactly as before */}
       <div className="hidden lg:block sticky left-0 top-0 max-h-screen bg-black border-r-2 border-gray-700/70">
