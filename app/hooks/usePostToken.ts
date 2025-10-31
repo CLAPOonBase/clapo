@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { useWalletContext } from '@/context/WalletContext';
+import { useSponsoredTransaction } from '@/app/hooks/useSponsoredTransaction';
+import { encodeFunctionData } from 'viem';
 
 // Contract ABI for Post Token with UUID support
 const CONTRACT_ABI = [
@@ -87,6 +89,7 @@ export interface UserPortfolio {
 
 export const usePostToken = () => {
   const { provider, signer, address, isConnecting, connect, disconnect } = useWalletContext();
+  const { sendSponsoredTransaction } = useSponsoredTransaction();
   const [contract, setContract] = useState<ethers.Contract | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -188,38 +191,45 @@ export const usePostToken = () => {
 
       if (useGasSponsorship && privyUserId && address) {
         try {
-          console.log('💰 Attempting gas sponsorship via backend API...');
+          console.log('💰 Attempting Privy native gas sponsorship...');
 
-          const sponsorResponse = await fetch('/api/sponsor-transaction', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              userAddress: address,
-              uuid,
-              content,
-              imageUrl,
-              quadraticDivisor,
-              privyUserId,
-            }),
+          // Encode the contract call using viem
+          const data = encodeFunctionData({
+            abi: [
+              {
+                name: 'createPost',
+                type: 'function',
+                stateMutability: 'nonpayable',
+                inputs: [
+                  { name: 'uuid', type: 'string' },
+                  { name: 'content', type: 'string' },
+                  { name: 'imageUrl', type: 'string' },
+                  { name: 'freebieCount', type: 'uint256' },
+                  { name: '_quadraticDivisor', type: 'uint256' }
+                ],
+                outputs: [{ name: '', type: 'string' }]
+              }
+            ],
+            functionName: 'createPost',
+            args: [uuid, content, imageUrl, 0n, BigInt(quadraticDivisor)]
           });
 
-          const sponsorData = await sponsorResponse.json();
+          // Send with Privy's native sponsorship (sponsor: true)
+          txHash = await sendSponsoredTransaction({
+            to: CONTRACT_ADDRESS as `0x${string}`,
+            data: data as `0x${string}`,
+            value: 0n
+          });
 
-          if (sponsorResponse.ok && sponsorData.success && sponsorData.txHash) {
-            console.log('✅ Gas sponsorship successful!', sponsorData.txHash);
-            txHash = sponsorData.txHash;
-            wasSponsored = true;
+          console.log('✅ Privy gas sponsorship successful!', txHash);
+          wasSponsored = true;
 
-            // Wait for transaction confirmation
-            const receipt = await provider.waitForTransaction(txHash);
-            console.log('✅ Sponsored transaction confirmed:', receipt);
-          } else {
-            throw new Error(sponsorData.error || 'Gas sponsorship failed');
-          }
+          // Wait for transaction confirmation
+          const receipt = await provider.waitForTransaction(txHash);
+          console.log('✅ Sponsored transaction confirmed:', receipt);
+
         } catch (sponsorError) {
-          console.warn('⚠️ Gas sponsorship failed, falling back to user-paid gas:', sponsorError);
+          console.warn('⚠️ Privy gas sponsorship failed, falling back to user-paid gas:', sponsorError);
           // Fall through to user-paid transaction
           wasSponsored = false;
         }
