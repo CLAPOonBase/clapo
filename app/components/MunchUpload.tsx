@@ -153,14 +153,14 @@ export const MunchUpload: React.FC<MunchUploadProps> = ({ onClose }) => {
       console.log('✅ Munch video created successfully in backend:', createdVideo);
 
       // Show success message
-      alert('Video uploaded successfully! Refreshing feed...');
+      alert('Video uploaded successfully!');
 
       // Reset form and close modal
       resetForm();
       onClose();
 
-      // Reload the page to show the new video
-      window.location.reload();
+      // Stay on munch section - the parent component will refresh the feed
+      // No need to reload the entire page
 
     } catch (error) {
       console.error('❌ Failed to upload munch video:', error);

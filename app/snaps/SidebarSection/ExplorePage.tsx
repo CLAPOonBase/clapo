@@ -989,7 +989,7 @@ export default function ExplorePage() {
                     </div>
                   </div>
                 </div>
-                <button className="px-4 py-2 bg-white text-black text-xs font-semibold rounded-full hover:bg-gray-200 transition-colors flex-shrink-0">
+                <button className="px-4 py-2 bg-[#6e54ff] hover:bg-[#5a45d9] text-white text-xs font-semibold rounded-full transition-colors flex-shrink-0">
                   Join
                 </button>
               </div>

@@ -464,8 +464,8 @@ const handleImageClick = (e: React.MouseEvent) => {
         content: commentText.trim(),
         created_at: new Date().toISOString(),
         user_id: currentUserId,
-        username: session?.dbUser?.username || 'Unknown',
-        avatar_url: currentUserAvatar
+        username: profile?.username || session?.dbUser?.username || 'Unknown',
+        avatar_url: profile?.avatar_url || currentUserAvatar
       }
 
       const updatedComments = [...comments, newComment]

@@ -339,6 +339,18 @@ export function SnapComposer({ close }: { close: () => void }) {
       console.log('✅ createPost completed successfully', response)
       console.log('📬 Check backend for mention notifications for:', mentions.join(', '))
 
+      // Enrich the response with current user's profile data to prevent "Unknown" display
+      if (response.post && profile) {
+        response.post.username = profile.username || profile.display_name
+        response.post.avatar_url = profile.avatar_url
+        response.post.author_reputation = profile.reputation_score
+        response.post.author_reputation_tier = profile.reputation_tier
+        console.log('✅ Enriched post with user data:', {
+          username: response.post.username,
+          avatar_url: response.post.avatar_url
+        })
+      }
+
       // Always create post token if wallet is connected
       if (isConnected) {
         try {

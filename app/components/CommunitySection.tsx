@@ -123,7 +123,7 @@ export const CommunitySection = ({
                   e.stopPropagation();
                   handleJoin(community.id);
                 }}
-                className="w-full px-3 py-1.5 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25"
+                className="w-full px-3 py-1.5 bg-[#6e54ff] hover:bg-[#5a45d9] text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg"
               >
                 Join
               </button>

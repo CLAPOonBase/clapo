@@ -16,6 +16,7 @@ import ReputationBadge from '@/app/components/ReputationBadge'
 import { renderTextWithMentions } from '@/app/lib/mentionUtils'
 import SnapCard from '../../Sections/SnapCard'
 import { ApiPost } from '@/app/types'
+import { MunchApiService } from '@/app/lib/munchApi'
 
 interface UserProfile {
   id: string
@@ -71,6 +72,8 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
   const [activeTab, setActiveTab] = useState<'posts' | 'munchs' | 'activity'>('posts')
   const [isFollowing, setIsFollowing] = useState(false)
   const [isCheckingFollowStatus, setIsCheckingFollowStatus] = useState(false)
+  const [munchVideos, setMunchVideos] = useState<any[]>([])
+  const [isLoadingMunchs, setIsLoadingMunchs] = useState(false)
   const [currentPage, setCurrentPage] = useState<
     | "home"
     | "explore"
@@ -192,11 +195,11 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
 
   const loadUserProfile = async () => {
     if (!userId || isLoading) return
-    
+
     setIsLoading(true)
     try {
       const profileResponse = await getUserProfile(userId)
-      
+
       if (profileResponse && profileResponse.profile) {
         setUserProfile(profileResponse.profile)
       } else {
@@ -209,6 +212,28 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
       setIsLoading(false)
     }
   }
+
+  const loadMunchVideos = async () => {
+    if (!userId || isLoadingMunchs) return
+
+    setIsLoadingMunchs(true)
+    try {
+      const videos = await MunchApiService.getUserMunchVideos(userId, 50, 0)
+      setMunchVideos(videos)
+    } catch (error) {
+      console.error('Failed to load munch videos:', error)
+      setMunchVideos([])
+    } finally {
+      setIsLoadingMunchs(false)
+    }
+  }
+
+  // Load munch videos when munchs tab is selected
+  useEffect(() => {
+    if (activeTab === 'munchs' && munchVideos.length === 0) {
+      loadMunchVideos()
+    }
+  }, [activeTab, userId])
 
   const loadMessageThreads = async () => {
     const mockThreads = [
@@ -728,12 +753,66 @@ export default function UserProfileClient({ userId }: UserProfileClientProps) {
           )}
 
           {activeTab === 'munchs' && (
-            <div className="space-y-4">
-              <div className="text-center py-12 bg-black border-2 border-gray-700/70 rounded-2xl">
-                <Volume2 className="w-16 h-16 mx-auto mb-4 text-[#6E54FF]" />
-                <p className="text-gray-400 text-lg">Munchs coming soon!</p>
-                <p className="text-gray-500 text-sm mt-2">Video content will appear here</p>
-              </div>
+            <div>
+              {isLoadingMunchs ? (
+                <div className="grid grid-cols-3 gap-1">
+                  {[...Array(9)].map((_, i) => (
+                    <div key={i} className="aspect-[9/16] bg-gray-800 animate-pulse rounded" />
+                  ))}
+                </div>
+              ) : munchVideos.length > 0 ? (
+                <div className="grid grid-cols-3 gap-1">
+                  {munchVideos.map((video) => (
+                    <div
+                      key={video.id}
+                      className="relative aspect-[9/16] bg-black rounded overflow-hidden cursor-pointer group hover:opacity-90 transition-opacity"
+                      onClick={() => router.push(`/snaps?page=munch&videoId=${video.id}`)}
+                    >
+                      {/* Video thumbnail or first frame */}
+                      {video.thumbnail_url ? (
+                        <img
+                          src={video.thumbnail_url}
+                          alt={video.caption || 'Munch video'}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <video
+                          src={video.video_url}
+                          className="w-full h-full object-cover"
+                          muted
+                        />
+                      )}
+
+                      {/* Overlay with stats */}
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200 flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-4 text-white">
+                          <div className="flex items-center gap-1">
+                            <Heart size={20} fill="white" />
+                            <span className="font-semibold">{video.like_count}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Eye size={20} />
+                            <span className="font-semibold">{video.view_count}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Video duration indicator */}
+                      <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 px-2 py-1 rounded text-xs text-white font-medium">
+                        {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-black border-2 border-gray-700/70 rounded-2xl">
+                  <Volume2 className="w-16 h-16 mx-auto mb-4 text-[#6E54FF]" />
+                  <p className="text-gray-400 text-lg">No Munchs yet</p>
+                  <p className="text-gray-500 text-sm mt-2">
+                    {isOwnProfile ? 'Upload your first short video!' : 'This user hasn\'t posted any Munchs yet'}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>

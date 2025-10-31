@@ -16,7 +16,6 @@ export const CreateCommunityModal = ({
   onCreated
 }: CreateCommunityModalProps) => {
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
   const [communityImage, setCommunityImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -39,7 +38,7 @@ export const CreateCommunityModal = ({
   };
 
   const handleCreate = async () => {
-    if (!name.trim() || !description.trim()) return;
+    if (!name.trim()) return;
 
     // Check if we have a valid creatorId
     if (!creatorId || creatorId.trim() === '') {
@@ -57,12 +56,12 @@ export const CreateCommunityModal = ({
         try {
           const formData = new FormData();
           formData.append('file', communityImage);
-          
+
           const uploadResponse = await fetch('/api/upload', {
             method: 'POST',
             body: formData,
           });
-          
+
           if (uploadResponse.ok) {
             const uploadResult = await uploadResponse.json();
             profilePictureUrl = uploadResult.url;
@@ -76,10 +75,11 @@ export const CreateCommunityModal = ({
         }
       }
 
-      // Create the community with all data including image URL (constraint fixed)
+      // Create the community with all data including image URL
+      // Auto-generate description from name if not provided
       const communityData = {
         name: name.trim(),
-        description: description.trim(),
+        description: `Welcome to ${name.trim()}! Join us to connect and share.`,
         creatorId: creatorId,
         ...(profilePictureUrl && { profile_picture_url: profilePictureUrl })
       };
@@ -108,7 +108,6 @@ export const CreateCommunityModal = ({
 
       // Reset form
       setName('');
-      setDescription('');
       setCommunityImage(null);
       setImagePreview('');
       onClose();
@@ -123,59 +122,41 @@ export const CreateCommunityModal = ({
   if (!show) return null;
 
   return (
-    <div className="absolute top-0 inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 w-full max-w-md border border-slate-700/50 shadow-2xl">
+    <div className="absolute top-0 inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-black border-2 border-gray-700/70 rounded-2xl p-8 w-full max-w-md shadow-2xl">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-[#6e54ff] rounded-xl flex items-center justify-center">
             <Plus className="w-6 h-6 text-white" />
           </div>
           <div>
             <h3 className="text-2xl font-bold text-white">Create Community</h3>
-            <p className="text-sm text-slate-400">Build your own space</p>
+            <p className="text-sm text-gray-400">Build your own space</p>
           </div>
         </div>
-        
-        <div className="space-y-6">
-          {/* Debug info - remove in production */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-gray-500 bg-gray-800 p-2 rounded">
-              <div>Creator ID: {creatorId || 'None'}</div>
-              <div>Type: {typeof creatorId}</div>
-            </div>
-          )}
-          
+
+        <div className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Community Name</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Community Name</label>
             <input
               type="text"
               placeholder="Enter community name..."
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-700/50 text-white rounded-xl border border-slate-600/50 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
-            <textarea
-              placeholder="Describe your community..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-700/50 text-white rounded-xl border border-slate-600/50 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-none"
-              rows={3}
+              maxLength={50}
+              className="w-full px-4 py-3 bg-gray-800/50 text-white rounded-xl border-2 border-gray-700/70 focus:border-[#6e54ff] focus:outline-none transition-all duration-200"
             />
           </div>
 
           {/* Image Upload Section */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Community Image (Optional)</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Community Picture</label>
             <div className="space-y-3">
               {!imagePreview ? (
-                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-600/50 border-dashed rounded-xl cursor-pointer bg-slate-700/30 hover:bg-slate-700/50 transition-colors">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <ImageIcon className="w-8 h-8 mb-2 text-slate-400" />
-                    <p className="text-sm text-slate-400">Click to upload image</p>
-                    <p className="text-xs text-slate-500">PNG, JPG, GIF up to 10MB</p>
+                <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-700/70 border-dashed rounded-xl cursor-pointer bg-gray-800/30 hover:bg-gray-800/50 hover:border-[#6e54ff] transition-all duration-200">
+                  <div className="flex flex-col items-center justify-center py-6">
+                    <ImageIcon className="w-10 h-10 mb-3 text-[#6e54ff]" />
+                    <p className="text-sm text-gray-300 font-medium">Click to upload picture</p>
+                    <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 10MB</p>
                   </div>
                   <input
                     type="file"
@@ -191,11 +172,11 @@ export const CreateCommunityModal = ({
                     alt="Community preview"
                     width={400}
                     height={200}
-                    className="w-full h-32 object-cover rounded-xl"
+                    className="w-full h-40 object-cover rounded-xl border-2 border-gray-700/70"
                   />
                   <button
                     onClick={removeImage}
-                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg transition-colors"
+                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -203,21 +184,21 @@ export const CreateCommunityModal = ({
               )}
             </div>
           </div>
-          
-          <div className="flex space-x-3 pt-2">
+
+          <div className="flex space-x-3 pt-4">
             <button
               onClick={onClose}
               disabled={loading}
-              className="flex-1 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-xl transition-all duration-200 hover:shadow-lg disabled:opacity-50"
+              className="flex-1 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-xl border-2 border-gray-700/70 transition-all duration-200 disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleCreate}
-              disabled={!name.trim() || !description.trim() || loading}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:from-slate-600 disabled:to-slate-600 text-white font-medium rounded-xl transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!name.trim() || loading}
+              className="flex-1 px-6 py-3 bg-[#6e54ff] hover:bg-[#5a45d9] disabled:bg-gray-700 disabled:border-gray-700/70 text-white font-medium rounded-xl border-2 border-[#6e54ff] disabled:border-gray-700/70 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creating...' : 'Create Community'}
+              {loading ? 'Creating...' : 'Create'}
             </button>
           </div>
         </div>

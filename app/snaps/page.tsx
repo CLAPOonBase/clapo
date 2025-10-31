@@ -331,16 +331,18 @@ function SocialFeedPageContent() {
           console.log('📊 Reputation leaderboard response:', response);
 
           if (response.users && Array.isArray(response.users) && response.users.length > 0) {
-            // Show users immediately with loading state for follower counts
-            const usersWithPlaceholder = response.users.map(user => ({
-              user_id: user.user_id,
-              username: user.username,
-              avatar_url: user.avatar_url,
-              score: user.score,
-              tier: user.tier,
-              followers_count: null, // null indicates loading
-              isReputationBased: true
-            }));
+            // Show users immediately with loading state for follower counts (exclude current user)
+            const usersWithPlaceholder = response.users
+              .filter(user => user.user_id !== currentUserId)
+              .map(user => ({
+                user_id: user.user_id,
+                username: user.username,
+                avatar_url: user.avatar_url,
+                score: user.score,
+                tier: user.tier,
+                followers_count: null, // null indicates loading
+                isReputationBased: true
+              }));
             setTopUsers(usersWithPlaceholder);
             setIsLoadingTopUsers(false);
 
@@ -387,7 +389,8 @@ function SocialFeedPageContent() {
         if (state.posts.posts.length > 0) {
           const uniqueUsers = new Map();
           state.posts.posts.forEach(post => {
-            if (post.user_id && post.username && !uniqueUsers.has(post.user_id)) {
+            // Exclude current user from suggestions
+            if (post.user_id && post.username && !uniqueUsers.has(post.user_id) && post.user_id !== currentUserId) {
               uniqueUsers.set(post.user_id, {
                 user_id: post.user_id,
                 username: post.username,

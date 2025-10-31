@@ -11,6 +11,9 @@ type FlowState =
   | "displayname"
   | "topics"
   | "follow"
+  | "avatar"
+  | "bio"
+  | "creator-share"
   | "success";
 
 const topics = [
@@ -40,7 +43,11 @@ function SignInPage() {
     username: "",
     displayName: "",
     topics: [] as string[],
-    following: [] as string[]
+    following: [] as string[],
+    avatarFile: null as File | null,
+    avatarPreview: "" as string,
+    bio: "",
+    enableCreatorShare: false
   });
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
@@ -162,7 +169,10 @@ function SignInPage() {
       "name-username": "choice",
       "displayname": "name-username",
       "topics": "displayname",
-      "follow": "topics"
+      "follow": "topics",
+      "avatar": "follow",
+      "bio": "avatar",
+      "creator-share": "bio"
     };
     setFlowState(backMap[flowState] || "initial");
   };
@@ -211,39 +221,91 @@ function SignInPage() {
     }));
   };
 
+  // Handle avatar file selection
+  const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image must be less than 5MB');
+        return;
+      }
+
+      setFormData(prev => ({ ...prev, avatarFile: file }));
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFormData(prev => ({ ...prev, avatarPreview: e.target?.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleComplete = async () => {
     if (!user) return;
 
     setIsSubmitting(true);
     setSubmitError(null);
 
-    // Prepare complete profile data
-    const profileData: any = {
-      // Privy Authentication Data
-      privyId: user.id,
-      email: user.email?.address || null,
-      wallet: user.wallet?.address || null,
-      phone: user.phone?.number || null,
-
-      // Social Connections
-      twitter: user.twitter?.username || null,
-      discord: user.discord?.username || null,
-      github: user.github?.username || null,
-      google: user.google?.email || null,
-
-      // Metadata
-      accountType: accountType,
-
-      // User profile fields (same for both individual and community)
-      username: formData.username,
-      displayName: formData.displayName || null,
-      topics: formData.topics || [],
-      following: formData.following || []
-    };
-
-    console.log("📦 Submitting profile data to API:", profileData);
-
     try {
+      // Step 1: Upload avatar if provided
+      let avatarUrl: string | null = null;
+      if (formData.avatarFile) {
+        try {
+          const formDataUpload = new FormData();
+          formDataUpload.append('file', formData.avatarFile);
+
+          const uploadResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: formDataUpload,
+          });
+
+          if (uploadResponse.ok) {
+            const uploadResult = await uploadResponse.json();
+            avatarUrl = uploadResult.url;
+            console.log('✅ Avatar uploaded:', avatarUrl);
+          }
+        } catch (uploadError) {
+          console.error('⚠️ Avatar upload failed, continuing without it:', uploadError);
+        }
+      }
+
+      // Step 2: Prepare complete profile data
+      const profileData: any = {
+        // Privy Authentication Data
+        privyId: user.id,
+        email: user.email?.address || null,
+        wallet: user.wallet?.address || null,
+        phone: user.phone?.number || null,
+
+        // Social Connections
+        twitter: user.twitter?.username || null,
+        discord: user.discord?.username || null,
+        github: user.github?.username || null,
+        google: user.google?.email || null,
+
+        // Metadata
+        accountType: accountType,
+
+        // User profile fields
+        username: formData.username,
+        displayName: formData.displayName || null,
+        bio: formData.bio || null,
+        topics: formData.topics || [],
+        following: formData.following || [],
+        ...(avatarUrl && { avatar_url: avatarUrl })
+      };
+
+      console.log("📦 Submitting profile data to API:", profileData);
+
+      // Step 3: Create profile
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/auth/signup/privy`,
         {
@@ -258,9 +320,20 @@ function SignInPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        // Handle backend error format
         const errorMessage = data.message?.message || data.message || 'Failed to create account';
         throw new Error(errorMessage);
+      }
+
+      // Step 4: Create creator token if enabled (optional, don't block on failure)
+      if (formData.enableCreatorShare) {
+        try {
+          console.log('🎨 Creating creator share token...');
+          // TODO: Implement creator token creation via useCreatorToken hook
+          // This would require accessing wallet functionality
+          console.log('⚠️ Creator share token creation will be implemented');
+        } catch (tokenError) {
+          console.error('⚠️ Creator token creation failed, continuing anyway:', tokenError);
+        }
       }
 
       // Save minimal data to localStorage for session
@@ -274,9 +347,6 @@ function SignInPage() {
       console.error("❌ Error creating account:", error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create account. Please try again.';
       setSubmitError(errorMessage);
-
-      // Don't fallback to localStorage or proceed on real errors
-      // User should see the error and try again
     } finally {
       setIsSubmitting(false);
     }
@@ -293,10 +363,13 @@ function SignInPage() {
 
   const getStepInfo = () => {
     const stepMap: Record<string, string> = {
-      "name-username": "Step 1 of 4",
-      "displayname": "Step 2 of 4",
-      "topics": "Step 3 of 4",
-      "follow": "Final Step"
+      "name-username": "Step 1 of 7",
+      "displayname": "Step 2 of 7",
+      "topics": "Step 3 of 7",
+      "follow": "Step 4 of 7",
+      "avatar": "Step 5 of 7",
+      "bio": "Step 6 of 7",
+      "creator-share": "Final Step"
     };
     return stepMap[flowState] || "";
   };
@@ -810,6 +883,220 @@ function SignInPage() {
                     </div>
                   )}
                   <button
+                    onClick={() => setFlowState("avatar")}
+                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 flex items-center justify-center"
+                    style={{
+                      backgroundColor: "#6E54FF",
+                      boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                    }}
+                  >
+                    Continue <ArrowRight className="w-4 h-4 ml-2" />
+                  </button>
+                </div>
+              )}
+
+              {/* Avatar Upload Step */}
+              {flowState === "avatar" && (
+                <div className="space-y-6 w-full">
+                  <div className="text-center mb-6">
+                    <div
+                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center"
+                      style={{
+                        backgroundColor: "#6E54FF",
+                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                      }}
+                    >
+                      <Camera className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Add a profile picture</h2>
+                    <p className="text-gray-400 text-sm">Optional • You can skip this step</p>
+                  </div>
+
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="relative">
+                      <div
+                        className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-700/70 bg-gray-800"
+                        style={{
+                          boxShadow: "0px 0px 0px 4px rgba(110, 84, 255, 0.2)"
+                        }}
+                      >
+                        {formData.avatarPreview ? (
+                          <img
+                            src={formData.avatarPreview}
+                            alt="Avatar preview"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-500/20 to-pink-500/20">
+                            <User className="w-16 h-16 text-gray-500" />
+                          </div>
+                        )}
+                      </div>
+                      <label
+                        htmlFor="avatar-upload"
+                        className="absolute bottom-0 right-0 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-110"
+                        style={{
+                          backgroundColor: "#6E54FF",
+                          boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                        }}
+                      >
+                        <Camera className="w-5 h-5 text-white" />
+                      </label>
+                      <input
+                        id="avatar-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarSelect}
+                        className="hidden"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-400 text-center max-w-xs">
+                      Choose an image that represents you (Max 5MB, JPG/PNG)
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setFlowState("bio")}
+                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 flex items-center justify-center"
+                    style={{
+                      backgroundColor: "#6E54FF",
+                      boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                    }}
+                  >
+                    Continue <ArrowRight className="w-4 h-4 ml-2" />
+                  </button>
+                  <button
+                    onClick={() => setFlowState("bio")}
+                    className="w-full px-6 py-3 text-gray-400 text-sm font-medium rounded-full transition-all duration-200 hover:text-white hover:bg-gray-700/30"
+                  >
+                    Skip for now
+                  </button>
+                </div>
+              )}
+
+              {/* Bio Step */}
+              {flowState === "bio" && (
+                <div className="space-y-6 w-full">
+                  <div className="text-center mb-6">
+                    <div
+                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center"
+                      style={{
+                        backgroundColor: "#6E54FF",
+                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                      }}
+                    >
+                      <AtSign className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Write a bio</h2>
+                    <p className="text-gray-400 text-sm">Tell people about yourself</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <textarea
+                      value={formData.bio}
+                      onChange={(e) => {
+                        if (e.target.value.length <= 160) {
+                          setFormData({ ...formData, bio: e.target.value });
+                        }
+                      }}
+                      className="w-full px-4 py-3 bg-black border-2 border-gray-700/70 text-white rounded-xl focus:border-[#6E54FF]/50 focus:outline-none transition-all duration-200 placeholder:text-gray-500 resize-none h-32"
+                      placeholder="Share something interesting about yourself..."
+                    />
+                    <div className="flex justify-between items-center px-2">
+                      <p className="text-xs text-gray-500">Optional</p>
+                      <p className={`text-xs ${formData.bio.length >= 160 ? 'text-yellow-400' : 'text-gray-500'}`}>
+                        {formData.bio.length}/160
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setFlowState("creator-share")}
+                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 flex items-center justify-center"
+                    style={{
+                      backgroundColor: "#6E54FF",
+                      boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                    }}
+                  >
+                    Continue <ArrowRight className="w-4 h-4 ml-2" />
+                  </button>
+                  <button
+                    onClick={() => setFlowState("creator-share")}
+                    className="w-full px-6 py-3 text-gray-400 text-sm font-medium rounded-full transition-all duration-200 hover:text-white hover:bg-gray-700/30"
+                  >
+                    Skip for now
+                  </button>
+                </div>
+              )}
+
+              {/* Creator Share Step */}
+              {flowState === "creator-share" && (
+                <div className="space-y-6 w-full">
+                  <div className="text-center mb-6">
+                    <div
+                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center"
+                      style={{
+                        backgroundColor: "#6E54FF",
+                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                      }}
+                    >
+                      <Sparkles className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Enable Creator Share</h2>
+                    <p className="text-gray-400 text-sm">Let your followers invest in your success</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div
+                      className={`p-6 rounded-xl border-2 transition-all cursor-pointer ${
+                        formData.enableCreatorShare
+                          ? 'border-[#6E54FF] bg-[#6E54FF]/10'
+                          : 'border-gray-700/70 bg-black hover:border-gray-600'
+                      }`}
+                      onClick={() => setFormData({ ...formData, enableCreatorShare: !formData.enableCreatorShare })}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div
+                          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            formData.enableCreatorShare
+                              ? 'border-[#6E54FF] bg-[#6E54FF]'
+                              : 'border-gray-600'
+                          }`}
+                        >
+                          {formData.enableCreatorShare && (
+                            <Check className="w-4 h-4 text-white" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-white font-semibold mb-2">Enable Creator Token</h3>
+                          <p className="text-gray-400 text-sm mb-3">
+                            Create a creator token that allows your followers to support you and share in your success
+                          </p>
+                          <div className="space-y-2 text-xs text-gray-500">
+                            <p>• Followers can buy shares of your creator token</p>
+                            <p>• Token value grows with your engagement</p>
+                            <p>• Earn from token trades and holder benefits</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {formData.enableCreatorShare && (
+                      <div className="p-4 bg-blue-600/20 border border-blue-600/30 rounded-xl">
+                        <p className="text-xs text-blue-300">
+                          ℹ️ Your creator token will be created after you complete signup. You'll need to connect a wallet to manage it.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {submitError && (
+                    <div className="p-4 bg-red-600/20 border border-red-600/50 rounded-xl">
+                      <p className="text-sm text-red-300">{submitError}</p>
+                    </div>
+                  )}
+
+                  <button
                     onClick={handleComplete}
                     disabled={isSubmitting}
                     className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
@@ -861,6 +1148,17 @@ function SignInPage() {
                       You're all set to explore the ecosystem
                     </p>
                   </div>
+                  {/* Profile Preview Card */}
+                  {formData.avatarPreview && (
+                    <div className="flex justify-center mb-4">
+                      <img
+                        src={formData.avatarPreview}
+                        alt="Profile"
+                        className="w-24 h-24 rounded-full border-4 border-[#6E54FF]"
+                      />
+                    </div>
+                  )}
+
                   <div className="p-6 bg-green-600/20 border-2 border-green-600/50 rounded-xl">
                     <p className="text-sm text-green-300 mb-4">
                       🎉 Your {accountType === 'community' ? 'community' : 'account'} has been created successfully!
@@ -869,8 +1167,10 @@ function SignInPage() {
                       <p>• Account Type: {accountType === 'community' ? 'Community' : 'Individual'}</p>
                       <p>• Name: {formData.name}</p>
                       <p>• Display Name: {formData.displayName}</p>
+                      {formData.bio && <p>• Bio: {formData.bio}</p>}
                       <p>• Following {formData.following.length} users</p>
                       <p>• Interested in {formData.topics.length} topics</p>
+                      {formData.enableCreatorShare && <p>• ✨ Creator Share Enabled</p>}
                       {user && (
                         <p>• Connected: {user.email?.address || `${user.wallet?.address?.slice(0, 6)}...${user.wallet?.address?.slice(-4)}`}</p>
                       )}
@@ -878,10 +1178,10 @@ function SignInPage() {
                   </div>
                   <button
                     onClick={() => {
-                      console.log("Profile completed successfully - redirecting to home");
+                      console.log("Profile completed successfully - redirecting to snaps");
                       // Small delay to ensure everything is saved
                       setTimeout(() => {
-                        window.location.href = '/';
+                        window.location.href = '/snaps';
                       }, 300);
                     }}
                     className="w-full px-6 py-4 text-white text-sm font-medium rounded-full transition-all duration-200 hover:bg-green-600 hover:scale-105 transform transition-transform"
@@ -890,7 +1190,7 @@ function SignInPage() {
                       boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(16, 185, 129, 0.50), 0px 0px 0px 1px #10B981"
                     }}
                   >
-                    Go to Landing Page →
+                    Start Exploring →
                   </button>
                   
                   <div className="pt-4 border-t border-gray-700">
