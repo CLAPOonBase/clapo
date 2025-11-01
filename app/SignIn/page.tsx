@@ -1077,7 +1077,6 @@ function SignInPage() {
                       {formData.bio && <p>• Bio: {formData.bio}</p>}
                       <p>• Following {formData.following.length} users</p>
                       <p>• Interested in {formData.topics.length} topics</p>
-                      {formData.enableCreatorShare && <p>• ✨ Creator Share Enabled</p>}
                       {user && (
                         <p>• Connected: {user.email?.address || `${user.wallet?.address?.slice(0, 6)}...${user.wallet?.address?.slice(-4)}`}</p>
                       )}
