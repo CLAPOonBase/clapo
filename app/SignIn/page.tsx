@@ -53,6 +53,7 @@ function SignInPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [checkingExistingUser, setCheckingExistingUser] = useState(false);
+  const [createdUserId, setCreatedUserId] = useState<string | null>(null);
 
   const { login, logout, authenticated, user, ready } = usePrivy();
 
@@ -248,14 +249,120 @@ function SignInPage() {
     }
   };
 
-  const handleComplete = async () => {
+  // Step 1: Create profile after step 4 (follow selection)
+  const handleCreateProfile = async () => {
     if (!user) return;
 
     setIsSubmitting(true);
     setSubmitError(null);
 
     try {
-      // Step 1: Upload avatar if provided
+      // Prepare profile data (WITHOUT bio and avatar)
+      const profileData: any = {
+        // Privy Authentication Data
+        privyId: user.id,
+        email: user.email?.address || null,
+        wallet: user.wallet?.address || null,
+        phone: user.phone?.number || null,
+
+        // Social Connections
+        twitter: user.twitter?.username || null,
+        discord: user.discord?.username || null,
+        github: user.github?.username || null,
+        google: user.google?.email || null,
+
+        // Metadata
+        accountType: accountType,
+
+        // User profile fields (Steps 1-4 only)
+        name: formData.name,
+        username: formData.username,
+        displayName: formData.displayName || null,
+        topics: formData.topics || [],
+        following: formData.following || []
+      };
+
+      console.log("📦 Creating profile (Steps 1-4):", profileData);
+
+      // Create profile
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/signup/privy`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(profileData),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = data.message?.message || data.message || 'Failed to create account';
+        throw new Error(errorMessage);
+      }
+
+      const userId = data.user?.id;
+      console.log("✅ Profile created successfully! User ID:", userId);
+      setCreatedUserId(userId);
+
+      // Follow selected users
+      await handleFollowUsers(userId);
+
+      // Move to avatar step
+      setFlowState("avatar");
+
+    } catch (error) {
+      console.error("❌ Error creating profile:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create account. Please try again.';
+      setSubmitError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Step 2: Follow selected users
+  const handleFollowUsers = async (userId: string) => {
+    if (formData.following.length === 0) {
+      console.log("No users selected to follow");
+      return;
+    }
+
+    console.log(`📍 Following ${formData.following.length} users...`);
+
+    for (const targetUserId of formData.following) {
+      try {
+        await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/users/${targetUserId}/follow`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ userId }),
+          }
+        );
+        console.log(`✅ Followed user: ${targetUserId}`);
+      } catch (error) {
+        console.error(`⚠️ Failed to follow user ${targetUserId}:`, error);
+        // Continue with other follows even if one fails
+      }
+    }
+  };
+
+  // Step 3: Update profile with avatar and bio (final step)
+  const handleComplete = async () => {
+    if (!createdUserId) {
+      console.error("No user ID available");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // Upload avatar if provided
       let avatarUrl: string | null = null;
       if (formData.avatarFile) {
         try {
@@ -277,64 +384,50 @@ function SignInPage() {
         }
       }
 
-      // Step 2: Prepare complete profile data
-      const profileData: any = {
-        // Privy Authentication Data
-        privyId: user.id,
-        email: user.email?.address || null,
-        wallet: user.wallet?.address || null,
-        phone: user.phone?.number || null,
-
-        // Social Connections
-        twitter: user.twitter?.username || null,
-        discord: user.discord?.username || null,
-        github: user.github?.username || null,
-        google: user.google?.email || null,
-
-        // Metadata
-        accountType: accountType,
-
-        // User profile fields
-        name: formData.name,
-        username: formData.username,
-        displayName: formData.displayName || null,
-        bio: formData.bio || null,
-        topics: formData.topics || [],
-        following: formData.following || [],
-        ...(avatarUrl && { avatar_url: avatarUrl })
-      };
-
-      console.log("📦 Submitting profile data to API:", profileData);
-
-      // Step 3: Create profile
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/signup/privy`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(profileData),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        const errorMessage = data.message?.message || data.message || 'Failed to create account';
-        throw new Error(errorMessage);
+      // Update profile with bio and avatar
+      const updateData: any = {};
+      if (formData.bio) {
+        updateData.bio = formData.bio;
+      }
+      if (avatarUrl) {
+        updateData.avatarUrl = avatarUrl; // Note: camelCase!
       }
 
-      // Save minimal data to localStorage for session
-      localStorage.setItem(`profile_completed_${user.id}`, 'true');
-      localStorage.setItem('latest_user_profile', JSON.stringify(data.user || profileData));
+      if (Object.keys(updateData).length > 0) {
+        console.log("📦 Updating profile with bio/avatar:", updateData);
 
-      console.log("✅ Profile created successfully:", data);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/users/${createdUserId}/profile`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updateData),
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          const errorMessage = data.message?.message || data.message || 'Failed to update profile';
+          throw new Error(errorMessage);
+        }
+
+        console.log("✅ Profile updated successfully:", data);
+      }
+
+      // Save to localStorage
+      if (user) {
+        localStorage.setItem(`profile_completed_${user.id}`, 'true');
+        localStorage.setItem('latest_user_profile', JSON.stringify({ id: createdUserId, ...updateData }));
+      }
+
       setFlowState("success");
 
     } catch (error) {
-      console.error("❌ Error creating account:", error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create account. Please try again.';
+      console.error("❌ Error updating profile:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update profile. Please try again.';
       setSubmitError(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -871,14 +964,24 @@ function SignInPage() {
                     </div>
                   )}
                   <button
-                    onClick={() => setFlowState("avatar")}
-                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 flex items-center justify-center"
+                    onClick={handleCreateProfile}
+                    disabled={isSubmitting}
+                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     style={{
                       backgroundColor: "#6E54FF",
                       boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
                     }}
                   >
-                    Continue <ArrowRight className="w-4 h-4 ml-2" />
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Creating Profile...
+                      </>
+                    ) : (
+                      <>
+                        Continue <ArrowRight className="w-4 h-4 ml-2" />
+                      </>
+                    )}
                   </button>
                 </div>
               )}
