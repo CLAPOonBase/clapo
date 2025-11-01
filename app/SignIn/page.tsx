@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { X, ArrowLeft, Check, Sparkles, Camera, User, ArrowRight, Loader2, AtSign } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, Check, Mail, AtSign, User, Hash, Users, Sparkles, Wallet, Camera, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { usePrivy } from '@privy-io/react-auth';
 
 type FlowState =
@@ -15,22 +15,24 @@ type FlowState =
   | "bio"
   | "success";
 
-// Hooks
-import { useUsernameCheck } from './hooks/useUsernameCheck';
-import { useUserCheck } from './hooks/useUserCheck';
-import { useFormHandlers } from './hooks/useFormHandlers';
+const topics = [
+  "Technology", "Design", "Business", "Art", "Music", 
+  "Gaming", "Sports", "Fashion", "Food", "Travel",
+  "Science", "Education", "Health", "Finance", "Web3"
+];
 
-// Components
-import { InitialScreen } from './components/InitialScreen';
-import { ChoiceScreen } from './components/ChoiceScreen';
-import { NameUsernameScreen } from './components/NameUsernameScreen';
-import { DisplayNameScreen } from './components/DisplayNameScreen';
-import { TopicsScreen } from './components/TopicsScreen';
-import { FollowScreen } from './components/FollowScreen';
-import { SuccessScreen } from './components/SuccessScreen';
+const suggestedUsers = [
+  { username: "alex_dev", name: "Alex Chen", avatar: "👨‍💻", followers: "12.5K" },
+  { username: "sarah_design", name: "Sarah Miller", avatar: "🎨", followers: "8.3K" },
+  { username: "tech_guru", name: "Mike Johnson", avatar: "🚀", followers: "25.1K" },
+  { username: "crypto_queen", name: "Emma Davis", avatar: "💎", followers: "15.7K" }
+];
 
-// Utils
-import { generateUsername, getAuthProviderText } from './utils/helpers';
+const communityTypes = [
+  { id: "open", name: "Open", description: "Anyone can join and post" },
+  { id: "closed", name: "Closed", description: "Anyone can join, admin approval for posts" },
+  { id: "private", name: "Private", description: "Invite-only community" }
+];
 
 function SignInPage() {
   const [flowState, setFlowState] = useState<FlowState>("initial");
@@ -50,27 +52,19 @@ function SignInPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [checkingExistingUser, setCheckingExistingUser] = useState(false);
 
   const { login, logout, authenticated, user, ready } = usePrivy();
 
-  // Custom hooks
-  const { usernameAvailable, checkingUsername } = useUsernameCheck(formData.username);
-  const { checkingExistingUser } = useUserCheck({
-    authenticated,
-    user,
-    ready,
-    flowState,
-    setFlowState,
-    setIsRedirecting
-  });
-  const { handleComplete, isSubmitting, submitError } = useFormHandlers(
-    user,
-    formData,
-    accountType,
-    setFlowState
-  );
+  // Generate random username from name
+  const generateUsername = (name: string) => {
+    if (!name) return "";
+    const baseName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const randomNum = Math.floor(Math.random() * 10000);
+    return `${baseName}${randomNum}`;
+  };
 
-  // Auto-generate username when name changes
+  // Update username when name changes
   useEffect(() => {
     if (flowState === "name-username" && formData.name) {
       const generatedUsername = generateUsername(formData.name);
@@ -78,7 +72,95 @@ function SignInPage() {
     }
   }, [formData.name, flowState]);
 
-  // Handlers
+  // Check username availability with debouncing
+  useEffect(() => {
+    if (!formData.username || formData.username.length < 3) {
+      setUsernameAvailable(null);
+      setCheckingUsername(false);
+      return;
+    }
+
+    setCheckingUsername(true);
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/users/check-username/${formData.username}`
+        );
+        const data = await response.json();
+        setUsernameAvailable(data.available);
+      } catch (error) {
+        console.error('Error checking username:', error);
+        // If endpoint doesn't exist yet, assume available
+        setUsernameAvailable(true);
+      } finally {
+        setCheckingUsername(false);
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(timeoutId);
+      setCheckingUsername(false);
+    };
+  }, [formData.username]);
+
+  // Check if user is new and needs profile completion
+  useEffect(() => {
+    if (authenticated && user && ready) {
+      console.log("🔍 User authenticated:", {
+        privyId: user.id,
+        email: user.email?.address,
+        flowState: flowState,
+        ready: ready
+      });
+
+      // Only check when on initial screen or success screen
+      if (flowState === "initial" || flowState === "success") {
+        // Check if user exists in backend
+        const checkExistingUser = async () => {
+          setCheckingExistingUser(true);
+          try {
+            console.log("🌐 Checking user in backend:", user.id);
+            const response = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/users/privy/${user.id}`
+            );
+            const data = await response.json();
+            console.log("📦 Backend response:", data);
+
+            if (data.exists && data.user?.hasCompletedOnboarding) {
+              // Existing user - redirect immediately
+              console.log("✅ Returning user detected, redirecting immediately...");
+              setIsRedirecting(true);
+              console.log("🚀 Redirecting now to /snaps");
+              window.location.href = '/snaps';
+            } else if (flowState === "initial") {
+              // New user - show onboarding
+              console.log("🆕 New user detected, showing onboarding");
+              setCheckingExistingUser(false);
+              setFlowState("choice");
+            }
+          } catch (error) {
+            console.error('❌ Error checking user:', error);
+            // Fallback to localStorage check if API fails
+            const profileKey = `profile_completed_${user.id}`;
+            const hasCompletedProfile = localStorage.getItem(profileKey);
+
+            if (hasCompletedProfile) {
+              console.log("✅ Returning user detected (localStorage), redirecting...");
+              setIsRedirecting(true);
+              window.location.href = '/snaps';
+            } else if (flowState === "initial") {
+              console.log("🆕 New user detected (localStorage), showing onboarding");
+              setCheckingExistingUser(false);
+              setFlowState("choice");
+            }
+          }
+        };
+
+        checkExistingUser();
+      }
+    }
+  }, [authenticated, user, ready, flowState]);
+
   const handleBack = () => {
     const backMap: Record<string, FlowState> = {
       "choice": "initial",
@@ -119,15 +201,6 @@ function SignInPage() {
     } catch (error) {
       console.error("Privy logout error:", error);
     }
-  };
-
-  const handleChooseAccountType = (type: AccountType) => {
-    setAccountType(type);
-    setFlowState("name-username");
-  };
-
-  const updateFormData = (data: Partial<FormData>) => {
-    setFormData(prev => ({ ...prev, ...data }));
   };
 
   const toggleTopic = (topic: string) => {
@@ -269,7 +342,12 @@ function SignInPage() {
   };
 
   const handleClose = () => {
+    // Navigate to landing page
     window.location.href = '/';
+    // Or if using Next.js router:
+    // import { useRouter } from 'next/navigation';
+    // const router = useRouter();
+    // router.push('/');
   };
 
   const getStepInfo = () => {
@@ -284,17 +362,30 @@ function SignInPage() {
     return stepMap[flowState] || "";
   };
 
+  const getAuthProviderText = () => {
+    if (!user) return "";
+    
+    if (user.email?.address) return "Email";
+    if (user.wallet?.address) return "Wallet";
+    if (user.twitter?.username) return "Twitter";
+    if (user.discord?.username) return "Discord";
+    if (user.github?.username) return "GitHub";
+    if (user.phone?.number) return "Phone";
+    
+    return "Privy";
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div className="bg-black border-2 border-gray-700/70 rounded-xl w-full max-w-5xl shadow-2xl flex overflow-hidden">
-
+          
           {/* Left Side - Illustration/Branding */}
-          <div
+          <div 
             style={{
               backgroundColor: "#6E54FF",
               boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-            }}
+            }} 
             className="hidden lg:flex lg:w-1/2 relative p-12 items-center justify-center bg-gradient-to-br from-[#4F47EB]/20 to-[#3B32C7]/20 border-r-2 border-gray-700/70"
           >
             <div className="relative z-10 text-center">
@@ -322,15 +413,15 @@ function SignInPage() {
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center space-x-3">
                 {flowState !== "initial" && flowState !== "choice" && (
-                  <button
+                  <button 
                     onClick={handleBack}
                     className="w-8 h-8 rounded-full bg-gray-700/50 hover:bg-gray-600/50 flex items-center justify-center transition-colors mr-2"
                   >
                     <ArrowLeft className="w-4 h-4 text-gray-400" />
                   </button>
                 )}
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center"
+                <div 
+                  className="w-10 h-10 rounded-full flex items-center justify-center" 
                   style={{
                     backgroundColor: "#6E54FF",
                     boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
@@ -344,7 +435,7 @@ function SignInPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-white">
-                    {flowState === "initial" ? "Get Started" :
+                    {flowState === "initial" ? "Get Started" : 
                      flowState === "choice" ? "Choose Your Path" :
                      flowState === "success" ? "Welcome!" : "Sign Up"}
                   </h3>
@@ -363,56 +454,433 @@ function SignInPage() {
 
             {/* Dynamic Content Based on Flow State */}
             <div className="flex justify-center items-start min-h-[400px]">
+              {/* Initial Screen */}
               {flowState === "initial" && (
-                <InitialScreen
-                  authenticated={authenticated}
-                  user={user}
-                  ready={ready}
-                  checkingExistingUser={checkingExistingUser}
-                  onLogin={handlePrivyLogin}
-                  onLogout={handlePrivyLogout}
-                  onContinue={() => setFlowState("choice")}
-                  getAuthProviderText={() => getAuthProviderText(user)}
-                />
+                <div className="text-center space-y-6 w-full">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-3">Join Clapo Today</h2>
+                    <p className="text-gray-400">Create your account with Privy</p>
+                  </div>
+                  
+                  {/* Privy Auth */}
+                  <div className="space-y-3">
+                    {authenticated && user ? (
+                      <div className="p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
+                              {user.email?.address?.[0]?.toUpperCase() || 
+                               user.twitter?.username?.[0]?.toUpperCase() ||
+                               user.wallet?.address?.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div className="text-left">
+                              <p className="text-white font-semibold text-sm">
+                                {user.email?.address || 
+                                 user.twitter?.username ||
+                                 `${user.wallet?.address?.slice(0, 6)}...${user.wallet?.address?.slice(-4)}`}
+                              </p>
+                              <p className="text-gray-400 text-xs">
+                                {getAuthProviderText()} Connected
+                              </p>
+                            </div>
+                          </div>
+                          <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                            <Check className="w-4 h-4 text-green-400" />
+                          </div>
+                        </div>
+                        <button
+                          onClick={handlePrivyLogout}
+                          className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-full transition-all duration-200 flex items-center justify-center"
+                        >
+                          <X className="w-4 h-4 mr-2" />
+                          Disconnect
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handlePrivyLogin}
+                        disabled={!ready}
+                        className="w-full px-6 py-4 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{
+                          backgroundColor: "#6E54FF",
+                          boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                        }}
+                      >
+                        {!ready ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2 inline-block"></div>
+                            Loading...
+                          </>
+                        ) : (
+                          <>
+                            <Wallet className="w-5 h-5 mr-2 inline-block" />
+                            Connect with Privy
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  {authenticated && user && !checkingExistingUser && (
+                    <div className="space-y-4">
+                      <button
+                        onClick={() => setFlowState("choice")}
+                        className="w-full px-6 py-4 text-white text-sm font-medium rounded-full transition-all duration-200"
+                        style={{
+                          backgroundColor: "#6E54FF",
+                          boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                        }}
+                      >
+                        Continue Setup <ArrowRight className="w-4 h-4 ml-2 inline-block" />
+                      </button>
+
+                      <div className="p-4 bg-blue-600/20 border border-blue-600/30 rounded-xl">
+                        <p className="text-sm text-blue-300">
+                          ✅ Successfully connected! Complete your profile to continue.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {checkingExistingUser && (
+                    <div className="p-4 bg-purple-600/20 border border-purple-600/30 rounded-xl">
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
+                        <p className="text-sm text-purple-300">
+                          Checking your account...
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="pt-4 border-t border-gray-700">
+                    <p className="text-xs text-gray-400 mb-2">
+                      Powered by Privy • Secure & Decentralized
+                    </p>
+                    <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                      <span>📧 Email</span>
+                      <span>•</span>
+                      <span>🔗 Wallet</span>
+                      <span>•</span>
+                      <span>🔐 Social</span>
+                    </div>
+                  </div>
+                </div>
               )}
 
+              {/* Choice Screen */}
               {flowState === "choice" && (
-                <ChoiceScreen onChoose={handleChooseAccountType} />
+                <div className="space-y-4 w-full">
+                  <p className="text-gray-400 text-center mb-6">How would you like to join Clapo?</p>
+
+                  <button
+                    onClick={() => {
+                      setAccountType('individual');
+                      setFlowState("name-username");
+                    }}
+                    className="w-full p-6 bg-gray-700/30 hover:bg-gray-600/30 rounded-xl border border-gray-600/30 transition-all duration-200 text-left"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div
+                        className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{
+                          backgroundColor: "#6E54FF",
+                          boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                        }}
+                      >
+                        <User className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-white mb-2">Join as Individual</h3>
+                        <p className="text-gray-400 text-sm">Create a personal account to connect with others</p>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setAccountType('community');
+                      setFlowState("name-username");
+                    }}
+                    className="w-full p-6 bg-gray-700/30 hover:bg-gray-600/30 rounded-xl border border-gray-600/30 transition-all duration-200 text-left"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div
+                        className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{
+                          backgroundColor: "#6E54FF",
+                          boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                        }}
+                      >
+                        <Users className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-white mb-2">Create Community</h3>
+                        <p className="text-gray-400 text-sm">Build and manage your own community space</p>
+                      </div>
+                    </div>
+                  </button>
+                </div>
               )}
 
+              {/* Name & Username Flow */}
               {flowState === "name-username" && (
-                <NameUsernameScreen
-                  formData={formData}
-                  usernameAvailable={usernameAvailable}
-                  checkingUsername={checkingUsername}
-                  onUpdateFormData={updateFormData}
-                  onContinue={() => setFlowState("displayname")}
-                />
+                <div className="space-y-6 w-full">
+                  <div className="text-center mb-6">
+                    <div 
+                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" 
+                      style={{
+                        backgroundColor: "#6E54FF",
+                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                      }}
+                    >
+                      <User className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Tell us about yourself</h2>
+                    <p className="text-gray-400 text-sm">We'll generate a username based on your name</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm text-gray-400">Your full name</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-4 py-3 bg-black border-2 border-gray-700/70 text-white rounded-xl focus:border-[#6E54FF]/50 focus:outline-none transition-all duration-200 placeholder:text-gray-500"
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm text-gray-400">Username</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">@</span>
+                      <input
+                        type="text"
+                        value={formData.username}
+                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                        className={`w-full pl-10 pr-12 py-3 bg-black border-2 text-white rounded-xl focus:outline-none transition-all duration-200 placeholder:text-gray-500 ${
+                          formData.username.length >= 3
+                            ? usernameAvailable === true
+                              ? 'border-green-500/50 focus:border-green-500/70'
+                              : usernameAvailable === false
+                              ? 'border-red-500/50 focus:border-red-500/70'
+                              : 'border-gray-700/70 focus:border-[#6E54FF]/50'
+                            : 'border-gray-700/70 focus:border-[#6E54FF]/50'
+                        }`}
+                        placeholder="username"
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                        {checkingUsername && (
+                          <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
+                        )}
+                        {!checkingUsername && usernameAvailable === true && formData.username.length >= 3 && (
+                          <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        )}
+                        {!checkingUsername && usernameAvailable === false && formData.username.length >= 3 && (
+                          <XCircle className="w-4 h-4 text-red-500" />
+                        )}
+                      </div>
+                    </div>
+                    {formData.name && !checkingUsername && (
+                      <p className="text-xs text-gray-500">
+                        Auto-generated username. Feel free to edit it.
+                      </p>
+                    )}
+                    {!checkingUsername && usernameAvailable === false && formData.username.length >= 3 && (
+                      <p className="text-xs text-red-400">
+                        Username is already taken. Please try another.
+                      </p>
+                    )}
+                    {!checkingUsername && usernameAvailable === true && formData.username.length >= 3 && (
+                      <p className="text-xs text-green-400">
+                        Username is available!
+                      </p>
+                    )}
+                  </div>
+                  
+                  <button
+                    onClick={() => setFlowState("displayname")}
+                    disabled={!formData.name || !formData.username || usernameAvailable === false || checkingUsername}
+                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    style={{
+                      backgroundColor: (formData.name && formData.username && usernameAvailable !== false && !checkingUsername) ? "#6E54FF" : "#6B7280",
+                      boxShadow: (formData.name && formData.username && usernameAvailable !== false && !checkingUsername) ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
+                    }}
+                  >
+                    {checkingUsername ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Checking...
+                      </>
+                    ) : (
+                      <>
+                        Continue <ArrowRight className="w-4 h-4 ml-2" />
+                      </>
+                    )}
+                  </button>
+                </div>
               )}
 
+              {/* Display Name Flow */}
               {flowState === "displayname" && (
-                <DisplayNameScreen
-                  formData={formData}
-                  onUpdateFormData={updateFormData}
-                  onContinue={() => setFlowState("topics")}
-                />
+                <div className="space-y-6 w-full">
+                  <div className="text-center mb-6">
+                    <div 
+                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" 
+                      style={{
+                        backgroundColor: "#6E54FF",
+                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                      }}
+                    >
+                      <User className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2">What's your display name?</h2>
+                    <p className="text-gray-400 text-sm">This is how others will see you</p>
+                  </div>
+                  <input
+                    type="text"
+                    value={formData.displayName}
+                    onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+                    className="w-full px-4 py-3 bg-black border-2 border-gray-700/70 text-white rounded-xl focus:border-[#6E54FF]/50 focus:outline-none transition-all duration-200 placeholder:text-gray-500"
+                    placeholder="Your display name"
+                  />
+                  <button
+                    onClick={() => setFlowState("topics")}
+                    disabled={!formData.displayName}
+                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    style={{
+                      backgroundColor: formData.displayName ? "#6E54FF" : "#6B7280",
+                      boxShadow: formData.displayName ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
+                    }}
+                  >
+                    Continue <ArrowRight className="w-4 h-4 ml-2" />
+                  </button>
+                </div>
               )}
 
+              {/* Topics Flow */}
               {flowState === "topics" && (
-                <TopicsScreen
-                  formData={formData}
-                  onToggleTopic={toggleTopic}
-                  onContinue={() => setFlowState("follow")}
-                />
+                <div className="space-y-6 w-full">
+                  <div className="text-center mb-6">
+                    <div 
+                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" 
+                      style={{
+                        backgroundColor: "#6E54FF",
+                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                      }}
+                    >
+                      <Sparkles className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2">What interests you?</h2>
+                    <p className="text-gray-400 text-sm">Select at least 3 topics</p>
+                  </div>
+                  <div className="flex flex-wrap gap-3 max-h-64 overflow-y-auto p-1">
+                    {topics.map((topic) => (
+                      <button
+                        key={topic}
+                        onClick={() => toggleTopic(topic)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                          formData.topics.includes(topic)
+                            ? "text-white"
+                            : "bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 border border-gray-600"
+                        }`}
+                        style={formData.topics.includes(topic) ? {
+                          backgroundColor: "#6E54FF",
+                          boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                        } : {}}
+                      >
+                        {topic}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="text-center text-sm text-gray-400">
+                    {formData.topics.length} of 3 selected
+                  </div>
+                  <button
+                    onClick={() => setFlowState("follow")}
+                    disabled={formData.topics.length < 3}
+                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    style={{
+                      backgroundColor: formData.topics.length >= 3 ? "#6E54FF" : "#6B7280",
+                      boxShadow: formData.topics.length >= 3 ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
+                    }}
+                  >
+                    Continue <ArrowRight className="w-4 h-4 ml-2" />
+                  </button>
+                </div>
               )}
 
+              {/* Follow Flow */}
               {flowState === "follow" && (
-                <FollowScreen
-                  formData={formData}
-                  submitError={submitError}
-                  onToggleFollow={toggleFollow}
-                  onContinue={handleComplete}
-                />
+                <div className="space-y-6 w-full">
+                  <div className="text-center mb-6">
+                    <div 
+                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" 
+                      style={{
+                        backgroundColor: "#6E54FF",
+                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                      }}
+                    >
+                      <Users className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Follow suggested users</h2>
+                    <p className="text-gray-400 text-sm">Optional • You can skip this step</p>
+                  </div>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {suggestedUsers.map((user) => (
+                      <div
+                        key={user.username}
+                        className="flex items-center justify-between p-4 bg-gray-700/30 border border-gray-600/30 rounded-xl"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-2xl" 
+                            style={{
+                              backgroundColor: "#6E54FF",
+                              boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                            }}
+                          >
+                            {user.avatar}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-white text-sm">{user.name}</p>
+                            <p className="text-xs text-gray-400">@{user.username} • {user.followers}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => toggleFollow(user.username)}
+                          className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
+                            formData.following.includes(user.username)
+                              ? "bg-gray-700 text-white border border-gray-600"
+                              : "text-white"
+                          }`}
+                          style={!formData.following.includes(user.username) ? {
+                            backgroundColor: "#6E54FF",
+                            boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                          } : {}}
+                        >
+                          {formData.following.includes(user.username) ? "Following" : "Follow"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  {submitError && (
+                    <div className="p-4 bg-red-600/20 border border-red-600/50 rounded-xl">
+                      <p className="text-sm text-red-300">{submitError}</p>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => setFlowState("avatar")}
+                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 flex items-center justify-center"
+                    style={{
+                      backgroundColor: "#6E54FF",
+                      boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
+                    }}
+                  >
+                    Continue <ArrowRight className="w-4 h-4 ml-2" />
+                  </button>
+                </div>
               )}
 
               {/* Avatar Upload Step */}
@@ -631,7 +1099,7 @@ function SignInPage() {
                   >
                     Start Exploring →
                   </button>
-
+                  
                   <div className="pt-4 border-t border-gray-700">
                     <p className="text-xs text-gray-400">
                       Profile saved successfully. You can now access all features.
