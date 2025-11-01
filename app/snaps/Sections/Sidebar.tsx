@@ -4,12 +4,17 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { useWalletContext } from "@/context/WalletContext";
 import { usePrivy } from "@privy-io/react-auth";
-// import SignInPage from "@/app/SignIn";
-import SignInPage from "@/app/SignIn/page";
 import { SnapComposer } from "./SnapComposer";
 import AccountInfo from "@/app/components/AccountInfo";
+
+// Dynamic import for SignIn page (1,117 lines) - improves initial load
+const SignInPage = dynamic(() => import("@/app/SignIn/page"), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div></div>,
+  ssr: false
+});
 
 type PageKey = "home" | "wallet" | "explore" | "notifications" | "activity" | "messages" | "profile" | "share" |"explore" | "search" | "likes" | "bookmarks" | "munch" | "mention";
 

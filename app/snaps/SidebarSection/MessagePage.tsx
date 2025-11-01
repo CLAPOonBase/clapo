@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { usePrivy } from '@privy-io/react-auth';
 import { useApi } from '../../Context/ApiProvider';
 import { MessageCircle, Users, Plus, Search, ChevronDown, Hash, Dot, ArrowLeft, UserPlus, MessageSquare, Eye, Clock, User } from 'lucide-react';
@@ -9,10 +10,15 @@ import { MessageInput } from '../../components/MessageInput';
 import { CreateCommunityModal } from '@/app/components/CreateCommunityModal';
 import { ConnectionStatus } from '../../components/ConnectionStatus';
 import { TabNavigation } from '@/app/components/TabNavigation';
-import { DMSection } from '@/app/components/DMSection';
 import { CommunitySection } from '@/app/components/CommunitySection';
 import { ChatHeader } from '@/app/components/ChatHeader';
 import { CommunityMembersSidebar } from '@/app/components/CommunityMembersSidebar';
+
+// Dynamic import for heavy DM component (504 lines)
+const DMSection = dynamic(() => import('@/app/components/DMSection').then(mod => ({ default: mod.DMSection })), {
+  loading: () => <div className="flex items-center justify-center p-4"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div></div>,
+  ssr: false
+});
 
 export default function MessagePage() {
   const { authenticated: privyAuthenticated, user: privyUser, ready: privyReady } = usePrivy();

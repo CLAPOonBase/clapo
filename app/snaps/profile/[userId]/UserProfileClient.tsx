@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { X, User, Users, MapPin, Calendar, Link, Grid, Heart, MessageCircle, Share2, Image as ImageIcon, Eye, ArrowLeft, MessageSquare, Volume2, TrendingUp, Repeat2, Triangle, Bookmark } from 'lucide-react'
 import { usePrivy } from '@privy-io/react-auth'
 import { useApi } from '@/app/Context/ApiProvider'
@@ -11,12 +12,17 @@ import Sidebar from '../../Sections/Sidebar'
 import { CreatorTokenDisplay } from '@/app/components/CreatorTokenDisplay'
 import { useCreatorToken } from '@/app/hooks/useCreatorToken'
 import { generateCreatorTokenUUID } from '@/app/lib/uuid'
-import CreatorTokenTrading from '@/app/components/CreatorTokenTrading'
 import ReputationBadge from '@/app/components/ReputationBadge'
 import { renderTextWithMentions } from '@/app/lib/mentionUtils'
 import SnapCard from '../../Sections/SnapCard'
 import { ApiPost } from '@/app/types'
 import { MunchApiService } from '@/app/lib/munchApi'
+
+// Dynamic import for heavy trading component (763 lines)
+const CreatorTokenTrading = dynamic(() => import('@/app/components/CreatorTokenTrading'), {
+  loading: () => <div className="flex items-center justify-center p-4"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div></div>,
+  ssr: false
+})
 
 interface UserProfile {
   id: string

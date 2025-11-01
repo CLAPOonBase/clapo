@@ -2,18 +2,27 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
 import { ArrowLeft, Heart, MessageSquare, Share2, TrendingUp, Send, MoreVertical, Bookmark, X, Triangle, Repeat, HandMetal, Eye, ExternalLink } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useApi } from '@/app/Context/ApiProvider'
-// import { useApi } from "@/app/Context/ApiProvider"
 import { useSession } from 'next-auth/react'
 import { Post, ApiPost } from '@/app/types'
 import ReputationBadge from '@/app/components/ReputationBadge'
 import { usePostTokenPrice } from '@/app/hooks/useGlobalPrice'
 import { renderTextWithMentions } from '@/app/lib/mentionUtils'
 import Toast from '@/app/components/Toast'
-import PostTokenTrading from '@/app/components/PostTokenTrading'
-import { UserProfileHover } from '@/app/components/UserProfileHover'
+
+// Dynamic imports for heavy components - improves page load time
+const PostTokenTrading = dynamic(() => import('@/app/components/PostTokenTrading'), {
+  loading: () => <div className="flex items-center justify-center p-4"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div></div>,
+  ssr: false
+})
+
+const UserProfileHover = dynamic(() => import('@/app/components/UserProfileHover').then(mod => ({ default: mod.UserProfileHover })), {
+  loading: () => <div />,
+  ssr: false
+})
 
 export default function PostDetailPage() {
   const params = useParams()

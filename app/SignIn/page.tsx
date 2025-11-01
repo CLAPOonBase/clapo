@@ -7,8 +7,7 @@ import { usePrivy } from '@privy-io/react-auth';
 type FlowState =
   | "initial"
   | "choice"
-  | "name-username"
-  | "displayname"
+  | "displayname-username"
   | "topics"
   | "follow"
   | "avatar"
@@ -38,7 +37,6 @@ function SignInPage() {
   const [flowState, setFlowState] = useState<FlowState>("initial");
   const [accountType, setAccountType] = useState<'individual' | 'community'>('individual');
   const [formData, setFormData] = useState({
-    name: "",
     username: "",
     displayName: "",
     topics: [] as string[],
@@ -56,21 +54,21 @@ function SignInPage() {
 
   const { login, logout, authenticated, user, ready } = usePrivy();
 
-  // Generate random username from name
-  const generateUsername = (name: string) => {
-    if (!name) return "";
-    const baseName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  // Generate random username from display name
+  const generateUsername = (displayName: string) => {
+    if (!displayName) return "";
+    const baseName = displayName.toLowerCase().replace(/[^a-z0-9]/g, '');
     const randomNum = Math.floor(Math.random() * 10000);
     return `${baseName}${randomNum}`;
   };
 
-  // Update username when name changes
+  // Update username when display name changes
   useEffect(() => {
-    if (flowState === "name-username" && formData.name) {
-      const generatedUsername = generateUsername(formData.name);
+    if (flowState === "displayname-username" && formData.displayName) {
+      const generatedUsername = generateUsername(formData.displayName);
       setFormData(prev => ({ ...prev, username: generatedUsername }));
     }
-  }, [formData.name, flowState]);
+  }, [formData.displayName, flowState]);
 
   // Check username availability with debouncing
   useEffect(() => {
@@ -164,9 +162,8 @@ function SignInPage() {
   const handleBack = () => {
     const backMap: Record<string, FlowState> = {
       "choice": "initial",
-      "name-username": "choice",
-      "displayname": "name-username",
-      "topics": "displayname",
+      "displayname-username": "choice",
+      "topics": "displayname-username",
       "follow": "topics",
       "avatar": "follow",
       "bio": "avatar"
@@ -189,7 +186,6 @@ function SignInPage() {
       setAccountType('individual');
       // Clear all form data
       setFormData({
-        name: "",
         username: "",
         displayName: "",
         topics: [],
@@ -295,13 +291,12 @@ function SignInPage() {
         accountType: accountType,
 
         // User profile fields
-        name: formData.name,
+        displayName: formData.displayName,
         username: formData.username,
-        displayName: formData.displayName || null,
         bio: formData.bio || null,
         topics: formData.topics || [],
         following: formData.following || [],
-        ...(avatarUrl && { avatar_url: avatarUrl })
+        ...(avatarUrl && { avatarUrl: avatarUrl })
       };
 
       console.log("📦 Submitting profile data to API:", profileData);
@@ -352,11 +347,10 @@ function SignInPage() {
 
   const getStepInfo = () => {
     const stepMap: Record<string, string> = {
-      "name-username": "Step 1 of 6",
-      "displayname": "Step 2 of 6",
-      "topics": "Step 3 of 6",
-      "follow": "Step 4 of 6",
-      "avatar": "Step 5 of 6",
+      "displayname-username": "Step 1 of 5",
+      "topics": "Step 2 of 5",
+      "follow": "Step 3 of 5",
+      "avatar": "Step 4 of 5",
       "bio": "Final Step"
     };
     return stepMap[flowState] || "";
@@ -576,7 +570,7 @@ function SignInPage() {
                   <button
                     onClick={() => {
                       setAccountType('individual');
-                      setFlowState("name-username");
+                      setFlowState("displayname-username");
                     }}
                     className="w-full p-6 bg-gray-700/30 hover:bg-gray-600/30 rounded-xl border border-gray-600/30 transition-all duration-200 text-left"
                   >
@@ -600,7 +594,7 @@ function SignInPage() {
                   <button
                     onClick={() => {
                       setAccountType('community');
-                      setFlowState("name-username");
+                      setFlowState("displayname-username");
                     }}
                     className="w-full p-6 bg-gray-700/30 hover:bg-gray-600/30 rounded-xl border border-gray-600/30 transition-all duration-200 text-left"
                   >
@@ -623,12 +617,12 @@ function SignInPage() {
                 </div>
               )}
 
-              {/* Name & Username Flow */}
-              {flowState === "name-username" && (
+              {/* Display Name & Username Flow */}
+              {flowState === "displayname-username" && (
                 <div className="space-y-6 w-full">
                   <div className="text-center mb-6">
-                    <div 
-                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" 
+                    <div
+                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center"
                       style={{
                         backgroundColor: "#6E54FF",
                         boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
@@ -637,17 +631,17 @@ function SignInPage() {
                       <User className="w-8 h-8 text-white" />
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-2">Tell us about yourself</h2>
-                    <p className="text-gray-400 text-sm">We'll generate a username based on your name</p>
+                    <p className="text-gray-400 text-sm">We'll generate a username based on your display name</p>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm text-gray-400">Your full name</label>
+                    <label className="text-sm text-gray-400">Display Name</label>
                     <input
                       type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      value={formData.displayName}
+                      onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
                       className="w-full px-4 py-3 bg-black border-2 border-gray-700/70 text-white rounded-xl focus:border-[#6E54FF]/50 focus:outline-none transition-all duration-200 placeholder:text-gray-500"
-                      placeholder="Enter your full name"
+                      placeholder="Enter your display name"
                     />
                   </div>
 
@@ -682,7 +676,7 @@ function SignInPage() {
                         )}
                       </div>
                     </div>
-                    {formData.name && !checkingUsername && (
+                    {formData.displayName && !checkingUsername && (
                       <p className="text-xs text-gray-500">
                         Auto-generated username. Feel free to edit it.
                       </p>
@@ -698,14 +692,14 @@ function SignInPage() {
                       </p>
                     )}
                   </div>
-                  
+
                   <button
-                    onClick={() => setFlowState("displayname")}
-                    disabled={!formData.name || !formData.username || usernameAvailable === false || checkingUsername}
+                    onClick={() => setFlowState("topics")}
+                    disabled={!formData.displayName || !formData.username || usernameAvailable === false || checkingUsername}
                     className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     style={{
-                      backgroundColor: (formData.name && formData.username && usernameAvailable !== false && !checkingUsername) ? "#6E54FF" : "#6B7280",
-                      boxShadow: (formData.name && formData.username && usernameAvailable !== false && !checkingUsername) ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
+                      backgroundColor: (formData.displayName && formData.username && usernameAvailable !== false && !checkingUsername) ? "#6E54FF" : "#6B7280",
+                      boxShadow: (formData.displayName && formData.username && usernameAvailable !== false && !checkingUsername) ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
                     }}
                   >
                     {checkingUsername ? (
@@ -718,43 +712,6 @@ function SignInPage() {
                         Continue <ArrowRight className="w-4 h-4 ml-2" />
                       </>
                     )}
-                  </button>
-                </div>
-              )}
-
-              {/* Display Name Flow */}
-              {flowState === "displayname" && (
-                <div className="space-y-6 w-full">
-                  <div className="text-center mb-6">
-                    <div 
-                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" 
-                      style={{
-                        backgroundColor: "#6E54FF",
-                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                      }}
-                    >
-                      <User className="w-8 h-8 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">What's your display name?</h2>
-                    <p className="text-gray-400 text-sm">This is how others will see you</p>
-                  </div>
-                  <input
-                    type="text"
-                    value={formData.displayName}
-                    onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                    className="w-full px-4 py-3 bg-black border-2 border-gray-700/70 text-white rounded-xl focus:border-[#6E54FF]/50 focus:outline-none transition-all duration-200 placeholder:text-gray-500"
-                    placeholder="Your display name"
-                  />
-                  <button
-                    onClick={() => setFlowState("topics")}
-                    disabled={!formData.displayName}
-                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    style={{
-                      backgroundColor: formData.displayName ? "#6E54FF" : "#6B7280",
-                      boxShadow: formData.displayName ? "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF" : "none"
-                    }}
-                  >
-                    Continue <ArrowRight className="w-4 h-4 ml-2" />
                   </button>
                 </div>
               )}
@@ -1073,7 +1030,6 @@ function SignInPage() {
                     </p>
                     <div className="text-left space-y-2 text-sm text-gray-300">
                       <p>• Account Type: {accountType === 'community' ? 'Community' : 'Individual'}</p>
-                      <p>• Name: {formData.name}</p>
                       <p>• Display Name: {formData.displayName}</p>
                       {formData.bio && <p>• Bio: {formData.bio}</p>}
                       <p>• Following {formData.following.length} users</p>

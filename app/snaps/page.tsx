@@ -5,29 +5,75 @@ import { useState, useEffect, Suspense } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import Sidebar from "./Sections/Sidebar";
 import { SnapComposer } from "./Sections/SnapComposer";
 import SnapCard from "./Sections/SnapCard";
 import Image from "next/image";
 import ActivityFeed from './Sections/ActivityFeed'
-import  ExplorePage  from "./SidebarSection/ExplorePage";
-import NotificationPage from "./SidebarSection/NotificationPage";
-import BookmarkPage from "./SidebarSection/BookmarkPage";
-import { ProfilePage } from "./SidebarSection/ProfilePage";
-import SearchPage from "./SidebarSection/SearchPage";
-import MessagePage from "./SidebarSection/MessagePage";
 import { mockUsers } from "../lib/mockdata";
-import ActivityPage from "./SidebarSection/ActivityPage";
-import InvitePage from "./SidebarSection/InvitePage";
 import { useApi } from "../Context/ApiProvider";
 import { PostSkeleton, LoadingSpinner } from "../components/SkeletonLoader";
 import UserActivityFeed from "./Sections/ActivityFeed";
 import { AnimatePresence, motion } from "framer-motion";
-import SharePage from "./SidebarSection/SharePage";
 import { X } from "lucide-react";
-import Stories from "../components/Story";
 import { apiService } from "../lib/api";
-import Munch from "../components/Munch";
+
+// Dynamic imports for heavy components - improves initial load time
+const ExplorePage = dynamic(() => import("./SidebarSection/ExplorePage"), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+});
+
+const ProfilePage = dynamic(() => import("./SidebarSection/ProfilePage").then(mod => ({ default: mod.ProfilePage })), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+});
+
+const NotificationPage = dynamic(() => import("./SidebarSection/NotificationPage"), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+});
+
+const MessagePage = dynamic(() => import("./SidebarSection/MessagePage"), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+});
+
+const BookmarkPage = dynamic(() => import("./SidebarSection/BookmarkPage"), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+});
+
+const SearchPage = dynamic(() => import("./SidebarSection/SearchPage"), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+});
+
+const ActivityPage = dynamic(() => import("./SidebarSection/ActivityPage"), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+});
+
+const InvitePage = dynamic(() => import("./SidebarSection/InvitePage"), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+});
+
+const SharePage = dynamic(() => import("./SidebarSection/SharePage"), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+});
+
+const Stories = dynamic(() => import("../components/Story"), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+});
+
+const Munch = dynamic(() => import("../components/Munch"), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+});
 
 function SocialFeedPageContent() {
   const [activeTab, setActiveTab] = useState<"FOR YOU" | "FOLLOWING" | "COMMUNITY">(

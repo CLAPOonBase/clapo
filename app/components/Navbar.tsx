@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { Menu } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import {
   Drawer,
   DrawerContent,
@@ -15,7 +16,12 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { useWalletContext } from "@/context/WalletContext";
-import SignInPage from "../SignIn/page";
+
+// Dynamic import for SignIn page (1,117 lines) - improves initial load
+const SignInPage = dynamic(() => import("../SignIn/page"), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div></div>,
+  ssr: false
+});
 
 interface ExtendedSession {
   user?: {
