@@ -295,6 +295,7 @@ function SignInPage() {
         accountType: accountType,
 
         // User profile fields
+        name: formData.name,
         username: formData.username,
         displayName: formData.displayName || null,
         bio: formData.bio || null,
