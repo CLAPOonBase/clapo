@@ -13,7 +13,6 @@ type FlowState =
   | "follow"
   | "avatar"
   | "bio"
-  | "creator-share"
   | "success";
 
 const topics = [
@@ -46,8 +45,7 @@ function SignInPage() {
     following: [] as string[],
     avatarFile: null as File | null,
     avatarPreview: "" as string,
-    bio: "",
-    enableCreatorShare: false
+    bio: ""
   });
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
@@ -171,8 +169,7 @@ function SignInPage() {
       "topics": "displayname",
       "follow": "topics",
       "avatar": "follow",
-      "bio": "avatar",
-      "creator-share": "bio"
+      "bio": "avatar"
     };
     setFlowState(backMap[flowState] || "initial");
   };
@@ -199,8 +196,7 @@ function SignInPage() {
         following: [],
         avatarFile: null,
         avatarPreview: "",
-        bio: "",
-        enableCreatorShare: false
+        bio: ""
       });
     } catch (error) {
       console.error("Privy logout error:", error);
@@ -328,18 +324,6 @@ function SignInPage() {
         throw new Error(errorMessage);
       }
 
-      // Step 4: Create creator token if enabled (optional, don't block on failure)
-      if (formData.enableCreatorShare) {
-        try {
-          console.log('🎨 Creating creator share token...');
-          // TODO: Implement creator token creation via useCreatorToken hook
-          // This would require accessing wallet functionality
-          console.log('⚠️ Creator share token creation will be implemented');
-        } catch (tokenError) {
-          console.error('⚠️ Creator token creation failed, continuing anyway:', tokenError);
-        }
-      }
-
       // Save minimal data to localStorage for session
       localStorage.setItem(`profile_completed_${user.id}`, 'true');
       localStorage.setItem('latest_user_profile', JSON.stringify(data.user || profileData));
@@ -367,13 +351,12 @@ function SignInPage() {
 
   const getStepInfo = () => {
     const stepMap: Record<string, string> = {
-      "name-username": "Step 1 of 7",
-      "displayname": "Step 2 of 7",
-      "topics": "Step 3 of 7",
-      "follow": "Step 4 of 7",
-      "avatar": "Step 5 of 7",
-      "bio": "Step 6 of 7",
-      "creator-share": "Final Step"
+      "name-username": "Step 1 of 6",
+      "displayname": "Step 2 of 6",
+      "topics": "Step 3 of 6",
+      "follow": "Step 4 of 6",
+      "avatar": "Step 5 of 6",
+      "bio": "Final Step"
     };
     return stepMap[flowState] || "";
   };
@@ -1012,86 +995,6 @@ function SignInPage() {
                         {formData.bio.length}/160
                       </p>
                     </div>
-                  </div>
-
-                  <button
-                    onClick={() => setFlowState("creator-share")}
-                    className="w-full px-6 py-3 text-white text-sm font-medium rounded-full transition-all duration-200 flex items-center justify-center"
-                    style={{
-                      backgroundColor: "#6E54FF",
-                      boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                    }}
-                  >
-                    Continue <ArrowRight className="w-4 h-4 ml-2" />
-                  </button>
-                  <button
-                    onClick={() => setFlowState("creator-share")}
-                    className="w-full px-6 py-3 text-gray-400 text-sm font-medium rounded-full transition-all duration-200 hover:text-white hover:bg-gray-700/30"
-                  >
-                    Skip for now
-                  </button>
-                </div>
-              )}
-
-              {/* Creator Share Step */}
-              {flowState === "creator-share" && (
-                <div className="space-y-6 w-full">
-                  <div className="text-center mb-6">
-                    <div
-                      className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center"
-                      style={{
-                        backgroundColor: "#6E54FF",
-                        boxShadow: "0px 1px 0.5px 0px rgba(255, 255, 255, 0.50) inset, 0px 1px 2px 0px rgba(110, 84, 255, 0.50), 0px 0px 0px 1px #6E54FF"
-                      }}
-                    >
-                      <Sparkles className="w-8 h-8 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Enable Creator Share</h2>
-                    <p className="text-gray-400 text-sm">Let your followers invest in your success</p>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div
-                      className={`p-6 rounded-xl border-2 transition-all cursor-pointer ${
-                        formData.enableCreatorShare
-                          ? 'border-[#6E54FF] bg-[#6E54FF]/10'
-                          : 'border-gray-700/70 bg-black hover:border-gray-600'
-                      }`}
-                      onClick={() => setFormData({ ...formData, enableCreatorShare: !formData.enableCreatorShare })}
-                    >
-                      <div className="flex items-start gap-4">
-                        <div
-                          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                            formData.enableCreatorShare
-                              ? 'border-[#6E54FF] bg-[#6E54FF]'
-                              : 'border-gray-600'
-                          }`}
-                        >
-                          {formData.enableCreatorShare && (
-                            <Check className="w-4 h-4 text-white" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-white font-semibold mb-2">Enable Creator Token</h3>
-                          <p className="text-gray-400 text-sm mb-3">
-                            Create a creator token that allows your followers to support you and share in your success
-                          </p>
-                          <div className="space-y-2 text-xs text-gray-500">
-                            <p>• Followers can buy shares of your creator token</p>
-                            <p>• Token value grows with your engagement</p>
-                            <p>• Earn from token trades and holder benefits</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {formData.enableCreatorShare && (
-                      <div className="p-4 bg-blue-600/20 border border-blue-600/30 rounded-xl">
-                        <p className="text-xs text-blue-300">
-                          ℹ️ Your creator token will be created after you complete signup. You'll need to connect a wallet to manage it.
-                        </p>
-                      </div>
-                    )}
                   </div>
 
                   {submitError && (
