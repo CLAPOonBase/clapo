@@ -261,6 +261,9 @@ export interface Post {
     author_reputation?: number
     author_reputation_tier?: ReputationTier
   }>
+  // Internal tracking flags for newly created posts
+  _isNewlyCreated?: boolean
+  _createdAt?: string
 }
 
 export interface CreatePostResponse {

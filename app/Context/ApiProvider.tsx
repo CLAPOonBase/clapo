@@ -45,7 +45,7 @@ export function useApi() {
       communities: community.state.communities,
       communityMessages: community.state.communityMessages,
     },
-    dispatch: () => {}, // No-op for backward compatibility
+    dispatch: (..._args: any[]) => {}, // No-op for backward compatibility
 
     // Auth methods
     login: auth.login,

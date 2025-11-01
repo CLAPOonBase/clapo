@@ -1,3 +1,5 @@
+import type { ReputationTier } from './api'
+
 export interface Leader {
   name: string
   username: string
@@ -131,7 +133,7 @@ export interface ApiPost {
   avatar_url: string
   account_type?: 'individual' | 'community'
   author_reputation?: number
-  author_reputation_tier?: 'newcomer' | 'contributor' | 'veteran' | 'expert' | 'legend'
+  author_reputation_tier?: ReputationTier
   likes?: Array<{
     user_id: string
     username: string
@@ -155,8 +157,11 @@ export interface ApiPost {
     username: string
     avatar_url: string
     author_reputation?: number
-    author_reputation_tier?: 'newcomer' | 'contributor' | 'veteran' | 'expert' | 'legend'
+    author_reputation_tier?: ReputationTier
   }>
+  // Internal tracking flags for newly created posts
+  _isNewlyCreated?: boolean
+  _createdAt?: string
 }
 
 export type User = {

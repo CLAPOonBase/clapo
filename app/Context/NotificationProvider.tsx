@@ -2,8 +2,10 @@
 
 import React, { createContext, useContext, useReducer, ReactNode, useCallback } from 'react'
 import { apiService } from '../lib/api'
-import type { ApiNotification, ApiActivity, EnhancedNotification } from '../types'
+import { ApiNotification, ApiActivity } from '../types'
+// impport EnhancedNotification from '../types/EnhancedNotification'
 import { useAuth } from './AuthProvider'
+import { EnhancedNotification } from '../types/api'
 
 // Action types
 type NotificationAction =
@@ -55,7 +57,7 @@ function notificationReducer(state: NotificationState, action: NotificationActio
     case 'MARK_ALL_NOTIFICATIONS_READ':
       return {
         ...state,
-        notifications: state.notifications.map(notification => ({ ...notification, is_read: true }))
+        notifications: state.notifications.map(notification => ({ ...notification, isRead: true }))
       }
     default:
       return state
@@ -86,7 +88,17 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await apiService.getNotifications(targetUserId)
-      dispatch({ type: 'SET_NOTIFICATIONS', payload: response.notifications })
+      const formattedNotifications = (response.notifications || []).map((n: any) => ({
+        id: n.id,
+        userId: n.userId ?? n.user_id ?? '',
+        refId: n.refId ?? n.ref_id ?? '',
+        fromUserId: n.fromUserId ?? n.from_user_id ?? '',
+        isRead: n.isRead ?? n.is_read ?? false,
+        createdAt: n.createdAt ?? n.created_at ?? new Date().toISOString(),
+        // preserve any other properties from the original object
+        ...n
+      })) as ApiNotification[]
+      dispatch({ type: 'SET_NOTIFICATIONS', payload: formattedNotifications })
     } catch (error) {
       console.error('Failed to fetch notifications:', error)
     }
@@ -122,7 +134,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       const response = await apiService.markNotificationAsRead(notificationId)
       dispatch({
         type: 'UPDATE_NOTIFICATION',
-        payload: { id: notificationId, updates: { is_read: true } }
+        payload: { id: notificationId, updates: { isRead: true } }
       })
       return response.notification
     } catch (error) {

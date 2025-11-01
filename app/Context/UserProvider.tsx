@@ -44,7 +44,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const followUser = useCallback(async (targetUserId: string, data: FollowRequest) => {
     try {
-      const authToken = session?.accessToken || session?.token
+      const authToken = session?.access_token
       const response = await apiService.followUser(targetUserId, data, authToken)
       return response
     } catch (error) {
@@ -55,7 +55,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const unfollowUser = useCallback(async (targetUserId: string, data: FollowRequest) => {
     try {
-      const authToken = session?.accessToken || session?.token
+      const authToken = session?.access_token
       const response = await apiService.unfollowUser(targetUserId, data, authToken)
       return response
     } catch (error) {
